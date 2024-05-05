@@ -1,0 +1,157 @@
+﻿using BepInEx;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using UnityEngine;
+
+namespace NWTWA.Utils
+{
+    internal static class PropertiesAndFieldsUtils
+    {
+        public static void ListNamesOfObjectsArray<T>(T[] array)
+        {
+            Type typeObj = typeof(T);
+
+            Plugin.Logger.LogDebug(" ");
+            if (array == null)
+            {
+                Plugin.Logger.LogDebug($"Array of type {typeObj} is null");
+                return;
+            }
+            if (array.Length == 0)
+            {
+                Plugin.Logger.LogDebug($"Array of type {typeObj} is empty");
+                return;
+            }
+
+            PropertyInfo[] arrObjProperties = GetReadablePropertiesOf(typeObj);
+
+            Plugin.Logger.LogDebug($"- List of type : {typeObj}");
+            for (int i = 0; i < array.Length; i++)
+            {
+                T obj = array[i];
+                if (obj == null)
+                {
+                    continue;
+                }
+
+                Plugin.Logger.LogDebug($" Object {i}: \"{nameOfObject(obj, arrObjProperties)}\"");
+            }
+        }
+
+        public static void ListPropertiesAndFieldsOfArray<T>(T[] array)
+        {
+            Type typeObj = typeof(T);
+
+            if (array == null)
+            {
+                Plugin.Logger.LogDebug($"Array of type {typeObj} is null");
+                return;
+            }
+            if (array.Length == 0)
+            {
+                Plugin.Logger.LogDebug($"Array of type {typeObj} is empty");
+                return;
+            }
+
+            PropertyInfo[] arrObjProperties = GetReadablePropertiesOf(typeObj);
+            for (int i = 0; i < array.Length; i++)
+            {
+                LogProperties(array[i], typeObj, arrObjProperties);
+            }
+
+            FieldInfo[] arrObjFields = GetAllFields(typeObj);
+            for (int i = 0; i < array.Length; i++)
+            {
+                LogFields(array[i], typeObj, arrObjFields);
+            }
+        }
+
+        public static void ListPropertiesAndFields<T>(T obj)
+        {
+            Type typeObj = typeof(T);
+            PropertyInfo[] arrObjProperties = GetReadablePropertiesOf(typeObj);
+            LogProperties(obj, typeObj, arrObjProperties);
+
+            FieldInfo[] arrObjFields = GetAllFields(typeObj);
+            LogFields(obj, typeObj, arrObjFields);
+        }
+
+        private static void LogProperties<T>(T obj, Type typeObj, PropertyInfo[] arrObjProperties)
+        {
+            if (obj == null)
+            {
+                Plugin.Logger.LogDebug($"Object of type {typeObj} is null");
+                return;
+            }
+
+            Plugin.Logger.LogDebug(" ");
+            Plugin.Logger.LogDebug($"- Properties of \"{nameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
+            foreach (PropertyInfo prop in arrObjProperties)
+            {
+                Plugin.Logger.LogDebug($" {prop.Name} = {GetValueOfProperty(obj, prop)}");
+            }
+        }
+
+        private static string nameOfObject<T>(T obj, PropertyInfo[] propertyInfos)
+        {
+            object? objNameProperty = GetValueOfProperty(obj, propertyInfos.FirstOrDefault(x => x.Name == "name"));
+            return objNameProperty == null ? "name null" : objNameProperty.ToString();
+        }
+
+        private static void LogFields<T>(T obj, Type typeObj, FieldInfo[] arrObjFields)
+        {
+            if (obj == null)
+            {
+                Plugin.Logger.LogDebug($"Object of type {typeObj} is null");
+                return;
+            }
+
+            Plugin.Logger.LogDebug(" ");
+            foreach (FieldInfo field in arrObjFields)
+            {
+                Plugin.Logger.LogDebug($" {field.Name} = {GetValueOfField(obj, field)}");
+            }
+        }
+
+        public static FieldInfo[] GetAllFields(System.Type t)
+        {
+            if (t == null)
+            {
+                return new FieldInfo[0];
+            }
+
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic |
+                                 BindingFlags.Static | BindingFlags.Instance |
+                                 BindingFlags.DeclaredOnly;
+            return t.GetFields(flags).Concat(GetAllFields(t.BaseType)).ToArray();
+        }
+
+        private static PropertyInfo[] GetReadablePropertiesOf(Type type)
+        {
+            return type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy).Where(x => x.CanRead).ToArray();
+            //return type.GetProperties().Where(x => x.CanRead).ToArray();
+        }
+        
+        private static object? GetValueOfProperty<T>(T obj, PropertyInfo propertyInfo)
+        {
+            if(propertyInfo == null)
+            {
+                return null;
+            }
+            return propertyInfo.GetAccessors(nonPublic: true)[0].IsStatic ? propertyInfo.GetValue(null) : propertyInfo.GetValue(obj, null);
+        }
+
+        private static object? GetValueOfField<T>(T obj, FieldInfo fieldInfo)
+        {
+            if (fieldInfo == null)
+            {
+                return null;
+            }
+            return fieldInfo.IsStatic ? fieldInfo.GetValue(null) : fieldInfo.GetValue(obj);
+        }
+    }
+}
