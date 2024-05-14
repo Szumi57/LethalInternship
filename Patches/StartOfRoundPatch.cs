@@ -12,30 +12,30 @@ using Quaternion = UnityEngine.Quaternion;
 using static UnityEngine.UIElements.UIR.Implementation.UIRStylePainter;
 using System.Runtime.CompilerServices;
 using System.Linq;
-using NWTWA.Utils;
+using LethalInternship.Utils;
 using GameNetcodeStuff;
 using UnityEngine.AI;
-using NWTWA.AI;
+using LethalInternship.AI;
 
-namespace NWTWA.Patches
+namespace LethalInternship.Patches
 {
     [HarmonyPatch(typeof(StartOfRound))]
     internal class StartOfRoundPatch
     {
-        private static EnemyType _intern = null!;
-        private static EnemyType? _enemyTypeMaskedEnemy = null!;
+        private static EnemyType intern = null!;
+        private static EnemyType? enemyTypeMaskedEnemy = null!;
 
         public static void Init()
         {
-            _intern = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
             //
-            if (_intern != null)
+            intern = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
+            if (intern != null)
             {
-                foreach (var transform in _intern.enemyPrefab.GetComponentsInChildren<Transform>()
+                foreach (var transform in intern.enemyPrefab.GetComponentsInChildren<Transform>()
                                                                    .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
                                                                                                 //&& x.name != "ScanNode"
                                                                                                 && x.name != "MapDot"
-                                                                                                && x.name != "Collision"
+                                                                                                //&& x.name != "Collision"
                                                                                                 && x.name != "TurnCompass"
                                                                                                 && x.name != "CreatureSFX"
                                                                                                 //&& x.name != "CreatureVoice"
@@ -61,7 +61,7 @@ namespace NWTWA.Patches
             //TreesUtils.PrintComponentsTreeOfGameObject(__instance.allPlayerScripts[0].gameObject);
 
             // Looking for masked enemy in loaded objects
-            if (_enemyTypeMaskedEnemy == null)
+            if (enemyTypeMaskedEnemy == null)
             {
                 EnemyType[] enemyTypes = Resources.FindObjectsOfTypeAll<EnemyType>();
                 if (enemyTypes.Length == 0)
@@ -69,7 +69,7 @@ namespace NWTWA.Patches
                     Plugin.Logger.LogError("No enemy types found.");
                     return;
                 }
-                _enemyTypeMaskedEnemy = enemyTypes.FirstOrDefault(x => x.name == "MaskedPlayerEnemy");
+                enemyTypeMaskedEnemy = enemyTypes.FirstOrDefault(x => x.name == "MaskedPlayerEnemy");
             }
 
             //todo supprimer
@@ -84,8 +84,6 @@ namespace NWTWA.Patches
             // Spawn intern
             //SpawnIntern(__instance.playerSpawnPositions[1]);
             //SpawnIntern(__instance.playerSpawnPositions[2]);
-
-
         }
 
         public static void SpawnIntern(Transform positionTransform)
@@ -118,34 +116,34 @@ namespace NWTWA.Patches
 
 
             Plugin.Logger.LogDebug($"Adding AI");
-            GameObject internGameobject = Object.Instantiate<GameObject>(_intern.enemyPrefab);
+            GameObject internGameobject = Object.Instantiate<GameObject>(intern.enemyPrefab);
             internGameobject.GetComponentInChildren<NetworkObject>().Spawn(true);
 
             var playerController = internNPC.GetComponentInChildren<PlayerControllerB>();
             playerController.isPlayerControlled = true;
             Plugin.Logger.LogDebug($"Local position playerController {playerController.transform.localPosition}");
-            //playerController.transform.localPosition = Vector3.zero;
+            playerController.transform.localScale *= 0.85f;
             //todo unique name
             playerController.playerUsername = "Intern";
 
             var aiPrefab = internGameobject.GetComponent<InternAI>();
-            
+
             //Plugin.Logger.LogDebug($"---------------");
             //ComponentUtil.ListAllComponents(exampleEnemyGameobject);
 
             aiPrefab.ventAnimationFinished = true;
             aiPrefab.creatureAnimator = playerController.playerBodyAnimator;
-            aiPrefab.NpcPilot = new NpcPilot(playerController);
+            aiPrefab.NpcController = aiPrefab.gameObject.AddComponent<NpcController>();
+            aiPrefab.NpcController.Npc = playerController;
             aiPrefab.eye = internNPC.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             aiPrefab.transform.position = playerController.transform.position;
 
             aiPrefab.himself = internNPC;
 
+            // Plug ai on intern
             aiPrefab.transform.parent = internNPC.transform;
 
-            
-
-            ComponentUtil.ListAllComponents(internNPC);
+            //ComponentUtil.ListAllComponents(internNPC);
 
             //PropertiesUtils.ListProperties(internNPC.GetComponentInChildren<PlayerControllerB>());
             //PropertiesUtils.ListProperties(internNPC.GetComponentInChildren<CharacterController>());
@@ -154,12 +152,12 @@ namespace NWTWA.Patches
             // Method 2
             // Spawn masked
             Plugin.Logger.LogDebug($"Spawn masked");
-            if (_enemyTypeMaskedEnemy == null)
+            if (enemyTypeMaskedEnemy == null)
             {
                 Plugin.Logger.LogError("No masked enemy type found.");
                 return;
             }
-            GameObject maskedGameobject = Object.Instantiate<GameObject>(_enemyTypeMaskedEnemy.enemyPrefab);
+            GameObject maskedGameobject = Object.Instantiate<GameObject>(enemyTypeMaskedEnemy.enemyPrefab);
             maskedGameobject.SetActive(false);
             Transform transformScavengerModel = maskedGameobject.GetComponentsInChildren<Transform>().First(x => x.name == "ScavengerModel");
             BoxCollider boxMasked = maskedGameobject.GetComponentsInChildren<BoxCollider>().First(x => x.name == "MaskedPlayerEnemy(Clone)");
@@ -168,13 +166,13 @@ namespace NWTWA.Patches
 
             // spawn agent
             Plugin.Logger.LogDebug($"Spawn intern");
-            if (_intern == null)
+            if (intern == null)
             {
                 Plugin.Logger.LogError($"Intern is not initialized.");
                 return;
             }
 
-            GameObject exampleEnemyGameobject25151 = Object.Instantiate<GameObject>(_intern.enemyPrefab, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
+            GameObject exampleEnemyGameobject25151 = Object.Instantiate<GameObject>(intern.enemyPrefab, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
             internGameobject.GetComponentInChildren<NetworkObject>().Spawn(true);
             //-----
             maskedGameobject.transform.position = internGameobject.transform.position;

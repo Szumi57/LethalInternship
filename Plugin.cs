@@ -1,24 +1,24 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using NWTWA.Patches;
+using LethalInternship.Patches;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
 
-namespace NWTWA
+namespace LethalInternship
 {
 
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin {
         // It is a good idea for our GUID to be more unique than only the plugin name. Notice that it is used in the BepInPlugin attribute.
         // The GUID is also used for the config file name by default.
-        public const string ModGUID = "Szumi." + PluginInfo.PLUGIN_NAME;
+        public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
         public static AssetBundle ModAssets = null!;        
         
         internal static new ManualLogSource Logger = null!;
-        internal static PluginConfig BoundConfig { get; private set; } = null!;
+        internal static Config BoundConfig { get; private set; } = null!;
 
         private readonly Harmony _harmony = new(PluginInfo.PLUGIN_GUID);
 
@@ -26,8 +26,7 @@ namespace NWTWA
 
             Logger = base.Logger;
 
-            // If you don't want your mod to use a configuration file, you can remove this line, Configuration.cs, and other references.
-            BoundConfig = new PluginConfig(base.Config);
+            BoundConfig = new Config(base.Config);
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();

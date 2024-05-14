@@ -1,11 +1,11 @@
-﻿using NWTWA.Utils;
+﻿using LethalInternship.Utils;
 using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NWTWA.Patches
+namespace LethalInternship.Patches
 {
     [HarmonyPatch(typeof(MaskedPlayerEnemy))]
     internal class maePatch

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace NWTWA.Utils
+namespace LethalInternship.Utils
 {
     internal static class TreesUtils
     {

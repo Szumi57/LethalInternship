@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
-namespace NWTWA.Utils
+namespace LethalInternship.Utils
 {
     internal static class PropertiesAndFieldsUtils
     {
@@ -42,7 +42,7 @@ namespace NWTWA.Utils
             }
         }
 
-        public static void ListPropertiesAndFieldsOfArray<T>(T[] array)
+        public static void ListPropertiesAndFieldsOfArray<T>(T[] array, bool hasToListProperties = true, bool hasToListFields = true)
         {
             Type typeObj = typeof(T);
 
@@ -58,15 +58,19 @@ namespace NWTWA.Utils
             }
 
             PropertyInfo[] arrObjProperties = GetReadablePropertiesOf(typeObj);
-            for (int i = 0; i < array.Length; i++)
-            {
-                LogProperties(array[i], typeObj, arrObjProperties);
-            }
-
             FieldInfo[] arrObjFields = GetAllFields(typeObj);
             for (int i = 0; i < array.Length; i++)
             {
-                LogFields(array[i], typeObj, arrObjFields);
+                if (hasToListProperties)
+                {
+                    LogProperties(array[i], typeObj, arrObjProperties);
+                }
+                Plugin.Logger.LogDebug(" ");
+                Plugin.Logger.LogDebug($"- Fields of \"{nameOfObject(array[i], arrObjProperties)}\" of type \"{typeObj}\" :");
+                if (hasToListFields)
+                {
+                    LogFields(array[i], typeObj, arrObjFields);
+                }
             }
         }
 
@@ -135,10 +139,10 @@ namespace NWTWA.Utils
             return type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy).Where(x => x.CanRead).ToArray();
             //return type.GetProperties().Where(x => x.CanRead).ToArray();
         }
-        
+
         private static object? GetValueOfProperty<T>(T obj, PropertyInfo propertyInfo)
         {
-            if(propertyInfo == null)
+            if (propertyInfo == null)
             {
                 return null;
             }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace NWTWA.Patches
+namespace LethalInternship.Patches
 {
     [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PlayerControllerBPatch
@@ -14,25 +14,36 @@ namespace NWTWA.Patches
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance)
         {
+            //todo uniqueness
             if (__instance.playerUsername == "Intern")
             {
                 return false;
             }
-            //Plugin.Logger.LogDebug($"{__instance.playerUsername} player pos: {__instance.transform.position}");
-            //Plugin.Logger.LogDebug($"{IngamePlayerSettings.Instance.playerInput.actions.FindAction("Sprint", false).ReadValue<float>()}");
-            //Plugin.Logger.LogDebug($"player {__instance.moveInputVector}");
             return true;
         }
 
-        [HarmonyPatch("Update")]
-        [HarmonyPostfix]
-        static void Update_PostFix(ref PlayerControllerB __instance)
+        [HarmonyPatch("Jump_performed")]
+        [HarmonyPrefix]
+        static bool Jump_performed_PreFix(PlayerControllerB __instance)
         {
-            //if (__instance.playerUsername == "Intern")
-            //{
-            //    Plugin.Logger.LogDebug($"bypass for {__instance.playerUsername}");
-            //    return false;
-            //}
+            Plugin.Logger.LogDebug($"{__instance.playerUsername} try to jump");
+            if (__instance.playerUsername == "Intern")
+            {
+                return false;
+            }
+            return true;
+        }
+
+        [HarmonyPatch("PerformEmote")]
+        [HarmonyPostfix]
+        static void PerformEmote_PostFix(PlayerControllerB __instance)
+        {
+            if (__instance.playerUsername != "Player #0")
+            {
+                return;
+            }
+
+            StartOfRoundPatch.SpawnIntern(__instance.transform);
         }
     }
 }

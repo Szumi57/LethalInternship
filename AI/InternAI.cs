@@ -1,15 +1,20 @@
 ﻿using GameNetcodeStuff;
-using NWTWA.AI.States;
-using NWTWA.Enums;
+using LethalInternship.AI.States;
+using LethalInternship.Enums;
+using LethalInternship.Patches;
+using LethalInternship.Utils;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
 
-namespace NWTWA.AI
+namespace LethalInternship.AI
 {
 
     // You may be wondering, how does the Example Enemy know it is from class ExampleEnemyAI?
@@ -34,10 +39,12 @@ namespace NWTWA.AI
 
         public State State { get; set; } = null!;
 
+        private InteractTrigger[] laddersInteractTrigger = null!;
+        private EntranceTeleport[] entrancesTeleportArray = null!;
+
         [Space(3f)]
         private Transform lerpTarget;
         private RaycastHit enemyRayHit;
-        public Vector3 mainEntrancePosition;
         public Transform animationContainer;
         private float velX;
         private float velZ;
@@ -63,9 +70,8 @@ namespace NWTWA.AI
         private float updateDestinationIntervalInternAI;
         private float setDestinationToPlayerIntervalInternAI;
 
-        public NpcPilot NpcPilot = null!;
+        public NpcController NpcController = null!;
 
-        private Vector3 NpcPosition;
         public GameObject himself;
 
         [Conditional("DEBUG")]
@@ -90,6 +96,7 @@ namespace NWTWA.AI
 
             //todo start bloodpools ?
 
+            // Behaviour states
             enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumStates)).Length];
             int index = 0;
             foreach (var state in (EnumStates[])Enum.GetValues(typeof(EnumStates)))
@@ -97,8 +104,45 @@ namespace NWTWA.AI
                 enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
             }
 
-            NpcPosition = NpcPilot.Npc.thisController.transform.position;
-            transform.position = NpcPosition;
+            this.transform.position = NpcController.Npc.thisController.transform.position;
+
+            // AIIntervalTime
+            if (AIIntervalTime == 0f)
+                if (AIIntervalTime == 0f)
+                {
+                    AIIntervalTime = 0.3f;
+                }
+
+            // Ladders
+            List<InteractTrigger> ladders = new List<InteractTrigger>();
+            InteractTrigger[] interactsTrigger = Resources.FindObjectsOfTypeAll<InteractTrigger>();
+            for (int i = 0; i < interactsTrigger.Length; i++)
+            {
+                if (interactsTrigger[i] == null)
+                {
+                    return;
+                }
+
+                if (interactsTrigger[i].isLadder && interactsTrigger[i].ladderHorizontalPosition != null)
+                {
+                    ladders.Add(interactsTrigger[i]);
+                    Plugin.Logger.LogDebug($"adding ladder {i} horiz pos {interactsTrigger[i].ladderHorizontalPosition.position}");
+                    Plugin.Logger.LogDebug($"adding ladder {i} top pos {interactsTrigger[i].topOfLadderPosition.position}");
+                    Plugin.Logger.LogDebug($"adding ladder {i} bottom pos {interactsTrigger[i].bottomOfLadderPosition.position}");
+                    Plugin.Logger.LogDebug($"adding ladder {i} player pos {interactsTrigger[i].playerPositionNode.position}");
+                    Plugin.Logger.LogDebug($"---------------");
+                }
+            }
+            laddersInteractTrigger = ladders.ToArray();
+            Plugin.Logger.LogDebug($"Ladders found : {laddersInteractTrigger.Length}");
+
+            // Entrances
+            entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+            //foreach (EntranceTeleport e in array)
+            //{
+            //    Plugin.Logger.LogDebug($"entrance point {e.entrancePoint.position}, isentrance {e.isEntranceToBuilding}");
+            //}
+            //PropertiesAndFieldsUtils.ListPropertiesAndFieldsOfArray(array, false);
 
             try
             {
@@ -114,7 +158,6 @@ namespace NWTWA.AI
                 thisEnemyIndex = RoundManager.Instance.numberOfEnemiesInScene;
                 RoundManager.Instance.numberOfEnemiesInScene++;
                 isOutside = transform.position.y > -80f;
-                mainEntrancePosition = RoundManager.FindMainEntrancePosition(true, isOutside);
                 if (isOutside)
                 {
                     if (allAINodes == null || allAINodes.Length == 0)
@@ -144,15 +187,16 @@ namespace NWTWA.AI
             }
             catch (Exception arg)
             {
-                Plugin.Logger.LogError(string.Format("Error when initializing enemy variables for {0} : {1}", gameObject.name, arg));
+                Plugin.Logger.LogError(string.Format("Error when initializing intern variables for {0} : {1}", gameObject.name, arg));
             }
             //this.lerpTarget.SetParent(RoundManager.Instance.mapPropsContainer.transform);
             enemyRayHit = default;
             addPlayerVelocityToDestination = 3f;
 
+            agent.Warp(NpcController.Npc.transform.position);
             // NOTE: Add your behavior states in your enemy script in Unity, where you can configure fun stuff
             // like a voice clip or an sfx clip to play when changing to that specific behavior state.
-            currentBehaviourStateIndex = (int)EnumStates.SearchingForPlayer;
+            currentBehaviourStateIndex = -1;
             State = new SearchingForPlayerState(this);
 
             // --- old code
@@ -188,37 +232,17 @@ namespace NWTWA.AI
                 SetClientCalculatingAI(enable: true);
             }
 
-            if (movingTowardsTargetPlayer && targetPlayer != null)
-            {
-                if (setDestinationToPlayerIntervalInternAI <= 0f)
-                {
-                    setDestinationToPlayerIntervalInternAI = 0.25f;
-                    destination = RoundManager.Instance.GetNavMeshPosition(targetPlayer.transform.position, RoundManager.Instance.navHit, 2.7f);
-                    //Log("Set destination to target player A");
-                }
-                else
-                {
-                    destination = new Vector3(targetPlayer.transform.position.x, destination.y, targetPlayer.transform.position.z);
-                    //Log("Set destination to target player B");
-                    setDestinationToPlayerIntervalInternAI -= Time.deltaTime;
-                }
-
-                if (addPlayerVelocityToDestination > 0f)
-                {
-                    if (targetPlayer == GameNetworkManager.Instance.localPlayerController)
-                    {
-                        destination += Vector3.Normalize(targetPlayer.thisController.velocity * 100f) * addPlayerVelocityToDestination;
-                    }
-                    else if (targetPlayer.timeSincePlayerMoving < 0.25f)
-                    {
-                        destination += Vector3.Normalize((targetPlayer.serverPlayerPosition - targetPlayer.oldPlayerPosition) * 100f) * addPlayerVelocityToDestination;
-                    }
-                }
-            }
-
             if (inSpecialAnimation)
             {
                 return;
+            }
+
+            NpcController.Update();
+            if (NpcController.HasToMove)
+            {
+                // Npc is following ai agent position that follows destination path
+                NpcController.SetTurnBodyTowardsDirection(this.transform.position);
+                agent.nextPosition = NpcController.Npc.thisController.transform.position;
             }
 
             if (updateDestinationIntervalInternAI >= 0f)
@@ -230,10 +254,12 @@ namespace NWTWA.AI
                 DoAIInterval();
                 updateDestinationIntervalInternAI = AIIntervalTime;
             }
-
-            NpcPilot.Update();
         }
 
+        private Vector3 agentLastPosition;
+        private Vector3 npcControllerLastPosition;
+        public float TimeSinceStuck;
+        public bool IsStuck { get { return TimeSinceStuck > Const.TIMER_STUCK; } }
         public override void DoAIInterval()
         {
             if (isEnemyDead || StartOfRound.Instance.allPlayersDead)
@@ -241,161 +267,254 @@ namespace NWTWA.AI
                 return;
             };
 
-            //Log($"mag:{(transform.position - NpcPilot.Npc.thisController.transform.position).magnitude}");
-            //Log($"dot:{Vector3.Dot(Vector3.forward, transform.position - NpcPilot.Npc.thisController.transform.position)}");
-
-            float distanceAIController = (transform.position - NpcPilot.Npc.thisController.transform.position).sqrMagnitude;
-            if (distanceAIController > 50f)
+            if (NpcController.HasToMove
+                && !NpcController.Npc.inSpecialInteractAnimation
+                && !NpcController.Npc.isClimbingLadder)
             {
-                Log($"Controller too far from ai, mag:{(transform.position - NpcPilot.Npc.thisController.transform.position).magnitude}");
-                NpcPilot.Npc.thisController.transform.position = transform.position;
+                // UnCrouch
+                if (NpcController.Npc.isCrouching && State.GetState() != EnumStates.Stuck)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+
+                // Controller stuck in world ?
+                Log($"ai progression {(this.transform.position - agentLastPosition).sqrMagnitude}");
+                if ((this.transform.position - agentLastPosition).sqrMagnitude < 0.1f * 0.1f
+                    && (NpcController.Npc.transform.position - npcControllerLastPosition).sqrMagnitude < 0.45f * 0.45f)
+                {
+                    Log($"TimeSinceStuck {TimeSinceStuck}");
+                    TimeSinceStuck += AIIntervalTime;
+                }
+                else
+                {
+                    TimeSinceStuck = 0f;
+                    agentLastPosition = this.transform.position;
+                    npcControllerLastPosition = NpcController.Npc.transform.position;
+                }
+
+                if (TimeSinceStuck > Const.TIMER_STUCK
+                    && State.GetState() != EnumStates.Stuck)
+                {
+                    State = new StuckState(this);
+                }
+
+
+                //if (lastAiPositions == null)
+                //{
+                //    lastAiPositions = new Queue<Vector3>();
+                //}
+
+                //shouldEnqueue = true;
+                //foreach (Vector3 aiPosition in lastAiPositions)
+                //{
+                //    //Plugin.Logger.LogDebug($"aiPosition {aiPosition} =? agentLastPosition {agentLastPosition} : ");
+                //    if ((aiPosition - agentLastPosition).sqrMagnitude < 0.01f * 0.01f)
+                //    {
+                //        stuckCounterAiPositions++;
+                //        Plugin.Logger.LogDebug($"                 stuck counter {stuckCounterAiPositions}");
+                //        shouldEnqueue = false;
+                //    }
+                //}
+
+                //if (shouldEnqueue)
+                //{
+                //    lastAiPositions.Enqueue(agentLastPosition);
+                //}
+                //if (lastAiPositions.Count > 30)
+                //{
+                //    lastAiPositions.Dequeue();
+                //}
+
+                //if (stuckCounterAiPositions >= 3
+                //&& State.GetState() != EnumStates.Stuck)
+                //{
+                //    lastAiPositions.Clear();
+                //    stuckCounterAiPositions = 0;
+                //    State = new StuckState(this);
+                //}
             }
 
             State.DoAI();
+        }
 
-            //playerControllerB = null!;
-            //switch (currentBehaviourStateIndex)
-            //{
-            //    case (int)EnumStates.SearchingForPlayer:
+        public void OrderMoveToDestination()
+        {
+            agent.SetDestination(destination);
+            NpcController.OrderToMove();
+        }
 
-            //        //this.LookAndRunRandomly(true, false);
+        public void StopMoving()
+        {
+            agent.ResetPath();
+            NpcController.OrderToStopMoving();
+            //this.transform.position = NpcController.Npc.thisController.transform.position;
+            agent.Warp(NpcController.Npc.thisController.transform.position);
+        }
 
-            //        if (Time.realtimeSinceStartup - timeAtLastUsingEntrance > 3f
-            //            && !GetClosestPlayer(false, false, false)
-            //            && !PathIsIntersectedByLineOfSight(mainEntrancePosition, false, false))
-            //        {
-            //            if (Vector3.Distance(transform.position, mainEntrancePosition) < 1f)
-            //            {
-            //                TeleportInternAndSync(RoundManager.FindMainEntrancePosition(true, !isOutside), !isOutside);
-            //                return;
-            //            }
-            //            if (searchForPlayers.inProgress)
-            //            {
-            //                StopSearch(searchForPlayers, true);
-            //            }
-            //            SetDestinationToPosition(mainEntrancePosition, false);
-            //            return;
-            //        }
-            //        else
-            //        {
-            //            if (!searchForPlayers.inProgress)
-            //            {
-            //                StartSearch(transform.position, searchForPlayers);
-            //            }
-            //            playerControllerB = CheckLineOfSightForClosestPlayer(50f, 60, -1, 0f);
-            //            if (playerControllerB != null)
-            //            {
-            //                //this.LookAtPlayerServerRpc((int)this.PlayerControllerB.playerClientId);
-            //                SetMovingTowardsTargetPlayer(playerControllerB);
-            //                SwitchToBehaviourState((int)EnumStates.GetCloseToPlayer);
-            //            }
-            //        }
-            //        break;
+        public PlayerControllerB? CheckLOSForTarget(float width = 45f, int range = 60, int proximityAwareness = -1)
+        {
+            if (targetPlayer == null)
+            {
+                return null;
+            }
 
-            //    case (int)EnumStates.GetCloseToPlayer:
+            if (isOutside && !enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
+            {
+                range = Mathf.Clamp(range, 0, 30);
+            }
 
-            //        moveTowardsDestination = true;
-            //        //this.LookAndRunRandomly(true, true);
-            //        playerControllerB = CheckLineOfSightForClosestPlayer(70f, 50, 1, 3f);
-            //        if (playerControllerB != null)
-            //        {
-            //            lostPlayerInChase = false;
-            //            lostLOSTimer = 0f;
-            //            if (playerControllerB != targetPlayer)
-            //            {
-            //                SetMovingTowardsTargetPlayer(playerControllerB);
-            //                //this.LookAtPlayerServerRpc((int)this.PlayerControllerB.playerClientId);
-            //            }
-            //            if (mostOptimalDistance > 12f)
-            //            {
-            //                if (!running)
-            //                {
-            //                    running = true;
-            //                    creatureAnimator.SetBool("Sprinting", true);
-            //                    Plugin.Logger.LogDebug(string.Format("Setting running to true 8; {0}", creatureAnimator.GetBool("Running")));
-            //                    SetRunningServerRpc(true);
-            //                }
-            //            }
-            //            else if (mostOptimalDistance < 4f)
-            //            {
-            //                // Stop movement
-            //                //agent.velocity = Vector3.zero;
-            //                //this.NpcControllerB.Npc.thisController.transform.position = base.transform.position;
-            //                agent.ResetPath();
-            //                moveTowardsDestination = false;
-            //                NpcPilot.MoveToTarget = false;
-            //                transform.position = NpcPilot.Npc.thisController.transform.position;
-            //            }
-            //            else if (mostOptimalDistance < 8f)
-            //            {
-            //                if (running && !runningRandomly)
-            //                {
-            //                    running = false;
-            //                    creatureAnimator.SetBool("Sprinting", false);
-            //                    Plugin.Logger.LogDebug(string.Format("Setting running to false 1; {0}", creatureAnimator.GetBool("Running")));
-            //                    SetRunningServerRpc(false);
-            //                }
-            //            }
-            //        }
-            //        else
-            //        {
-            //            lostLOSTimer += AIIntervalTime;
-            //            if (lostLOSTimer > 10f)
-            //            {
-            //                SwitchToBehaviourState((int)EnumStates.SearchingForPlayer);
-            //                targetPlayer = null;
-            //            }
-            //            else if (lostLOSTimer > 3.5f)
-            //            {
-            //                lostPlayerInChase = true;
-            //                StopLookingAtTransformServerRpc();
-            //                targetPlayer = null;
-            //                if (running)
-            //                {
-            //                    running = false;
-            //                    creatureAnimator.SetBool("Sprinting", false);
-            //                    Plugin.Logger.LogDebug(string.Format("Setting running to false 2; {0}", creatureAnimator.GetBool("Running")));
-            //                    SetRunningServerRpc(false);
-            //                }
-            //            }
-            //        }
-            //        break;
+            Vector3 posTargetCamera = targetPlayer.gameplayCamera.transform.position;
+            if (Vector3.Distance(posTargetCamera, eye.position) < (float)range
+                && !Physics.Linecast(eye.position, posTargetCamera, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+            {
+                Vector3 to = posTargetCamera - eye.position;
+                if (Vector3.Angle(eye.forward, to) < width
+                    || (proximityAwareness != -1 && Vector3.Distance(eye.position, posTargetCamera) < (float)proximityAwareness))
+                {
+                    return targetPlayer;
+                }
+            }
 
-            //    default:
-            //        Log("This Behavior State doesn't exist!");
-            //        break;
-            //}
+            return null;
+        }
 
-            //if (moveTowardsDestination)
-            //{
-            //    agent.SetDestination(destination);
-            //    NpcPilot.SetTargetPosition(transform.position);
-            //    agent.nextPosition = NpcPilot.Npc.thisController.transform.position;
-            //}
+        public PlayerControllerB? CheckLOSForClosestPlayer(float width = 45f, int range = 60, int proximityAwareness = -1, float bufferDistance = 0f)
+        {
+            if (isOutside && !enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
+            {
+                range = Mathf.Clamp(range, 0, 30);
+            }
 
+            float num = 1000f;
+            float num2 = 1000f;
+            int num3 = -1;
+            for (int i = 0; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
+            {
+                Vector3 position = StartOfRound.Instance.allPlayerScripts[i].gameplayCamera.transform.position;
+                if ((position - this.transform.position).sqrMagnitude > range * range)
+                {
+                    continue;
+                }
 
-            //if (targetPlayer != null
-            //    && PlayerIsTargetable(targetPlayer, false, false)
-            //    && currentBehaviourStateIndex == (int)EnumStates.GetCloseToPlayer)
-            //{
-            //    if (lostPlayerInChase)
-            //    {
-            //        moveTowardsDestination = true;
-            //        if (!searchForPlayers.inProgress)
-            //        {
-            //            StartSearch(transform.position, searchForPlayers);
-            //            return;
-            //        }
-            //    }
-            //    else
-            //    {
-            //        if (searchForPlayers.inProgress)
-            //        {
-            //            StopSearch(searchForPlayers, true);
-            //        }
-            //        SetMovingTowardsTargetPlayer(targetPlayer);
-            //    }
-            //}
+                if (!Physics.Linecast(eye.position, position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                {
+                    Vector3 to = position - eye.position;
+                    num = Vector3.Distance(eye.position, position);
+                    if ((Vector3.Angle(eye.forward, to) < width || (proximityAwareness != -1 && num < (float)proximityAwareness)) && num < num2)
+                    {
+                        num2 = num;
+                        num3 = i;
+                    }
+                }
+            }
+
+            if (targetPlayer != null && num3 != -1 && targetPlayer != StartOfRound.Instance.allPlayerScripts[num3] && bufferDistance > 0f && Mathf.Abs(num2 - Vector3.Distance(base.transform.position, targetPlayer.transform.position)) < bufferDistance)
+            {
+                return null;
+            }
+
+            if (num3 < 0)
+            {
+                return null;
+            }
+
+            mostOptimalDistance = num2;
+            return StartOfRound.Instance.allPlayerScripts[num3];
+        }
+
+        public bool SetDestinationToPositionInternAI(Vector3 position)
+        {
+            moveTowardsDestination = true;
+            movingTowardsTargetPlayer = false;
+            destination = RoundManager.Instance.GetNavMeshPosition(position, RoundManager.Instance.navHit, 2.7f);
+
+            return true;
+        }
+
+        public InteractTrigger? GetLadderIfWantsToUseLadder()
+        {
+            Vector3 nextAIPos = transform.position;
+            Vector3 npcBodyHorizPos = new Vector3(NpcController.Npc.thisController.transform.position.x, 0f, NpcController.Npc.thisController.transform.position.z);
+            for (int i = 0; i < laddersInteractTrigger.Length; i++)
+            {
+                Vector3 ladderBottomPos = laddersInteractTrigger[i].bottomOfLadderPosition.position;
+                Vector3 ladderTopPos = laddersInteractTrigger[i].topOfLadderPosition.position;
+                Vector3 ladderHorizPos = new Vector3(laddersInteractTrigger[i].ladderHorizontalPosition.position.x,
+                                                   0f,
+                                                   laddersInteractTrigger[i].ladderHorizontalPosition.position.z);
+                //Log($"all ladder bottom distnace {(ladderBottom - transform.position).sqrMagnitude}");
+                //if ((ladderBottomPos - thisAIPos).sqrMagnitude < 10f * 10f)
+                //{
+                //    Log($"this ladder bottom distance {(ladderBottomPos - thisAIPos).sqrMagnitude}");
+                //    if ((ladderBottomPos - thisAIPos).sqrMagnitude < 1f)
+                //    {
+                //        Log($"bottom of ladder reached");
+                //    }
+
+                //    Log($"this ladder top distance {(ladderTopPos - thisAIPos).sqrMagnitude}");
+                //    if ((ladderTopPos - thisAIPos).sqrMagnitude < 1f)
+                //    {
+                //        Log($"top of ladder reached");
+                //    }
+                //}
+
+                if ((ladderBottomPos - nextAIPos).sqrMagnitude < Const.DISTANCE_AI_FROM_LADDER * Const.DISTANCE_AI_FROM_LADDER
+                    && (ladderHorizPos - npcBodyHorizPos).sqrMagnitude < Const.DISTANCE_NPCBODY_FROM_LADDER * Const.DISTANCE_NPCBODY_FROM_LADDER)
+                {
+                    // Ai close to bottom, npc controller close to top
+                    Log($"Wants to go down on ladder");
+                    // Wants to go down on ladder
+                    return laddersInteractTrigger[i];
+                }
+                else if ((ladderTopPos - nextAIPos).sqrMagnitude < Const.DISTANCE_AI_FROM_LADDER * Const.DISTANCE_AI_FROM_LADDER
+                        && (ladderHorizPos - npcBodyHorizPos).sqrMagnitude < Const.DISTANCE_NPCBODY_FROM_LADDER * Const.DISTANCE_NPCBODY_FROM_LADDER)
+                {
+                    // Ai close to top, npc controller close to bottom
+                    // Wants to go up on ladder
+                    Log($"Wants to go up on ladder");
+                    return laddersInteractTrigger[i];
+                }
+            }
+            return null;
+        }
+
+        public EntranceTeleport? IsEntranceClose(Vector3 entityPos)
+        {
+            for (int i = 0; i < entrancesTeleportArray.Length; i++)
+            {
+                if ((entityPos - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 3f * 3f)
+                {
+                    return entrancesTeleportArray[i];
+                }
+            }
+            return null;
+        }
+
+        public EntranceTeleport? IsEntranceCloseForBoth(Vector3 entityPos1, Vector3 entityPos2)
+        {
+            for (int i = 0; i < entrancesTeleportArray.Length; i++)
+            {
+                if ((entityPos1 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 3f * 3f
+                    && (entityPos2 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 3f * 3f)
+                {
+                    return entrancesTeleportArray[i];
+                }
+            }
+            return null;
+        }
+
+        public Vector3? GetTeleportPosOfEntrance(EntranceTeleport entranceToUse)
+        {
+            for (int i = 0; i < entrancesTeleportArray.Length; i++)
+            {
+                EntranceTeleport entrance = entrancesTeleportArray[i];
+                if (entrance.entranceId == entranceToUse.entranceId 
+                    && entrance.isEntranceToBuilding != entranceToUse.isEntranceToBuilding)
+                {
+                    return entrance.entrancePoint.position;
+                }
+            }
+            return null;
         }
 
         private void CalculateAnimationDirection(float maxSpeed = 1f)
@@ -557,7 +676,6 @@ namespace NWTWA.AI
             TeleportIntern(pos, setOutside);
         }
 
-        // Token: 0x060003AE RID: 942 RVA: 0x00021D28 File Offset: 0x0001FF28
         private void TeleportIntern(Vector3 pos, bool setOutside)
         {
             State.TimeAtLastUsingEntrance = Time.realtimeSinceStartup;
@@ -567,6 +685,8 @@ namespace NWTWA.AI
                 agent.enabled = false;
                 transform.position = navMeshPosition;
                 agent.enabled = true;
+                agent.Warp(navMeshPosition);
+                NpcController.Npc.transform.position = navMeshPosition;
             }
             else
             {
@@ -783,7 +903,7 @@ namespace NWTWA.AI
             return true;
         }
 
-        
+
 
         [ServerRpc]
         public void StopLookingAtTransformServerRpc()
@@ -875,6 +995,13 @@ namespace NWTWA.AI
 
         public override void OnCollideWithPlayer(Collider other)
         {
+            Plugin.Logger.LogDebug($"collision ? 1: {other.gameObject}{other.gameObject.GetInstanceID()} 2:{this.gameObject}{this.gameObject.GetInstanceID()}");
+            if (other.gameObject.GetInstanceID() == this.gameObject.GetInstanceID())
+            {
+                return;
+            }
+
+            Plugin.Logger.LogDebug($"collision !");
             if (timeSinceHittingLocalPlayer < 1f)
             {
                 return;

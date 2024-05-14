@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace NWTWA.Patches
+namespace LethalInternship.Patches
 {
     [HarmonyPatch(typeof(ItemDropship))]
     internal class ItemDropShipPatch
@@ -26,8 +26,8 @@ namespace NWTWA.Patches
 
         #endregion
 
-        [HarmonyPatch("Update")]
-        [HarmonyPostfix]
+        //[HarmonyPatch("Update")]
+        //[HarmonyPostfix]
         static void Update_PostFix(ref ItemDropship __instance,
                                                 StartOfRound ___playersManager,
                                                 ref int ___timesPlayedWithoutTurningOff,

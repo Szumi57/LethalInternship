@@ -5,12 +5,17 @@ using System.Text;
 using UnityEngine.Rendering;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.UIElements;
+using UnityEngine.XR;
+using static UnityEngine.GraphicsBuffer;
+using System.Collections;
+using UnityEngine.Yoga;
 
-namespace NWTWA.AI
+namespace LethalInternship.AI
 {
-    internal class NpcPilot : NetworkBehaviour
+    internal class NpcController : NetworkBehaviour
     {
-        public PlayerControllerB Npc { get; set; }
+        public PlayerControllerB Npc { get; set; } = null!;
 
         private bool isCameraDisabled = true;
 
@@ -50,29 +55,18 @@ namespace NWTWA.AI
 
         private bool wasUnderwaterLastFrame;
 
-        public Vector2 OldPosition;
-        private Vector3 targetDirection;
-        private Vector3 targetPosition;
-        private bool moveToTarget;
-
-        private float cameraUp;
-
-        public NpcPilot(PlayerControllerB p)
-        {
-            Npc = p;
-        }
-
-        public void SetTargetPosition(Vector3 targetPosition)
-        {
-            this.targetPosition = targetPosition;
-            targetDirection = (targetPosition - Npc.thisController.transform.position).normalized;
-            moveToTarget = true;
-        }
-
-        public void StopMoving()
-        {
-            moveToTarget = false;
-        }
+        public bool HasToMove { get { return lastMoveVector.y > 0f; } }
+        // Orders
+        private bool hasToLookAtPlayer = false;
+        private bool hasToLookForward = true;
+        // Fields for orders
+        private Vector2 lastMoveVector;
+        private Vector3 positionToUpdateTurnBodyTowardsTo;
+        private Vector3 directionToUpdateTurnBodyTowardsTo;
+        private Vector3 directionToUpdateTurnBodyTowardsToNormalized;
+        private Transform playerEyeToLookAt = null!;
+        private float floatSprint;
+        private Coroutine jumpCoroutine = null!;
 
         public void Update()
         {
@@ -81,32 +75,79 @@ namespace NWTWA.AI
                 if (isCameraDisabled)
                 {
                     isCameraDisabled = false;
-                    Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                    Npc.thisPlayerModelArms.enabled = false;
+                    Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                     Npc.gameObject.GetComponent<CharacterController>().enabled = true;
+                    this.previousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+                    this.currentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
                     if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.localClientAnimatorController)
                     {
                         Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.localClientAnimatorController;
                     }
+
+                    //if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.otherClientsAnimatorController)
+                    //{
+                    //    Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
+                    //}
+                    //Plugin.Logger.LogDebug("----playerBodyAnimator---------");
+                    //foreach (var a in Npc.playerBodyAnimator.parameters)
+                    //{
+                    //    Plugin.Logger.LogDebug(a.name);
+                    //}
+                    //Plugin.Logger.LogDebug("----localClientAnimatorController---------");
+                    //foreach (var a in Npc.playersManager.localClientAnimatorController.animationClips)
+                    //{
+                    //    Plugin.Logger.LogDebug(a.name);
+                    //}
+                    //Plugin.Logger.LogDebug("-----otherClientsAnimatorController--------");
+                    //foreach (var a in Npc.playersManager.otherClientsAnimatorController.animationClips)
+                    //{
+                    //    Plugin.Logger.LogDebug(a.name);
+                    //}
+
+                    //Animator anim = NpcController.Npc.playerBodyAnimator;
+                    //Plugin.Logger.LogDebug("-------------");
+                    //AnimationClip[] animationClips2 = Npc.playerBodyAnimator.runtimeAnimatorController.animationClips;
+                    //Array.Sort(animationClips2, (x, y) => String.Compare(x.name, y.name));
+                    //foreach (AnimationClip animClip in animationClips2)
+                    //{
+                    //    Plugin.Logger.LogDebug(animClip.name + ": " + animClip.length);
+                    //}
+                    //Plugin.Logger.LogDebug($"-----------           dead {Npc.isPlayerDead}");
+
                 }
 
-                TurnTowardsTarget();
+                if (this.HasToMove)
+                {
+                    if (isJumping || Npc.isCrouching)
+                    {
+                        this.lastMoveVector.y = Const.BASE_MAX_SPEED;
+                    }
+                    else
+                    {
+                        // Move and slow down when tight turn
+                        Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
+                        var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
+                        
+                        this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 3f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
+                        if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
+                        {
+                            floatSprint = 0f;
+                        }
+                        //Plugin.Logger.LogDebug($"this.lastMoveVector.y {this.lastMoveVector.y}, turnSpeed {turnSpeed}");
+                    }
+                }
+                Npc.moveInputVector.y = this.lastMoveVector.y;
+
+                UpdateTurnBodyTowardsDirection();
+
                 Npc.ForceTurnTowardsTarget();
 
-                if (moveToTarget)
-                {
-                    Npc.moveInputVector = new Vector2(0f, 1f);
-                }
-                else
-                {
-                    Npc.moveInputVector = Vector2.zeroVector;
-                }
-
-                // todo brancher mouvement
-                //float num = IngamePlayerSettings.Instance.playerInput.actions.FindAction("Sprint", false).ReadValue<float>();
-                float num = 0f;
                 if (isWalking)
                 {
-                    if (Npc.moveInputVector.sqrMagnitude <= 0.001f || Npc.inSpecialInteractAnimation && !Npc.isClimbingLadder && !Npc.inShockingMinigame)
+                    if (Npc.moveInputVector.sqrMagnitude <= 0.001
+                        || Npc.inSpecialInteractAnimation
+                        && !Npc.isClimbingLadder && !Npc.inShockingMinigame)
                     {
                         isWalking = false;
                         Npc.isSprinting = false;
@@ -114,7 +155,7 @@ namespace NWTWA.AI
                         Npc.playerBodyAnimator.SetBool("Sprinting", false);
                         Npc.playerBodyAnimator.SetBool("Sideways", false);
                     }
-                    else if (num > 0.3f && movementHinderedPrev <= 0 && !Npc.criticallyInjured && Npc.sprintMeter > 0.1f)
+                    else if (floatSprint > 0.3f && movementHinderedPrev <= 0 && !Npc.criticallyInjured && Npc.sprintMeter > 0.1f)
                     {
                         if (!Npc.isSprinting && Npc.sprintMeter < 0.3f)
                         {
@@ -164,15 +205,13 @@ namespace NWTWA.AI
                     {
                         Npc.playerBodyAnimator.SetFloat("animationSpeed", 1f);
                     }
-                    else if (Npc.moveInputVector.y < 0.5f && Npc.moveInputVector.x < 0.5f)
+                    else if (Npc.moveInputVector.y < 0.3f && Npc.moveInputVector.x < 0.3f)
                     {
                         Npc.playerBodyAnimator.SetFloat("animationSpeed", -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
-                        movingForward = false;
                     }
                     else
                     {
                         Npc.playerBodyAnimator.SetFloat("animationSpeed", 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
-                        movingForward = true;
                     }
                 }
                 else
@@ -246,10 +285,10 @@ namespace NWTWA.AI
 
                 if (!Npc.isClimbingLadder)
                 {
-                    Vector3 localEulerAngles = Npc.transform.localEulerAngles;
-                    localEulerAngles.x = Mathf.LerpAngle(localEulerAngles.x, 0f, 15f * Time.deltaTime);
-                    localEulerAngles.z = Mathf.LerpAngle(localEulerAngles.z, 0f, 15f * Time.deltaTime);
-                    Npc.transform.localEulerAngles = localEulerAngles;
+                    //Vector3 localEulerAngles = Npc.transform.localEulerAngles;
+                    //localEulerAngles.x = Mathf.LerpAngle(localEulerAngles.x, 0f, 15f * Time.deltaTime);
+                    //localEulerAngles.z = Mathf.LerpAngle(localEulerAngles.z, 0f, 15f * Time.deltaTime);
+                    //Npc.transform.localEulerAngles = localEulerAngles;
                 }
                 if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame || StartOfRound.Instance.suckingPlayersOutOfShip)
                 {
@@ -275,6 +314,7 @@ namespace NWTWA.AI
                         }
                         if (Npc.isSpeedCheating)
                         {
+                            Plugin.Logger.LogDebug("===================================================== speed cheat ?");
                             num3 *= 15f;
                         }
                         if (movementHinderedPrev > 0)
@@ -365,11 +405,12 @@ namespace NWTWA.AI
                         playerSlidingTimer = 0f;
                         slideFriction = 0f;
                     }
-                    float magnitude = Npc.thisController.velocity.magnitude;
+
                     //----------------------
                     // Move
                     //----------------------
                     Npc.thisController.Move(vector2 * Time.deltaTime);
+                    //Plugin.Logger.LogDebug($"-----------           Move {vector2 * Time.deltaTime}, mag {(vector2 * Time.deltaTime).magnitude}");
                     if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame)
                     {
                         if (!Npc.thisController.isGrounded)
@@ -454,17 +495,33 @@ namespace NWTWA.AI
                     }
                     Npc.externalForces = Vector3.zero;
                     Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 5f * Time.deltaTime);
-                    if (Npc.moveInputVector.y < 0f)
+
+                    if (directionToUpdateTurnBodyTowardsTo.y < 0f)
                     {
                         direction = -Npc.thisPlayerBody.up;
                         origin = Npc.transform.position;
                     }
                     if (!Physics.Raycast(origin, direction, 0.15f, StartOfRound.Instance.allPlayersCollideWithMask, QueryTriggerInteraction.Ignore))
                     {
-                        Npc.thisPlayerBody.transform.position += Npc.thisPlayerBody.up * (Npc.moveInputVector.y * Npc.climbSpeed * Time.deltaTime);
+                        Npc.thisPlayerBody.transform.position += direction * (Const.BASE_MAX_SPEED * Npc.climbSpeed * Time.deltaTime);
+                    }
+                    else
+                    {
+                        Npc.CancelSpecialTriggerAnimations();
                     }
                 }
                 teleportingThisFrame = false;
+
+                // Rotations
+                if (this.hasToLookAtPlayer)
+                {
+                    this.UpdateLookAtPlayer();
+                }
+                if (this.hasToLookForward)
+                {
+                    this.UpdateLookForward();
+                }
+
                 Npc.playerEye.position = Npc.gameplayCamera.transform.position;
                 Npc.playerEye.rotation = Npc.gameplayCamera.transform.rotation;
 
@@ -472,12 +529,13 @@ namespace NWTWA.AI
                 {
                     Npc.DropAllHeldItems(true, false);
                 }
+
+                //Plugin.Logger.LogDebug($"NetworkManager.Singleton += {NetworkManager.Singleton}, Npc.IsServer {Npc.IsServer}, Npc.playersManager.connectedPlayersAmount {Npc.playersManager.connectedPlayersAmount}, oldConnectedPlayersAmount {oldConnectedPlayersAmount}");
                 if (NetworkManager.Singleton != null && !Npc.IsServer || !Npc.isTestingPlayer && Npc.playersManager.connectedPlayersAmount > 0 || oldConnectedPlayersAmount >= 1)
                 {
                     updatePlayerLookInterval += Time.deltaTime;
                     UpdatePlayerAnimationsToOtherClients(Npc.moveInputVector);
                 }
-
             }
             else
             {
@@ -499,245 +557,399 @@ namespace NWTWA.AI
                         Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
                     }
                 }
-
-
-                //Npc.SetNightVisionEnabled(true);
-                if (!Npc.isTestingPlayer && !Npc.isPlayerDead && Npc.isPlayerControlled)
-                {
-                    if (!Npc.disableSyncInAnimation)
-                    {
-                        if (Npc.snapToServerPosition)
-                        {
-                            Npc.transform.localPosition = Vector3.Lerp(Npc.transform.localPosition, Npc.serverPlayerPosition, 16f * Time.deltaTime);
-                        }
-                        else
-                        {
-                            float num10 = 8f;
-                            if (Npc.jetpackControls)
-                            {
-                                num10 = 15f;
-                            }
-                            float num11 = Mathf.Clamp(num10 * Vector3.Distance(Npc.transform.localPosition, Npc.serverPlayerPosition), 0.9f, 300f);
-                            Npc.transform.localPosition = Vector3.MoveTowards(Npc.transform.localPosition, Npc.serverPlayerPosition, num11 * Time.deltaTime);
-                        }
-                    }
-                    if (Npc.jetpackControls || Npc.disablingJetpackControls || Npc.isClimbingLadder)
-                    {
-                        if (!Npc.disableSyncInAnimation)
-                        {
-                            RoundManager.Instance.tempTransform.rotation = Quaternion.Euler(Npc.syncFullRotation);
-                            Npc.transform.rotation = Quaternion.Lerp(Quaternion.Euler(Npc.transform.eulerAngles), Quaternion.Euler(Npc.syncFullRotation), 8f * Time.deltaTime);
-                        }
-                    }
-                    else
-                    {
-                        Npc.syncFullRotation = Npc.transform.eulerAngles;
-                        if (!Npc.disableSyncInAnimation)
-                        {
-                            Npc.transform.eulerAngles = new Vector3(Npc.transform.eulerAngles.x, Mathf.LerpAngle(Npc.transform.eulerAngles.y, this.targetYRot, 14f * Time.deltaTime), Npc.transform.eulerAngles.z);
-                        }
-                        if (!Npc.inSpecialInteractAnimation && !Npc.disableSyncInAnimation)
-                        {
-                            Vector3 localEulerAngles2 = Npc.transform.localEulerAngles;
-                            localEulerAngles2.x = Mathf.LerpAngle(localEulerAngles2.x, 0f, 25f * Time.deltaTime);
-                            localEulerAngles2.z = Mathf.LerpAngle(localEulerAngles2.z, 0f, 25f * Time.deltaTime);
-                            Npc.transform.localEulerAngles = localEulerAngles2;
-                        }
-                    }
-                    Npc.playerEye.position = Npc.gameplayCamera.transform.position;
-                    Npc.playerEye.localEulerAngles = new Vector3(this.targetLookRot, 0f, 0f);
-                    Npc.playerEye.eulerAngles = new Vector3(Npc.playerEye.eulerAngles.x, this.targetYRot, Npc.playerEye.eulerAngles.z);
-                }
-                else if ((Npc.isPlayerDead || !Npc.isPlayerControlled) && Npc.setPositionOfDeadPlayer)
-                {
-                    Npc.transform.position = Npc.playersManager.notSpawnedPosition.position;
-                }
-                if (Npc.isInGameOverAnimation > 0f && Npc.deadBody != null && Npc.deadBody.gameObject.activeSelf)
-                {
-                    Npc.isInGameOverAnimation -= Time.deltaTime;
-                }
-                else if (!Npc.hasBegunSpectating)
-                {
-                    if (Npc.deadBody != null)
-                    {
-                        Debug.Log(Npc.deadBody.gameObject.activeSelf);
-                    }
-                    Npc.isInGameOverAnimation = 0f;
-                    Npc.hasBegunSpectating = true;
-                }
-
-                Npc.timeSincePlayerMoving += Time.deltaTime;
-                Npc.timeSinceMakingLoudNoise += Time.deltaTime;
-                if (!Npc.inSpecialInteractAnimation)
-                {
-                    if (Npc.playingQuickSpecialAnimation)
-                    {
-                        Npc.specialAnimationWeight = 1f;
-                    }
-                    else
-                    {
-                        Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 0f, Time.deltaTime * 12f);
-                    }
-                    if (!Npc.localArmsMatchCamera)
-                    {
-                        Npc.localArmsTransform.position = Npc.playerModelArmsMetarig.position + Npc.playerModelArmsMetarig.forward * -0.445f;
-                        Npc.playerModelArmsMetarig.rotation = Quaternion.Lerp(Npc.playerModelArmsMetarig.rotation, Npc.localArmsRotationTarget.rotation, 15f * Time.deltaTime);
-                    }
-                }
-                else
-                {
-                    Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 1f, Time.deltaTime * 20f);
-                    Npc.playerModelArmsMetarig.localEulerAngles = new Vector3(-90f, 0f, 0f);
-                }
-
-                if (Npc.doingUpperBodyEmote > 0f)
-                {
-                    Npc.doingUpperBodyEmote -= Time.deltaTime;
-                }
-
-                if (Npc.performingEmote)
-                {
-                    Npc.emoteLayerWeight = Mathf.Lerp(Npc.emoteLayerWeight, 1f, 10f * Time.deltaTime);
-                }
-                else
-                {
-                    Npc.emoteLayerWeight = Mathf.Lerp(Npc.emoteLayerWeight, 0f, 10f * Time.deltaTime);
-                }
-                Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("EmotesNoArms"), Npc.emoteLayerWeight);
-                Npc.meshContainer.position = Vector3.Lerp(Npc.transform.position, Npc.transform.position - Vector3.up * 2.8f, StartOfRound.Instance.playerSinkingCurve.Evaluate(Npc.sinkingValue));
-                if (Npc.isSinking && !Npc.inSpecialInteractAnimation && Npc.inAnimationWithEnemy == null)
-                {
-                    Npc.sinkingValue = Mathf.Clamp(Npc.sinkingValue + Time.deltaTime * Npc.sinkingSpeedMultiplier, 0f, 1f);
-                }
-                else
-                {
-                    Npc.sinkingValue = Mathf.Clamp(Npc.sinkingValue - Time.deltaTime * 0.75f, 0f, 1f);
-                }
-                if (Npc.sinkingValue > 0.73f || Npc.isUnderwater)
-                {
-                    if (!this.wasUnderwaterLastFrame)
-                    {
-                        this.wasUnderwaterLastFrame = true;
-                        if (!Npc.IsOwner)
-                        {
-                            Npc.waterBubblesAudio.Play();
-                        }
-                    }
-                    Npc.voiceMuffledByEnemy = true;
-                    if (Npc.IsOwner && Npc.sinkingValue > 0.73f)
-                    {
-                        HUDManager.Instance.sinkingCoveredFace = true;
-                    }
-                }
-                else if (Npc.IsOwner)
-                {
-                    HUDManager.Instance.sinkingCoveredFace = false;
-                }
-                else if (this.wasUnderwaterLastFrame)
-                {
-                    Npc.waterBubblesAudio.Stop();
-                }
-                else
-                {
-                    Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
-                }
-                if (Npc.activeAudioReverbFilter == null)
-                {
-                    Npc.activeAudioReverbFilter = Npc.activeAudioListener.GetComponent<AudioReverbFilter>();
-                    Npc.activeAudioReverbFilter.enabled = true;
-                }
-                if (Npc.reverbPreset != null && GameNetworkManager.Instance != null && GameNetworkManager.Instance.localPlayerController != null
-                    && ((GameNetworkManager.Instance.localPlayerController == this.Npc
-                    && (!Npc.isPlayerDead || StartOfRound.Instance.overrideSpectateCamera)) || (GameNetworkManager.Instance.localPlayerController.spectatedPlayerScript == this.Npc && !StartOfRound.Instance.overrideSpectateCamera)))
-                {
-                    Npc.activeAudioReverbFilter.dryLevel = Mathf.Lerp(Npc.activeAudioReverbFilter.dryLevel, Npc.reverbPreset.dryLevel, 15f * Time.deltaTime);
-                    Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomLF, Npc.reverbPreset.lowFreq, 15f * Time.deltaTime);
-                    Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomHF, Npc.reverbPreset.highFreq, 15f * Time.deltaTime);
-                    Npc.activeAudioReverbFilter.decayTime = Mathf.Lerp(Npc.activeAudioReverbFilter.decayTime, Npc.reverbPreset.decayTime, 15f * Time.deltaTime);
-                    Npc.activeAudioReverbFilter.room = Mathf.Lerp(Npc.activeAudioReverbFilter.room, Npc.reverbPreset.room, 15f * Time.deltaTime);
-                }
-
-
-
-                if (Npc.isHoldingObject || Npc.isGrabbingObjectAnimation || Npc.inShockingMinigame)
-                {
-                    this.upperBodyAnimationsWeight = Mathf.Lerp(this.upperBodyAnimationsWeight, 1f, 25f * Time.deltaTime);
-                    Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsRightHand"), this.upperBodyAnimationsWeight);
-                    if (Npc.twoHandedAnimation || Npc.inShockingMinigame)
-                    {
-                        Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), this.upperBodyAnimationsWeight);
-                    }
-                    else
-                    {
-                        Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), Mathf.Abs(this.upperBodyAnimationsWeight - 1f));
-                    }
-                }
-                else
-                {
-                    this.upperBodyAnimationsWeight = Mathf.Lerp(this.upperBodyAnimationsWeight, 0f, 25f * Time.deltaTime);
-                    Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsRightHand"), this.upperBodyAnimationsWeight);
-                    Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), this.upperBodyAnimationsWeight);
-                }
-                Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("SpecialAnimations"), Npc.specialAnimationWeight);
-
-                if (Npc.isExhausted)
-                {
-                    this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 1f, 10f * Time.deltaTime);
-                }
-                else
-                {
-                    this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 0f, 10f * Time.deltaTime);
-                }
-                Npc.playerBodyAnimator.SetFloat("tiredAmount", this.exhaustionEffectLerp);
                 */
             }
 
+            if (!Npc.isTestingPlayer && !Npc.isPlayerDead && Npc.isPlayerControlled)
+            {
+                //if (!Npc.disableSyncInAnimation)
+                //{
+                //    if (Npc.snapToServerPosition)
+                //    {
+                //        Npc.transform.localPosition = Vector3.Lerp(Npc.transform.localPosition, Npc.serverPlayerPosition, 16f * Time.deltaTime);
+                //    }
+                //    else
+                //    {
+                //        float num10 = 8f;
+                //        if (Npc.jetpackControls)
+                //        {
+                //            num10 = 15f;
+                //        }
+                //        float num11 = Mathf.Clamp(num10 * Vector3.Distance(Npc.transform.localPosition, Npc.serverPlayerPosition), 0.9f, 300f);
+                //        Npc.transform.localPosition = Vector3.MoveTowards(Npc.transform.localPosition, Npc.serverPlayerPosition, num11 * Time.deltaTime);
+                //    }
+                //}
+                //if (Npc.jetpackControls || Npc.disablingJetpackControls || Npc.isClimbingLadder)
+                //{
+                //    if (!Npc.disableSyncInAnimation)
+                //    {
+                //        RoundManager.Instance.tempTransform.rotation = Quaternion.Euler(Npc.syncFullRotation);
+                //        Npc.transform.rotation = Quaternion.Lerp(Quaternion.Euler(Npc.transform.eulerAngles), Quaternion.Euler(Npc.syncFullRotation), 8f * Time.deltaTime);
+                //    }
+                //}
+                //else
+                //{
+                //    Npc.syncFullRotation = Npc.transform.eulerAngles;
+                //    if (!Npc.disableSyncInAnimation)
+                //    {
+                //        Npc.transform.eulerAngles = new Vector3(Npc.transform.eulerAngles.x, Mathf.LerpAngle(Npc.transform.eulerAngles.y, this.targetYRot, 14f * Time.deltaTime), Npc.transform.eulerAngles.z);
+                //    }
+                //    if (!Npc.inSpecialInteractAnimation && !Npc.disableSyncInAnimation)
+                //    {
+                //        Vector3 localEulerAngles2 = Npc.transform.localEulerAngles;
+                //        localEulerAngles2.x = Mathf.LerpAngle(localEulerAngles2.x, 0f, 25f * Time.deltaTime);
+                //        localEulerAngles2.z = Mathf.LerpAngle(localEulerAngles2.z, 0f, 25f * Time.deltaTime);
+                //        Npc.transform.localEulerAngles = localEulerAngles2;
+                //    }
+                //}
+                //Npc.playerEye.position = Npc.gameplayCamera.transform.position;
+                //Npc.playerEye.localEulerAngles = new Vector3(this.targetLookRot, 0f, 0f);
+                //Npc.playerEye.eulerAngles = new Vector3(Npc.playerEye.eulerAngles.x, this.targetYRot, Npc.playerEye.eulerAngles.z);
+            }
+            else if ((Npc.isPlayerDead || !Npc.isPlayerControlled) && Npc.setPositionOfDeadPlayer)
+            {
+                Npc.transform.position = Npc.playersManager.notSpawnedPosition.position;
+            }
+            if (Npc.isInGameOverAnimation > 0f && Npc.deadBody != null && Npc.deadBody.gameObject.activeSelf)
+            {
+                Npc.isInGameOverAnimation -= Time.deltaTime;
+            }
+            else if (!Npc.hasBegunSpectating)
+            {
+                if (Npc.deadBody != null)
+                {
+                    Debug.Log(Npc.deadBody.gameObject.activeSelf);
+                }
+                Npc.isInGameOverAnimation = 0f;
+                Npc.hasBegunSpectating = true;
+            }
+
+            Npc.timeSincePlayerMoving += Time.deltaTime;
+            Npc.timeSinceMakingLoudNoise += Time.deltaTime;
+            if (!Npc.inSpecialInteractAnimation)
+            {
+                if (Npc.playingQuickSpecialAnimation)
+                {
+                    Npc.specialAnimationWeight = 1f;
+                }
+                else
+                {
+                    Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 0f, Time.deltaTime * 12f);
+                }
+                if (!Npc.localArmsMatchCamera)
+                {
+                    Npc.localArmsTransform.position = Npc.playerModelArmsMetarig.position + Npc.playerModelArmsMetarig.forward * -0.445f;
+                    Npc.playerModelArmsMetarig.rotation = Quaternion.Lerp(Npc.playerModelArmsMetarig.rotation, Npc.localArmsRotationTarget.rotation, 15f * Time.deltaTime);
+                }
+            }
+            else
+            {
+                Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 1f, Time.deltaTime * 20f);
+                Npc.playerModelArmsMetarig.localEulerAngles = new Vector3(-90f, 0f, 0f);
+            }
+
+            if (Npc.doingUpperBodyEmote > 0f)
+            {
+                Npc.doingUpperBodyEmote -= Time.deltaTime;
+            }
+
+            if (Npc.performingEmote)
+            {
+                Npc.emoteLayerWeight = Mathf.Lerp(Npc.emoteLayerWeight, 1f, 10f * Time.deltaTime);
+            }
+            else
+            {
+                Npc.emoteLayerWeight = Mathf.Lerp(Npc.emoteLayerWeight, 0f, 10f * Time.deltaTime);
+            }
+            Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("EmotesNoArms"), Npc.emoteLayerWeight);
+            Npc.meshContainer.position = Vector3.Lerp(Npc.transform.position, Npc.transform.position - Vector3.up * 2.8f, StartOfRound.Instance.playerSinkingCurve.Evaluate(Npc.sinkingValue));
+            if (Npc.isSinking && !Npc.inSpecialInteractAnimation && Npc.inAnimationWithEnemy == null)
+            {
+                Npc.sinkingValue = Mathf.Clamp(Npc.sinkingValue + Time.deltaTime * Npc.sinkingSpeedMultiplier, 0f, 1f);
+            }
+            else
+            {
+                Npc.sinkingValue = Mathf.Clamp(Npc.sinkingValue - Time.deltaTime * 0.75f, 0f, 1f);
+            }
+            if (Npc.sinkingValue > 0.73f || Npc.isUnderwater)
+            {
+                if (!this.wasUnderwaterLastFrame)
+                {
+                    this.wasUnderwaterLastFrame = true;
+                    if (!Npc.IsOwner)
+                    {
+                        Npc.waterBubblesAudio.Play();
+                    }
+                }
+                Npc.voiceMuffledByEnemy = true;
+                if (Npc.IsOwner && Npc.sinkingValue > 0.73f)
+                {
+                    HUDManager.Instance.sinkingCoveredFace = true;
+                }
+            }
+            else if (Npc.IsOwner)
+            {
+                HUDManager.Instance.sinkingCoveredFace = false;
+            }
+            else if (this.wasUnderwaterLastFrame)
+            {
+                Npc.waterBubblesAudio.Stop();
+            }
+            else
+            {
+                Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
+            }
+            if (Npc.activeAudioReverbFilter == null)
+            {
+                Npc.activeAudioReverbFilter = Npc.activeAudioListener.GetComponent<AudioReverbFilter>();
+                Npc.activeAudioReverbFilter.enabled = true;
+            }
+            if (Npc.reverbPreset != null && GameNetworkManager.Instance != null && GameNetworkManager.Instance.localPlayerController != null
+                && ((GameNetworkManager.Instance.localPlayerController == this.Npc
+                && (!Npc.isPlayerDead || StartOfRound.Instance.overrideSpectateCamera)) || (GameNetworkManager.Instance.localPlayerController.spectatedPlayerScript == this.Npc && !StartOfRound.Instance.overrideSpectateCamera)))
+            {
+                Npc.activeAudioReverbFilter.dryLevel = Mathf.Lerp(Npc.activeAudioReverbFilter.dryLevel, Npc.reverbPreset.dryLevel, 15f * Time.deltaTime);
+                Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomLF, Npc.reverbPreset.lowFreq, 15f * Time.deltaTime);
+                Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomHF, Npc.reverbPreset.highFreq, 15f * Time.deltaTime);
+                Npc.activeAudioReverbFilter.decayTime = Mathf.Lerp(Npc.activeAudioReverbFilter.decayTime, Npc.reverbPreset.decayTime, 15f * Time.deltaTime);
+                Npc.activeAudioReverbFilter.room = Mathf.Lerp(Npc.activeAudioReverbFilter.room, Npc.reverbPreset.room, 15f * Time.deltaTime);
+            }
+
+            if (Npc.isHoldingObject || Npc.isGrabbingObjectAnimation || Npc.inShockingMinigame)
+            {
+                this.upperBodyAnimationsWeight = Mathf.Lerp(this.upperBodyAnimationsWeight, 1f, 25f * Time.deltaTime);
+                Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsRightHand"), this.upperBodyAnimationsWeight);
+                if (Npc.twoHandedAnimation || Npc.inShockingMinigame)
+                {
+                    Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), this.upperBodyAnimationsWeight);
+                }
+                else
+                {
+                    Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), Mathf.Abs(this.upperBodyAnimationsWeight - 1f));
+                }
+            }
+            else
+            {
+                this.upperBodyAnimationsWeight = Mathf.Lerp(this.upperBodyAnimationsWeight, 0f, 25f * Time.deltaTime);
+                Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsRightHand"), this.upperBodyAnimationsWeight);
+                Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), this.upperBodyAnimationsWeight);
+            }
+            Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("SpecialAnimations"), Npc.specialAnimationWeight);
+
+            if (Npc.isExhausted)
+            {
+                this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 1f, 10f * Time.deltaTime);
+            }
+            else
+            {
+                this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 0f, 10f * Time.deltaTime);
+            }
+            Npc.playerBodyAnimator.SetFloat("tiredAmount", this.exhaustionEffectLerp);
         }
 
-        public void TurnTowardsTarget()
+        public void OrderToMove()
+        {
+            if (this.lastMoveVector.y < Const.BASE_MIN_SPEED)
+            {
+                this.lastMoveVector = new Vector2(0f, Const.BASE_MAX_SPEED);
+            }
+        }
+
+        public void OrderForceToMove()
+        {
+            this.lastMoveVector = new Vector2(0f, Const.BASE_MAX_SPEED);
+        }
+
+        public void OrderToStopMoving()
+        {
+            this.lastMoveVector = Vector2.zero;
+            floatSprint = 0f;
+        }
+
+        public void OrderToSprint()
+        {
+            if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
+            {
+                return;
+            }
+            if (this.isJumping)
+            {
+                return;
+            }
+            if (Npc.isSprinting)
+            {
+                return;
+            }
+
+            floatSprint = 1f;
+        }
+        public void OrderToStopSprint()
+        {
+            if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
+            {
+                return;
+            }
+            if (this.isJumping)
+            {
+                return;
+            }
+            if (Npc.isSprinting)
+            {
+                return;
+            }
+
+            floatSprint = 0f;
+        }
+
+        public void OrderToToggleCrouch()
+        {
+            if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
+            {
+                return;
+            }
+            if (this.isJumping)
+            {
+                return;
+            }
+            if (Npc.isSprinting)
+            {
+                return;
+            }
+            this.crouchMeter = Mathf.Min(this.crouchMeter + 0.3f, 1.3f);
+            Npc.Crouch(!Npc.isCrouching);
+        }
+
+        public void OrderToJump()
+        {
+            if (Npc.inSpecialInteractAnimation)
+            {
+                return;
+            }
+            if (Npc.isMovementHindered > 0 && !Npc.isUnderwater)
+            {
+                return;
+            }
+            if (Npc.isExhausted)
+            {
+                return;
+            }
+            if ((Npc.thisController.isGrounded || (!this.isJumping && this.IsPlayerNearGround()))
+                && !this.isJumping
+                && (!Npc.isPlayerSliding || this.playerSlidingTimer > 2.5f)
+                && !Npc.isCrouching)
+            {
+                this.playerSlidingTimer = 0f;
+                this.isJumping = true;
+                Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - 0.08f, 0f, 1f);
+                StartOfRound.Instance.PlayerJumpEvent.Invoke(this.Npc);
+                this.PlayJumpAudio();
+                if (this.jumpCoroutine != null)
+                {
+                    base.StopCoroutine(this.jumpCoroutine);
+                }
+                this.jumpCoroutine = base.StartCoroutine(this.PlayerJump());
+                if (StartOfRound.Instance.connectedPlayersAmount != 0)
+                {
+                    Npc.PlayerJumpedServerRpc();
+                }
+            }
+        }
+        private bool IsPlayerNearGround()
+        {
+            Ray interactRay = new Ray(base.transform.position, Vector3.down);
+            return Physics.Raycast(interactRay, 0.15f, StartOfRound.Instance.allPlayersCollideWithMask, QueryTriggerInteraction.Ignore);
+        }
+
+        private void PlayJumpAudio()
+        {
+            if (StartOfRound.Instance.unlockablesList.unlockables[Npc.currentSuitID].jumpAudio != null)
+            {
+                Npc.movementAudio.PlayOneShot(StartOfRound.Instance.unlockablesList.unlockables[Npc.currentSuitID].jumpAudio);
+                return;
+            }
+            Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerJumpSFX);
+        }
+
+        private IEnumerator PlayerJump()
+        {
+            Npc.playerBodyAnimator.SetBool("Jumping", true);
+            yield return new WaitForSeconds(0.15f);
+            Npc.fallValue = Npc.jumpForce;
+            Npc.fallValueUncapped = Npc.jumpForce;
+            yield return new WaitForSeconds(0.1f);
+            this.isJumping = false;
+            this.isFallingFromJump = true;
+            yield return new WaitUntil(() => Npc.thisController.isGrounded);
+            Npc.playerBodyAnimator.SetBool("Jumping", false);
+            this.isFallingFromJump = false;
+            this.PlayerHitGroundEffects();
+            this.jumpCoroutine = null!;
+            yield break;
+        }
+
+        public void SetTurnBodyTowardsDirection(Vector3 positionDirection)
+        {
+            positionToUpdateTurnBodyTowardsTo = positionDirection;
+            directionToUpdateTurnBodyTowardsTo = positionToUpdateTurnBodyTowardsTo - Npc.thisController.transform.position;
+            directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
+        }
+        private void UpdateTurnBodyTowardsDirection()
         {
             if (Npc.inSpecialInteractAnimation)
             {
                 return;
             }
 
-            //float targetPullPosition;
-
-            //float num = Mathf.Clamp(Time.deltaTime, 0f, 0.1f);
-            //Npc.targetScreenPos = Npc.turnCompassCamera.WorldToViewportPoint(this.targetPosition);
-            //targetPullPosition = Npc.targetScreenPos.x - 0.5f;
-            //if (Npc.targetScreenPos.x > 0.54f)
-            //{
-            //    Npc.turnCompass.Rotate(Vector3.up * 2000f * num * Mathf.Abs(targetPullPosition));
-            //}
-            //else if (Npc.targetScreenPos.x < 0.46f)
-            //{
-            //    Npc.turnCompass.Rotate(Vector3.up * -2000f * num * Mathf.Abs(targetPullPosition));
-            //}
-
-            //Npc.targetScreenPos = Npc.gameplayCamera.WorldToViewportPoint(this.targetPosition);
-
-            //Vector3 newDirection = Vector3.RotateTowards(transform.forward, targetDirection, singleStep, 0.0f);
-            // Draw a ray pointing at our target in
-            //Debug.DrawRay(transform.position, newDirection, Color.red);
-            //Npc.thisPlayerBody.Rotate(new Vector3(0f, Npc.targetScreenPos.x, 0f), Space.Self);
-            if (targetDirection != Vector3.zero)
+            Vector3 direction = directionToUpdateTurnBodyTowardsTo;
+            if (DirectionNotZero(direction.x) || DirectionNotZero(direction.z))
             {
-                //Quaternion target = Quaternion.Euler(this.targetPosition.x, this.targetPosition.y, 0f);
-                //Npc.thisPlayerBody.rotation = Quaternion.Slerp(Npc.thisPlayerBody.rotation, target, 50f * Time.deltaTime);
+                Quaternion targetRotation = Quaternion.LookRotation(new Vector3(direction.x, 0f, direction.z));
+                Npc.thisPlayerBody.rotation = Quaternion.Lerp(Npc.thisPlayerBody.rotation, targetRotation, Const.BODY_TURNSPEED * Time.deltaTime);
+            }
+        }
 
-                Quaternion target = Quaternion.LookRotation(new Vector3(targetDirection.x, 0f, targetDirection.z));
-                Npc.thisPlayerBody.rotation = Quaternion.Slerp(Npc.thisPlayerBody.rotation, target, 35f * Time.deltaTime);
-
-
-                //Npc.thisPlayerBody.rotation = Quaternion.LookRotation(this.targetDirection);
-                //Npc.thisPlayerBody.Rotate(new Vector3(0f, this.targetDirection.x * 50f * Time.deltaTime, 0f), Space.Self);
+        public void OrderToLookAtPlayer(PlayerControllerB player)
+        {
+            this.playerEyeToLookAt = player.playerEye;
+            this.hasToLookAtPlayer = true;
+            this.hasToLookForward = !this.hasToLookAtPlayer;
+        }
+        private void UpdateLookAtPlayer()
+        {
+            if (Npc.inSpecialInteractAnimation)
+            {
+                return;
             }
 
+            Vector3 direction = playerEyeToLookAt.position - Npc.gameplayCamera.transform.position;
+            if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
+            {
+                Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+                if (180f - Vector3.Angle(playerEyeToLookAt.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
+                {
+                    SetTurnBodyTowardsDirection(playerEyeToLookAt.position);
+                }
+            }
+        }
 
-            cameraUp = targetDirection.y;
-            cameraUp = Mathf.Clamp(cameraUp, -80f, 60f);
-            Npc.gameplayCamera.transform.localEulerAngles = new Vector3(cameraUp, Npc.gameplayCamera.transform.localEulerAngles.y, Npc.gameplayCamera.transform.localEulerAngles.z);
+        public void OrderToLookForward()
+        {
+            this.hasToLookForward = true;
+            this.hasToLookAtPlayer = !this.hasToLookForward;
+        }
+        private void UpdateLookForward()
+        {
+            if (Npc.inSpecialInteractAnimation)
+            {
+                return;
+            }
+            Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, Npc.thisPlayerBody.rotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+        }
+
+        private bool DirectionNotZero(float direction)
+        {
+            return direction < -Const.EPSILON || Const.EPSILON < direction;
         }
 
         private bool CheckConditionsForEmote()

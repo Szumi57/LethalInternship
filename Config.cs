@@ -3,16 +3,18 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 
-namespace NWTWA {
-    public class PluginConfig
+namespace LethalInternship {
+    public class Config
     {
         // For more info on custom configs, see https://lethal.wiki/dev/intermediate/custom-configs
         public ConfigEntry<int> SpawnWeight;
-        public PluginConfig(ConfigFile cfg)
+        public Config(ConfigFile cfg)
         {
-            SpawnWeight = cfg.Bind("General", "Spawn weight", 20,
-                "The spawn chance weight for NWTWA, relative to other existing enemies.\n" +
-                "Goes up from 0, lower is more rare, 100 and up is very common.");
+            SpawnWeight = cfg.Bind("General",
+                                   "Spawn weight", 
+                                   20,
+                                   "The spawn chance weight for LethalInternship, relative to other existing enemies.\n" +
+                                   "Goes up from 0, lower is more rare, 100 and up is very common.");
             
             ClearUnusedEntries(cfg);
         }

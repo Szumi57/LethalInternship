@@ -1,114 +1,96 @@
-﻿using NWTWA.Enums;
+﻿using GameNetcodeStuff;
+using LethalInternship.Enums;
+using UnityEngine;
 
-namespace NWTWA.AI.States
+namespace LethalInternship.AI.States
 {
     internal class GetCloseToPlayerState : State
     {
-        private bool lostPlayerInChase;
-        private float lostLOSTimer;
+        private static readonly EnumStates STATE = EnumStates.GetCloseToPlayer;
+        public override EnumStates GetState() { return STATE; }
 
-        public GetCloseToPlayerState(State state) : base(state) { }
+        private float sqrHorizontalDistanceWithTarget
+        {
+            get
+            {
+                //return (ai.targetPlayer.transform.position - ai.transform.position).sqrMagnitude;
+                return Vector3.Scale((ai.targetPlayer.transform.position - npcPilot.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
+            }
+        }
+
+        private float sqrVerticalDistanceWithTarget
+        {
+            get
+            {
+                //return (ai.targetPlayer.transform.position - ai.transform.position).sqrMagnitude;
+                return Vector3.Scale((ai.targetPlayer.transform.position - npcPilot.transform.position), new Vector3(0, 1, 0)).sqrMagnitude;
+            }
+        }
+
+        public GetCloseToPlayerState(State state) : base(state)
+        {
+            if (searchForPlayers.inProgress)
+            {
+                ai.StopSearch(searchForPlayers, true);
+            }
+        }
 
         public override void DoAI()
         {
-            //this.LookAndRunRandomly(true, true);
-            playerControllerB = ai.CheckLineOfSightForClosestPlayer(70f, 50, 1, 3f);
-            if (playerControllerB != null)
+            if (ai.targetPlayer == null)
             {
-                lostPlayerInChase = false;
-                lostLOSTimer = 0f;
-                if (playerControllerB != ai.targetPlayer)
-                {
-                    ai.SetMovingTowardsTargetPlayer(playerControllerB);
-                    //this.LookAtPlayerServerRpc((int)this.PlayerControllerB.playerClientId);
-                }
-                if (ai.mostOptimalDistance > 12f)
-                {
-                    //if (!running)
-                    //{
-                    //    running = true;
-                    //    creatureAnimator.SetBool("Sprinting", true);
-                    //    Plugin.Logger.LogDebug(string.Format("Setting running to true 8; {0}", creatureAnimator.GetBool("Running")));
-                    //    SetRunningServerRpc(true);
-                    //}
-                }
-                else if (ai.mostOptimalDistance < 4f)
-                {
-                    // Stop movement
-                    ChangeStateToChillWithPlayer();
-                    return;
-                }
-                else if (ai.mostOptimalDistance < 8f)
-                {
-                    //if (running && !runningRandomly)
-                    //{
-                    //    running = false;
-                    //    creatureAnimator.SetBool("Sprinting", false);
-                    //    Plugin.Logger.LogDebug(string.Format("Setting running to false 1; {0}", creatureAnimator.GetBool("Running")));
-                    //    SetRunningServerRpc(false);
-                    //}
-                }
+                ai.State = new SearchingForPlayerState(this);
+                return;
+            }
+
+            if (ai.PlayerIsTargetable(ai.targetPlayer))
+            {
+                targetLastKnownPosition = ai.targetPlayer.transform.position;
+                ai.SetMovingTowardsTargetPlayer(ai.targetPlayer);
+                ai.destination = RoundManager.Instance.GetNavMeshPosition(ai.targetPlayer.transform.position, RoundManager.Instance.navHit, 2.7f);
             }
             else
             {
-                lostLOSTimer += ai.AIIntervalTime;
-                if (lostLOSTimer > 10f)
+                // Target is not available anymore
+                ai.State = new SearchingForPlayerState(this);
+                return;
+            }
+
+            //Plugin.Logger.LogDebug($"sqrHorizontalDistanceWithTarget {sqrHorizontalDistanceWithTarget}, sqrVerticalDistanceWithTarget {sqrVerticalDistanceWithTarget}");
+            // Follow player
+            if (sqrHorizontalDistanceWithTarget > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING
+                || sqrVerticalDistanceWithTarget > 0.3f * 0.3f)
+            {
+                npcPilot.OrderToSprint();
+                // todo rpc
+                //    SetRunningServerRpc(true);
+            }
+            else if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
+                     && sqrVerticalDistanceWithTarget < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
+            {
+                ai.State = new ChillWithPlayerState(this);
+                return;
+            }
+            else if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_STOP_RUNNING * Const.DISTANCE_STOP_RUNNING)
+            {
+                npcPilot.OrderToStopSprint();
+                // todo rpc
+                //    SetRunningServerRpc(false);
+            }
+
+            PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (player == null)
+            {
+                Plugin.Logger.LogDebug($"no see player, but still in range, too far {sqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {sqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
+                if(sqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
+                    || sqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
                 {
-                    ai.targetPlayer = null;
-                    ChangeStateToSearchingForPlayer();
+                    ai.State = new JustLostPlayerState(this);
                     return;
                 }
-                else if (lostLOSTimer > 3.5f)
-                {
-                    lostPlayerInChase = true;
-                    //StopLookingAtTransformServerRpc();
-                    ai.targetPlayer = null;
-                    //if (running)
-                    //{
-                    //    running = false;
-                    //    creatureAnimator.SetBool("Sprinting", false);
-                    //    Plugin.Logger.LogDebug(string.Format("Setting running to false 2; {0}", creatureAnimator.GetBool("Running")));
-                    //    SetRunningServerRpc(false);
-                    //}
-                }
             }
 
-            if (ai.targetPlayer != null
-                && ai.PlayerIsTargetable(ai.targetPlayer, false, false))
-            {
-                if (lostPlayerInChase)
-                {
-                    if (!searchForPlayers.inProgress)
-                    {
-                        ai.StartSearch(ai.transform.position, searchForPlayers);
-                        return;
-                    }
-                }
-                else
-                {
-                    if (searchForPlayers.inProgress)
-                    {
-                        ai.StopSearch(searchForPlayers, true);
-                    }
-                    ai.SetMovingTowardsTargetPlayer(ai.targetPlayer);
-                }
-            }
-
-            ai.agent.SetDestination(ai.destination);
-            npcPilot.SetTargetPosition(ai.transform.position);
-            ai.agent.nextPosition = npcPilot.Npc.thisController.transform.position;
-        }
-
-        private void ChangeStateToSearchingForPlayer()
-        {
-            ai.SwitchToBehaviourState((int)EnumStates.SearchingForPlayer);
-            ai.State = new SearchingForPlayerState(this);
-        }
-
-        private void ChangeStateToChillWithPlayer()
-        {
-            ai.SwitchToBehaviourState((int)EnumStates.ChillWithPlayer);
-            ai.State = new ChillWithPlayerState(this);
+            ai.OrderMoveToDestination();
         }
     }
 }

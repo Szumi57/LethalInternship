@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace NWTWA.Utils
+namespace LethalInternship.Utils
 {
     internal static class ComponentUtil
     {

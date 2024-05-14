@@ -1,9 +1,12 @@
-﻿namespace NWTWA.Enums
+﻿namespace LethalInternship.Enums
 {
     internal enum EnumStates
     {
         SearchingForPlayer,
         GetCloseToPlayer,
-        ChillWithPlayer
+        JustLostPlayer,
+        ChillWithPlayer,
+        UsingLadder,
+        Stuck,
     }
 }
