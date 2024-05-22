@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Patches;
 using UnityEngine;
 
 namespace LethalInternship.AI.States
@@ -16,9 +17,27 @@ namespace LethalInternship.AI.States
 
         public override void DoAI()
         {
-            player = ai.CheckLineOfSightForClosestPlayer(Const.INTERN_FOV, 60, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            // Check for object to grab
+            if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
+            {
+                GameObject gameObjectGrabbleObject = ai.CheckLineOfSightForObjects();
+                if (gameObjectGrabbleObject)
+                {
+                    GrabbableObject component = gameObjectGrabbleObject.GetComponent<GrabbableObject>();
+                    if (component && !component.isHeld)
+                    {
+                        ai.SetDestinationToPositionInternAI(gameObjectGrabbleObject.transform.position);
+                        this.targetItem = component;
+                        ai.State = new FetchingObjectState(this);
+                        return;
+                    }
+                }
+            }
+
+            player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, 60, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (player != null && ai.PlayerIsTargetable(player))
             {
+                Plugin.Logger.LogDebug($"target {player.name}");
                 // new target
                 ai.SetMovingTowardsTargetPlayer(player);
                 ai.State = new GetCloseToPlayerState(this);

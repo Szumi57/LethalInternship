@@ -12,11 +12,6 @@ namespace LethalInternship.Patches
         private static Traverse? _traverseMethodLandShipOnServer;
         private static bool _isInternSpawned;
 
-        public static void Init()
-        {
-
-        }
-
         #region ItemDropShip private methods
 
         private static void LandShipOnServer()
@@ -97,7 +92,7 @@ namespace LethalInternship.Patches
                 return;
             }
 
-            StartOfRoundPatch.SpawnIntern(___itemSpawnPositions[0]);
+            StartOfRoundPatch.SpawnIntern(___itemSpawnPositions[0], true);
             _isInternSpawned = true;
 
             __instance.shipLanded = false;

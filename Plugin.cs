@@ -79,11 +79,12 @@ namespace LethalInternship
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
 
             StartOfRoundPatch.Init();
-            ItemDropShipPatch.Init();
             _harmony.PatchAll(typeof(StartOfRoundPatch));
             _harmony.PatchAll(typeof(ItemDropShipPatch));
             _harmony.PatchAll(typeof(PlayerControllerBPatch));
-            _harmony.PatchAll(typeof(maePatch));
+            _harmony.PatchAll(typeof(DoorLockPatch));
+            _harmony.PatchAll(typeof(EnemyAIPatch));
+            _harmony.PatchAll(typeof(GrabbableObjectPatch));
         }
 
         private static void InitializeNetworkBehaviours() {

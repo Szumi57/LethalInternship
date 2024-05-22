@@ -10,39 +10,35 @@ using UnityEngine.XR;
 using static UnityEngine.GraphicsBuffer;
 using System.Collections;
 using UnityEngine.Yoga;
+using System.ComponentModel;
+using LethalInternship.Patches;
+using LethalInternship.Enums;
+using System.Linq;
 
 namespace LethalInternship.AI
 {
-    internal class NpcController : NetworkBehaviour
+    internal class NpcController
     {
         public PlayerControllerB Npc { get; set; } = null!;
 
-        private bool isCameraDisabled = true;
 
-        private bool isWalking;
-        private bool isJumping;
         private int movementHinderedPrev;
         private bool isSidling;
         private float sprintMultiplier = 1f;
         private float slopeModifier;
         private bool movingForward;
-        private float crouchMeter;
         private float limpMultiplier = 0.2f;
         private Vector3 walkForce;
         private bool isFallingFromJump;
         private bool isFallingNoJump;
         private float playerSlidingTimer;
         private float slideFriction;
-        private bool disabledJetpackControlsThisFrame;
         private bool teleportingThisFrame;
 
         private float updatePlayerLookInterval;
         private int oldConnectedPlayersAmount;
-        private float updatePlayerAnimationsInterval;
-        private List<int> currentAnimationStateHash = new List<int>();
-        private List<int> previousAnimationStateHash = new List<int>();
-        private float currentAnimationSpeed;
-        private float previousAnimationSpeed;
+
+
 
         private RaycastHit hit;
         private Collider[] nearByPlayers = new Collider[4];
@@ -56,70 +52,88 @@ namespace LethalInternship.AI
         private bool wasUnderwaterLastFrame;
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
+
+        public bool IsCameraDisabled = true;
+        public bool IsJumping;
+        public float CrouchMeter;
+        public bool IsWalking;
+        public bool DisabledJetpackControlsThisFrame;
+        public float UpdatePlayerAnimationsInterval;
+        public float CurrentAnimationSpeed;
+        public float PreviousAnimationSpeed;
+        public List<int> CurrentAnimationStateHash = new List<int>();
+        public List<int> PreviousAnimationStateHash = new List<int>();
+        public Vector3 RightArmProceduralTargetBasePosition;
+        public int PreviousAnimationState;
+
         // Orders
-        private bool hasToLookAtPlayer = false;
-        private bool hasToLookForward = true;
+        private EnumObjectsLookingAt enumObjectsLookingAt;
+        //private bool hasToLookAtPlayer = false;
+        //private bool hasToLookForward = true;
         // Fields for orders
         private Vector2 lastMoveVector;
         private Vector3 positionToUpdateTurnBodyTowardsTo;
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 directionToUpdateTurnBodyTowardsToNormalized;
         private Transform playerEyeToLookAt = null!;
+        private Vector3 positionToLookAt;
         private float floatSprint;
         private Coroutine jumpCoroutine = null!;
+
+        public void Awake()
+        {
+            Plugin.Logger.LogDebug("Awake intern controller.");
+            //Npc.isHostPlayerObject = false;
+            //Npc.playerActions = new PlayerActions();
+            //this.PreviousAnimationState = 0;
+            //Npc.serverPlayerPosition = Npc.transform.position;
+            //Npc.gameplayCamera.enabled = false;
+            //Npc.visorCamera.enabled = false;
+            //Npc.thisPlayerModel.enabled = true;
+            //Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+            //Npc.thisPlayerModelArms.enabled = false;
+            //Npc.gameplayCamera.enabled = false;
+            //PreviousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+            //CurrentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+            //if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.otherClientsAnimatorController)
+            //{
+            //    Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
+            //}
+            //this.IsCameraDisabled = true;
+            //Npc.sprintMeter = 1f;
+            Npc.ItemSlots = new GrabbableObject[1];
+            //RightArmProceduralTargetBasePosition = Npc.rightArmProceduralTarget.localPosition;
+            Npc.playerUsername = string.Format("Intern #todoawake{0}", Npc.playerClientId);
+            //Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
+            //if (Npc.gameObject.GetComponent<Rigidbody>())
+            //{
+            //    Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
+            //}
+            //Npc.gameObject.GetComponent<CharacterController>().enabled = false;
+            //Npc.syncFullRotation = Npc.transform.eulerAngles;
+        }
 
         public void Update()
         {
             if (Npc.IsOwner && Npc.isPlayerControlled)
             {
-                if (isCameraDisabled)
+                if (IsCameraDisabled)
                 {
-                    isCameraDisabled = false;
+                    IsCameraDisabled = false;
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                     Npc.gameObject.GetComponent<CharacterController>().enabled = true;
-                    this.previousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
-                    this.currentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+                    PreviousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+                    CurrentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
                     if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.localClientAnimatorController)
                     {
                         Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.localClientAnimatorController;
                     }
-
-                    //if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.otherClientsAnimatorController)
-                    //{
-                    //    Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
-                    //}
-                    //Plugin.Logger.LogDebug("----playerBodyAnimator---------");
-                    //foreach (var a in Npc.playerBodyAnimator.parameters)
-                    //{
-                    //    Plugin.Logger.LogDebug(a.name);
-                    //}
-                    //Plugin.Logger.LogDebug("----localClientAnimatorController---------");
-                    //foreach (var a in Npc.playersManager.localClientAnimatorController.animationClips)
-                    //{
-                    //    Plugin.Logger.LogDebug(a.name);
-                    //}
-                    //Plugin.Logger.LogDebug("-----otherClientsAnimatorController--------");
-                    //foreach (var a in Npc.playersManager.otherClientsAnimatorController.animationClips)
-                    //{
-                    //    Plugin.Logger.LogDebug(a.name);
-                    //}
-
-                    //Animator anim = NpcController.Npc.playerBodyAnimator;
-                    //Plugin.Logger.LogDebug("-------------");
-                    //AnimationClip[] animationClips2 = Npc.playerBodyAnimator.runtimeAnimatorController.animationClips;
-                    //Array.Sort(animationClips2, (x, y) => String.Compare(x.name, y.name));
-                    //foreach (AnimationClip animClip in animationClips2)
-                    //{
-                    //    Plugin.Logger.LogDebug(animClip.name + ": " + animClip.length);
-                    //}
-                    //Plugin.Logger.LogDebug($"-----------           dead {Npc.isPlayerDead}");
-
                 }
 
                 if (this.HasToMove)
                 {
-                    if (isJumping || Npc.isCrouching)
+                    if (IsJumping || Npc.isCrouching)
                     {
                         this.lastMoveVector.y = Const.BASE_MAX_SPEED;
                     }
@@ -128,8 +142,8 @@ namespace LethalInternship.AI
                         // Move and slow down when tight turn
                         Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
                         var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
-                        
-                        this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 3f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
+
+                        this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
                         if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
                         {
                             floatSprint = 0f;
@@ -143,13 +157,13 @@ namespace LethalInternship.AI
 
                 Npc.ForceTurnTowardsTarget();
 
-                if (isWalking)
+                if (IsWalking)
                 {
                     if (Npc.moveInputVector.sqrMagnitude <= 0.001
                         || Npc.inSpecialInteractAnimation
                         && !Npc.isClimbingLadder && !Npc.inShockingMinigame)
                     {
-                        isWalking = false;
+                        IsWalking = false;
                         Npc.isSprinting = false;
                         Npc.playerBodyAnimator.SetBool("Walking", false);
                         Npc.playerBodyAnimator.SetBool("Sprinting", false);
@@ -226,11 +240,11 @@ namespace LethalInternship.AI
                     }
                     if (!Npc.isFreeCamera && Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
                     {
-                        isWalking = true;
+                        IsWalking = true;
                         Npc.playerBodyAnimator.SetBool("Walking", true);
                     }
                 }
-                if (Npc.performingEmote && !CheckConditionsForEmote())
+                if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
                 {
                     Npc.performingEmote = false;
                     Npc.StopPerformingEmoteServerRpc();
@@ -278,7 +292,7 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    crouchMeter = Mathf.Max(crouchMeter - Time.deltaTime * 2f, 0f);
+                    CrouchMeter = Mathf.Max(CrouchMeter - Time.deltaTime * 2f, 0f);
                     Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 1.28f, Npc.thisController.center.z), 8f * Time.deltaTime);
                     Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 2.5f, 8f * Time.deltaTime);
                 }
@@ -296,7 +310,7 @@ namespace LethalInternship.AI
                     {
                         Npc.moveInputVector = Vector2.zero;
                     }
-                    CalculateGroundNormal();
+                    PlayerControllerBPatch.CalculateGroundNormal_ReversePatch(this.Npc);
                     float num3 = Npc.movementSpeed / Npc.carryWeight;
                     if (Npc.sinkingValue > 0.73f)
                     {
@@ -325,7 +339,7 @@ namespace LethalInternship.AI
                         {
                             num3 *= StartOfRound.Instance.drunknessSpeedEffect.Evaluate(Npc.drunkness) / 5f + 1f;
                         }
-                        if (!Npc.isCrouching && crouchMeter > 1.2f)
+                        if (!Npc.isCrouching && CrouchMeter > 1.2f)
                         {
                             num3 *= 0.5f;
                         }
@@ -371,7 +385,7 @@ namespace LethalInternship.AI
                     {
                         num7 = Mathf.Clamp(Mathf.Abs(Npc.drunkness - 2.25f), 0.3f, 2.5f);
                     }
-                    else if (!Npc.isCrouching && crouchMeter > 1f)
+                    else if (!Npc.isCrouching && CrouchMeter > 1f)
                     {
                         num7 = 15f;
                     }
@@ -435,7 +449,7 @@ namespace LethalInternship.AI
                                     }
                                 }
                             }
-                            if (!isJumping && !isFallingFromJump)
+                            if (!IsJumping && !isFallingFromJump)
                             {
                                 if (!isFallingNoJump)
                                 {
@@ -458,7 +472,7 @@ namespace LethalInternship.AI
                         else
                         {
                             movementHinderedPrev = Npc.isMovementHindered;
-                            if (!isJumping)
+                            if (!IsJumping)
                             {
                                 if (isFallingNoJump)
                                 {
@@ -467,7 +481,7 @@ namespace LethalInternship.AI
                                     {
                                         Npc.playerBodyAnimator.SetTrigger("ShortFallLanding");
                                     }
-                                    PlayerHitGroundEffects();
+                                    PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
                                 }
                                 if (!isFallingFromJump)
                                 {
@@ -513,14 +527,7 @@ namespace LethalInternship.AI
                 teleportingThisFrame = false;
 
                 // Rotations
-                if (this.hasToLookAtPlayer)
-                {
-                    this.UpdateLookAtPlayer();
-                }
-                if (this.hasToLookForward)
-                {
-                    this.UpdateLookForward();
-                }
+                this.UpdateLookAt();
 
                 Npc.playerEye.position = Npc.gameplayCamera.transform.position;
                 Npc.playerEye.rotation = Npc.gameplayCamera.transform.rotation;
@@ -534,15 +541,14 @@ namespace LethalInternship.AI
                 if (NetworkManager.Singleton != null && !Npc.IsServer || !Npc.isTestingPlayer && Npc.playersManager.connectedPlayersAmount > 0 || oldConnectedPlayersAmount >= 1)
                 {
                     updatePlayerLookInterval += Time.deltaTime;
-                    UpdatePlayerAnimationsToOtherClients(Npc.moveInputVector);
+                    PlayerControllerBPatch.UpdatePlayerAnimationsToOtherClients_ReversePatch(this.Npc, Npc.moveInputVector);
                 }
             }
             else
             {
-                /*
-                if (!this.isCameraDisabled)
+                if (!this.IsCameraDisabled)
                 {
-                    this.isCameraDisabled = true;
+                    this.IsCameraDisabled = true;
                     Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.mapRadarDirectionIndicator.enabled = false;
@@ -551,13 +557,11 @@ namespace LethalInternship.AI
                     {
                         Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
                     }
-                    Npc.SpawnPlayerAnimation();
                     if (Npc.gameObject.GetComponent<Rigidbody>())
                     {
                         Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
                     }
                 }
-                */
             }
 
             if (!Npc.isTestingPlayer && !Npc.isPlayerDead && Npc.isPlayerControlled)
@@ -682,15 +686,15 @@ namespace LethalInternship.AI
                     }
                 }
                 Npc.voiceMuffledByEnemy = true;
-                if (Npc.IsOwner && Npc.sinkingValue > 0.73f)
-                {
-                    HUDManager.Instance.sinkingCoveredFace = true;
-                }
+                //if (Npc.IsOwner && Npc.sinkingValue > 0.73f)
+                //{
+                //    HUDManager.Instance.sinkingCoveredFace = true;
+                //}
             }
-            else if (Npc.IsOwner)
-            {
-                HUDManager.Instance.sinkingCoveredFace = false;
-            }
+            //else if (Npc.IsOwner)
+            //{
+            //    HUDManager.Instance.sinkingCoveredFace = false;
+            //}
             else if (this.wasUnderwaterLastFrame)
             {
                 Npc.waterBubblesAudio.Stop();
@@ -747,6 +751,219 @@ namespace LethalInternship.AI
             Npc.playerBodyAnimator.SetFloat("tiredAmount", this.exhaustionEffectLerp);
         }
 
+        //public void DamagePlayer(int damageNumber,
+        //                         bool hasDamageSFX = true,
+        //                         bool callRPC = true,
+        //                         CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
+        //                         int deathAnimation = 0,
+        //                         bool fallDamage = false,
+        //                         Vector3 force = default(Vector3))
+        //{
+        //    if (!Npc.IsOwner || Npc.isPlayerDead || !Npc.AllowPlayerDeath())
+        //    {
+        //        //Plugin.Logger.LogDebug($"base.IsOwner {base.IsOwner},Npc.isPlayerDead {Npc.isPlayerDead}, Npc.AllowPlayerDeath() {Npc.AllowPlayerDeath()}");
+        //        return;
+        //    }
+
+        //    if (Npc.health - damageNumber <= 0 && !Npc.criticallyInjured && damageNumber < 50)
+        //    {
+        //        Npc.health = 5;
+        //    }
+        //    else
+        //    {
+        //        Npc.health = Mathf.Clamp(Npc.health - damageNumber, 0, 100);
+        //    }
+
+        //    if (Npc.health <= 0)
+        //    {
+        //        Npc.KillPlayer(force, spawnBody: true, causeOfDeath, deathAnimation);
+        //    }
+        //    else
+        //    {
+        //        if (Npc.health < 10 && !Npc.criticallyInjured)
+        //        {
+        //            Npc.MakeCriticallyInjured(enable: true);
+        //        }
+        //        else
+        //        {
+        //            if (damageNumber >= 10)
+        //            {
+        //                Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter + (float)damageNumber / 125f, 0f, 1f);
+        //            }
+
+        //            if (callRPC)
+        //            {
+        //                if (base.IsServer)
+        //                {
+        //                    Npc.DamagePlayerClientRpc(damageNumber, Npc.health);
+        //                }
+        //                else
+        //                {
+        //                    Npc.DamagePlayerServerRpc(damageNumber, Npc.health);
+        //                }
+        //            }
+        //        }
+
+        //        if (fallDamage)
+        //        {
+        //            Npc.BreakLegsSFXClientRpc();
+        //        }
+        //    }
+
+        //    //StartOfRound.Instance.LocalPlayerDamagedEvent.Invoke();
+        //    Npc.takingFallDamage = false;
+        //    if (!Npc.inSpecialInteractAnimation)
+        //    {
+        //        Npc.playerBodyAnimator.SetTrigger("Damage");
+        //    }
+
+        //    Npc.specialAnimationWeight = 1f;
+        //    Npc.PlayQuickSpecialAnimation(0.7f);
+        //}
+
+        //public void KillPlayer(Vector3 bodyVelocity, bool spawnBody = true, CauseOfDeath causeOfDeath = CauseOfDeath.Unknown, int deathAnimation = 0)
+        //{
+        //    if (Npc.IsOwner && !Npc.isPlayerDead && Npc.AllowPlayerDeath())
+        //    {
+        //        Npc.isPlayerDead = true;
+        //        Npc.isPlayerControlled = false;
+        //        Npc.thisPlayerModelArms.enabled = false;
+        //        Npc.localVisor.position = Npc.playersManager.notSpawnedPosition.position;
+        //        Npc.DisablePlayerModel(Npc.gameObject);
+        //        Npc.isInsideFactory = false;
+        //        Npc.IsInspectingItem = false;
+        //        Npc.inTerminalMenu = false;
+        //        Npc.twoHanded = false;
+        //        Npc.carryWeight = 1f;
+        //        Npc.fallValue = 0f;
+        //        Npc.fallValueUncapped = 0f;
+        //        Npc.takingFallDamage = false;
+        //        Npc.isSinking = false;
+        //        Npc.isUnderwater = false;
+        //        //StartOfRound.Instance.drowningTimer = 1f;
+        //        this.wasUnderwaterLastFrame = false;
+        //        Npc.sourcesCausingSinking = 0;
+        //        Npc.sinkingValue = 0f;
+        //        Npc.hinderedMultiplier = 1f;
+        //        Npc.isMovementHindered = 0;
+        //        Npc.inAnimationWithEnemy = null;
+        //        Debug.Log("Running kill player function for LOCAL client, intern object: " + Npc.gameObject.name);
+        //        KillPlayerServerRpc((int)Npc.playerClientId, spawnBody, bodyVelocity, (int)causeOfDeath, deathAnimation);
+        //        if (spawnBody)
+        //        {
+        //            Npc.SpawnDeadBody((int)Npc.playerClientId, bodyVelocity, (int)causeOfDeath, Npc, deathAnimation);
+        //        }
+        //        Npc.DropAllHeldItems(spawnBody);
+        //        //Npc.TeleportPlayer(Npc.playersManager.notSpawnedPosition.position, false, 0f, false, true);
+        //        //UnlockableSuit.SwitchSuitForPlayer(Npc, 0, false);
+        //    }
+        //}
+        //[ServerRpc]
+        //private void KillPlayerServerRpc(int playerId, bool spawnBody, Vector3 bodyVelocity, int causeOfDeath, int deathAnimation)
+        //{
+        //    NetworkManager networkManager = Npc.NetworkManager;
+        //    if ((object)networkManager == null || !networkManager.IsListening)
+        //    {
+        //        return;
+        //    }
+
+        //    if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
+        //    {
+        //        if (Npc.OwnerClientId != networkManager.LocalClientId)
+        //        {
+        //            if (networkManager.LogLevel <= LogLevel.Normal)
+        //            {
+        //                Debug.LogError("Only the owner can invoke a ServerRpc that requires ownership!");
+        //            }
+
+        //            return;
+        //        }
+
+        //        ServerRpcParams serverRpcParams = default(ServerRpcParams);
+        //        FastBufferWriter bufferWriter = __beginSendServerRpc(1346025125u, serverRpcParams, RpcDelivery.Reliable);
+        //        BytePacker.WriteValueBitPacked(bufferWriter, playerId);
+        //        bufferWriter.WriteValueSafe(in spawnBody, default(FastBufferWriter.ForPrimitives));
+        //        bufferWriter.WriteValueSafe(in bodyVelocity);
+        //        BytePacker.WriteValueBitPacked(bufferWriter, causeOfDeath);
+        //        BytePacker.WriteValueBitPacked(bufferWriter, deathAnimation);
+        //        __endSendServerRpc(ref bufferWriter, 1346025125u, serverRpcParams, RpcDelivery.Reliable);
+        //    }
+
+        //    if (__rpc_exec_stage != __RpcExecStage.Server || (!networkManager.IsServer && !networkManager.IsHost))
+        //    {
+        //        return;
+        //    }
+
+        //    if (!spawnBody)
+        //    {
+        //        PlayerControllerB component = Npc.playersManager.allPlayerObjects[playerId].GetComponent<PlayerControllerB>();
+        //        for (int i = 0; i < component.ItemSlots.Length; i++)
+        //        {
+        //            GrabbableObject grabbableObject = component.ItemSlots[i];
+        //            if (grabbableObject != null)
+        //            {
+        //                grabbableObject.gameObject.GetComponent<NetworkObject>().Despawn();
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        GameObject obj = UnityEngine.Object.Instantiate(StartOfRound.Instance.ragdollGrabbableObjectPrefab, Npc.playersManager.propsContainer);
+        //        obj.GetComponent<NetworkObject>().Spawn();
+        //        obj.GetComponent<RagdollGrabbableObject>().bodyID.Value = playerId;
+        //    }
+
+        //    KillPlayerClientRpc(playerId, spawnBody, bodyVelocity, causeOfDeath, deathAnimation);
+        //}
+        //[ClientRpc]
+        //private void KillPlayerClientRpc(int playerId, bool spawnBody, Vector3 bodyVelocity, int causeOfDeath, int deathAnimation)
+        //{
+        //    NetworkManager networkManager = Npc.NetworkManager;
+        //    if ((object)networkManager == null || !networkManager.IsListening)
+        //    {
+        //        return;
+        //    }
+
+        //    if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
+        //    {
+        //        ClientRpcParams clientRpcParams = default(ClientRpcParams);
+        //        FastBufferWriter bufferWriter = __beginSendClientRpc(168339603u, clientRpcParams, RpcDelivery.Reliable);
+        //        BytePacker.WriteValueBitPacked(bufferWriter, playerId);
+        //        bufferWriter.WriteValueSafe(in spawnBody, default(FastBufferWriter.ForPrimitives));
+        //        bufferWriter.WriteValueSafe(in bodyVelocity);
+        //        BytePacker.WriteValueBitPacked(bufferWriter, causeOfDeath);
+        //        BytePacker.WriteValueBitPacked(bufferWriter, deathAnimation);
+        //        __endSendClientRpc(ref bufferWriter, 168339603u, clientRpcParams, RpcDelivery.Reliable);
+        //    }
+
+        //    if (__rpc_exec_stage != __RpcExecStage.Client || (!networkManager.IsClient && !networkManager.IsHost))
+        //    {
+        //        return;
+        //    }
+
+        //    Debug.Log("An intern died. Object: " + Npc.gameObject.name);
+
+        //    PlayerControllerB component = Npc.playersManager.allPlayerObjects[playerId].GetComponent<PlayerControllerB>();
+        //    component.bleedingHeavily = false;
+        //    Npc.statusEffectAudio.Stop();
+        //    if (!Npc.IsOwner && spawnBody)
+        //    {
+        //        Npc.SpawnDeadBody(playerId, bodyVelocity, causeOfDeath, component, deathAnimation);
+        //        Npc.DropAllHeldItems(spawnBody);
+        //    }
+
+        //    Npc.placeOfDeath = component.transform.position;
+        //    Npc.DisablePlayerModel(Npc.playersManager.allPlayerObjects[playerId]);
+        //    component.setPositionOfDeadPlayer = true;
+        //    component.isPlayerDead = true;
+        //    component.isPlayerControlled = false;
+        //    component.snapToServerPosition = false;
+        //    component.isUnderwater = false;
+        //    component.isHoldingObject = false;
+        //    component.currentlyHeldObjectServer = null;
+        //    component.causeOfDeath = (CauseOfDeath)causeOfDeath;
+        //}
+
         public void OrderToMove()
         {
             if (this.lastMoveVector.y < Const.BASE_MIN_SPEED)
@@ -759,7 +976,6 @@ namespace LethalInternship.AI
         {
             this.lastMoveVector = new Vector2(0f, Const.BASE_MAX_SPEED);
         }
-
         public void OrderToStopMoving()
         {
             this.lastMoveVector = Vector2.zero;
@@ -772,7 +988,7 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            if (this.isJumping)
+            if (this.IsJumping)
             {
                 return;
             }
@@ -789,7 +1005,7 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            if (this.isJumping)
+            if (this.IsJumping)
             {
                 return;
             }
@@ -800,14 +1016,13 @@ namespace LethalInternship.AI
 
             floatSprint = 0f;
         }
-
         public void OrderToToggleCrouch()
         {
             if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
             {
                 return;
             }
-            if (this.isJumping)
+            if (this.IsJumping)
             {
                 return;
             }
@@ -815,76 +1030,8 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            this.crouchMeter = Mathf.Min(this.crouchMeter + 0.3f, 1.3f);
+            this.CrouchMeter = Mathf.Min(this.CrouchMeter + 0.3f, 1.3f);
             Npc.Crouch(!Npc.isCrouching);
-        }
-
-        public void OrderToJump()
-        {
-            if (Npc.inSpecialInteractAnimation)
-            {
-                return;
-            }
-            if (Npc.isMovementHindered > 0 && !Npc.isUnderwater)
-            {
-                return;
-            }
-            if (Npc.isExhausted)
-            {
-                return;
-            }
-            if ((Npc.thisController.isGrounded || (!this.isJumping && this.IsPlayerNearGround()))
-                && !this.isJumping
-                && (!Npc.isPlayerSliding || this.playerSlidingTimer > 2.5f)
-                && !Npc.isCrouching)
-            {
-                this.playerSlidingTimer = 0f;
-                this.isJumping = true;
-                Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - 0.08f, 0f, 1f);
-                StartOfRound.Instance.PlayerJumpEvent.Invoke(this.Npc);
-                this.PlayJumpAudio();
-                if (this.jumpCoroutine != null)
-                {
-                    base.StopCoroutine(this.jumpCoroutine);
-                }
-                this.jumpCoroutine = base.StartCoroutine(this.PlayerJump());
-                if (StartOfRound.Instance.connectedPlayersAmount != 0)
-                {
-                    Npc.PlayerJumpedServerRpc();
-                }
-            }
-        }
-        private bool IsPlayerNearGround()
-        {
-            Ray interactRay = new Ray(base.transform.position, Vector3.down);
-            return Physics.Raycast(interactRay, 0.15f, StartOfRound.Instance.allPlayersCollideWithMask, QueryTriggerInteraction.Ignore);
-        }
-
-        private void PlayJumpAudio()
-        {
-            if (StartOfRound.Instance.unlockablesList.unlockables[Npc.currentSuitID].jumpAudio != null)
-            {
-                Npc.movementAudio.PlayOneShot(StartOfRound.Instance.unlockablesList.unlockables[Npc.currentSuitID].jumpAudio);
-                return;
-            }
-            Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerJumpSFX);
-        }
-
-        private IEnumerator PlayerJump()
-        {
-            Npc.playerBodyAnimator.SetBool("Jumping", true);
-            yield return new WaitForSeconds(0.15f);
-            Npc.fallValue = Npc.jumpForce;
-            Npc.fallValueUncapped = Npc.jumpForce;
-            yield return new WaitForSeconds(0.1f);
-            this.isJumping = false;
-            this.isFallingFromJump = true;
-            yield return new WaitUntil(() => Npc.thisController.isGrounded);
-            Npc.playerBodyAnimator.SetBool("Jumping", false);
-            this.isFallingFromJump = false;
-            this.PlayerHitGroundEffects();
-            this.jumpCoroutine = null!;
-            yield break;
         }
 
         public void SetTurnBodyTowardsDirection(Vector3 positionDirection)
@@ -910,41 +1057,78 @@ namespace LethalInternship.AI
 
         public void OrderToLookAtPlayer(PlayerControllerB player)
         {
+            this.enumObjectsLookingAt = EnumObjectsLookingAt.Player;
             this.playerEyeToLookAt = player.playerEye;
-            this.hasToLookAtPlayer = true;
-            this.hasToLookForward = !this.hasToLookAtPlayer;
         }
-        private void UpdateLookAtPlayer()
-        {
-            if (Npc.inSpecialInteractAnimation)
-            {
-                return;
-            }
-
-            Vector3 direction = playerEyeToLookAt.position - Npc.gameplayCamera.transform.position;
-            if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
-            {
-                Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-                Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
-                if (180f - Vector3.Angle(playerEyeToLookAt.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
-                {
-                    SetTurnBodyTowardsDirection(playerEyeToLookAt.position);
-                }
-            }
-        }
-
         public void OrderToLookForward()
         {
-            this.hasToLookForward = true;
-            this.hasToLookAtPlayer = !this.hasToLookForward;
+            this.enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
         }
-        private void UpdateLookForward()
+        public void OrderToLookAtPosition(Vector3 positionToLookAt)
+        {
+            this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
+            this.positionToLookAt = positionToLookAt;
+        }
+        private void UpdateLookAt()
         {
             if (Npc.inSpecialInteractAnimation)
             {
                 return;
             }
-            Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, Npc.thisPlayerBody.rotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+
+            Vector3 direction;
+            switch (enumObjectsLookingAt)
+            {
+                case EnumObjectsLookingAt.Forward:
+
+                    Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, Npc.thisPlayerBody.rotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+                    break;
+
+                case EnumObjectsLookingAt.Player:
+
+                    direction = playerEyeToLookAt.position - Npc.gameplayCamera.transform.position;
+                    if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
+                    {
+                        Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                        Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+
+                        if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
+                        {
+                            if (this.HasToMove)
+                                enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
+                            else
+                                SetTurnBodyTowardsDirection(playerEyeToLookAt.position);
+                        }
+                    }
+                    break;
+
+                case EnumObjectsLookingAt.Position:
+
+                    direction = positionToLookAt - Npc.gameplayCamera.transform.position;
+                    if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
+                    {
+                        Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                        Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+
+                        if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
+                        {
+                            if (this.HasToMove)
+                                enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
+                            else
+                                SetTurnBodyTowardsDirection(positionToLookAt);
+                        }
+                    }
+                    break;
+            }
+
+            //    Npc.transform.localScale *= 1/0.85f;
+            //Npc.localItemHolder.position = Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R").position;
+            //Npc.localItemHolder.rotation = Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R").rotation;
+            //    Npc.transform.localScale *= 0.85f;
+            //Npc.localItemHolder.rotation = Npc.thisPlayerBody.rotation;
+            //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.rotation}");
+            //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.position}");
+            //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.gameObject.name}, {Npc.localItemHolder.parent?.gameObject.name}, {Npc.localItemHolder.parent?.parent?.gameObject.name}");
         }
 
         private bool DirectionNotZero(float direction)
@@ -952,176 +1136,174 @@ namespace LethalInternship.AI
             return direction < -Const.EPSILON || Const.EPSILON < direction;
         }
 
-        private bool CheckConditionsForEmote()
-        {
-            return !Npc.inSpecialInteractAnimation
-                && !Npc.isPlayerDead
-                && !isJumping
-                && !isWalking
-                && !Npc.isCrouching
-                && !Npc.isClimbingLadder
-                && !Npc.isGrabbingObjectAnimation;
-        }
+        //private bool CheckConditionsForEmote()
+        //{
+        //    return !Npc.inSpecialInteractAnimation
+        //        && !Npc.isPlayerDead
+        //        && !IsJumping
+        //        && !isWalking
+        //        && !Npc.isCrouching
+        //        && !Npc.isClimbingLadder
+        //        && !Npc.isGrabbingObjectAnimation;
+        //}
 
-        private void CalculateGroundNormal()
-        {
-            if (Physics.Raycast(Npc.transform.position + Vector3.up * 0.2f, -Vector3.up, out hit, 6f, 268438273, QueryTriggerInteraction.Ignore))
-            {
-                Npc.playerGroundNormal = hit.normal;
-                return;
-            }
-            Npc.playerGroundNormal = Vector3.up;
-        }
+        //private void CalculateGroundNormal()
+        //{
+        //    if (Physics.Raycast(Npc.transform.position + Vector3.up * 0.2f, -Vector3.up, out hit, 6f, 268438273, QueryTriggerInteraction.Ignore))
+        //    {
+        //        Npc.playerGroundNormal = hit.normal;
+        //        return;
+        //    }
+        //    Npc.playerGroundNormal = Vector3.up;
+        //}
 
-        private void PlayerHitGroundEffects()
-        {
-            Npc.GetCurrentMaterialStandingOn();
-            if (Npc.fallValue < -9f)
-            {
-                if (Npc.fallValue < -16f)
-                {
-                    Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerHitGroundHard, 1f);
-                    WalkieTalkie.TransmitOneShotAudio(Npc.movementAudio, StartOfRound.Instance.playerHitGroundHard, 1f);
-                }
-                else if (Npc.fallValue < -2f)
-                {
-                    Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerHitGroundSoft, 1f);
-                }
-                Npc.LandFromJumpServerRpc(Npc.fallValue < -16f);
-            }
-            float num = Npc.fallValueUncapped;
-            if (disabledJetpackControlsThisFrame && Vector3.Angle(Npc.transform.up, Vector3.up) > 80f)
-            {
-                num -= 10f;
-            }
-            if (Npc.takingFallDamage && !Npc.isSpeedCheating)
-            {
-                if (Npc.fallValueUncapped < -48.5f)
-                {
-                    Npc.DamagePlayer(100, true, true, CauseOfDeath.Gravity, 0, false, default);
-                }
-                else if (Npc.fallValueUncapped < -45f)
-                {
-                    Npc.DamagePlayer(80, true, true, CauseOfDeath.Gravity, 0, false, default);
-                }
-                else if (Npc.fallValueUncapped < -40f)
-                {
-                    Npc.DamagePlayer(50, true, true, CauseOfDeath.Gravity, 0, false, default);
-                }
-                else if (Npc.fallValue < -38f)
-                {
-                    Npc.DamagePlayer(30, true, true, CauseOfDeath.Gravity, 0, false, default);
-                }
-            }
-            if (Npc.fallValue < -16f)
-            {
-                RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 7f, 0.5f, 0, false, 0);
-            }
-        }
+        //private void PlayerHitGroundEffects()
+        //{
+        //    Npc.GetCurrentMaterialStandingOn();
+        //    if (Npc.fallValue < -9f)
+        //    {
+        //        if (Npc.fallValue < -16f)
+        //        {
+        //            Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerHitGroundHard, 1f);
+        //            WalkieTalkie.TransmitOneShotAudio(Npc.movementAudio, StartOfRound.Instance.playerHitGroundHard, 1f);
+        //        }
+        //        else if (Npc.fallValue < -2f)
+        //        {
+        //            Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerHitGroundSoft, 1f);
+        //        }
+        //        Npc.LandFromJumpServerRpc(Npc.fallValue < -16f);
+        //    }
+        //    float num = Npc.fallValueUncapped;
+        //    if (DisabledJetpackControlsThisFrame && Vector3.Angle(Npc.transform.up, Vector3.up) > 80f)
+        //    {
+        //        num -= 10f;
+        //    }
+        //    if (Npc.takingFallDamage && !Npc.isSpeedCheating)
+        //    {
+        //        if (Npc.fallValueUncapped < -48.5f)
+        //        {
+        //            Npc.DamagePlayer(100, true, true, CauseOfDeath.Gravity, 0, false, default);
+        //        }
+        //        else if (Npc.fallValueUncapped < -45f)
+        //        {
+        //            Npc.DamagePlayer(80, true, true, CauseOfDeath.Gravity, 0, false, default);
+        //        }
+        //        else if (Npc.fallValueUncapped < -40f)
+        //        {
+        //            Npc.DamagePlayer(50, true, true, CauseOfDeath.Gravity, 0, false, default);
+        //        }
+        //        else if (Npc.fallValue < -38f)
+        //        {
+        //            Npc.DamagePlayer(30, true, true, CauseOfDeath.Gravity, 0, false, default);
+        //        }
+        //    }
+        //    if (Npc.fallValue < -16f)
+        //    {
+        //        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 7f, 0.5f, 0, false, 0);
+        //    }
+        //}
 
-        private void UpdatePlayerAnimationsToOtherClients(Vector2 moveInputVector)
-        {
-            updatePlayerAnimationsInterval += Time.deltaTime;
-            if (Npc.inSpecialInteractAnimation || updatePlayerAnimationsInterval > 0.14f)
-            {
-                updatePlayerAnimationsInterval = 0f;
-                currentAnimationSpeed = Npc.playerBodyAnimator.GetFloat("animationSpeed");
-                for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
-                {
-                    currentAnimationStateHash[i] = Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash;
-                    if (previousAnimationStateHash[i] != currentAnimationStateHash[i])
-                    {
-                        previousAnimationStateHash[i] = currentAnimationStateHash[i];
-                        previousAnimationSpeed = currentAnimationSpeed;
-                        UpdatePlayerAnimationServerRpc(currentAnimationStateHash[i], currentAnimationSpeed);
-                        return;
-                    }
-                }
-                if (previousAnimationSpeed != currentAnimationSpeed)
-                {
-                    previousAnimationSpeed = currentAnimationSpeed;
-                    UpdatePlayerAnimationServerRpc(0, currentAnimationSpeed);
-                }
-            }
-        }
-
-        [ServerRpc]
-        private void UpdatePlayerAnimationServerRpc(int animationState, float animationSpeed)
-        {
-            NetworkManager networkManager = Npc.NetworkManager;
-            if (networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
-            {
-                if (OwnerClientId != networkManager.LocalClientId)
-                {
-                    if (networkManager.LogLevel <= LogLevel.Normal)
-                    {
-                        Debug.LogError("Only the owner can invoke a ServerRpc that requires ownership!");
-                    }
-                    return;
-                }
-                ServerRpcParams serverRpcParams = new ServerRpcParams();
-                FastBufferWriter writer = __beginSendServerRpc(3473255830U, serverRpcParams, RpcDelivery.Reliable);
-                BytePacker.WriteValueBitPacked(writer, animationState);
-                writer.WriteValueSafe(animationSpeed, default);
-                __endSendServerRpc(ref writer, 3473255830U, serverRpcParams, RpcDelivery.Reliable);
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Server || !networkManager.IsServer && !networkManager.IsHost)
-            {
-                return;
-            }
-            try
-            {
-                UpdatePlayerAnimationClientRpc(animationState, animationSpeed);
-            }
-            catch (Exception arg)
-            {
-                Debug.Log(string.Format("Client rpc parameters were likely not correct, so an RPC was skipped: {0}", arg));
-            }
-        }
-
-        [ClientRpc]
-        private void UpdatePlayerAnimationClientRpc(int animationState, float animationSpeed)
-        {
-            NetworkManager networkManager = NetworkManager;
-            if (networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
-            {
-                ClientRpcParams clientRpcParams = new ClientRpcParams();
-                FastBufferWriter writer = __beginSendClientRpc(3386813972U, clientRpcParams, RpcDelivery.Reliable);
-                BytePacker.WriteValueBitPacked(writer, animationState);
-                writer.WriteValueSafe(animationSpeed, default);
-                __endSendClientRpc(ref writer, 3386813972U, clientRpcParams, RpcDelivery.Reliable);
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Client || !networkManager.IsClient && !networkManager.IsHost)
-            {
-                return;
-            }
-            if (IsOwner)
-            {
-                return;
-            }
-            if (Npc.playerBodyAnimator.GetFloat("animationSpeed") != animationSpeed)
-            {
-                Npc.playerBodyAnimator.SetFloat("animationSpeed", animationSpeed);
-            }
-            if (animationState != 0 && Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != animationState)
-            {
-                for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
-                {
-                    if (Npc.playerBodyAnimator.HasState(i, animationState))
-                    {
-                        Npc.playerBodyAnimator.CrossFadeInFixedTime(animationState, 0.1f);
-                        return;
-                    }
-                }
-            }
-        }
+        //private void UpdatePlayerAnimationsToOtherClients(Vector2 moveInputVector)
+        //{
+        //    UpdatePlayerAnimationsInterval += Time.deltaTime;
+        //    if (Npc.inSpecialInteractAnimation || UpdatePlayerAnimationsInterval > 0.14f)
+        //    {
+        //        UpdatePlayerAnimationsInterval = 0f;
+        //        currentAnimationSpeed = Npc.playerBodyAnimator.GetFloat("animationSpeed");
+        //        for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+        //        {
+        //            currentAnimationStateHash[i] = Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash;
+        //            if (previousAnimationStateHash[i] != currentAnimationStateHash[i])
+        //            {
+        //                previousAnimationStateHash[i] = currentAnimationStateHash[i];
+        //                previousAnimationSpeed = currentAnimationSpeed;
+        //                UpdatePlayerAnimationServerRpc(currentAnimationStateHash[i], currentAnimationSpeed);
+        //                return;
+        //            }
+        //        }
+        //        if (previousAnimationSpeed != currentAnimationSpeed)
+        //        {
+        //            previousAnimationSpeed = currentAnimationSpeed;
+        //            UpdatePlayerAnimationServerRpc(0, currentAnimationSpeed);
+        //        }
+        //    }
+        //}
+        //[ServerRpc]
+        //private void UpdatePlayerAnimationServerRpc(int animationState, float animationSpeed)
+        //{
+        //    NetworkManager networkManager = Npc.NetworkManager;
+        //    if (networkManager == null || !networkManager.IsListening)
+        //    {
+        //        return;
+        //    }
+        //    if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
+        //    {
+        //        if (OwnerClientId != networkManager.LocalClientId)
+        //        {
+        //            if (networkManager.LogLevel <= LogLevel.Normal)
+        //            {
+        //                Debug.LogError("Only the owner can invoke a ServerRpc that requires ownership!");
+        //            }
+        //            return;
+        //        }
+        //        ServerRpcParams serverRpcParams = new ServerRpcParams();
+        //        FastBufferWriter writer = __beginSendServerRpc(3473255830U, serverRpcParams, RpcDelivery.Reliable);
+        //        BytePacker.WriteValueBitPacked(writer, animationState);
+        //        writer.WriteValueSafe(animationSpeed, default);
+        //        __endSendServerRpc(ref writer, 3473255830U, serverRpcParams, RpcDelivery.Reliable);
+        //    }
+        //    if (__rpc_exec_stage != __RpcExecStage.Server || !networkManager.IsServer && !networkManager.IsHost)
+        //    {
+        //        return;
+        //    }
+        //    try
+        //    {
+        //        UpdatePlayerAnimationClientRpc(animationState, animationSpeed);
+        //    }
+        //    catch (Exception arg)
+        //    {
+        //        Debug.Log(string.Format("Client rpc parameters were likely not correct, so an RPC was skipped: {0}", arg));
+        //    }
+        //}
+        //[ClientRpc]
+        //private void UpdatePlayerAnimationClientRpc(int animationState, float animationSpeed)
+        //{
+        //    NetworkManager networkManager = NetworkManager;
+        //    if (networkManager == null || !networkManager.IsListening)
+        //    {
+        //        return;
+        //    }
+        //    if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
+        //    {
+        //        ClientRpcParams clientRpcParams = new ClientRpcParams();
+        //        FastBufferWriter writer = __beginSendClientRpc(3386813972U, clientRpcParams, RpcDelivery.Reliable);
+        //        BytePacker.WriteValueBitPacked(writer, animationState);
+        //        writer.WriteValueSafe(animationSpeed, default);
+        //        __endSendClientRpc(ref writer, 3386813972U, clientRpcParams, RpcDelivery.Reliable);
+        //    }
+        //    if (__rpc_exec_stage != __RpcExecStage.Client || !networkManager.IsClient && !networkManager.IsHost)
+        //    {
+        //        return;
+        //    }
+        //    if (IsOwner)
+        //    {
+        //        return;
+        //    }
+        //    if (Npc.playerBodyAnimator.GetFloat("animationSpeed") != animationSpeed)
+        //    {
+        //        Npc.playerBodyAnimator.SetFloat("animationSpeed", animationSpeed);
+        //    }
+        //    if (animationState != 0 && Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != animationState)
+        //    {
+        //        for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+        //        {
+        //            if (Npc.playerBodyAnimator.HasState(i, animationState))
+        //            {
+        //                Npc.playerBodyAnimator.CrossFadeInFixedTime(animationState, 0.1f);
+        //                return;
+        //            }
+        //        }
+        //    }
+        //}
     }
 }

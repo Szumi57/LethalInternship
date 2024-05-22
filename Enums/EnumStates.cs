@@ -6,7 +6,6 @@
         GetCloseToPlayer,
         JustLostPlayer,
         ChillWithPlayer,
-        UsingLadder,
-        Stuck,
+        FetchingObject
     }
 }

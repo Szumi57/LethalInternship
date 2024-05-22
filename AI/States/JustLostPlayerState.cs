@@ -1,10 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using LethalInternship.Patches;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace LethalInternship.AI.States
 {
@@ -15,7 +12,7 @@ namespace LethalInternship.AI.States
 
         private PlayerControllerB? player;
         private float lookingAroundTimer;
-        private float sqrDistanceWithTargetLastKnownPosition
+        private float SqrDistanceWithTargetLastKnownPosition
         {
             get
             {
@@ -24,7 +21,7 @@ namespace LethalInternship.AI.States
                     return 0f;
                 }
 
-                return (targetLastKnownPosition.Value - npcPilot.transform.position).sqrMagnitude;
+                return (targetLastKnownPosition.Value - npcController.Npc.transform.position).sqrMagnitude;
                 //return (targetLastKnownPosition.Value - ai.transform.position).sqrMagnitude;
             }
         }
@@ -54,6 +51,23 @@ namespace LethalInternship.AI.States
                 return;
             }
 
+            // Check for object to grab
+            if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
+            {
+                GameObject gameObjectGrabbleObject = ai.CheckLineOfSightForObjects();
+                if (gameObjectGrabbleObject)
+                {
+                    GrabbableObject component = gameObjectGrabbleObject.GetComponent<GrabbableObject>();
+                    if (component && !component.isHeld)
+                    {
+                        ai.SetDestinationToPositionInternAI(gameObjectGrabbleObject.transform.position);
+                        this.targetItem = component;
+                        ai.State = new FetchingObjectState(this);
+                        return;
+                    }
+                }
+            }
+
             // Try to reach target last known position
             if (!targetLastKnownPosition.HasValue)
             {
@@ -61,7 +75,7 @@ namespace LethalInternship.AI.States
                 return;
             }
 
-            EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcPilot.transform.position);
+            EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcController.Npc.transform.position);
             if (entrance != null)
             {
                 Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
@@ -76,14 +90,14 @@ namespace LethalInternship.AI.States
             }
 
             Plugin.Logger.LogDebug($"distance to last position {Vector3.Distance(targetLastKnownPosition.Value, ai.transform.position)}");
-            npcPilot.OrderToLookForward();
-            if (sqrDistanceWithTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
+            //npcController.OrderToLookForward();
+            if (SqrDistanceWithTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
             {
-                npcPilot.OrderToStopSprint();
+                npcController.OrderToStopSprint();
             }
             else
             {
-                npcPilot.OrderToSprint();
+                npcController.OrderToSprint();
             }
 
             if ((ai.transform.position - targetLastKnownPosition.Value).sqrMagnitude < Const.DISTANCE_CLOSE_ENOUGH_LAST_KNOWN_POSITION * Const.DISTANCE_CLOSE_ENOUGH_LAST_KNOWN_POSITION)

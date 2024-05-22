@@ -7,17 +7,18 @@ namespace LethalInternship.AI
     internal abstract class State
     {
         protected InternAI ai;
-        protected NpcController npcPilot;
+        protected NpcController npcController;
         protected AISearchRoutine searchForPlayers;
 
         protected Vector3? targetLastKnownPosition;
+        protected GrabbableObject? targetItem;
         
-        public EnumStuckStates EnumStuckStates;
         public float TimeAtLastUsingEntrance { get; set; }
 
         protected State(State newState) : this(newState.ai)
         {
             this.targetLastKnownPosition = newState.targetLastKnownPosition;
+            this.targetItem = newState.targetItem;
         }
 
         protected State(InternAI ai)
@@ -31,7 +32,7 @@ namespace LethalInternship.AI
             this.ai = ai;
             this.ai.SwitchToBehaviourState((int)this.GetState());
 
-            this.npcPilot = ai.NpcController;
+            this.npcController = ai.NpcController;
 
             this.searchForPlayers = new AISearchRoutine();
             this.searchForPlayers.randomized = true;

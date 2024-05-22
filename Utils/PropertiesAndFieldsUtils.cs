@@ -74,14 +74,21 @@ namespace LethalInternship.Utils
             }
         }
 
-        public static void ListPropertiesAndFields<T>(T obj)
+        public static void ListPropertiesAndFields<T>(T obj, bool hasToListProperties = true, bool hasToListFields = true)
         {
             Type typeObj = typeof(T);
             PropertyInfo[] arrObjProperties = GetReadablePropertiesOf(typeObj);
-            LogProperties(obj, typeObj, arrObjProperties);
-
+            if (hasToListProperties)
+            {
+                LogProperties(obj, typeObj, arrObjProperties);
+            }
+            Plugin.Logger.LogDebug(" ");
+            Plugin.Logger.LogDebug($"- Fields of \"{nameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
             FieldInfo[] arrObjFields = GetAllFields(typeObj);
-            LogFields(obj, typeObj, arrObjFields);
+            if (hasToListFields)
+            {
+                LogFields(obj, typeObj, arrObjFields);
+            }
         }
 
         private static void LogProperties<T>(T obj, Type typeObj, PropertyInfo[] arrObjProperties)

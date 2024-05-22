@@ -22,6 +22,8 @@ namespace LethalInternship.Patches
     [HarmonyPatch(typeof(StartOfRound))]
     internal class StartOfRoundPatch
     {
+        public static InternAI[] InternAIs = null!;
+
         private static EnemyType intern = null!;
         private static EnemyType? enemyTypeMaskedEnemy = null!;
 
@@ -84,64 +86,83 @@ namespace LethalInternship.Patches
             // Spawn intern
             //SpawnIntern(__instance.playerSpawnPositions[1]);
             //SpawnIntern(__instance.playerSpawnPositions[2]);
+
+            InternAIs = new InternAI[__instance.allPlayerObjects.Length];
+            Plugin.Logger.LogDebug($"InternIds {InternAIs.Length}");
         }
 
-        public static void SpawnIntern(Transform positionTransform)
+        public static InternAI? GetInternAI(int index)
+        {
+            if(InternAIs != null &&  InternAIs.Length > 0)
+            {
+                return InternAIs[index == -1 ? 0 : index];
+            }
+            return null;
+        }
+
+        public static void SpawnIntern(Transform positionTransform, bool isOutside = true)
         {
             // Method 1
             Vector3 spawnPosition = positionTransform.position;
             float yRot = positionTransform.eulerAngles.y;
             Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
 
+            Plugin.Logger.LogDebug($"-----------------  allPlayerObjects size : {StartOfRound.Instance.allPlayerObjects.Length}");
 
 
-            GameObject gameObjectToSpawn = StartOfRound.Instance.allPlayerObjects[0].gameObject;
-            GameObject internNPC = Object.Instantiate<GameObject>(gameObjectToSpawn, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
+            //GameObject gameObjectToSpawn = StartOfRound.Instance.allPlayerObjects[0].gameObject;
+            //GameObject internNPC = Object.Instantiate<GameObject>(gameObjectToSpawn, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
 
-            var listNetworkObjects = internNPC.GetComponentsInChildren<NetworkObject>();
-            NetworkObject networkObjectRoot = null!;
-            foreach (var networkObject in listNetworkObjects)
-            {
-                if (networkObject.transform.parent == null)
-                {
-                    networkObjectRoot = networkObject;
-                    continue;
-                }
+            //var listNetworkObjects = internNPC.GetComponentsInChildren<NetworkObject>();
+            //NetworkObject networkObjectRoot = null!;
+            //foreach (var networkObject in listNetworkObjects)
+            //{
+            //    if (networkObject.transform.parent == null)
+            //    {
+            //        networkObjectRoot = networkObject;
+            //        continue;
+            //    }
 
-                networkObject.Spawn(true);
-            }
-            networkObjectRoot.Spawn(true);
-            Plugin.Logger.LogDebug($"---------------");
+            //    networkObject.Spawn(true);
+            //}
+            //networkObjectRoot.Spawn(true);
 
 
+            GameObject internObjectParent = StartOfRound.Instance.allPlayerObjects[31];
+            PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[31];
+            internController.isPlayerDead = false;
+            internController.isPlayerControlled = true;
+            internController.transform.localScale *= 0.85f;
+            //TreesUtils.PrintTransformTree(internController.GetComponentsInChildren<Transform>());
+
+            //todo unique name and unique id
+            internController.actualClientId = internController.playerClientId;
+            internController.playerUsername = $"Intern #todo startofround{internController.playerClientId}";
+            internController.health = 50;
+            internController.isInsideFactory = !isOutside;
 
             Plugin.Logger.LogDebug($"Adding AI");
-            GameObject internGameobject = Object.Instantiate<GameObject>(intern.enemyPrefab);
-            internGameobject.GetComponentInChildren<NetworkObject>().Spawn(true);
-
-            var playerController = internNPC.GetComponentInChildren<PlayerControllerB>();
-            playerController.isPlayerControlled = true;
-            Plugin.Logger.LogDebug($"Local position playerController {playerController.transform.localPosition}");
-            playerController.transform.localScale *= 0.85f;
-            //todo unique name
-            playerController.playerUsername = "Intern";
-
-            var aiPrefab = internGameobject.GetComponent<InternAI>();
-
-            //Plugin.Logger.LogDebug($"---------------");
-            //ComponentUtil.ListAllComponents(exampleEnemyGameobject);
-
-            aiPrefab.ventAnimationFinished = true;
-            aiPrefab.creatureAnimator = playerController.playerBodyAnimator;
-            aiPrefab.NpcController = aiPrefab.gameObject.AddComponent<NpcController>();
-            aiPrefab.NpcController.Npc = playerController;
-            aiPrefab.eye = internNPC.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
-            aiPrefab.transform.position = playerController.transform.position;
-
-            aiPrefab.himself = internNPC;
+            GameObject internPrefab = Object.Instantiate<GameObject>(intern.enemyPrefab);
+            internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
+            var internAI = internPrefab.GetComponent<InternAI>();
+            internAI.ventAnimationFinished = true;
+            internAI.creatureAnimator = internController.playerBodyAnimator;
+            internAI.NpcController = new NpcController();
+            internAI.NpcController.Npc = internController;
+            internAI.eye = internObjectParent.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
+            internAI.transform.position = internController.transform.position;
+            internAI.LineRenderer = internAI.gameObject.AddComponent<LineRenderer>();
+            //internAI.isOutside = isOutside;
+            internAI.SetEnemyOutside(isOutside);
 
             // Plug ai on intern
-            aiPrefab.transform.parent = internNPC.transform;
+            internAI.transform.parent = internObjectParent.transform;
+
+            internObjectParent.transform.position = spawnPosition;
+            internObjectParent.SetActive(true);
+
+            InternAIs[internController.playerClientId] = internAI;
+            Plugin.Logger.LogDebug($"internAI {StartOfRoundPatch.InternAIs[internController.playerClientId]}");
 
             //ComponentUtil.ListAllComponents(internNPC);
 
@@ -173,29 +194,29 @@ namespace LethalInternship.Patches
             }
 
             GameObject exampleEnemyGameobject25151 = Object.Instantiate<GameObject>(intern.enemyPrefab, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
-            internGameobject.GetComponentInChildren<NetworkObject>().Spawn(true);
+            internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
             //-----
-            maskedGameobject.transform.position = internGameobject.transform.position;
-            maskedGameobject.transform.eulerAngles = internGameobject.transform.eulerAngles;
-            transformScavengerModel.parent = internGameobject.transform;
+            maskedGameobject.transform.position = internPrefab.transform.position;
+            maskedGameobject.transform.eulerAngles = internPrefab.transform.eulerAngles;
+            transformScavengerModel.parent = internPrefab.transform;
             //-----
 
             //
-            foreach (var transform in internGameobject.GetComponentsInChildren<Transform>()
+            foreach (var transform in internPrefab.GetComponentsInChildren<Transform>()
                                                             .Where(x => x.parent != null && x.parent.name == "spine.004" && x.name != "spine.004_end")
                                                             .ToList())
             {
                 Object.DestroyImmediate(transform.gameObject);
             }
-            internGameobject.transform.localScale = new Vector3(0.85f, 0.85f, 0.85f);
+            internPrefab.transform.localScale = new Vector3(0.85f, 0.85f, 0.85f);
             //
-            BoxCollider box = internGameobject.GetComponentsInChildren<BoxCollider>().First(x => x.name == "Collision");
+            BoxCollider box = internPrefab.GetComponentsInChildren<BoxCollider>().First(x => x.name == "Collision");
             box.center = boxMasked.center;
             box.size = boxMasked.size;
 
-            PropertiesAndFieldsUtils.ListPropertiesAndFields(internGameobject.GetComponent<InternAI>());
+            PropertiesAndFieldsUtils.ListPropertiesAndFields(internPrefab.GetComponent<InternAI>());
 
-            TreesUtils.PrintComponentsTreeOfGameObject(internGameobject);
+            TreesUtils.PrintComponentsTreeOfGameObject(internPrefab);
         }
     }
 }
