@@ -25,7 +25,7 @@ namespace LethalInternship.AI
     // Asset bundles cannot contain scripts, so our script lives here. It is important to get the
     // reference right, or else it will not find this file. See the guide for more information.
 
-    class InternAI : EnemyAI
+    internal class InternAI : EnemyAI
     {
         // We set these in our Asset Bundle, so we can disable warning CS0649:
         // Field 'field' is never assigned to, and will always have its default value 'value'
@@ -228,6 +228,7 @@ namespace LethalInternship.AI
             if (isEnemyDead)
             {
                 SetClientCalculatingAI(enable: false);
+                this.enabled = false;
             }
             else if (NpcController.Npc.isPlayerDead)
             {
@@ -371,10 +372,8 @@ namespace LethalInternship.AI
             float num = 1000f;
             float num2 = 1000f;
             int num3 = -1;
-            for (int i = 0; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
+            for (int i = 0; i < StartOfRound.Instance.allPlayerScripts.Length - InternManager.AllInternAIs.Length; i++)
             {
-                // todo refaire !!!!
-                if (i == 31) continue;
                 Vector3 position = StartOfRound.Instance.allPlayerScripts[i].gameplayCamera.transform.position;
                 if ((position - this.transform.position).sqrMagnitude > range * range)
                 {

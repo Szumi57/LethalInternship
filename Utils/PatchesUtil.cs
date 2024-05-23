@@ -24,7 +24,7 @@ namespace LethalInternship.Utils
 
         public static bool IsPlayerIntern(PlayerControllerB player)
         {
-            InternAI? internAI = StartOfRoundPatch.GetInternAI((int)player.playerClientId);
+            InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
             return internAI != null;
         }
 

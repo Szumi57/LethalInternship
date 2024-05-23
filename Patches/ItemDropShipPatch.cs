@@ -92,7 +92,7 @@ namespace LethalInternship.Patches
                 return;
             }
 
-            StartOfRoundPatch.SpawnIntern(___itemSpawnPositions[0], true);
+            InternManager.SpawnIntern(___itemSpawnPositions[0], true);
             _isInternSpawned = true;
 
             __instance.shipLanded = false;

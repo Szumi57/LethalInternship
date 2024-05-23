@@ -36,12 +36,11 @@ namespace LethalInternship.Patches
                                   ref List<int> ___currentAnimationStateHash,
                                   ref List<int> ___previousAnimationStateHash)
         {
-            InternAI? internAI = StartOfRoundPatch.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.GetInternAI((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId != __instance.playerClientId)
             {
                 return true;
             }
-
             // Use Intern update and pass all needed paramaters back and forth
             internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
             internAI.NpcController.IsJumping = ___isJumping;
@@ -53,7 +52,6 @@ namespace LethalInternship.Patches
             internAI.NpcController.PreviousAnimationSpeed = ___previousAnimationSpeed;
             internAI.NpcController.CurrentAnimationStateHash = ___currentAnimationStateHash;
             internAI.NpcController.PreviousAnimationStateHash = ___previousAnimationStateHash;
-
 
             internAI.NpcController.Update();
 
@@ -70,7 +68,7 @@ namespace LethalInternship.Patches
         [HarmonyPrefix]
         static bool LateUpdate_PreFix(PlayerControllerB __instance)
         {
-            InternAI? internAI = StartOfRoundPatch.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.GetInternAI((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
             {
                 LateUpdate_ReversePatch(internAI.NpcController.Npc);
@@ -1207,7 +1205,7 @@ namespace LethalInternship.Patches
                 return;
             }
 
-            StartOfRoundPatch.SpawnIntern(__instance.transform, !__instance.isInsideFactory);
+            InternManager.SpawnIntern(__instance.transform, !__instance.isInsideFactory);
         }
 
         #endregion

@@ -2,6 +2,7 @@
 {
     internal class Const
     {
+        public static readonly int INTERN_COUNT_MAX = 16;
         public static readonly float EPSILON = 0.01f;
 
         public static readonly float INTERN_FOV = 90f;

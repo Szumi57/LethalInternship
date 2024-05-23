@@ -14,7 +14,7 @@ namespace LethalInternship.Patches
                                            bool ___isDoorOpened,
                                            PlayerControllerB playerWhoTriggered)
         {
-            InternAI? internAI = StartOfRoundPatch.GetInternAI((int)playerWhoTriggered.playerClientId);
+            InternAI? internAI = InternManager.GetInternAI((int)playerWhoTriggered.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId != playerWhoTriggered.playerClientId)
             {
                 return true;

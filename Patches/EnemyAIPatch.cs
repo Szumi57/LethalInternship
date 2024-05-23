@@ -25,7 +25,7 @@ namespace LethalInternship.Patches
         {
             //todo !! ActualClientId not localClientId
             Plugin.Logger.LogDebug($"ChangeOwnershipOfEnemy index {(int)newOwnerClientId}");
-            InternAI? internAI = StartOfRoundPatch.GetInternAI((int)newOwnerClientId);
+            InternAI? internAI = InternManager.GetInternAI((int)newOwnerClientId);
             if (internAI != null)
             {
                 // do not change owner on an intern

@@ -1,14 +1,19 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Patches;
+using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using Unity.Netcode;
 using UnityEngine;
+
 
 namespace LethalInternship
 {
-
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin {
         // It is a good idea for our GUID to be more unique than only the plugin name. Notice that it is used in the BepInPlugin attribute.
@@ -20,7 +25,7 @@ namespace LethalInternship
         internal static new ManualLogSource Logger = null!;
         internal static Config BoundConfig { get; private set; } = null!;
 
-        private readonly Harmony _harmony = new(PluginInfo.PLUGIN_GUID);
+        private readonly Harmony _harmony = new(ModGUID);
 
         private void Awake() {
 
@@ -78,12 +83,15 @@ namespace LethalInternship
             
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
 
-            StartOfRoundPatch.Init();
+            InternManager.Init();
             _harmony.PatchAll(typeof(StartOfRoundPatch));
             _harmony.PatchAll(typeof(ItemDropShipPatch));
             _harmony.PatchAll(typeof(PlayerControllerBPatch));
             _harmony.PatchAll(typeof(DoorLockPatch));
             _harmony.PatchAll(typeof(EnemyAIPatch));
+            _harmony.PatchAll(typeof(SoundManagerPatch));
+            _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
+
             _harmony.PatchAll(typeof(GrabbableObjectPatch));
         }
 
@@ -102,6 +110,6 @@ namespace LethalInternship
                     }
                 }
             }
-        } 
+        }
     }
 }

@@ -80,6 +80,11 @@ namespace LethalInternship.AI
         private float floatSprint;
         private Coroutine jumpCoroutine = null!;
 
+        public NpcController(PlayerControllerB npc)
+        {
+            this.Npc = npc;
+        }
+
         public void Awake()
         {
             Plugin.Logger.LogDebug("Awake intern controller.");
@@ -103,7 +108,7 @@ namespace LethalInternship.AI
             //Npc.sprintMeter = 1f;
             Npc.ItemSlots = new GrabbableObject[1];
             //RightArmProceduralTargetBasePosition = Npc.rightArmProceduralTarget.localPosition;
-            Npc.playerUsername = string.Format("Intern #todoawake{0}", Npc.playerClientId);
+            Npc.playerUsername = string.Format("Intern #{0}", Npc.playerClientId);
             //Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
             //if (Npc.gameObject.GetComponent<Rigidbody>())
             //{
