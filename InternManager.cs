@@ -13,6 +13,7 @@ namespace LethalInternship
 {
     internal static class InternManager
     {
+        public static int AllEntitiesCount;
         public static InternAI[] AllInternAIs = null!;
         public static EnemyType InternNPCPrefab = null!;
 
@@ -56,40 +57,75 @@ namespace LethalInternship
             float yRot = positionTransform.eulerAngles.y;
             Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
 
-            PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
-            internController.isPlayerDead = false;
-            internController.isPlayerControlled = true;
-            internController.health = 50;
-            internController.isInsideFactory = !isOutside;
-
             GameObject internObjectParent = instance.allPlayerObjects[indexNextPlayerObject];
             internObjectParent.transform.position = spawnPosition;
             internObjectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
 
-            int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - InternManager.AllInternAIs.Length);
-            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {indexNextPlayerObject}");
-            GameObject internPrefab = Object.Instantiate<GameObject>(InternManager.InternNPCPrefab.enemyPrefab);
-            internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
-            InternAI internAI = internPrefab.GetComponent<InternAI>();
+            PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
+            internController.isPlayerDead = false;
+            internController.isPlayerControlled = true;
+            internController.health = 50;
+            internController.DisablePlayerModel(internObjectParent, true, true);
+            internController.isInsideFactory = !isOutside;
+            internController.isMovementHindered = 0;
+            internController.criticallyInjured = false;
+            internController.bleedingHeavily = false;
+            internController.activatingItem = false;
+            internController.twoHanded = false;
+            internController.inSpecialInteractAnimation = false;
+            internController.freeRotationInInteractAnimation = false;
+            internController.disableSyncInAnimation = false;
+            internController.inAnimationWithEnemy = null;
+            internController.holdingWalkieTalkie = false;
+            internController.speakingToWalkieTalkie = false;
+            internController.isSinking = false;
+            internController.isUnderwater = false;
+            internController.sinkingValue = 0f;
+
+            int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - AllInternAIs.Length);
+            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerClientId}");
+            InternAI internAI = null!;
+            internAI = AllInternAIs[indexNextIntern];
+            if (internAI == null)
+            {
+                GameObject internPrefab = Object.Instantiate<GameObject>(InternNPCPrefab.enemyPrefab);
+                internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
+                internAI = internPrefab.GetComponent<InternAI>();
+                internAI.creatureAnimator = internController.playerBodyAnimator;
+                internAI.NpcController = new NpcController(internController);
+                internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
+
+
+                internAI.LineRenderer1 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer1.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer1.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer2 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer2.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer2.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer3 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer3.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer3.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer4 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer4.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer4.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer5 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer5.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer5.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                AllInternAIs[indexNextIntern] = internAI;
+            }
+
             // Plug ai on intern body
             internAI.transform.parent = internObjectParent.transform;
 
             internAI.SetEnemyOutside(isOutside);
-            internAI.creatureAnimator = internController.playerBodyAnimator;
-            internAI.NpcController = new NpcController(internController);
-            internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
-            internAI.LineRenderer = internAI.gameObject.AddComponent<LineRenderer>();
-            internAI.ventAnimationFinished = true;
-            internAI.transform.position = internController.transform.position;
-            internAI.enabled = true;
-            InternManager.AllInternAIs[indexNextIntern] = internAI;
+            internAI.Init();
 
             internObjectParent.SetActive(true);
-            //GameObject internNPC = Object.Instantiate<GameObject>(internObjectParent, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
-
-            //ComponentUtil.ListAllComponents(internNPC);
-            //PropertiesUtils.ListProperties(internNPC.GetComponentInChildren<PlayerControllerB>());
-            //PropertiesUtils.ListProperties(internNPC.GetComponentInChildren<CharacterController>());
         }
 
         private static int GetNextAvailablePlayerObject()
@@ -131,85 +167,84 @@ namespace LethalInternship
 
         public static void ResizeAndPopulateInterns()
         {
-            int internCount = 16;
-
             StartOfRound instance = StartOfRound.Instance;
-            int oldPlayersCount = instance.allPlayerObjects.Length;
-            int playerAndInternCount = oldPlayersCount + internCount;
-            Array.Resize(ref instance.allPlayerObjects, playerAndInternCount);
-            Array.Resize(ref instance.allPlayerScripts, playerAndInternCount);
-            Array.Resize(ref instance.gameStats.allPlayerStats, playerAndInternCount);
-            Array.Resize(ref instance.playerSpawnPositions, playerAndInternCount);
-            Plugin.Logger.LogDebug($"Resize for interns from {oldPlayersCount} to {playerAndInternCount}");
+            int irlPlayersCount = instance.allPlayerObjects.Length;
+            int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE;
+            Array.Resize(ref instance.allPlayerObjects, irlPlayersAndInternsCount);
+            Array.Resize(ref instance.allPlayerScripts, irlPlayersAndInternsCount);
+            Array.Resize(ref instance.gameStats.allPlayerStats, irlPlayersAndInternsCount);
+            Array.Resize(ref instance.playerSpawnPositions, irlPlayersAndInternsCount);
+            Plugin.Logger.LogDebug($"Resize for interns from irl players count of {irlPlayersCount} to {irlPlayersAndInternsCount}");
+            AllEntitiesCount = irlPlayersAndInternsCount;
 
-            if (AllPlayerObjectsBackUp != null && AllPlayerObjectsBackUp.Length > 0)
+            if (AllPlayerObjectsBackUp == null || AllPlayerObjectsBackUp.Length == 0)
             {
-                //foreach (InternAI ai in InternAIs)
-                //{
-                //    ai.enabled = true;
-                //    GameObject internNPC = ai.NpcController.Npc.transform.root.gameObject;
-
-                //    var listNetworkObjects = internNPC.GetComponentsInChildren<NetworkObject>();
-                //    NetworkObject networkObjectRoot = null!;
-                //    foreach (var networkObject in listNetworkObjects)
-                //    {
-                //        if (networkObject.transform.parent == null)
-                //        {
-                //            networkObjectRoot = networkObject;
-                //            continue;
-                //        }
-
-                //        networkObject.Despawn(true);
-                //    }
-                //    networkObjectRoot.Despawn(true);
-
-                //    Object.DestroyImmediate(ai.NpcController.Npc.gameObject);
-                //    //Object.DestroyImmediate(ai.gameObject);
-                //    NetworkManager.Singleton.PrefabHandler.RemoveHandler(StartOfRound.Instance.allPlayerObjects[3].gameObject);
-                //    Object.DestroyImmediate(internNPC);
-                //}
-
-                for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
-                {
-                    instance.allPlayerObjects[i + oldPlayersCount] = AllPlayerObjectsBackUp[i];
-                    instance.allPlayerScripts[i + oldPlayersCount] = AllPlayerScriptsBackUp[i];
-                    instance.gameStats.allPlayerStats[i + oldPlayersCount] = new PlayerStats();
-                    instance.playerSpawnPositions[i + oldPlayersCount] = instance.playerSpawnPositions[3];
-                }
+                AllInternAIs = new InternAI[Const.INTERN_AVAILABLE];
+                AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE];
+                AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE];
             }
-            else
+
+            GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
+            for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
             {
-                AllInternAIs = new InternAI[internCount];
-                AllPlayerObjectsBackUp = new GameObject[internCount];
-                AllPlayerScriptsBackUp = new PlayerControllerB[internCount];
-                GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
-
-                for (int i = oldPlayersCount; i < playerAndInternCount; i++)
+                if (AllPlayerObjectsBackUp[i] != null)
                 {
-                    GameObject internNPC = Object.Instantiate<GameObject>(internObjectParent, Vector3.zero, Quaternion.identity);
-                    SpawnNetworkObjectsOfGameObject(internNPC);
-
-                    PlayerControllerB internController = internNPC.GetComponentInChildren<PlayerControllerB>();
-                    internController.isPlayerDead = false;
-                    internController.isPlayerControlled = false;
-                    internController.transform.localScale *= 0.85f;
-
-                    //todo unique name and unique id
-                    internController.playerClientId = (ulong)i;
-                    internController.actualClientId = internController.playerClientId;
-                    internController.DropAllHeldItems(false, false);
-
-                    internNPC.SetActive(false);
-
-                    instance.allPlayerObjects[i] = internNPC;
-                    instance.allPlayerScripts[i] = internController;
-                    instance.gameStats.allPlayerStats[i] = new PlayerStats();
-                    instance.playerSpawnPositions[i] = instance.playerSpawnPositions[3];
-
-                    AllPlayerObjectsBackUp[i - oldPlayersCount] = internNPC;
-                    AllPlayerScriptsBackUp[i - oldPlayersCount] = internController;
+                    Plugin.Logger.LogDebug($"use of backup : {AllPlayerObjectsBackUp[i]}");
+                    instance.allPlayerObjects[i + irlPlayersCount] = AllPlayerObjectsBackUp[i];
+                    instance.allPlayerScripts[i + irlPlayersCount] = AllPlayerScriptsBackUp[i];
+                    instance.gameStats.allPlayerStats[i + irlPlayersCount] = new PlayerStats();
+                    instance.playerSpawnPositions[i + irlPlayersCount] = instance.playerSpawnPositions[3];
+                    continue;
                 }
+
+                GameObject internNPC = Object.Instantiate<GameObject>(internObjectParent, Vector3.zero, Quaternion.identity);
+                SpawnNetworkObjectsOfGameObject(internNPC);
+
+                PlayerControllerB internController = internNPC.GetComponentInChildren<PlayerControllerB>();
+                internController.isPlayerDead = false;
+                internController.isPlayerControlled = false;
+                internController.transform.localScale *= 0.85f;
+
+                //todo unique name and unique id
+                internController.playerClientId = (ulong)(i + irlPlayersCount);
+                internController.actualClientId = internController.playerClientId;
+                internController.DropAllHeldItems(false, false);
+
+                internNPC.SetActive(false);
+
+                instance.allPlayerObjects[i + irlPlayersCount] = internNPC;
+                instance.allPlayerScripts[i + irlPlayersCount] = internController;
+                instance.gameStats.allPlayerStats[i + irlPlayersCount] = new PlayerStats();
+                instance.playerSpawnPositions[i + irlPlayersCount] = instance.playerSpawnPositions[3];
+
+                AllPlayerObjectsBackUp[i] = internNPC;
+                AllPlayerScriptsBackUp[i] = internController;
             }
+
+            //foreach (InternAI ai in InternAIs)
+            //{
+            //    ai.enabled = true;
+            //    GameObject internNPC = ai.NpcController.Npc.transform.root.gameObject;
+
+            //    var listNetworkObjects = internNPC.GetComponentsInChildren<NetworkObject>();
+            //    NetworkObject networkObjectRoot = null!;
+            //    foreach (var networkObject in listNetworkObjects)
+            //    {
+            //        if (networkObject.transform.parent == null)
+            //        {
+            //            networkObjectRoot = networkObject;
+            //            continue;
+            //        }
+
+            //        networkObject.Despawn(true);
+            //    }
+            //    networkObjectRoot.Despawn(true);
+
+            //    Object.DestroyImmediate(ai.NpcController.Npc.gameObject);
+            //    //Object.DestroyImmediate(ai.gameObject);
+            //    NetworkManager.Singleton.PrefabHandler.RemoveHandler(StartOfRound.Instance.allPlayerObjects[3].gameObject);
+            //    Object.DestroyImmediate(internNPC);
+            //}
         }
 
         private static void SpawnNetworkObjectsOfGameObject(GameObject gameObject)

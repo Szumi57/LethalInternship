@@ -8,7 +8,7 @@ namespace LethalInternship.Utils
 {
     internal static class DrawUtil
     {
-        public static void DrawLine(LineRenderer lr, Ray ray, float length)
+        public static void DrawWhiteLine(LineRenderer lr, Ray ray, float length)
         {
             DrawLine(lr, ray, length, UnityEngine.Color.white);
         }

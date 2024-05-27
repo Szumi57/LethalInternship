@@ -27,12 +27,12 @@ namespace LethalInternship.AI
             {
                 throw new System.Exception("Enemy AI is null.");
             }
-            Plugin.Logger.LogDebug($"new state :                 {this.GetState()}");
 
             this.ai = ai;
             this.ai.SwitchToBehaviourState((int)this.GetState());
 
             this.npcController = ai.NpcController;
+            Plugin.Logger.LogDebug($"Intern {npcController.Npc.playerClientId} new state :                 {this.GetState()}");
 
             this.searchForPlayers = new AISearchRoutine();
             this.searchForPlayers.randomized = true;

@@ -109,6 +109,7 @@ namespace LethalInternship.AI
             Npc.ItemSlots = new GrabbableObject[1];
             //RightArmProceduralTargetBasePosition = Npc.rightArmProceduralTarget.localPosition;
             Npc.playerUsername = string.Format("Intern #{0}", Npc.playerClientId);
+            Npc.usernameBillboardText.text = Npc.playerUsername;
             //Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
             //if (Npc.gameObject.GetComponent<Rigidbody>())
             //{
@@ -157,7 +158,10 @@ namespace LethalInternship.AI
                     }
                 }
                 Npc.moveInputVector.y = this.lastMoveVector.y;
-
+                //if (floatSprint > 0f)
+                //{
+                //    Plugin.Logger.LogDebug($"-----------           Move {Npc.moveInputVector.y}");
+                //}
                 UpdateTurnBodyTowardsDirection();
 
                 Npc.ForceTurnTowardsTarget();
@@ -429,7 +433,11 @@ namespace LethalInternship.AI
                     // Move
                     //----------------------
                     Npc.thisController.Move(vector2 * Time.deltaTime);
+                    //if(floatSprint >  0f)
+                    //{
                     //Plugin.Logger.LogDebug($"-----------           Move {vector2 * Time.deltaTime}, mag {(vector2 * Time.deltaTime).magnitude}");
+
+                    //}
                     if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame)
                     {
                         if (!Npc.thisController.isGrounded)

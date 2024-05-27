@@ -15,6 +15,12 @@ namespace LethalInternship.Utils
     internal static class PatchesUtil
     {
         static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerIntern(new PlayerControllerB()));
+        static readonly MethodInfo IsPlayerLocalOrInternMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerLocalOrIntern(new PlayerControllerB()));
+
+        public static CodeInstruction CallIsPlayerLocalOrInternMethod()
+        {
+            return new CodeInstruction(OpCodes.Call, IsPlayerLocalOrInternMethod);
+        }
 
         public static bool IsColliderFromIntern(Collider collider)
         {
@@ -24,8 +30,14 @@ namespace LethalInternship.Utils
 
         public static bool IsPlayerIntern(PlayerControllerB player)
         {
+            if (player == null) return false;
             InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
             return internAI != null;
+        }
+
+        public static bool IsPlayerLocalOrIntern(PlayerControllerB player)
+        {
+            return player == GameNetworkManager.Instance.localPlayerController || IsPlayerIntern(player);
         }
 
         public static List<CodeInstruction> InsertIsPlayerInternInstructions(List<CodeInstruction> codes,

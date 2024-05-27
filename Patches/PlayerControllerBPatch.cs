@@ -77,30 +77,29 @@ namespace LethalInternship.Patches
             return true;
         }
 
-        //[HarmonyPatch("Awake")]
-        //[HarmonyPrefix]
-        //static bool Awake_PreFix(PlayerControllerB __instance,
-        //                         ref bool ___isCameraDisabled,
-        //                         ref Vector3 ___rightArmProceduralTargetBasePosition,
-        //                         ref int ___previousAnimationState)
-        //{
-        //    Plugin.Logger.LogDebug($"wtf {(int)__instance.playerClientId}");
-        //    InternAI? internAI = StartOfRoundPatch.GetInternAI((int)__instance.playerClientId);
-        //    if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
-        //    {
-        //        internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
-        //        internAI.NpcController.RightArmProceduralTargetBasePosition = ___rightArmProceduralTargetBasePosition;
-        //        internAI.NpcController.PreviousAnimationState = ___previousAnimationState;
+        [HarmonyPatch("Awake")]
+        [HarmonyPrefix]
+        static bool Awake_PreFix(PlayerControllerB __instance,
+                                 ref bool ___isCameraDisabled,
+                                 ref Vector3 ___rightArmProceduralTargetBasePosition,
+                                 ref int ___previousAnimationState)
+        {
+            InternAI? internAI = InternManager.GetInternAI((int)__instance.playerClientId);
+            if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
+            {
+                //internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
+                //internAI.NpcController.RightArmProceduralTargetBasePosition = ___rightArmProceduralTargetBasePosition;
+                //internAI.NpcController.PreviousAnimationState = ___previousAnimationState;
 
-        //        internAI.NpcController.Awake();
+                //internAI.NpcController.Awake();
 
-        //        ___isCameraDisabled = internAI.NpcController.IsCameraDisabled;
-        //        ___rightArmProceduralTargetBasePosition = internAI.NpcController.RightArmProceduralTargetBasePosition;
-        //        ___previousAnimationState = internAI.NpcController.PreviousAnimationState;
-        //        return false;
-        //    }
-        //    return true;
-        //}
+                //___isCameraDisabled = internAI.NpcController.IsCameraDisabled;
+                //___rightArmProceduralTargetBasePosition = internAI.NpcController.RightArmProceduralTargetBasePosition;
+                //___previousAnimationState = internAI.NpcController.PreviousAnimationState;
+                return false;
+            }
+            return true;
+        }
 
         [HarmonyPatch("DamagePlayer")]
         [HarmonyPrefix]
@@ -110,7 +109,7 @@ namespace LethalInternship.Patches
             {
                 // todo: Bootleg invulnerability
                 //Plugin.Logger.LogDebug($"Bootleg invulnerability (return false)");
-                return false;
+                //return false;
                 return true;
             }
             return true;
@@ -514,8 +513,6 @@ namespace LethalInternship.Patches
                 }
 
                 PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 4);
-
-
                 startIndex = -1;
             }
             else
@@ -1207,7 +1204,6 @@ namespace LethalInternship.Patches
 
             InternManager.SpawnIntern(__instance.transform, !__instance.isInsideFactory);
         }
-
         #endregion
     }
 

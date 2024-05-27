@@ -4,6 +4,7 @@ using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches;
+using LethalInternship.Patches.EnemiesPatches;
 using System;
 using System.IO;
 using System.Linq;
@@ -91,6 +92,13 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(EnemyAIPatch));
             _harmony.PatchAll(typeof(SoundManagerPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
+
+            // Enemies
+            _harmony.PatchAll(typeof(CrawlerAIPatch));
+            _harmony.PatchAll(typeof(RedLocustBeesPatch));
+            _harmony.PatchAll(typeof(SandSpiderAIPatch));
+            _harmony.PatchAll(typeof(SpringManAIPatch));
+            _harmony.PatchAll(typeof(BlobAIPatch));
 
             _harmony.PatchAll(typeof(GrabbableObjectPatch));
         }

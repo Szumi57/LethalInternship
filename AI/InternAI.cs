@@ -84,7 +84,11 @@ namespace LethalInternship.AI
         private float timerCheckLadders;
 
         public NpcController NpcController = null!;
-        public LineRenderer LineRenderer = null!;
+        public LineRenderer LineRenderer1 = null!;
+        public LineRenderer LineRenderer2 = null!;
+        public LineRenderer LineRenderer3 = null!;
+        public LineRenderer LineRenderer4 = null!;
+        public LineRenderer LineRenderer5 = null!;
 
         [Conditional("DEBUG")]
         void LogIfDebugBuild(string text)
@@ -104,14 +108,6 @@ namespace LethalInternship.AI
 
             //todo start bloodpools ?
 
-            // Behaviour states
-            enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumStates)).Length];
-            int index = 0;
-            foreach (var state in (EnumStates[])Enum.GetValues(typeof(EnumStates)))
-            {
-                enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
-            }
-
             // AIIntervalTime
             if (AIIntervalTime == 0f)
                 if (AIIntervalTime == 0f)
@@ -128,7 +124,6 @@ namespace LethalInternship.AI
                 {
                     return;
                 }
-
 
                 if (interactsTrigger[i].isLadder && interactsTrigger[i].ladderHorizontalPosition != null)
                 {
@@ -198,10 +193,7 @@ namespace LethalInternship.AI
             enemyRayHit = default;
             addPlayerVelocityToDestination = 3f;
 
-            this.transform.position = NpcController.Npc.transform.position;
-            agent.Warp(NpcController.Npc.transform.position);
-            currentBehaviourStateIndex = -1;
-            State = new SearchingForPlayerState(this);
+            Init();
 
             // --- old code
             timeSinceHittingLocalPlayer = 0;
@@ -211,6 +203,32 @@ namespace LethalInternship.AI
             isDeadAnimationDone = false;
         }
 
+        public void Init()
+        {
+            this.ventAnimationFinished = true;
+            this.transform.position = NpcController.Npc.transform.position;
+            if (agent != null)
+            {
+                agent.Warp(NpcController.Npc.transform.position);
+                this.agent.enabled = true;
+                this.agent.speed = 3.5f;
+            }
+            this.isEnemyDead = false;
+            this.enabled = true;
+
+            // Behaviour states
+            enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumStates)).Length];
+            int index = 0;
+            foreach (var state in (EnumStates[])Enum.GetValues(typeof(EnumStates)))
+            {
+                enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
+            }
+            currentBehaviourStateIndex = -1;
+            State = new SearchingForPlayerState(this);
+        }
+
+        private float timerRayCast;
+        private float timerLimitRayCast = 0.05f;
         public override void Update()
         {
             if (!IsOwner)
@@ -247,43 +265,43 @@ namespace LethalInternship.AI
                 return;
             }
 
-            //    private float timerRayCast;
-            //private float timerLimitRayCast = 0.05f;
-            //    if (timerRayCast > timerLimitRayCast)
-            //    {
-            //        timerRayCast = 0f;
-            //        if (NpcController.HasToMove
-            //            && !NpcController.Npc.inSpecialInteractAnimation
-            //            && !NpcController.Npc.isClimbingLadder)
-            //        {
 
-            //            Vector3 axis = Vector3.Cross(NpcController.Npc.playerEye.forward, Vector3.up);
-            //            if (axis == Vector3.zero) axis = Vector3.right;
-            //            Ray scanRay = new Ray(NpcController.Npc.playerEye.position, Quaternion.AngleAxis(-70, axis) * NpcController.Npc.playerEye.forward);
-            //            float lengthScanRay = 5f;
-            //            DrawUtil.DrawLine(LineRenderer, scanRay, lengthScanRay);
-            //            if (!Physics.Raycast(scanRay, lengthScanRay, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))
-            //            {
-            //                NpcController.OrderToJump();
-            //                Log($"======= HOLE ???");
-            //                //Ray scanHoleRay = new Ray(NpcController.Npc.playerEye.position, Quaternion.AngleAxis(-90, axis) * NpcController.Npc.playerEye.forward);
-            //                //float lengthScanHoleRay = 20f;
-            //                //DrawUtil.DrawLine(LineRenderer, scanHoleRay, lengthScanHoleRay, UnityEngine.Color.red);
-            //                //if (!Physics.Raycast(scanRay, lengthScanRay, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))
-            //                //{
-            //                //    Log($"======= HOLE !!!!!!!!!!!!!!!");
-            //                //    NpcController.OrderToJump();
-            //                //}
-            //            }
-            //        }
-            //    }
-            //    timerRayCast += Time.deltaTime;
+            if (timerRayCast > timerLimitRayCast)
+            {
+                timerRayCast = 0f;
+                if (NpcController.HasToMove
+                    && !NpcController.Npc.inSpecialInteractAnimation
+                    && !NpcController.Npc.isClimbingLadder)
+                {
+
+                    //RayUtil.RayCastAndDraw(LineRenderer1, NpcController.Npc.thisController.transform.position + new Vector3(0, 0.5f, 0), NpcController.Npc.thisController.transform.forward, 
+                    //                       -70f, 5);
+
+
+                    //Vector3 nextDestination = (this.transform.position + new Vector3(0, 0.5f, 0)) - NpcController.Npc.thisController.transform.position;
+                    //RayUtil.RayCastDownAndDraw(LineRenderer5, midDistanceNextDestination,
+                    //                                          -NpcController.Npc.thisController.transform.up,
+                    //                                          1f);
+                    //PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
+                    //Log($"======= HOLE ???");
+                    //Ray scanHoleRay = new Ray(NpcController.Npc.playerEye.position, Quaternion.AngleAxis(-90, axis) * NpcController.Npc.playerEye.forward);
+                    //float lengthScanHoleRay = 20f;
+                    //DrawUtil.DrawLine(LineRenderer, scanHoleRay, lengthScanHoleRay, UnityEngine.Color.red);
+                    //if (!Physics.Raycast(scanRay, lengthScanRay, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))
+                    //{
+                    //    Log($"======= HOLE !!!!!!!!!!!!!!!");
+                    //    NpcController.OrderToJump();
+                    //}
+
+                }
+            }
+            timerRayCast += Time.deltaTime;
 
             //Transform t = NpcController.Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R");
             //Ray scanHoleRay = new Ray(t.position, t.forward);
-            Ray scanHoleRay = new Ray(NpcController.Npc.localItemHolder.position, NpcController.Npc.localItemHolder.forward);
-            float lengthScanHoleRay = 1f;
-            DrawUtil.DrawLine(LineRenderer, scanHoleRay, lengthScanHoleRay, UnityEngine.Color.red);
+            //Ray scanHoleRay = new Ray(NpcController.Npc.localItemHolder.position, NpcController.Npc.localItemHolder.forward);
+            //float lengthScanHoleRay = 1f;
+            //DrawUtil.DrawLine(LineRenderer, scanHoleRay, lengthScanHoleRay, UnityEngine.Color.red);
 
             if (NpcController.HasToMove)
             {
@@ -310,15 +328,9 @@ namespace LethalInternship.AI
                 return;
             };
 
-            //Log($"dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
-            if ((this.transform.position - NpcController.Npc.transform.position).magnitude > 3f)
-            {
-                Log($"============ HOLE ????");
-            }
+            State.DoAI();
 
             CheckIfStuck();
-
-            State.DoAI();
         }
 
         public void OrderMoveToDestination()
@@ -422,9 +434,64 @@ namespace LethalInternship.AI
                 && !NpcController.Npc.isClimbingLadder)
             {
                 // Doors
-                CheckForDoorToOpen();
+                bool isOpeningDoor = CheckForDoorToOpen();
                 // Ladders
-                CheckForLaddersToUse();
+                bool isUsingLadder = CheckForLaddersToUse();
+
+                // Check for hole
+                if (!isOpeningDoor && !isUsingLadder)
+                {
+                    Log($"dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
+                    if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > 2f * 2f)
+                    {
+                        NpcController.Npc.transform.position = this.transform.position;
+                        Log($"============ HOLE ????");
+                    }
+                }
+
+                // Check for stuck
+                bool legsFreeCheck1 = !RayUtil.RayCastForwardAndDraw(LineRenderer1, NpcController.Npc.thisController.transform.position + new Vector3(0, 0.4f, 0),
+                                                                NpcController.Npc.thisController.transform.forward,
+                                                                0.5f);
+                bool legsFreeCheck2 = !RayUtil.RayCastForwardAndDraw(LineRenderer1, NpcController.Npc.thisController.transform.position + new Vector3(0, 0.6f, 0),
+                                                                NpcController.Npc.thisController.transform.forward,
+                                                                0.5f);
+                bool legsFreeCheck = legsFreeCheck1 && legsFreeCheck2;
+                bool canMoveCheck = !RayUtil.RayCastForwardAndDraw(LineRenderer3, NpcController.Npc.thisController.transform.position + new Vector3(0, 1.3f, 0),
+                                                             NpcController.Npc.thisController.transform.forward,
+                                                             0.5f);
+                bool headFreeCheck = !RayUtil.RayCastForwardAndDraw(LineRenderer4, NpcController.Npc.thisController.transform.position + new Vector3(0, 2.1f, 0),
+                                                             NpcController.Npc.thisController.transform.forward,
+                                                             0.5f);
+                bool headFreeWhenJumpingCheck = !RayUtil.RayCastForwardAndDraw(LineRenderer2, NpcController.Npc.thisController.transform.position + new Vector3(0, 3f, 0),
+                                                             NpcController.Npc.thisController.transform.forward,
+                                                             0.5f);
+                if (!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheck)
+                {
+                    if (!NpcController.IsJumping)
+                    {
+                        Log($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheck -> jump");
+                        PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
+                    }
+                }
+                else if (legsFreeCheck && !headFreeCheck && canMoveCheck)
+                {
+                    if (!NpcController.Npc.isCrouching)
+                    {
+                        Log($"legsFreeCheck && !headFreeCheck && canMoveCheck -> crouch");
+                        NpcController.OrderToToggleCrouch();
+                    }
+                }
+                else if (legsFreeCheck && headFreeCheck && canMoveCheck)
+                {
+                    if (NpcController.Npc.isCrouching)
+                    {
+                        Log($"uncrouch (unsprint too)");
+                        NpcController.OrderToStopSprint();
+                        NpcController.OrderToToggleCrouch();
+                    }
+                }
+
 
                 // Controller stuck in world ?
                 //Log($"ai progression {(this.transform.position - agentLastPosition).sqrMagnitude}");
@@ -443,17 +510,17 @@ namespace LethalInternship.AI
                     //npcControllerLastPosition = NpcController.Npc.transform.position;
 
                     // UnCrouch
-                    if (NpcController.Npc.isCrouching)
-                    {
-                        NpcController.OrderToToggleCrouch();
-                    }
+                    //if (NpcController.Npc.isCrouching)
+                    //{
+                    //    NpcController.OrderToToggleCrouch();
+                    //}
 
-                    if (hasTriedToJump && NpcController.Npc.thisController.isGrounded)
-                    {
-                        agent.Warp(NpcController.Npc.transform.position);
-                        Log($"ai catch up body after jump");
-                        hasTriedToJump = false;
-                    }
+                    //if (hasTriedToJump && NpcController.Npc.thisController.isGrounded)
+                    //{
+                    //    agent.Warp(NpcController.Npc.transform.position);
+                    //    Log($"ai catch up body after jump");
+                    //    hasTriedToJump = false;
+                    //}
                 }
 
                 if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
@@ -463,31 +530,21 @@ namespace LethalInternship.AI
                     NpcController.Npc.thisPlayerBody.transform.position = this.transform.position;
                 }
 
-                if (timeSinceStuck > Const.TIMER_STUCK_AFTER_TRIED_JUMP)
-                {
-                    Plugin.Logger.LogDebug("Crouch ?");
-                    NpcController.OrderToToggleCrouch();
-                }
+                //if (timeSinceStuck > Const.TIMER_STUCK_AFTER_TRIED_JUMP)
+                //{
+                //    Plugin.Logger.LogDebug("Crouch ?");
+                //    NpcController.OrderToToggleCrouch();
+                //}
 
-                if (timeSinceStuck > Const.TIMER_STUCK)
-                {
-                    if (!hasTriedToJump)
-                    {
-                        Plugin.Logger.LogDebug("Jump ?");
-                        PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
-                        hasTriedToJump = true;
-                    }
-                }
-            }
-            else if (!NpcController.HasToMove
-                && !NpcController.Npc.inSpecialInteractAnimation
-                && !NpcController.Npc.isClimbingLadder)
-            {
-                // UnCrouch
-                if (NpcController.Npc.isCrouching)
-                {
-                    NpcController.OrderToToggleCrouch();
-                }
+                //if (timeSinceStuck > Const.TIMER_STUCK)
+                //{
+                //    if (!hasTriedToJump)
+                //    {
+                //        Plugin.Logger.LogDebug("Jump ?");
+                //        PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
+                //        hasTriedToJump = true;
+                //    }
+                //}
             }
         }
 
@@ -577,7 +634,7 @@ namespace LethalInternship.AI
             return null;
         }
 
-        private void CheckForDoorToOpen()
+        private bool CheckForDoorToOpen()
         {
             if (timerCheckDoor > Const.TIMER_CHECK_DOOR)
             {
@@ -588,14 +645,16 @@ namespace LethalInternship.AI
                 {
                     door.OpenOrCloseDoor(NpcController.Npc);
                     door.OpenDoorAsEnemyServerRpc();
+                    return true;
                 }
             }
             timerCheckDoor += AIIntervalTime;
+            return false;
         }
 
-        private void CheckForLaddersToUse()
+        private bool CheckForLaddersToUse()
         {
-            if (timerCheckLadders > Const.TIMER_CHECK_DOOR)
+            if (timerCheckLadders > Const.TIMER_CHECK_LADDERS)
             {
                 timerCheckLadders = 0f;
 
@@ -604,10 +663,11 @@ namespace LethalInternship.AI
                 {
                     Plugin.Logger.LogDebug("-> wants to use ladder");
                     ladder.Interact(NpcController.Npc.thisPlayerBody);
-                    return;
+                    return true;
                 }
             }
             timerCheckLadders += AIIntervalTime;
+            return false;
         }
 
         public GameObject CheckLineOfSightForObjects()
