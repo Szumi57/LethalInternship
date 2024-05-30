@@ -14,18 +14,18 @@ namespace LethalInternship.Utils
 {
     internal static class PatchesUtil
     {
+        public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
         static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerIntern(new PlayerControllerB()));
-        static readonly MethodInfo IsPlayerLocalOrInternMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerLocalOrIntern(new PlayerControllerB()));
 
-        public static CodeInstruction CallIsPlayerLocalOrInternMethod()
+        public static CodeInstruction CallIsPlayerLocalOrInternOwnerLocalMethod()
         {
-            return new CodeInstruction(OpCodes.Call, IsPlayerLocalOrInternMethod);
+            return new CodeInstruction(OpCodes.Call, IsPlayerLocalOrInternOwnerLocalMethod);
         }
 
-        public static bool IsColliderFromIntern(Collider collider)
+        public static bool IsColliderFromLocalOrInternOwnerLocal(Collider collider)
         {
             PlayerControllerB player = collider.gameObject.GetComponent<PlayerControllerB>();
-            return IsPlayerIntern(player);
+            return IsPlayerLocalOrInternOwnerLocal(player);
         }
 
         public static bool IsPlayerIntern(PlayerControllerB player)
@@ -35,9 +35,45 @@ namespace LethalInternship.Utils
             return internAI != null;
         }
 
-        public static bool IsPlayerLocalOrIntern(PlayerControllerB player)
+        public static bool IsPlayerLocalOrInternOwnerLocal(PlayerControllerB player)
         {
-            return player == GameNetworkManager.Instance.localPlayerController || IsPlayerIntern(player);
+            if (player == null)
+            {
+                return false;
+            }
+            if (player == GameNetworkManager.Instance.localPlayerController)
+            {
+                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> LOCAL PLAYER");
+                return true;
+            }
+
+            InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> OTHER PLAYER");
+                return false;
+            }
+
+            Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> {internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId}, internAI.OwnerClientId {internAI.OwnerClientId}, localPlayerController.actualClientId {GameNetworkManager.Instance.localPlayerController.actualClientId}");
+            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public static bool IsPlayerInternOwnerLocal(PlayerControllerB player)
+        {
+            if (player == null)
+            {
+                return false;
+            }
+
+            InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> OTHER PLAYER");
+                return false;
+            }
+
+            Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> {internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId}, internAI.OwnerClientId {internAI.OwnerClientId}, localPlayerController.actualClientId {GameNetworkManager.Instance.localPlayerController.actualClientId}");
+            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
         public static List<CodeInstruction> InsertIsPlayerInternInstructions(List<CodeInstruction> codes,

@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
+using System.ComponentModel;
 using UnityEngine;
 
 namespace LethalInternship.AI.States
@@ -20,26 +21,22 @@ namespace LethalInternship.AI.States
             // Check for object to grab
             if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
             {
-                GameObject gameObjectGrabbleObject = ai.CheckLineOfSightForObjects();
-                if (gameObjectGrabbleObject)
+                GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
+                if (grabbableObject != null)
                 {
-                    GrabbableObject component = gameObjectGrabbleObject.GetComponent<GrabbableObject>();
-                    if (component && !component.isHeld)
-                    {
-                        ai.SetDestinationToPositionInternAI(gameObjectGrabbleObject.transform.position);
-                        this.targetItem = component;
-                        ai.State = new FetchingObjectState(this);
-                        return;
-                    }
+                    ai.SetDestinationToPositionInternAI(grabbableObject.transform.position);
+                    this.targetItem = grabbableObject;
+                    ai.State = new FetchingObjectState(this);
+                    return;
                 }
             }
 
             player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, 60, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (player != null && ai.PlayerIsTargetable(player))
+            if (player != null)
             {
                 Plugin.Logger.LogDebug($"target {player.name}");
                 // new target
-                ai.SetMovingTowardsTargetPlayer(player);
+                ai.AssignTargetAndSetMovingTo(player);
                 ai.State = new GetCloseToPlayerState(this);
                 return;
             }

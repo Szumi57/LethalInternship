@@ -1,6 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
 using UnityEngine;
 
 namespace LethalInternship.AI.States
@@ -54,17 +54,13 @@ namespace LethalInternship.AI.States
             // Check for object to grab
             if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
             {
-                GameObject gameObjectGrabbleObject = ai.CheckLineOfSightForObjects();
-                if (gameObjectGrabbleObject)
+                GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
+                if (grabbableObject != null)
                 {
-                    GrabbableObject component = gameObjectGrabbleObject.GetComponent<GrabbableObject>();
-                    if (component && !component.isHeld)
-                    {
-                        ai.SetDestinationToPositionInternAI(gameObjectGrabbleObject.transform.position);
-                        this.targetItem = component;
-                        ai.State = new FetchingObjectState(this);
-                        return;
-                    }
+                    ai.SetDestinationToPositionInternAI(grabbableObject.transform.position);
+                    this.targetItem = grabbableObject;
+                    ai.State = new FetchingObjectState(this);
+                    return;
                 }
             }
 
@@ -75,17 +71,20 @@ namespace LethalInternship.AI.States
                 return;
             }
 
-            EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcController.Npc.transform.position);
-            if (entrance != null)
+            if (Time.realtimeSinceStartup - TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
             {
-                Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
-                if(entranceTeleportPos.HasValue)
+                EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcController.Npc.transform.position);
+                if (entrance != null)
                 {
-                    targetLastKnownPosition = null;
-                    ai.State = new SearchingForPlayerState(this);
-                    Plugin.Logger.LogDebug($"======== TeleportInternAndSync !!!!!!!!!!!!!!! ");
-                    ai.TeleportInternAndSync(entranceTeleportPos.Value, !ai.isOutside);
-                    return;
+                    Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
+                    if (entranceTeleportPos.HasValue)
+                    {
+                        targetLastKnownPosition = null;
+                        ai.State = new GetCloseToPlayerState(this);
+                        Plugin.Logger.LogDebug($"======== TeleportInternAndSync !!!!!!!!!!!!!!! ");
+                        ai.TeleportInternAndSync(entranceTeleportPos.Value, !ai.isOutside, true);
+                        return;
+                    }
                 }
             }
 
@@ -110,7 +109,7 @@ namespace LethalInternship.AI.States
             }
 
             player = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (player != null && ai.PlayerIsTargetable(player))
+            if (player != null)
             {
                 // Target found
                 targetLastKnownPosition = player.transform.position;

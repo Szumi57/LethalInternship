@@ -6,9 +6,10 @@
         public static readonly float EPSILON = 0.01f;
 
         public static readonly float INTERN_FOV = 90f;
-        public static readonly float INTERN_OBJECT_AWARNESS = 10f;
-        public static readonly int INTERN_OBJECT_RANGE = 20;
 
+        public static readonly float INTERN_OBJECT_AWARNESS = 5f;
+        public static readonly int INTERN_OBJECT_RANGE = 20;
+        public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
 
         public static readonly float BASE_MAX_SPEED = 1f;
         public static readonly float BASE_MIN_SPEED = 0.04f;
@@ -27,6 +28,7 @@
         public static readonly float TIMER_LOOKING_AROUND = 4f;
         public static readonly float DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION = 2f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_LAST_KNOWN_POSITION = 0.5f;
+        public static readonly float WAIT_TIME_TO_TELEPORT = 1f;
 
         // ChillWithPlayerState
 

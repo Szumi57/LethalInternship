@@ -16,12 +16,13 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.NpcPatches
 {
     [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PlayerControllerBPatch
     {
         #region Prefixes
+
         [HarmonyPatch("Update")]
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance,
@@ -129,6 +130,102 @@ namespace LethalInternship.Patches
             return true;
         }
 
+        [HarmonyPatch("Discard_performed")]
+        [HarmonyPrefix]
+        static bool Discard_performed_PreFix(PlayerControllerB __instance,
+                                             float ___timeSinceSwitchingSlots,
+                                             bool ___throwingObject,
+                                             ref InputAction.CallbackContext context,
+                                             ref Ray ___interactRay,
+                                             ref int ___playerMask)
+        {
+            if (!context.performed)
+            {
+                return true;
+            }
+
+            RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
+            foreach (RaycastHit hit in raycastHits)
+            {
+                if (hit.collider.tag != "Player")
+                {
+                    continue;
+                }
+
+                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (player == null)
+                {
+                    continue;
+                }
+                InternAI? intern = InternManager.GetInternAI((int)player.playerClientId);
+                if (intern == null)
+                {
+                    continue;
+                }
+
+                if (FirstEmptyItemSlot_ReversePatch(intern.NpcController.Npc) < 0)
+                {
+                    Discard_performed_ReversePatch(intern.NpcController.Npc, context);
+                    Plugin.Logger.LogDebug($"intern dropped {intern.NpcController.Npc.currentlyHeldObjectServer}");
+                    InternAI.dictJustDroppedItems[intern.NpcController.Npc.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
+                }
+                return false;
+            }
+
+            if (___timeSinceSwitchingSlots < 0.2f || __instance.isGrabbingObjectAnimation || __instance.isTypingChat || __instance.inSpecialInteractAnimation)
+            {
+                return true;
+            }
+            if (__instance.activatingItem)
+            {
+                return true;
+            }
+            if (___throwingObject || !__instance.isHoldingObject || __instance.currentlyHeldObjectServer == null)
+            {
+                return true;
+            }
+
+            Plugin.Logger.LogDebug($"player dropped {__instance.currentlyHeldObjectServer}");
+            InternAI.dictJustDroppedItems[__instance.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
+            return true;
+        }
+
+        [HarmonyPatch("Interact_performed")]
+        [HarmonyPrefix]
+        static bool Interact_performed_PreFix(PlayerControllerB __instance,
+                                              ref Ray ___interactRay,
+                                              ref int ___playerMask)
+        {
+            RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
+            foreach (RaycastHit hit in raycastHits)
+            {
+                if (hit.collider.tag != "Player")
+                {
+                    continue;
+                }
+
+                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (player == null)
+                {
+                    continue;
+                }
+                InternAI? intern = InternManager.GetInternAI((int)player.playerClientId);
+                if (intern == null)
+                {
+                    continue;
+                }
+
+                if (intern.targetPlayer != __instance)
+                {
+                    intern.AssignTargetAndSetMovingTo(__instance);
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region Transpilers
@@ -158,7 +255,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.DamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::ShakeCamera.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::ShakeCamera.");
             }
 
             // ----------------------------------------------------------------------
@@ -178,7 +275,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.DamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::UpdateHealthUI.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::UpdateHealthUI.");
             }
 
 
@@ -200,7 +297,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.DamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::UIAudio and WalkieTalkie.TransmitOneShotAudio.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::UIAudio and WalkieTalkie.TransmitOneShotAudio.");
             }
 
 
@@ -222,7 +319,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.DamagePlayer_Transpiler could not insert instruction if is intern for AudioSource::PlayOneShot and StartOfRound::LocalPlayerDamagedEvent.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.DamagePlayer_Transpiler could not insert instruction if is intern for AudioSource::PlayOneShot and StartOfRound::LocalPlayerDamagedEvent.");
             }
 
 
@@ -262,7 +359,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayer_Transpiler could not insert instruction if is intern for StartOfRound::get_Instance() and HUDManager::get_Instance().");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayer_Transpiler could not insert instruction if is intern for StartOfRound::get_Instance() and HUDManager::get_Instance().");
             }
 
             // ----------------------------------------------------------------------
@@ -289,7 +386,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayer_Transpiler could not insert instruction if is intern for FindObjectOfType and others.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayer_Transpiler could not insert instruction if is intern for FindObjectOfType and others.");
             }
 
 
@@ -313,7 +410,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayer_Transpiler could not insert instruction if is intern for SwitchCamera and others.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayer_Transpiler could not insert instruction if is intern for SwitchCamera and others.");
             }
 
             // ----------------------------------------------------------------------
@@ -357,7 +454,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayerServerRpc_Transpiler could not insert instruction if is intern for livingPlayers--.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerServerRpc_Transpiler could not insert instruction if is intern for livingPlayers--.");
             }
 
 
@@ -396,7 +493,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayerClientRpc_Transpiler could not change string \"A player died. player object: \".");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not change string \"A player died. player object: \".");
             }
 
             // ----------------------------------------------------------------------
@@ -423,7 +520,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayerClientRpc_Transpiler could not insert instruction if is intern for livingPlayers-- after isServer.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not insert instruction if is intern for livingPlayers-- after isServer.");
             }
 
             // ----------------------------------------------------------------------
@@ -445,7 +542,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayerClientRpc_Transpiler could not insert instruction if is intern for playerVoicePitchTargets, playerVoicePitchLerpSpeed.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not insert instruction if is intern for playerVoicePitchTargets, playerVoicePitchLerpSpeed.");
             }
 
             // ----------------------------------------------------------------------
@@ -469,7 +566,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.KillPlayerClientRpc_Transpiler could not insert instruction if is intern for UpdateBoxesSpectateUI(),  UpdatePlayerVoiceEffects().");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not insert instruction if is intern for UpdateBoxesSpectateUI(),  UpdatePlayerVoiceEffects().");
             }
 
 
@@ -517,7 +614,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.GrabObjectServerRpc_Transpiler could not remove change ownership");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchGrabObjectServerRpc_Transpiler could not remove change ownership");
             }
 
 
@@ -563,7 +660,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.SwitchToItemSlot_Transpiler could not remove hudmanager itemsloticonframes");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager itemsloticonframes");
             }
 
             // ----------------------------------------------------------------------
@@ -584,7 +681,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.SwitchToItemSlot_Transpiler could not remove hudmanager set_sprite");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager set_sprite");
             }
 
             // ----------------------------------------------------------------------
@@ -605,7 +702,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.SwitchToItemSlot_Transpiler could not remove hudmanager clearcontroltips");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager clearcontroltips");
             }
 
             // ----------------------------------------------------------------------
@@ -626,7 +723,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.SwitchToItemSlot_Transpiler could not remove hudmanager holdingTwoHandedItem");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager holdingTwoHandedItem");
             }
 
             //Plugin.Logger.LogDebug($"SwitchToItemSlot ======================");
@@ -671,7 +768,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.DiscardHeldObject_Transpiler could not remove HUDManager::itemSlotIcons");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscardHeldObject_Transpiler could not remove HUDManager::itemSlotIcons");
             }
 
             //Plugin.Logger.LogDebug($"DiscardHeldObject ======================");
@@ -717,7 +814,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.DropAllHeldItems_Transpiler could not remove HUDManager::holdingTwoHandedItem, itemSlotIcons, ClearControlTips");
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDropAllHeldItems_Transpiler could not remove HUDManager::holdingTwoHandedItem, itemSlotIcons, ClearControlTips");
             }
 
             //Plugin.Logger.LogDebug($"DropAllHeldItems ======================");
@@ -770,7 +867,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove isMenuOpen condition");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchJumpPerformed_ReversePatch could not remove isMenuOpen condition");
                 }
 
                 // ----------------------------------------------------------------------
@@ -799,7 +896,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove isHostPlayerObject condition");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchJumpPerformed_ReversePatch could not remove isHostPlayerObject condition");
                 }
 
                 // ----------------------------------------------------------------------
@@ -825,7 +922,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove isTypingChat condition");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchJumpPerformed_ReversePatch could not remove isTypingChat condition");
                 }
 
                 //Plugin.Logger.LogDebug($"Jump_performed ======================");
@@ -842,21 +939,76 @@ namespace LethalInternship.Patches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        [HarmonyPatch("Discard_performed")]
+        [HarmonyReversePatch]
+        public static void Discard_performed_ReversePatch(object instance, InputAction.CallbackContext context)
+        {
+            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var startIndex = -1;
+                List<CodeInstruction> codes = Transpilers.Manipulator(instructions,
+                                                                      item => item.opcode == OpCodes.Ldarg_1,
+                                                                      item => item.opcode = OpCodes.Ldarg_0
+                                                                      ).ToList();
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 4; i++)
+                {
+                    if (codes[i].ToString() == "ldarg.0 NULL" //6
+                        && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsServer()"
+                        && codes[i + 2].ToString() == "brfalse Label3"
+                        && codes[i + 3].ToString() == "ldarg.0 NULL"
+                        && codes[i + 4].ToString() == "ldfld bool GameNetcodeStuff.PlayerControllerB::isHostPlayerObject")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    for (var i = startIndex; i < startIndex + 6; i++)
+                    {
+                        codes[i].opcode = OpCodes.Nop;
+                        codes[i].operand = null;
+                    }
+                    codes[startIndex].opcode = OpCodes.Br;
+                    codes[startIndex].operand = codes[startIndex + 11].labels[0];
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscard_performed_ReversePatch could not remove isHostPlayerObject condition");
+                }
+
+                //Plugin.Logger.LogDebug($"Discard_performed ======================");
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+                //Plugin.Logger.LogDebug($"Discard_performed ======================");
+                return codes.AsEnumerable();
+            }
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+            _ = Transpiler(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+        }
+
         [HarmonyPatch("CalculateGroundNormal")]
         [HarmonyReversePatch]
-        public static void CalculateGroundNormal_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.PlayerControllerBPatch.CalculateGroundNormal_ReversePatch");
+        public static void CalculateGroundNormal_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatchCalculateGroundNormal_ReversePatch");
 
         [HarmonyPatch("PlayerHitGroundEffects")]
         [HarmonyReversePatch]
-        public static void PlayerHitGroundEffects_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch");
+        public static void PlayerHitGroundEffects_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatchPlayerHitGroundEffects_ReversePatch");
 
         [HarmonyPatch("UpdatePlayerAnimationsToOtherClients")]
         [HarmonyReversePatch]
-        public static void UpdatePlayerAnimationsToOtherClients_ReversePatch(object instance, Vector2 moveInputVector) => throw new NotImplementedException("Stub LethalInternship.Patches.PlayerControllerBPatch.UpdatePlayerAnimationsToOtherClients_ReversePatch");
+        public static void UpdatePlayerAnimationsToOtherClients_ReversePatch(object instance, Vector2 moveInputVector) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatchUpdatePlayerAnimationsToOtherClients_ReversePatch");
 
         [HarmonyPatch("CheckConditionsForEmote")]
         [HarmonyReversePatch]
-        public static bool CheckConditionsForEmote_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch");
+        public static bool CheckConditionsForEmote_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatchCheckConditionsForEmote_ReversePatch");
 
         [HarmonyPatch("BeginGrabObject")]
         [HarmonyReversePatch]
@@ -891,7 +1043,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.BeginGrabObject_ReversePatch could not remove hitray condition");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchBeginGrabObject_ReversePatch could not remove hitray condition");
                 }
 
                 // ----------------------------------------------------------------------
@@ -920,7 +1072,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.BeginGrabObject_ReversePatch could not force to take grabbable object");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchBeginGrabObject_ReversePatch could not force to take grabbable object");
                 }
 
                 //Plugin.Logger.LogDebug($"BeginGrabObject ======================");
@@ -987,7 +1139,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove isHostPlayerObject condition 1");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove isHostPlayerObject condition 1");
                 }
 
                 // ----------------------------------------------------------------------
@@ -1013,7 +1165,7 @@ namespace LethalInternship.Patches
                 //}
                 //else
                 //{
-                //    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove billboard and canvas");
+                //    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove billboard and canvas");
                 //}
 
                 // ----------------------------------------------------------------------
@@ -1048,7 +1200,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove isHostPlayerObject condition 2 and lookinput");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove isHostPlayerObject condition 2 and lookinput");
                 }
 
                 // ----------------------------------------------------------------------
@@ -1073,7 +1225,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove local visor updates");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove local visor updates");
                 }
 
                 // ----------------------------------------------------------------------
@@ -1098,7 +1250,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove all HUDManager udpate stuff");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove all HUDManager udpate stuff");
                 }
 
                 // ----------------------------------------------------------------------
@@ -1122,7 +1274,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove HUDManager UpdateHealthUI");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove HUDManager UpdateHealthUI");
                 }
 
                 // ----------------------------------------------------------------------
@@ -1146,7 +1298,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove SetHoverTipAndCurrentInteractTrigger");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove SetHoverTipAndCurrentInteractTrigger");
                 }
 
                 // ----------------------------------------------------------------------
@@ -1168,7 +1320,7 @@ namespace LethalInternship.Patches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove end of method with spectate stuff");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove end of method with spectate stuff");
                 }
 
                 //Plugin.Logger.LogDebug($"LateUpdate ======================");
@@ -1187,11 +1339,15 @@ namespace LethalInternship.Patches
 
         [HarmonyPatch("FirstEmptyItemSlot")]
         [HarmonyReversePatch]
-        public static int FirstEmptyItemSlot_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch");
+        public static int FirstEmptyItemSlot_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatchFirstEmptyItemSlot_ReversePatch");
+
+        [HarmonyPatch("OnDisable")]
+        [HarmonyReversePatch]
+        public static void OnDisable_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.OnDisable_ReversePatch");
 
         #endregion
 
-        #region
+        #region Postfixes
 
         [HarmonyPatch("PerformEmote")]
         [HarmonyPostfix]
@@ -1204,63 +1360,133 @@ namespace LethalInternship.Patches
 
             InternManager.SpawnIntern(__instance.transform, !__instance.isInsideFactory);
         }
+
+        [HarmonyPatch("SetHoverTipAndCurrentInteractTrigger")]
+        [HarmonyPostfix]
+        static void SetHoverTipAndCurrentInteractTrigger_PostFix(ref PlayerControllerB __instance,
+                                                                 ref Ray ___interactRay,
+                                                                 ref int ___playerMask)
+        {
+            RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
+            foreach (RaycastHit hit in raycastHits)
+            {
+                if (hit.collider.tag != "Player")
+                {
+                    continue;
+                }
+
+                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (player == null)
+                {
+                    continue;
+                }
+                player.ShowNameBillboard();
+
+                InternAI? intern = InternManager.GetInternAI((int)player.playerClientId);
+                if (intern == null)
+                {
+                    continue;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                if (FirstEmptyItemSlot_ReversePatch(intern.NpcController.Npc) < 0)
+                {
+                    sb.Append("Drop item : [G]").AppendLine();
+                }
+                if (intern.targetPlayer == __instance)
+                {
+                    sb.Append("Following you");
+                }
+                else
+                {
+                    sb.Append("Follow me: [E]");
+                }
+                __instance.cursorTip.text = sb.ToString();
+
+                break;
+            }
+        }
+
         #endregion
     }
 
-    // TODO todo grabbable object anim
-    [HarmonyPatch(typeof(GrabbableObject))]
-    internal class GrabbableObjectPatch
+    [HarmonyPatch(typeof(InteractTrigger))]
+    internal class InteractTriggerPatch
     {
-        [HarmonyPatch("LateUpdate")]
+        [HarmonyPatch("Interact")]
         [HarmonyPrefix]
-        static bool LateUpdate_PreFix(ref GrabbableObject __instance)
+        static bool Interact_PreFix(InteractTrigger __instance)
         {
+            if (!__instance.interactable || __instance.isPlayingSpecialAnimation || __instance.usingLadder)
+            {
+                if (__instance.usingLadder)
+                {
+                    Plugin.Logger.LogDebug("why cancel ????");
+                }
+            }
+
             return true;
-            //if (__instance.parentObject != null)
-            //{
-            //    __instance.parentObject.GetComponentsInParent<Transform>().First(x => x.name.StartsWith("Player")).transform.localScale = Vector3.one;
-            //    Plugin.Logger.LogDebug($"prefix rot {__instance.parentObject.rotation}, {__instance.itemProperties.rotationOffset}");
-            //    Plugin.Logger.LogDebug($"prefix pos {__instance.parentObject.position}, {__instance.itemProperties.positionOffset}");
-            //    Plugin.Logger.LogDebug($"prefix {__instance.parentObject.gameObject.name}, {__instance.parentObject.parent?.gameObject.name}, {__instance.parentObject.parent?.parent?.gameObject.name}");
-
-            //    __instance.transform.rotation = __instance.parentObject.rotation;
-            //    __instance.transform.Rotate(__instance.itemProperties.rotationOffset);
-            //    __instance.transform.position = __instance.parentObject.position;
-            //    Vector3 vector = __instance.itemProperties.positionOffset;
-            //    vector = __instance.parentObject.rotation * vector;
-            //    __instance.transform.position += vector;
-
-            //    var handpos = __instance.parentObject.GetComponentsInParent<Transform>().First(x => x.name.StartsWith("hand.R")).transform.position;
-            //    Plugin.Logger.LogDebug($"dist holder/hand {(__instance.parentObject.position - handpos).magnitude}");
-            //    Plugin.Logger.LogDebug($"dist object/hand {(__instance.transform.position - handpos).magnitude}");
-            //}
-            //__instance.parentObject.GetComponentsInParent<Transform>().First(x => x.name.StartsWith("hand.R")).transform;
-
-            //return false;
-            //if (__instance.parentObject != null)
-            //{
-
-            //Plugin.Logger.LogDebug($"{__instance.itemProperties.positionOffset}, {__instance.itemProperties.positionOffset}");
-            //}
         }
 
-        [HarmonyPatch("LateUpdate")]
-        [HarmonyPostfix]
-        static void LateUpdate_PostFix(ref GrabbableObject __instance)
+        [HarmonyPatch("Interact")]
+        [HarmonyReversePatch]
+        public static void Interact_ReversePatch(object instance, Transform playerTransform)
         {
-            if (__instance.parentObject != null)
+            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
+                var startIndex = -1;
+                List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
 
-                //__instance.parentObject.GetComponentsInParent<Transform>().First(x => x.name.StartsWith("Player")).transform.localScale *= 0.85f;
-                //Plugin.Logger.LogDebug($"prefix rot {__instance.parentObject.rotation}, {__instance.itemProperties.rotationOffset}");
-                //Plugin.Logger.LogDebug($"prefix pos {__instance.parentObject.position}, {__instance.itemProperties.positionOffset}");
-                //Plugin.Logger.LogDebug($"prefix {__instance.parentObject.gameObject.name}, {__instance.parentObject.parent?.gameObject.name}, {__instance.parentObject.parent?.parent?.gameObject.name}");
+                Plugin.Logger.LogDebug($"Interact ======================");
+                for (var i = 0; i < codes.Count; i++)
+                {
+                    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                }
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 1; i++)
+                {
+                    if (codes[i].ToString() == "ldarg.0 NULL" //36
+                        && codes[i + 1].ToString() == "call void InteractTrigger::CancelLadderAnimation()")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Nop;
+                    codes[startIndex].operand = null;
+                    codes[startIndex + 1].opcode = OpCodes.Nop;
+                    codes[startIndex + 1].operand = null;
+                    codes[startIndex + 2].opcode = OpCodes.Nop;
+                    codes[startIndex + 2].operand = null;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchBeginGrabObject_ReversePatch could not remove hitray condition");
+                }
+
+                //Plugin.Logger.LogDebug($"Interact ======================");
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+                //Plugin.Logger.LogDebug($"Interact ======================");
+                return codes.AsEnumerable();
             }
-            //if (__instance.parentObject != null)
-            //{
 
-            //Plugin.Logger.LogDebug($"{__instance.itemProperties.positionOffset}, {__instance.itemProperties.positionOffset}");
-            //}
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+            _ = Transpiler(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+        }
+
+        [HarmonyPatch("CancelLadderAnimation")]
+        [HarmonyPostfix]
+        static void CancelLadderAnimation_PostFix(InteractTrigger __instance)
+        {
+            Plugin.Logger.LogDebug("wtf!!!!!");
         }
     }
 }

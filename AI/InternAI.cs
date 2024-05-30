@@ -1,7 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI.States;
 using LethalInternship.Enums;
-using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System;
 using System.Collections;
@@ -11,11 +11,9 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Rendering;
-using UnityEngine.UIElements;
-using static UnityEngine.ParticleSystem;
+using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
-using Object = UnityEngine.Object;
+using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
 {
@@ -40,6 +38,9 @@ namespace LethalInternship.AI
         System.Random enemyRandom = null!;
         bool isDeadAnimationDone;
 
+
+        public static Dictionary<GrabbableObject, float> dictJustDroppedItems = new Dictionary<GrabbableObject, float>();
+
         public State State { get; set; } = null!;
 
 
@@ -47,15 +48,14 @@ namespace LethalInternship.AI
         private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
 
+
         //private Vector3 agentLastPosition;
         //private Vector3 npcControllerLastPosition;
         private float timeSinceStuck;
         private bool hasTriedToJump = false;
 
         [Space(3f)]
-        private Transform lerpTarget;
         private RaycastHit enemyRayHit;
-        public Transform animationContainer;
         private float velX;
         private float velZ;
 
@@ -72,7 +72,6 @@ namespace LethalInternship.AI
         private Vector3 focusOnPosition;
         private float verticalLookAngle;
         private float lookAtPositionTimer;
-        public Transform stareAtTransform;
 
         private Vector3 previousPosition;
         private Vector3 agentLocalVelocity;
@@ -128,8 +127,8 @@ namespace LethalInternship.AI
                 if (interactsTrigger[i].isLadder && interactsTrigger[i].ladderHorizontalPosition != null)
                 {
                     ladders.Add(interactsTrigger[i]);
-                    Plugin.Logger.LogDebug($"adding ladder {i} horiz pos {interactsTrigger[i].ladderHorizontalPosition.position}");
-                    Plugin.Logger.LogDebug($"---------------");
+                    //Plugin.Logger.LogDebug($"adding ladder {i} horiz pos {interactsTrigger[i].ladderHorizontalPosition.position}");
+                    //Plugin.Logger.LogDebug($"---------------");
                 }
             }
             laddersInteractTrigger = ladders.ToArray();
@@ -177,8 +176,7 @@ namespace LethalInternship.AI
                 openDoorSpeedMultiplier = enemyType.doorSpeedMultiplier;
                 if (IsOwner)
                 {
-                    // todo see that
-                    //base.SyncPositionToClients();
+                    base.SyncPositionToClients();
                 }
                 else
                 {
@@ -227,8 +225,6 @@ namespace LethalInternship.AI
             State = new SearchingForPlayerState(this);
         }
 
-        private float timerRayCast;
-        private float timerLimitRayCast = 0.05f;
         public override void Update()
         {
             if (!IsOwner)
@@ -264,38 +260,6 @@ namespace LethalInternship.AI
             {
                 return;
             }
-
-
-            if (timerRayCast > timerLimitRayCast)
-            {
-                timerRayCast = 0f;
-                if (NpcController.HasToMove
-                    && !NpcController.Npc.inSpecialInteractAnimation
-                    && !NpcController.Npc.isClimbingLadder)
-                {
-
-                    //RayUtil.RayCastAndDraw(LineRenderer1, NpcController.Npc.thisController.transform.position + new Vector3(0, 0.5f, 0), NpcController.Npc.thisController.transform.forward, 
-                    //                       -70f, 5);
-
-
-                    //Vector3 nextDestination = (this.transform.position + new Vector3(0, 0.5f, 0)) - NpcController.Npc.thisController.transform.position;
-                    //RayUtil.RayCastDownAndDraw(LineRenderer5, midDistanceNextDestination,
-                    //                                          -NpcController.Npc.thisController.transform.up,
-                    //                                          1f);
-                    //PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
-                    //Log($"======= HOLE ???");
-                    //Ray scanHoleRay = new Ray(NpcController.Npc.playerEye.position, Quaternion.AngleAxis(-90, axis) * NpcController.Npc.playerEye.forward);
-                    //float lengthScanHoleRay = 20f;
-                    //DrawUtil.DrawLine(LineRenderer, scanHoleRay, lengthScanHoleRay, UnityEngine.Color.red);
-                    //if (!Physics.Raycast(scanRay, lengthScanRay, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))
-                    //{
-                    //    Log($"======= HOLE !!!!!!!!!!!!!!!");
-                    //    NpcController.OrderToJump();
-                    //}
-
-                }
-            }
-            timerRayCast += Time.deltaTime;
 
             //Transform t = NpcController.Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R");
             //Ray scanHoleRay = new Ray(t.position, t.forward);
@@ -335,21 +299,31 @@ namespace LethalInternship.AI
 
         public void OrderMoveToDestination()
         {
-            agent.SetDestination(destination);
+            if (agent.isActiveAndEnabled)
+            {
+                agent.SetDestination(destination);
+            }
             NpcController.OrderToMove();
         }
 
         public void StopMoving()
         {
-            agent.ResetPath();
+            if (agent.isActiveAndEnabled)
+            {
+                agent.ResetPath();
+            }
             NpcController.OrderToStopMoving();
-            //this.transform.position = NpcController.Npc.thisController.transform.position;
             agent.Warp(NpcController.Npc.thisController.transform.position);
         }
 
         public PlayerControllerB? CheckLOSForTarget(float width = 45f, int range = 60, int proximityAwareness = -1)
         {
             if (targetPlayer == null)
+            {
+                return null;
+            }
+
+            if (!PlayerIsTargetable(targetPlayer))
             {
                 return null;
             }
@@ -386,7 +360,13 @@ namespace LethalInternship.AI
             int num3 = -1;
             for (int i = 0; i < StartOfRound.Instance.allPlayerScripts.Length - InternManager.AllInternAIs.Length; i++)
             {
-                Vector3 position = StartOfRound.Instance.allPlayerScripts[i].gameplayCamera.transform.position;
+                PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
+                if (!PlayerIsTargetable(player))
+                {
+                    continue;
+                }
+
+                Vector3 position = player.gameplayCamera.transform.position;
                 if ((position - this.transform.position).sqrMagnitude > range * range)
                 {
                     continue;
@@ -434,18 +414,20 @@ namespace LethalInternship.AI
                 && !NpcController.Npc.isClimbingLadder)
             {
                 // Doors
-                bool isOpeningDoor = CheckForDoorToOpen();
+                bool isOpeningDoor = OpenDoorIfNeeded();
                 // Ladders
-                bool isUsingLadder = CheckForLaddersToUse();
+                bool isUsingLadder = UseLadderIfNeeded();
 
                 // Check for hole
                 if (!isOpeningDoor && !isUsingLadder)
                 {
-                    Log($"dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
-                    if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > 2f * 2f)
+                    if (Time.realtimeSinceStartup - State.TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
                     {
-                        NpcController.Npc.transform.position = this.transform.position;
-                        Log($"============ HOLE ????");
+                        if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > 2.5f * 2.5f)
+                        {
+                            NpcController.Npc.transform.position = this.transform.position;
+                            Log($"============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
+                        }
                     }
                 }
 
@@ -597,8 +579,8 @@ namespace LethalInternship.AI
         {
             for (int i = 0; i < entrancesTeleportArray.Length; i++)
             {
-                if ((entityPos1 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 4f * 4f
-                    && (entityPos2 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 4f * 4f)
+                if ((entityPos1 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 3f * 3f
+                    && (entityPos2 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 3f * 3f)
                 {
                     return entrancesTeleportArray[i];
                 }
@@ -625,7 +607,6 @@ namespace LethalInternship.AI
             Vector3 npcBodyPos = NpcController.Npc.thisController.transform.position;
             foreach (var door in doorLocksArray.Where(x => !x.isLocked))
             {
-                //Plugin.Logger.LogDebug($"dis door {(door.transform.position - npcBodyPos).magnitude}");
                 if ((door.transform.position - npcBodyPos).sqrMagnitude < Const.DISTANCE_NPCBODY_FROM_DOOR * Const.DISTANCE_NPCBODY_FROM_DOOR)
                 {
                     return door;
@@ -634,7 +615,7 @@ namespace LethalInternship.AI
             return null;
         }
 
-        private bool CheckForDoorToOpen()
+        private bool OpenDoorIfNeeded()
         {
             if (timerCheckDoor > Const.TIMER_CHECK_DOOR)
             {
@@ -643,6 +624,10 @@ namespace LethalInternship.AI
                 DoorLock? door = GetDoorIfWantsToOpen();
                 if (door != null)
                 {
+                    // Prevent stuck behind open door
+                    Physics.IgnoreCollision(this.NpcController.Npc.playerCollider, door.GetComponent<Collider>());
+
+                    // Open door
                     door.OpenOrCloseDoor(NpcController.Npc);
                     door.OpenDoorAsEnemyServerRpc();
                     return true;
@@ -652,17 +637,17 @@ namespace LethalInternship.AI
             return false;
         }
 
-        private bool CheckForLaddersToUse()
+        private bool UseLadderIfNeeded()
         {
             if (timerCheckLadders > Const.TIMER_CHECK_LADDERS)
             {
                 timerCheckLadders = 0f;
 
                 InteractTrigger? ladder = GetLadderIfWantsToUseLadder();
-                if (ladder != null)
+                if (ladder != null && NpcController.CanUseLadder(ladder))
                 {
-                    Plugin.Logger.LogDebug("-> wants to use ladder");
-                    ladder.Interact(NpcController.Npc.thisPlayerBody);
+                    InteractTriggerPatch.Interact_ReversePatch(ladder, NpcController.Npc.thisPlayerBody);
+                    //ladder.Interact(NpcController.Npc.thisPlayerBody);
                     return true;
                 }
             }
@@ -670,9 +655,114 @@ namespace LethalInternship.AI
             return false;
         }
 
-        public GameObject CheckLineOfSightForObjects()
+        public void AssignTargetAndSetMovingTo(PlayerControllerB newTarget)
         {
-            return base.CheckLineOfSight(HoarderBugAI.grabbableObjectsInMap, Const.INTERN_FOV, Const.INTERN_OBJECT_RANGE, Const.INTERN_OBJECT_AWARNESS);
+            if (this.targetPlayer != newTarget)
+            {
+                ChangeOwnershipOfEnemy(newTarget.actualClientId);
+            }
+            SetMovingTowardsTargetPlayer(newTarget);
+        }
+
+        public GrabbableObject? LookingForObjectToGrab()
+        {
+            for (int i = 0; i < HoarderBugAI.grabbableObjectsInMap.Count; i++)
+            {
+                GameObject gameObject = HoarderBugAI.grabbableObjectsInMap[i];
+                if (gameObject == null)
+                {
+                    HoarderBugAI.grabbableObjectsInMap.TrimExcess();
+                    continue;
+                }
+
+                Vector3 gameObjectPosition = gameObject.transform.position;
+                if (isOutside && gameObjectPosition.y < -100f)
+                {
+                    continue;
+                }
+                else if (!isOutside && gameObjectPosition.y > -80f)
+                {
+                    continue;
+                }
+
+                float sqrDistanceEyeGameObject = (gameObjectPosition - this.eye.position).sqrMagnitude;
+                if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
+                {
+                    GrabbableObject? grabbableObject = CheckConditionForGrabbableObject(gameObject);
+                    if (grabbableObject == null)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        Log($"awareness {grabbableObject.name}");
+                        return grabbableObject;
+                    }
+                }
+
+
+                if (sqrDistanceEyeGameObject < (float)Const.INTERN_OBJECT_RANGE * (float)Const.INTERN_OBJECT_RANGE
+                    && !Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                {
+                    Vector3 to = gameObjectPosition - eye.position;
+                    if (Vector3.Angle(eye.forward, to) < Const.INTERN_FOV)
+                    {
+                        GrabbableObject? grabbableObject = CheckConditionForGrabbableObject(gameObject);
+                        if (grabbableObject == null)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            Log($"LOS {grabbableObject.name}");
+                            return grabbableObject;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private GrabbableObject? CheckConditionForGrabbableObject(GameObject gameObject)
+        {
+            GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                return null;
+            }
+
+            if (grabbableObject.isHeld
+                || grabbableObject.isInShipRoom
+                || !grabbableObject.grabbable
+                || grabbableObject.deactivated)
+            {
+                return null;
+            }
+
+            if (dictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
+            {
+                if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
+                {
+                    return null;
+                }
+            }
+            TrimDictJustDroppedItems();
+
+            return grabbableObject;
+        }
+
+        private static void TrimDictJustDroppedItems()
+        {
+            if (dictJustDroppedItems != null && dictJustDroppedItems.Count > 20)
+            {
+                Plugin.Logger.LogDebug($"TrimDictJustDroppedItems Count{dictJustDroppedItems.Count}");
+                var itemsToClean = dictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS);
+                foreach (var item in itemsToClean)
+                {
+                    dictJustDroppedItems.Remove(item.Key);
+                }
+            }
         }
 
         private void CalculateAnimationDirection(float maxSpeed = 1f)
@@ -764,74 +854,32 @@ namespace LethalInternship.AI
             }
         }
 
-        public void TeleportInternAndSync(Vector3 pos, bool setOutside)
+        public void TeleportInternAndSync(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             if (!IsOwner)
             {
                 return;
             }
-            TeleportIntern(pos, setOutside);
-            TeleportInternServerRpc(pos, setOutside);
+            TeleportIntern(pos, setOutside, isUsingEntrance);
+            TeleportInternServerRpc(pos, setOutside, isUsingEntrance);
         }
         [ServerRpc]
-        public void TeleportInternServerRpc(Vector3 pos, bool setOutside)
+        public void TeleportInternServerRpc(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
-            NetworkManager networkManager = NetworkManager;
-            if (networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
-            {
-                if (OwnerClientId != networkManager.LocalClientId)
-                {
-                    if (networkManager.LogLevel <= LogLevel.Normal)
-                    {
-                        Plugin.Logger.LogError("Only the owner can invoke a ServerRpc that requires ownership!");
-                    }
-                    return;
-                }
-                ServerRpcParams serverRpcParams = new ServerRpcParams();
-                FastBufferWriter fastBufferWriter = __beginSendServerRpc(657232826U, serverRpcParams, RpcDelivery.Reliable);
-                fastBufferWriter.WriteValueSafe(pos);
-                fastBufferWriter.WriteValueSafe(setOutside, default);
-                __endSendServerRpc(ref fastBufferWriter, 657232826U, serverRpcParams, RpcDelivery.Reliable);
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Server || !networkManager.IsServer && !networkManager.IsHost)
-            {
-                return;
-            }
-            TeleportInternClientRpc(pos, setOutside);
+            TeleportInternClientRpc(pos, setOutside, isUsingEntrance);
         }
         [ClientRpc]
-        public void TeleportInternClientRpc(Vector3 pos, bool setOutside)
+        public void TeleportInternClientRpc(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
-            NetworkManager networkManager = NetworkManager;
-            if (networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
-            {
-                ClientRpcParams clientRpcParams = new ClientRpcParams();
-                FastBufferWriter fastBufferWriter = __beginSendClientRpc(2539470808U, clientRpcParams, RpcDelivery.Reliable);
-                fastBufferWriter.WriteValueSafe(pos);
-                fastBufferWriter.WriteValueSafe(setOutside, default);
-                __endSendClientRpc(ref fastBufferWriter, 2539470808U, clientRpcParams, RpcDelivery.Reliable);
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Client || !networkManager.IsClient && !networkManager.IsHost)
-            {
-                return;
-            }
             if (IsOwner)
             {
                 return;
             }
-            TeleportIntern(pos, setOutside);
+            TeleportIntern(pos, setOutside, isUsingEntrance);
         }
-        private void TeleportIntern(Vector3 pos, bool setOutside)
+        private void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
-            State.TimeAtLastUsingEntrance = Time.realtimeSinceStartup;
+            State.TimeSinceUsingEntrance = Time.realtimeSinceStartup;
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 5f, -1);
             if (IsOwner)
             {
@@ -839,21 +887,30 @@ namespace LethalInternship.AI
                 transform.position = navMeshPosition;
                 agent.enabled = true;
                 agent.Warp(navMeshPosition);
-                agent.ResetPath();
+                if (agent.isActiveAndEnabled)
+                {
+                    agent.ResetPath();
+                }
             }
             else
             {
                 transform.position = navMeshPosition;
             }
+
             NpcController.Npc.isInsideFactory = !setOutside;
             NpcController.Npc.transform.position = navMeshPosition;
             serverPosition = navMeshPosition;
             SetEnemyOutside(setOutside);
-            EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside);
-            if (entranceTeleport.doorAudios != null && entranceTeleport.doorAudios.Length != 0)
+            NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
+
+            if (isUsingEntrance)
             {
-                entranceTeleport.entrancePointAudio.PlayOneShot(entranceTeleport.doorAudios[0]);
-                WalkieTalkie.TransmitOneShotAudio(entranceTeleport.entrancePointAudio, entranceTeleport.doorAudios[0], 1f);
+                EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside);
+                if (entranceTeleport.doorAudios != null && entranceTeleport.doorAudios.Length != 0)
+                {
+                    entranceTeleport.entrancePointAudio.PlayOneShot(entranceTeleport.doorAudios[0]);
+                    WalkieTalkie.TransmitOneShotAudio(entranceTeleport.entrancePointAudio, entranceTeleport.doorAudios[0], 1f);
+                }
             }
         }
 

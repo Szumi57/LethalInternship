@@ -42,7 +42,9 @@ namespace LethalInternship.Utils
         public static T GetCopyOf<T>(this Component comp, T other) where T : Component
         {
             Type type = comp.GetType();
+#pragma warning disable CS8603 // Possible null reference return.
             if (type != other.GetType()) return null; // type mis-match
+#pragma warning restore CS8603 // Possible null reference return.
             BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default | BindingFlags.DeclaredOnly;
             PropertyInfo[] props = type.GetProperties(flags);
             foreach (var prop in props)
@@ -60,7 +62,9 @@ namespace LethalInternship.Utils
                 if (finfo.IsStatic) continue;
                 finfo.SetValue(comp, finfo.GetValue(other));
             }
+#pragma warning disable CS8603 // Possible null reference return.
             return comp as T;
+#pragma warning restore CS8603 // Possible null reference return.
         }
 
         public static T AddCopyOfComponent<T>(this GameObject go, T toAdd) where T : Component
@@ -90,7 +94,9 @@ namespace LethalInternship.Utils
                 prop.SetValue(dst, prop.GetValue(original, null), null);
             }
 
+#pragma warning disable CS8603 // Possible null reference return.
             return dst as T;
+#pragma warning restore CS8603 // Possible null reference return.
         }
 
         

@@ -1,7 +1,7 @@
 ﻿using GameNetcodeStuff;
 using JetBrains.Annotations;
 using LethalInternship.Enums;
-using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -16,7 +16,6 @@ namespace LethalInternship.AI.States
         {
             get
             {
-                //return (ai.targetPlayer.transform.position - ai.transform.position).sqrMagnitude;
                 return Vector3.Scale((ai.targetPlayer.transform.position - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
             }
         }
@@ -25,7 +24,6 @@ namespace LethalInternship.AI.States
         {
             get
             {
-                //return (ai.targetPlayer.transform.position - ai.transform.position).sqrMagnitude;
                 return Vector3.Scale((ai.targetPlayer.transform.position - npcController.Npc.transform.position), new Vector3(0, 1, 0)).sqrMagnitude;
             }
         }
@@ -43,17 +41,13 @@ namespace LethalInternship.AI.States
             // Check for object to grab
             if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
             {
-                GameObject gameObjectGrabbleObject = ai.CheckLineOfSightForObjects();
-                if (gameObjectGrabbleObject)
+                GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
+                if (grabbableObject != null)
                 {
-                    GrabbableObject component = gameObjectGrabbleObject.GetComponent<GrabbableObject>();
-                    if (component && !component.isHeld)
-                    {
-                        ai.SetDestinationToPositionInternAI(gameObjectGrabbleObject.transform.position);
-                        this.targetItem = component;
-                        ai.State = new FetchingObjectState(this);
-                        return;
-                    }
+                    ai.SetDestinationToPositionInternAI(grabbableObject.transform.position);
+                    this.targetItem = grabbableObject;
+                    ai.State = new FetchingObjectState(this);
+                    return;
                 }
             }
 
@@ -64,7 +58,7 @@ namespace LethalInternship.AI.States
                 npcController.OrderToLookForward();
 
                 PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                if (player != null && ai.PlayerIsTargetable(player))
+                if (player != null)
                 {
                     // Target still here but too far
                     targetLastKnownPosition = player.transform.position;

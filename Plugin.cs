@@ -5,6 +5,9 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches;
 using LethalInternship.Patches.EnemiesPatches;
+using LethalInternship.Patches.MapHazardsPatches;
+using LethalInternship.Patches.NpcPatches;
+using LethalInternship.Patches.ObjectsPatches;
 using System;
 using System.IO;
 using System.Linq;
@@ -85,22 +88,38 @@ namespace LethalInternship
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
 
             InternManager.Init();
-            _harmony.PatchAll(typeof(StartOfRoundPatch));
-            _harmony.PatchAll(typeof(ItemDropShipPatch));
-            _harmony.PatchAll(typeof(PlayerControllerBPatch));
             _harmony.PatchAll(typeof(DoorLockPatch));
-            _harmony.PatchAll(typeof(EnemyAIPatch));
-            _harmony.PatchAll(typeof(SoundManagerPatch));
+            _harmony.PatchAll(typeof(ItemDropShipPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
+            _harmony.PatchAll(typeof(SoundManagerPatch));
+            _harmony.PatchAll(typeof(StartOfRoundPatch));
+
+            // Npc
+            _harmony.PatchAll(typeof(EnemyAIPatch));
+            _harmony.PatchAll(typeof(PlayerControllerBPatch));
 
             // Enemies
+            _harmony.PatchAll(typeof(BlobAIPatch));
+            _harmony.PatchAll(typeof(CentipedeAIPatch));
             _harmony.PatchAll(typeof(CrawlerAIPatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
             _harmony.PatchAll(typeof(SpringManAIPatch));
-            _harmony.PatchAll(typeof(BlobAIPatch));
 
+            // Map hazards
+            _harmony.PatchAll(typeof(LandminePatch));
+            _harmony.PatchAll(typeof(QuicksandTriggerPatch));
+            _harmony.PatchAll(typeof(SpikeRoofTrapPatch));
+            _harmony.PatchAll(typeof(TurretPatch));
+
+            // Objects
             _harmony.PatchAll(typeof(GrabbableObjectPatch));
+            _harmony.PatchAll(typeof(ShotgunItemPatch));
+            _harmony.PatchAll(typeof(StunGrenadeItemPatch));
+
+
+            _harmony.PatchAll(typeof(InteractTriggerPatch));
+
         }
 
         private static void InitializeNetworkBehaviours() {

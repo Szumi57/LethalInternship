@@ -13,12 +13,13 @@ namespace LethalInternship.AI
         protected Vector3? targetLastKnownPosition;
         protected GrabbableObject? targetItem;
         
-        public float TimeAtLastUsingEntrance { get; set; }
+        public float TimeSinceUsingEntrance { get; set; }
 
         protected State(State newState) : this(newState.ai)
         {
             this.targetLastKnownPosition = newState.targetLastKnownPosition;
             this.targetItem = newState.targetItem;
+            this.TimeSinceUsingEntrance = newState.TimeSinceUsingEntrance;
         }
 
         protected State(InternAI ai)

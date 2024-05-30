@@ -1,6 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,8 +36,21 @@ namespace LethalInternship.AI.States
                 if (!npcController.Npc.inAnimationWithEnemy && !npcController.Npc.activatingItem)
                 {
                     PlayerControllerBPatch.BeginGrabObject_ReversePatch(npcController.Npc, this.targetItem);
-                    this.targetItem = null;
-                    ai.State = new JustLostPlayerState(this);
+                    if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) < 0)
+                    {
+                        this.targetItem = null;
+                        ai.State = new GetCloseToPlayerState(this);
+                    }
+                }
+            }
+
+            if (this.targetItem != null)
+            {
+                // ragdoll can move so we follow new position
+                RagdollGrabbableObject? ragdollGrabbableObject = this.targetItem as RagdollGrabbableObject;
+                if(ragdollGrabbableObject != null)
+                {
+                    ai.SetDestinationToPositionInternAI(this.targetItem.transform.position);
                 }
             }
 

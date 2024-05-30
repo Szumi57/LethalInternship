@@ -165,6 +165,26 @@ namespace LethalInternship
             return null;
         }
 
+        public static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
+        {
+            Plugin.Logger.LogDebug($"grabbable {grabbableObject}");
+            Transform localItemHolder = grabbableObject.parentObject;
+            PlayerControllerB playerHolder;
+
+            if (localItemHolder == null)
+            {
+                playerHolder = grabbableObject.playerHeldBy;
+            }
+            else
+            {
+                playerHolder = localItemHolder.GetComponentInParent<PlayerControllerB>();
+            }
+
+            if (playerHolder == null) { return false; }
+            Plugin.Logger.LogDebug($"return {GetInternAI((int)playerHolder.playerClientId) != null}");
+            return GetInternAI((int)playerHolder.playerClientId) != null;
+        }
+
         public static void ResizeAndPopulateInterns()
         {
             StartOfRound instance = StartOfRound.Instance;

@@ -77,7 +77,7 @@ namespace LethalInternship.Utils
             for (int i = index; i < tree.Length; i++)
             {
                 Component actual = tree[i];
-                Transform transform = actual as Transform;
+                Transform? transform = actual as Transform;
                 bool isTransform = transform != null;
                 if (transform == null)
                 {

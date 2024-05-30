@@ -21,12 +21,12 @@ namespace LethalInternship.Patches.EnemiesPatches
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
 
-            Plugin.Logger.LogDebug($"Update ======================");
-            for (var i = 0; i < codes.Count; i++)
-            {
-                Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            }
-            Plugin.Logger.LogDebug($"Update ======================");
+            //Plugin.Logger.LogDebug($"Update ======================");
+            //for (var i = 0; i < codes.Count; i++)
+            //{
+            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+            //}
+            //Plugin.Logger.LogDebug($"Update ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 3; i++)

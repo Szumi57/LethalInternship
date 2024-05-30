@@ -1,6 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
 using UnityEngine;
 
 namespace LethalInternship.AI.States
@@ -47,9 +47,8 @@ namespace LethalInternship.AI.States
             if (ai.PlayerIsTargetable(ai.targetPlayer))
             {
                 targetLastKnownPosition = ai.targetPlayer.transform.position;
-                ai.SetMovingTowardsTargetPlayer(ai.targetPlayer);
+                ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
                 ai.destination = RoundManager.Instance.GetNavMeshPosition(ai.targetPlayer.transform.position, RoundManager.Instance.navHit, 2.7f);
-                //Plugin.Logger.LogDebug($"setdestination");
             }
             else
             {
@@ -83,17 +82,13 @@ namespace LethalInternship.AI.States
             // Check for object to grab
             if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
             {
-                GameObject gameObjectGrabbleObject = ai.CheckLineOfSightForObjects();
-                if (gameObjectGrabbleObject)
+                GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
+                if (grabbableObject != null)
                 {
-                    GrabbableObject component = gameObjectGrabbleObject.GetComponent<GrabbableObject>();
-                    if (component && !component.isHeld)
-                    {
-                        ai.SetDestinationToPositionInternAI(gameObjectGrabbleObject.transform.position);
-                        this.targetItem = component;
-                        ai.State = new FetchingObjectState(this);
-                        return;
-                    }
+                    ai.SetDestinationToPositionInternAI(grabbableObject.transform.position);
+                    this.targetItem = grabbableObject;
+                    ai.State = new FetchingObjectState(this);
+                    return;
                 }
             }
 
@@ -109,7 +104,6 @@ namespace LethalInternship.AI.States
                 }
             }
 
-            //Plugin.Logger.LogDebug($"OrderMoveToDestination");
             ai.OrderMoveToDestination();
         }
     }
