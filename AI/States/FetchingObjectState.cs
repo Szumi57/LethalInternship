@@ -13,12 +13,14 @@ namespace LethalInternship.AI.States
         private static readonly EnumStates STATE = EnumStates.FetchingObject;
         public override EnumStates GetState() { return STATE; }
 
-        public FetchingObjectState(State state) : base(state)
+        public FetchingObjectState(State state, GrabbableObject targetItem) : base(state)
         {
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);
             }
+
+            this.targetItem = targetItem;
         }
 
         public override void DoAI()
@@ -29,28 +31,31 @@ namespace LethalInternship.AI.States
                 return;
             }
 
+            if (!ai.IsGrabbableObjectGrabbable(this.targetItem))
+            {
+                this.targetItem = null;
+                ai.State = new GetCloseToPlayerState(this);
+                return;
+            }
+
+            ai.SetDestinationToPositionInternAI(this.targetItem.transform.position);
             npcController.OrderToLookAtPosition(this.targetItem.transform.position);
 
+            Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} try to grab {this.targetItem.name}");
             if ((ai.destination - npcController.Npc.transform.position).sqrMagnitude < npcController.Npc.grabDistance * npcController.Npc.grabDistance)
             {
                 if (!npcController.Npc.inAnimationWithEnemy && !npcController.Npc.activatingItem)
                 {
                     PlayerControllerBPatch.BeginGrabObject_ReversePatch(npcController.Npc, this.targetItem);
-                    if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) < 0)
+                    if (ai.HandsFree())
                     {
-                        this.targetItem = null;
-                        ai.State = new GetCloseToPlayerState(this);
+                        // Problem with taking object
+                        ai.ListInvalidObjects.Add(this.targetItem);
                     }
-                }
-            }
 
-            if (this.targetItem != null)
-            {
-                // ragdoll can move so we follow new position
-                RagdollGrabbableObject? ragdollGrabbableObject = this.targetItem as RagdollGrabbableObject;
-                if(ragdollGrabbableObject != null)
-                {
-                    ai.SetDestinationToPositionInternAI(this.targetItem.transform.position);
+                    this.targetItem = null;
+                    ai.State = new GetCloseToPlayerState(this);
+                    return;
                 }
             }
 

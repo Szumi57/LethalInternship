@@ -144,6 +144,7 @@ namespace LethalInternship.Patches.NpcPatches
                 return true;
             }
 
+            // Make an intern drop his object
             RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
             foreach (RaycastHit hit in raycastHits)
             {
@@ -163,12 +164,7 @@ namespace LethalInternship.Patches.NpcPatches
                     continue;
                 }
 
-                if (FirstEmptyItemSlot_ReversePatch(intern.NpcController.Npc) < 0)
-                {
-                    Discard_performed_ReversePatch(intern.NpcController.Npc, context);
-                    Plugin.Logger.LogDebug($"intern dropped {intern.NpcController.Npc.currentlyHeldObjectServer}");
-                    InternAI.dictJustDroppedItems[intern.NpcController.Npc.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
-                }
+                InternDropIfHoldingAnItem(intern.NpcController.Npc);
                 return false;
             }
 
@@ -190,12 +186,23 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        public static void InternDropIfHoldingAnItem(PlayerControllerB intern)
+        {
+            if (FirstEmptyItemSlot_ReversePatch(intern) < 0)
+            {
+                Discard_performed_ReversePatch(intern, new InputAction.CallbackContext());
+                Plugin.Logger.LogDebug($"intern dropped {intern.currentlyHeldObjectServer}");
+                InternAI.dictJustDroppedItems[intern.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
+            }
+        }
+
         [HarmonyPatch("Interact_performed")]
         [HarmonyPrefix]
         static bool Interact_performed_PreFix(PlayerControllerB __instance,
                                               ref Ray ___interactRay,
                                               ref int ___playerMask)
         {
+            // Use of interact key to assign intern to player
             RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
             foreach (RaycastHit hit in raycastHits)
             {
@@ -951,6 +958,13 @@ namespace LethalInternship.Patches.NpcPatches
                                                                       item => item.opcode = OpCodes.Ldarg_0
                                                                       ).ToList();
 
+                //Plugin.Logger.LogDebug($"Discard_performed ======================");
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+                //Plugin.Logger.LogDebug($"Discard_performed ======================");
+
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 4; i++)
                 {
@@ -978,6 +992,33 @@ namespace LethalInternship.Patches.NpcPatches
                 else
                 {
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscard_performed_ReversePatch could not remove isHostPlayerObject condition");
+                }
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 1; i++)
+                {
+                    if (codes[i].ToString().StartsWith("ldarga.s 1") //13
+                        && codes[i + 1].ToString() == "call bool UnityEngine.InputSystem.InputAction+CallbackContext::get_performed()")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Nop;
+                    codes[startIndex].operand = null;
+
+                    codes[startIndex + 1].opcode = OpCodes.Nop;
+                    codes[startIndex + 1].operand = null;
+
+                    codes[startIndex + 2].opcode = OpCodes.Nop;
+                    codes[startIndex + 2].operand = null;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscard_performed_ReversePatch could not remove action performed condition");
                 }
 
                 //Plugin.Logger.LogDebug($"Discard_performed ======================");
@@ -1109,13 +1150,11 @@ namespace LethalInternship.Patches.NpcPatches
                 //Plugin.Logger.LogDebug($"LateUpdate ======================");
 
                 // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 4; i++)
+                for (var i = 0; i < codes.Count - 5; i++)
                 {
-                    if (codes[i].ToString() == "ldarg.0 NULL" //19
-                        && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsServer()"
-                        && codes[i + 2].ToString() == "brfalse Label5"
-                        && codes[i + 3].ToString() == "ldarg.0 NULL"
-                        && codes[i + 4].ToString() == "ldfld bool GameNetcodeStuff.PlayerControllerB::isHostPlayerObject")
+                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //53
+                        && codes[i + 1].ToString() == "ldarg.0 NULL"
+                        && codes[i + 5].ToString() == "stfld UnityEngine.Vector3 GameNetcodeStuff.PlayerControllerB::previousElevatorPosition")//58
                     {
                         startIndex = i;
                         break;
@@ -1123,57 +1162,40 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 if (startIndex > -1)
                 {
-                    for (var i = startIndex; i < startIndex + 6; i++)
-                    {
-                        if (i == startIndex + 2)
-                        {
-                            codes[i].opcode = OpCodes.Br;// use label5 here to bypass condition check
-                        }
-                        else
-                        {
-                            codes[i].opcode = OpCodes.Nop;
-                            codes[i].operand = null;
-                        }
-                    }
+                    codes.RemoveRange(0, startIndex);
                     startIndex = -1;
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove isHostPlayerObject condition 1");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove all beginning with in elevator stuff");
                 }
 
                 // ----------------------------------------------------------------------
-                // invalid IL code op ?????
-                //for (var i = 0; i < codes.Count - 29; i++)
-                //{
-                //    if (codes[i].ToString() == "ldarg.0 NULL" //59
-                //        && codes[i + 1].ToString() == "ldfld bool GameNetcodeStuff.PlayerControllerB::isTestingPlayer"
-                //        && codes[i + 29].ToString() == "ldfld UnityEngine.Transform GameNetcodeStuff.PlayerControllerB::usernameBillboard") // 88
-                //    {
-                //        startIndex = i;
-                //        break;
-                //    }
-                //}
-                //if (startIndex > -1)
-                //{
-                //    for (var i = startIndex; i < startIndex + 45; i++) //104
-                //    {
-                //        codes[i].opcode = OpCodes.Nop;
-                //        codes[i].operand = null;
-                //    }
-                //    startIndex = -1;
-                //}
-                //else
-                //{
-                //    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove billboard and canvas");
-                //}
+                for (var i = 0; i < codes.Count - 1; i++)
+                {
+                    if (codes[i].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()" //68
+                        && codes[i + 1].ToString().StartsWith("brtrue"))
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex + 1].opcode = OpCodes.Brfalse;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not use is owner for displaying names above interns");
+                }
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 7; i++)
                 {
                     if (codes[i].ToString() == "ldarg.0 NULL" //107
                         && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsServer()"
-                        && codes[i + 2].ToString() == "brfalse Label19"
+                        && codes[i + 2].ToString().StartsWith("brfalse")
                         && codes[i + 3].ToString() == "ldarg.0 NULL"
                         && codes[i + 4].ToString() == "ldfld bool GameNetcodeStuff.PlayerControllerB::isHostPlayerObject"
                         && codes[i + 7].ToString() == "call void GameNetcodeStuff.PlayerControllerB::PlayerLookInput()")
@@ -1206,7 +1228,7 @@ namespace LethalInternship.Patches.NpcPatches
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 21; i++)
                 {
-                    if (codes[i].ToString() == "ldarg.0 NULL [Label23, Label31, Label32, Label33]" //210
+                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //210
                         && codes[i + 1].ToString() == "ldfld UnityEngine.Transform GameNetcodeStuff.PlayerControllerB::localVisor"
                         && codes[i + 21].ToString() == "callvirt void UnityEngine.Transform::set_rotation(UnityEngine.Quaternion value)") // 231
                     {
@@ -1280,7 +1302,7 @@ namespace LethalInternship.Patches.NpcPatches
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 1; i++)
                 {
-                    if (codes[i].ToString() == "ldarg.0 NULL [Label53, Label56]" //491
+                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //491
                         && codes[i + 1].ToString() == "call void GameNetcodeStuff.PlayerControllerB::SetHoverTipAndCurrentInteractTrigger()")
                     {
                         startIndex = i;
@@ -1304,7 +1326,7 @@ namespace LethalInternship.Patches.NpcPatches
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 4; i++)
                 {
-                    if (codes[i].ToString() == "ldarg.0 NULL [Label57, Label58]" //519
+                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //519
                         && codes[i + 2].ToString() == "ldfld bool StartOfRound::overrideSpectateCamera")
                     {
                         startIndex = i;
@@ -1437,11 +1459,11 @@ namespace LethalInternship.Patches.NpcPatches
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
 
-                Plugin.Logger.LogDebug($"Interact ======================");
-                for (var i = 0; i < codes.Count; i++)
-                {
-                    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                }
+                //Plugin.Logger.LogDebug($"Interact ======================");
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 1; i++)
@@ -1459,8 +1481,6 @@ namespace LethalInternship.Patches.NpcPatches
                     codes[startIndex].operand = null;
                     codes[startIndex + 1].opcode = OpCodes.Nop;
                     codes[startIndex + 1].operand = null;
-                    codes[startIndex + 2].opcode = OpCodes.Nop;
-                    codes[startIndex + 2].operand = null;
                     startIndex = -1;
                 }
                 else

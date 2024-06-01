@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI;
 using LethalInternship.Patches;
+using LethalInternship.Patches.NpcPatches;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -126,6 +127,9 @@ namespace LethalInternship
             internAI.Init();
 
             internObjectParent.SetActive(true);
+
+            // Unsuscribe from events to prevent double trigger
+            PlayerControllerBPatch.OnDisable_ReversePatch(internController);
         }
 
         private static int GetNextAvailablePlayerObject()
@@ -167,7 +171,6 @@ namespace LethalInternship
 
         public static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
         {
-            Plugin.Logger.LogDebug($"grabbable {grabbableObject}");
             Transform localItemHolder = grabbableObject.parentObject;
             PlayerControllerB playerHolder;
 
@@ -181,7 +184,6 @@ namespace LethalInternship
             }
 
             if (playerHolder == null) { return false; }
-            Plugin.Logger.LogDebug($"return {GetInternAI((int)playerHolder.playerClientId) != null}");
             return GetInternAI((int)playerHolder.playerClientId) != null;
         }
 
@@ -297,6 +299,18 @@ namespace LethalInternship
                 networkObject.enabled = true;
                 networkObject.AutoObjectParentSync = true;
             }
+        }
+
+        public static Vector3 ShipBoundClosestPoint(Vector3 fromPoint)
+        {
+            return GetExpandedShipBounds().ClosestPoint(fromPoint);
+        }
+
+        public static Bounds GetExpandedShipBounds()
+        {
+            Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
+            shipBounds.Expand(6f);
+            return shipBounds;
         }
     }
 }

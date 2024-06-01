@@ -19,14 +19,12 @@ namespace LethalInternship.AI.States
         public override void DoAI()
         {
             // Check for object to grab
-            if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
+            if (ai.HandsFree())
             {
                 GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
                 if (grabbableObject != null)
                 {
-                    ai.SetDestinationToPositionInternAI(grabbableObject.transform.position);
-                    this.targetItem = grabbableObject;
-                    ai.State = new FetchingObjectState(this);
+                    ai.State = new FetchingObjectState(this, grabbableObject);
                     return;
                 }
             }
@@ -34,7 +32,6 @@ namespace LethalInternship.AI.States
             player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, 60, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (player != null)
             {
-                Plugin.Logger.LogDebug($"target {player.name}");
                 // new target
                 ai.AssignTargetAndSetMovingTo(player);
                 ai.State = new GetCloseToPlayerState(this);

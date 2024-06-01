@@ -39,51 +39,37 @@ namespace LethalInternship.AI.States
         public override void DoAI()
         {
             // Check for object to grab
-            if (PlayerControllerBPatch.FirstEmptyItemSlot_ReversePatch(npcController.Npc) > -1)
+            if (ai.HandsFree())
             {
                 GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
                 if (grabbableObject != null)
                 {
-                    ai.SetDestinationToPositionInternAI(grabbableObject.transform.position);
-                    this.targetItem = grabbableObject;
-                    ai.State = new FetchingObjectState(this);
+                    ai.State = new FetchingObjectState(this, grabbableObject);
                     return;
                 }
             }
 
+            // Target in ship, wait outside
+            if (ai.IsTargetInShipBoundsExpanded())
+            {
+                ai.State = new PlayerInShipState(this);
+                return;
+            }
+
+            PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (player != null)
+            {
+                targetLastKnownPosition = ai.targetPlayer.transform.position;
+            }
+
+            // Target too far
             if (SqrHorizontalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
                 || SqrVerticalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {
                 // todo check sound
                 npcController.OrderToLookForward();
-
-                PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                if (player != null)
-                {
-                    // Target still here but too far
-                    targetLastKnownPosition = player.transform.position;
-                    ai.State = new GetCloseToPlayerState(this);
-                    return;
-                }
-                else
-                {
-                    // Target lost
-                    ai.State = new JustLostPlayerState(this);
-                    return;
-                }
-            }
-
-            PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (target == null)
-            {
-                // Target is not visible
                 ai.State = new GetCloseToPlayerState(this);
                 return;
-            }
-            else
-            {
-                // Target still visible
-                targetLastKnownPosition = target.transform.position;
             }
 
             // Looking

@@ -6,6 +6,7 @@
         GetCloseToPlayer,
         JustLostPlayer,
         ChillWithPlayer,
-        FetchingObject
+        FetchingObject,
+        PlayerInShip
     }
 }

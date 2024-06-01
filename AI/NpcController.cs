@@ -117,9 +117,6 @@ namespace LethalInternship.AI
             //}
             //Npc.gameObject.GetComponent<CharacterController>().enabled = false;
             //Npc.syncFullRotation = Npc.transform.eulerAngles;
-
-            // Unsuscribe from events to prevent double trigger
-            PlayerControllerBPatch.OnDisable_ReversePatch(this.Npc);
         }
 
         public void Update()
@@ -869,8 +866,15 @@ namespace LethalInternship.AI
         }
         public void OrderToLookAtPosition(Vector3 positionToLookAt)
         {
-            this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
-            this.positionToLookAt = positionToLookAt;
+            if (!Physics.Linecast(Npc.gameplayCamera.transform.position, positionToLookAt, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+            {
+                this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
+                this.positionToLookAt = positionToLookAt;
+            }
+            else
+            {
+                OrderToLookForward();
+            }
         }
         private void UpdateLookAt()
         {
@@ -944,8 +948,8 @@ namespace LethalInternship.AI
 
         public bool CanUseLadder(InteractTrigger ladder)
         {
-            if((this.Npc.isHoldingObject && !ladder.oneHandedItemAllowed) 
-                || (this.Npc.twoHanded && 
+            if ((this.Npc.isHoldingObject && !ladder.oneHandedItemAllowed)
+                || (this.Npc.twoHanded &&
                                    (!ladder.twoHandedItemAllowed || ladder.specialCharacterAnimation)))
             {
                 Plugin.Logger.LogDebug("no ladder cuz holding things");

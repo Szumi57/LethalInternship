@@ -303,7 +303,6 @@ namespace LethalInternship.Patches.NpcPatches
             if (__instance.targetPlayer != null && bufferDistance > 0f && playerControllerB != null
                 && Mathf.Abs(__instance.mostOptimalDistance - Vector3.Distance(__instance.transform.position, playerControllerB.transform.position)) < bufferDistance)
             {
-                Plugin.Logger.LogDebug("TargetClosestPlayer postfix intern closer");
                 __instance.targetPlayer = playerControllerB;
             }
             __result = __instance.targetPlayer != null;

@@ -91,6 +91,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(DoorLockPatch));
             _harmony.PatchAll(typeof(ItemDropShipPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
+            _harmony.PatchAll(typeof(NetworkObjectPatch));
             _harmony.PatchAll(typeof(SoundManagerPatch));
             _harmony.PatchAll(typeof(StartOfRoundPatch));
 
