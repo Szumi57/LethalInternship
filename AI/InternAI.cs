@@ -504,12 +504,12 @@ namespace LethalInternship.AI
                                                              0.5f);
                         if (canMoveCheckWhileJump)
                         {
-                            Log($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheck -> jump");
+                            Log($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
                             PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
                         }
                     }
                 }
-                else if (legsFreeCheck && !headFreeCheck)
+                else if (legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck))
                 {
                     if (!NpcController.Npc.isCrouching)
                     {
@@ -518,7 +518,7 @@ namespace LethalInternship.AI
                                                              0.5f);
                         if (canMoveCheckWhileCrouch)
                         {
-                            Log($"legsFreeCheck && !headFreeCheck && canMoveCheck -> crouch  (unsprint too)");
+                            Log($"legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
                             NpcController.OrderToStopSprint();
                             NpcController.OrderToToggleCrouch();
                         }
@@ -837,7 +837,6 @@ namespace LethalInternship.AI
             if ((grabbableObject.transform.position - InternManager.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
                     < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
             {
-                Plugin.Logger.LogDebug($"object {grabbableObject.name} dropped too close to ship");
                 return false;
             }
 
@@ -849,6 +848,12 @@ namespace LethalInternship.AI
                 }
             }
             TrimDictJustDroppedItems();
+
+            if(this.PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
+            {
+                Plugin.Logger.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
+                return false;
+            }
 
             return true;
         }

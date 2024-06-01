@@ -95,21 +95,27 @@ namespace LethalInternship.AI.States
                 }
             }
 
-            PlayerControllerB? checkTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (checkTarget == null)
-            {
-                if (SqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
-                    || SqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
-                {
-                    Plugin.Logger.LogDebug($"no see target, still in range ? too far {SqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {SqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
-                    ai.State = new JustLostPlayerState(this);
-                    return;
-                }
-            }
-            else
+            // Target is in awarness range
+            if (SqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
+                    && SqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
             {
                 targetLastKnownPosition = ai.targetPlayer.transform.position;
                 ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
+            }
+            else
+            {
+                Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} no see target, still in range ? too far {SqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {SqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
+                PlayerControllerB? checkTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                if (checkTarget == null)
+                {
+                    ai.State = new JustLostPlayerState(this);
+                    return;
+                }
+                else
+                {
+                    targetLastKnownPosition = ai.targetPlayer.transform.position;
+                    ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
+                }
             }
 
             ai.OrderMoveToDestination();

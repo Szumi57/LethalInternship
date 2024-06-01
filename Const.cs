@@ -11,8 +11,8 @@
         public static readonly float INTERN_OBJECT_RANGE = 20f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
 
-        public static readonly float BASE_MAX_SPEED = 0.9f;
-        public static readonly float BASE_MIN_SPEED = 0.04f;
+        public static readonly float BASE_MAX_SPEED = 0.8f;
+        public static readonly float BASE_MIN_SPEED = 0.1f;
         public static readonly float BODY_TURNSPEED = 6f;
         public static readonly float CAMERA_TURNSPEED = 8f;
 

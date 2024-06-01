@@ -44,7 +44,7 @@ namespace LethalInternship.AI.States
             {
                 // todo Look around randomly ?
                 lookingAroundTimer += ai.AIIntervalTime;
-                Plugin.Logger.LogDebug($"Looking around to find player {lookingAroundTimer}");
+                Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} Looking around to find player {lookingAroundTimer}");
                 ai.StopMoving();
                 return;
             }
