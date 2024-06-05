@@ -1,17 +1,13 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using HarmonyLib.Public.Patching;
 using LethalInternship.AI;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using UnityEngine;
-using UnityEngine.Analytics;
-using static UnityEngine.GridBrushBase;
 
 namespace LethalInternship.Patches.NpcPatches
 {

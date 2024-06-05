@@ -1,10 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.Utils;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
+using LethalInternship.Managers;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 

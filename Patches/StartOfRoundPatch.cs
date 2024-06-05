@@ -1,29 +1,29 @@
-﻿using BepInEx.Logging;
-using HarmonyLib;
-using System;
+﻿using HarmonyLib;
+using LethalInternship.Managers;
 using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
+using System.Linq;
+using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
-using Vector3 = UnityEngine.Vector3;
-using Object = UnityEngine.Object;
-using Quaternion = UnityEngine.Quaternion;
-using static UnityEngine.UIElements.UIR.Implementation.UIRStylePainter;
-using System.Runtime.CompilerServices;
-using System.Linq;
-using LethalInternship.Utils;
-using GameNetcodeStuff;
-using UnityEngine.AI;
-using LethalInternship.AI;
-using System.Reflection.Emit;
 
 namespace LethalInternship.Patches
 {
-    //todo SUPPRIMER ?
     [HarmonyPatch(typeof(StartOfRound))]
     internal class StartOfRoundPatch
     {
+        [HarmonyPatch("Awake")]
+        [HarmonyPrefix]
+        static void Awake_Prefix(StartOfRound __instance)
+        {
+            Plugin.Logger.LogDebug("Initialize TerminalManager...");
+            if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
+            {
+                GameObject terminalManager = Object.Instantiate(ManagersManager.Instance.TerminalManagerPrefab);
+                terminalManager.GetComponent<NetworkObject>().Spawn();
+                Plugin.Logger.LogDebug("TerminalManager started");
+            }
+        }
+
         // todo remove log debug supression
         [HarmonyPatch("RefreshPlayerVoicePlaybackObjects")]
         [HarmonyTranspiler]

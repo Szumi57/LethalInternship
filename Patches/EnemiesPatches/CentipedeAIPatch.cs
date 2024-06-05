@@ -1,9 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.Utils;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {

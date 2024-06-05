@@ -1,11 +1,9 @@
 ﻿using HarmonyLib;
-using LethalInternship.Utils;
-using System;
+using LethalInternship.Managers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {

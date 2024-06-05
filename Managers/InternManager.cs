@@ -1,22 +1,22 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI;
-using LethalInternship.Patches;
 using LethalInternship.Patches.NpcPatches;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace LethalInternship
+namespace LethalInternship.Managers
 {
     internal static class InternManager
     {
         public static int AllEntitiesCount;
         public static InternAI[] AllInternAIs = null!;
         public static EnemyType InternNPCPrefab = null!;
+
+        public static int NbInternsToDropShip;
 
         private static GameObject[] AllPlayerObjectsBackUp = null!;
         private static PlayerControllerB[] AllPlayerScriptsBackUp = null!;
@@ -41,6 +41,21 @@ namespace LethalInternship
                     Object.DestroyImmediate(transform.gameObject);
                 }
             }
+        }
+
+        public static void SpawnInternsFromDropShip(Transform[] spawnPositions)
+        {
+            int pos = 0;
+            for(int i = 0; i < NbInternsToDropShip; i++)
+            {
+                if (pos >= 3)
+                {
+                    pos = 0;
+                }
+                SpawnIntern(spawnPositions[pos++]);
+                Plugin.Logger.LogDebug($"pos {pos}, NbInternsToDropShip {NbInternsToDropShip}");
+            }
+            NbInternsToDropShip = 0;
         }
 
         public static void SpawnIntern(Transform positionTransform, bool isOutside = true)

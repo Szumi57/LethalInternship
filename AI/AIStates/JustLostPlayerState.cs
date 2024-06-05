@@ -1,14 +1,13 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches.NpcPatches;
 using UnityEngine;
 
-namespace LethalInternship.AI.States
+namespace LethalInternship.AI.AIStates
 {
-    internal class JustLostPlayerState : State
+    internal class JustLostPlayerState : AIState
     {
-        private static readonly EnumStates STATE = EnumStates.JustLostPlayer;
-        public override EnumStates GetState() { return STATE; }
+        private static readonly EnumAIStates STATE = EnumAIStates.JustLostPlayer;
+        public override EnumAIStates GetAIState() { return STATE; }
 
         private float lookingAroundTimer;
         private float SqrDistanceWithTargetLastKnownPosition
@@ -24,7 +23,7 @@ namespace LethalInternship.AI.States
             }
         }
 
-        public JustLostPlayerState(State state) : base(state)
+        public JustLostPlayerState(AIState state) : base(state)
         {
             if (searchForPlayers.inProgress)
             {

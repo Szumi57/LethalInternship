@@ -1,14 +1,13 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches.NpcPatches;
 using UnityEngine;
 
-namespace LethalInternship.AI.States
+namespace LethalInternship.AI.AIStates
 {
-    internal class GetCloseToPlayerState : State
+    internal class GetCloseToPlayerState : AIState
     {
-        private static readonly EnumStates STATE = EnumStates.GetCloseToPlayer;
-        public override EnumStates GetState() { return STATE; }
+        private static readonly EnumAIStates STATE = EnumAIStates.GetCloseToPlayer;
+        public override EnumAIStates GetAIState() { return STATE; }
 
         private float SqrHorizontalDistanceWithTarget
         {
@@ -26,7 +25,7 @@ namespace LethalInternship.AI.States
             }
         }
 
-        public GetCloseToPlayerState(State state) : base(state)
+        public GetCloseToPlayerState(AIState state) : base(state)
         {
             if (searchForPlayers.inProgress)
             {

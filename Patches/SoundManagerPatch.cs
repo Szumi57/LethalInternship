@@ -1,9 +1,5 @@
-﻿using GameNetcodeStuff;
-using HarmonyLib;
-using LethalInternship.AI;
+﻿using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LethalInternship.Patches
 {

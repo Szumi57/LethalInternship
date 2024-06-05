@@ -1,10 +1,9 @@
-﻿using GameNetcodeStuff;
-using LethalInternship.Enums;
+﻿using LethalInternship.Enums;
 using UnityEngine;
 
 namespace LethalInternship.AI
 {
-    internal abstract class State
+    internal abstract class AIState
     {
         protected InternAI ai;
         protected NpcController npcController;
@@ -15,14 +14,14 @@ namespace LethalInternship.AI
         
         public float TimeSinceUsingEntrance { get; set; }
 
-        protected State(State newState) : this(newState.ai)
+        protected AIState(AIState newState) : this(newState.ai)
         {
             this.targetLastKnownPosition = newState.targetLastKnownPosition;
             this.targetItem = newState.targetItem;
             this.TimeSinceUsingEntrance = newState.TimeSinceUsingEntrance;
         }
 
-        protected State(InternAI ai)
+        protected AIState(InternAI ai)
         {
             if (ai == null)
             {
@@ -30,10 +29,10 @@ namespace LethalInternship.AI
             }
 
             this.ai = ai;
-            this.ai.SwitchToBehaviourState((int)this.GetState());
+            this.ai.SwitchToBehaviourState((int)this.GetAIState());
 
             this.npcController = ai.NpcController;
-            Plugin.Logger.LogDebug($"Intern {npcController.Npc.playerClientId} new state :                 {this.GetState()}");
+            Plugin.Logger.LogDebug($"Intern {npcController.Npc.playerClientId} new state :                 {this.GetAIState()}");
 
             this.searchForPlayers = new AISearchRoutine();
             this.searchForPlayers.randomized = true;
@@ -41,6 +40,6 @@ namespace LethalInternship.AI
 
         public abstract void DoAI();
 
-        public abstract EnumStates GetState();
+        public abstract EnumAIStates GetAIState();
     }
 }

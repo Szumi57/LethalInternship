@@ -1,6 +1,8 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.AI.States;
+using LethalInternship.AI.AIStates;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
+using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System;
@@ -41,7 +43,7 @@ namespace LethalInternship.AI
 
         public static Dictionary<GrabbableObject, float> dictJustDroppedItems = new Dictionary<GrabbableObject, float>();
 
-        public State State { get; set; } = null!;
+        public AIState State { get; set; } = null!;
         public List<GrabbableObject> ListInvalidObjects = null!;
 
 
@@ -216,9 +218,9 @@ namespace LethalInternship.AI
             this.enabled = true;
 
             // Behaviour states
-            enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumStates)).Length];
+            enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumAIStates)).Length];
             int index = 0;
-            foreach (var state in (EnumStates[])Enum.GetValues(typeof(EnumStates)))
+            foreach (var state in (EnumAIStates[])Enum.GetValues(typeof(EnumAIStates)))
             {
                 enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
             }
@@ -362,7 +364,7 @@ namespace LethalInternship.AI
                 InternAI? internAI = InternManager.GetInternAI(i);
                 if (internAI == null
                     || internAI.targetPlayer == null
-                    || internAI.State.GetState() == EnumStates.JustLostPlayer)
+                    || internAI.State.GetAIState() == EnumAIStates.JustLostPlayer)
                 {
                     continue;
                 }
@@ -1095,7 +1097,7 @@ namespace LethalInternship.AI
             //{
             //    yield break;
             //}
-            SwitchToBehaviourClientRpc((int)EnumStates.GetCloseToPlayer);
+            SwitchToBehaviourClientRpc((int)EnumAIStates.GetCloseToPlayer);
         }
 
         public override void OnCollideWithPlayer(Collider other)

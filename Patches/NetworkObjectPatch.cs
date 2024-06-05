@@ -1,8 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.AI;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using LethalInternship.Managers;
 using Unity.Netcode;
 
 namespace LethalInternship.Patches

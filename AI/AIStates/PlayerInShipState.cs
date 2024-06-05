@@ -1,16 +1,14 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
-namespace LethalInternship.AI.States
+namespace LethalInternship.AI.AIStates
 {
-    internal class PlayerInShipState : State
+    internal class PlayerInShipState : AIState
     {
-        private static readonly EnumStates STATE = EnumStates.PlayerInShip;
-        public override EnumStates GetState() { return STATE; }
+        private static readonly EnumAIStates STATE = EnumAIStates.PlayerInShip;
+        public override EnumAIStates GetAIState() { return STATE; }
 
         private Vector3 shipBoundClosestPointFromIntern
         {
@@ -25,7 +23,7 @@ namespace LethalInternship.AI.States
             }
         }
 
-        public PlayerInShipState(State state) : base(state)
+        public PlayerInShipState(AIState state) : base(state)
         {
             if (searchForPlayers.inProgress)
             {

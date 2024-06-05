@@ -1,19 +1,14 @@
-﻿using GameNetcodeStuff;
-using LethalInternship.Enums;
+﻿using LethalInternship.Enums;
 using LethalInternship.Patches.NpcPatches;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Unity.Netcode;
 
-namespace LethalInternship.AI.States
+namespace LethalInternship.AI.AIStates
 {
-    internal class FetchingObjectState : State
+    internal class FetchingObjectState : AIState
     {
-        private static readonly EnumStates STATE = EnumStates.FetchingObject;
-        public override EnumStates GetState() { return STATE; }
+        private static readonly EnumAIStates STATE = EnumAIStates.FetchingObject;
+        public override EnumAIStates GetAIState() { return STATE; }
 
-        public FetchingObjectState(State state, GrabbableObject targetItem) : base(state)
+        public FetchingObjectState(AIState state, GrabbableObject targetItem) : base(state)
         {
             if (searchForPlayers.inProgress)
             {

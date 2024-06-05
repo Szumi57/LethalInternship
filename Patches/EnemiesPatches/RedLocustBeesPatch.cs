@@ -1,15 +1,7 @@
-﻿using GameNetcodeStuff;
-using HarmonyLib;
-using LethalInternship.AI;
-using LethalInternship.Utils;
-using MoreCompany;
-using System;
+﻿using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {

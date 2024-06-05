@@ -1,19 +1,10 @@
 ﻿using GameNetcodeStuff;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine.Rendering;
-using UnityEngine;
-using Unity.Netcode;
-using UnityEngine.UIElements;
-using UnityEngine.XR;
-using static UnityEngine.GraphicsBuffer;
-using System.Collections;
-using UnityEngine.Yoga;
-using System.ComponentModel;
 using LethalInternship.Enums;
-using System.Linq;
 using LethalInternship.Patches.NpcPatches;
+using System.Collections.Generic;
+using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace LethalInternship.AI
 {

@@ -1,6 +1,6 @@
 ﻿namespace LethalInternship.Enums
 {
-    internal enum EnumStates
+    internal enum EnumAIStates
     {
         SearchingForPlayer,
         GetCloseToPlayer,

@@ -1,19 +1,16 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Patches.NpcPatches;
-using System.ComponentModel;
-using UnityEngine;
 
-namespace LethalInternship.AI.States
+namespace LethalInternship.AI.AIStates
 {
-    internal class SearchingForPlayerState : State
+    internal class SearchingForPlayerState : AIState
     {
-        private static readonly EnumStates STATE = EnumStates.SearchingForPlayer;
-        public override EnumStates GetState() { return STATE; }
+        private static readonly EnumAIStates STATE = EnumAIStates.SearchingForPlayer;
+        public override EnumAIStates GetAIState() { return STATE; }
 
         private PlayerControllerB? player;
 
-        public SearchingForPlayerState(State newState) : base(newState) { }
+        public SearchingForPlayerState(AIState newState) : base(newState) { }
         public SearchingForPlayerState(InternAI ai) : base(ai) { }
 
         public override void DoAI()

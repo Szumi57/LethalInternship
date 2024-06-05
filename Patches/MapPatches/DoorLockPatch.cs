@@ -1,8 +1,9 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Managers;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.MapPatches
 {
     [HarmonyPatch(typeof(DoorLock))]
     internal class DoorLockPatch

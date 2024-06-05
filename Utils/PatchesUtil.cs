@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Managers;
 using LethalInternship.Patches;
 using System;
 using System.Collections.Generic;

@@ -1,12 +1,10 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.Utils;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches
