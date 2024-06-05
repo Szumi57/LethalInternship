@@ -1,19 +1,20 @@
 ﻿using LethalInternship.Enums;
 using LethalInternship.Patches.TerminalPatches;
-using LethalInternship.TerminalPluginParser.TerminalStates;
+using LethalInternship.TerminalAdapter.TerminalStates;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LethalInternship.TerminalPluginParser
+namespace LethalInternship.TerminalAdapter
 {
     internal class TerminalParser
     {
         public TerminalState TerminalState = null!;
         public int NbInternsAlreadyBought;
 
-        public TerminalParser()
+        public TerminalParser(int nbInternsAlreadyBought)
         {
+            this.NbInternsAlreadyBought = nbInternsAlreadyBought;
             TerminalState = new WaitForMainCommandPage(this);
         }
 

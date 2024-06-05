@@ -1,4 +1,4 @@
-﻿using LethalInternship.TerminalPluginParser;
+﻿using LethalInternship.TerminalAdapter;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -15,12 +15,6 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
-            if (base.IsHost)
-            {
-            }
-            else
-            {
-            }
         }
 
         public Terminal GetTerminal()
@@ -61,14 +55,14 @@ namespace LethalInternship.Managers
         {
             if (terminalParser == null)
             {
-                terminalParser = new TerminalParser();
+                terminalParser = new TerminalParser(InternManager.Instance.NbInternsToDropShip);
             }
             return terminalParser.ParseCommand(command, ref terminal);
         }
 
         public void SyncPurchaseAndCredits(int nbInternsBought, int credits)
         {
-            Plugin.Logger.LogInfo($"base.IsOwner {base.IsOwner}, IsClient {base.IsClient}, IsHost {base.IsHost}, IsServer {base.IsServer}");
+            Plugin.Logger.LogInfo($"base.IsOwner {base.IsOwner}, base.IsHost {base.IsHost}, IsHost {NetworkManager.IsHost}");
             if (base.IsOwner)
             {
                 SyncPurchaseAndCreditsFromServerToClientRpc(nbInternsBought, credits);
@@ -81,22 +75,23 @@ namespace LethalInternship.Managers
 
         private void UpdatePurchaseAndCredits(int nbInternsBought, int credits)
         {
-            terminalParser.NbInternsAlreadyBought += nbInternsBought;
+            InternManager.Instance.NbInternsToDropShip += nbInternsBought;
+            terminalParser.NbInternsAlreadyBought = InternManager.Instance.NbInternsToDropShip;
             Terminal.groupCredits = credits;
         }
 
 
         [ServerRpc(RequireOwnership = false)]
-        public void SyncPurchaseAndCreditsFromClientToServerRpc(int nbInternsBought, int credits)
+        private void SyncPurchaseAndCreditsFromClientToServerRpc(int nbInternsBought, int credits)
         {
             Plugin.Logger.LogInfo($"Client send to server to sync credits to ${credits}, calling ClientRpc...");
             SyncPurchaseAndCreditsFromServerToClientRpc(nbInternsBought, credits);
         }
 
         [ClientRpc]
-        public void SyncPurchaseAndCreditsFromServerToClientRpc(int nbInternsBought, int newCredits)
+        private void SyncPurchaseAndCreditsFromServerToClientRpc(int nbInternsBought, int newCredits)
         {
-            Plugin.Logger.LogInfo($"Server send to clients to sync credits to ${newCredits}, client calls...");
+            Plugin.Logger.LogInfo($"Server send to clients to sync credits to ${newCredits}, client execute...");
             UpdatePurchaseAndCredits(nbInternsBought, newCredits);
         }
     }

@@ -10,18 +10,27 @@ using Object = UnityEngine.Object;
 
 namespace LethalInternship.Managers
 {
-    internal static class InternManager
+    internal class InternManager : NetworkBehaviour
     {
-        public static int AllEntitiesCount;
-        public static InternAI[] AllInternAIs = null!;
-        public static EnemyType InternNPCPrefab = null!;
+        public static InternManager Instance { get; private set; } = null!;
 
-        public static int NbInternsToDropShip;
+        public int AllEntitiesCount;
+        public InternAI[] AllInternAIs = null!;
+        public EnemyType InternNPCPrefab = null!;
 
-        private static GameObject[] AllPlayerObjectsBackUp = null!;
-        private static PlayerControllerB[] AllPlayerScriptsBackUp = null!;
+        public int NbInternsToDropShip;
+        public int IndexBeginToInterns { get { return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length; } }
 
-        public static void Init()
+        private GameObject[] AllPlayerObjectsBackUp = null!;
+        private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
+
+        private void Awake()
+        {
+            Instance = this;
+            Init();
+        }
+
+        private void Init()
         {
             //
             InternNPCPrefab = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
@@ -43,10 +52,43 @@ namespace LethalInternship.Managers
             }
         }
 
-        public static void SpawnInternsFromDropShip(Transform[] spawnPositions)
+        public static bool AreInternsScheduledToLand()
+        {
+            return Instance.NbInternsToDropShip > 0;
+        }
+
+        public void SyncUpdateAliveInternsToDropShip()
+        {
+            NbInternsToDropShip = CountAliveInterns();
+
+            //if (base.IsOwner)
+            //{
+            //    SyncPurchaseAndCreditsFromServerToClientRpc(nbInternsBought, credits);
+            //}
+            //else
+            //{
+            //    SyncPurchaseAndCreditsFromClientToServerRpc(nbInternsBought, credits);
+            //}
+        }
+
+        private int CountAliveInterns()
+        {
+            StartOfRound instance = StartOfRound.Instance;
+            int alive = 0;
+            for (int i = instance.allPlayerScripts.Length - AllInternAIs.Length; i < instance.allPlayerScripts.Length; i++)
+            {
+                if (!instance.allPlayerScripts[i].isPlayerDead && instance.allPlayerScripts[i].isPlayerControlled)
+                {
+                    alive++;
+                }
+            }
+            return alive;
+        }
+
+        public void SpawnInternsFromDropShip(Transform[] spawnPositions)
         {
             int pos = 0;
-            for(int i = 0; i < NbInternsToDropShip; i++)
+            for (int i = 0; i < NbInternsToDropShip; i++)
             {
                 if (pos >= 3)
                 {
@@ -55,13 +97,12 @@ namespace LethalInternship.Managers
                 SpawnIntern(spawnPositions[pos++]);
                 Plugin.Logger.LogDebug($"pos {pos}, NbInternsToDropShip {NbInternsToDropShip}");
             }
-            NbInternsToDropShip = 0;
         }
 
-        public static void SpawnIntern(Transform positionTransform, bool isOutside = true)
+        public void SpawnIntern(Transform positionTransform, bool isOutside = true)
         {
             StartOfRound instance = StartOfRound.Instance;
-            int indexNextPlayerObject = InternManager.GetNextAvailablePlayerObject();
+            int indexNextPlayerObject = GetNextAvailablePlayerObject();
             if (indexNextPlayerObject < 0)
             {
                 Plugin.Logger.LogInfo($"No more intern available");
@@ -147,7 +188,7 @@ namespace LethalInternship.Managers
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
         }
 
-        private static int GetNextAvailablePlayerObject()
+        private int GetNextAvailablePlayerObject()
         {
             StartOfRound instance = StartOfRound.Instance;
             //Plugin.Logger.LogDebug($"2 instance.allPlayerScripts.Length : {instance.allPlayerScripts.Length}");
@@ -162,7 +203,7 @@ namespace LethalInternship.Managers
             return -1;
         }
 
-        public static InternAI? GetInternAI(int index)
+        public InternAI? GetInternAI(int index)
         {
             //Plugin.Logger.LogDebug($"1 instance.allPlayerScripts.Length : {StartOfRound.Instance.allPlayerScripts.Length}");
             //Plugin.Logger.LogDebug($"1 instance.allPlayerObjects.Length : {StartOfRound.Instance.allPlayerObjects.Length}");
@@ -199,10 +240,10 @@ namespace LethalInternship.Managers
             }
 
             if (playerHolder == null) { return false; }
-            return GetInternAI((int)playerHolder.playerClientId) != null;
+            return Instance.GetInternAI((int)playerHolder.playerClientId) != null;
         }
 
-        public static void ResizeAndPopulateInterns()
+        public void ResizeAndPopulateInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
             int irlPlayersCount = instance.allPlayerObjects.Length;
@@ -284,7 +325,7 @@ namespace LethalInternship.Managers
             //}
         }
 
-        private static void SpawnNetworkObjectsOfGameObject(GameObject gameObject)
+        private void SpawnNetworkObjectsOfGameObject(GameObject gameObject)
         {
             var listNetworkObjects = gameObject.GetComponentsInChildren<NetworkObject>();
             NetworkObject networkObjectRoot = null!;
@@ -316,12 +357,12 @@ namespace LethalInternship.Managers
             }
         }
 
-        public static Vector3 ShipBoundClosestPoint(Vector3 fromPoint)
+        public Vector3 ShipBoundClosestPoint(Vector3 fromPoint)
         {
             return GetExpandedShipBounds().ClosestPoint(fromPoint);
         }
 
-        public static Bounds GetExpandedShipBounds()
+        public Bounds GetExpandedShipBounds()
         {
             Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
             shipBounds.Expand(6f);

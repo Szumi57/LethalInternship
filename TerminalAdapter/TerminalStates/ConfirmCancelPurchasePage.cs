@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace LethalInternship.TerminalPluginParser.TerminalStates
+namespace LethalInternship.TerminalAdapter.TerminalStates
 {
     internal class ConfirmCancelPurchasePage : TerminalState
     {
@@ -42,8 +42,7 @@ namespace LethalInternship.TerminalPluginParser.TerminalStates
                 // Confirm
                 int cost = TerminalManager.Instance.GetTerminal().groupCredits - (Const.PRICE_INTERN * this.NbOrdered);
                 TerminalManager.Instance.SyncPurchaseAndCredits(this.NbOrdered, cost);
-                InternManager.NbInternsToDropShip = terminalParser.NbInternsAlreadyBought;
-                Plugin.Logger.LogDebug($"NbInternsToDropShip {InternManager.NbInternsToDropShip}");
+                Plugin.Logger.LogDebug($"NbInternsToDropShip confirmed {InternManager.Instance.NbInternsToDropShip}");
 
                 terminalParser.TerminalState = new InfoPage(this);
                 return true;

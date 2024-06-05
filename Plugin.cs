@@ -1,8 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
-using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Patches;
 using LethalInternship.Patches.EnemiesPatches;
@@ -11,13 +9,9 @@ using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
-using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using Unity.Netcode;
 using UnityEngine;
-
 
 namespace LethalInternship
 {
@@ -51,8 +45,9 @@ namespace LethalInternship
                 return;
             }
 
-            InitManagersManager();
+            InitPluginManager();
 
+            _harmony.PatchAll(typeof(GameNetworkManagerPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
             _harmony.PatchAll(typeof(NetworkObjectPatch));
             _harmony.PatchAll(typeof(SoundManagerPatch));
@@ -109,11 +104,11 @@ namespace LethalInternship
             }
         }
 
-        private static void InitManagersManager()
+        private static void InitPluginManager()
         {
-            GameObject gameObject = new GameObject("ManagersManager");
-            gameObject.AddComponent<ManagersManager>();
-            ManagersManager.Instance.InitManagers();
+            GameObject gameObject = new GameObject("PluginManager");
+            gameObject.AddComponent<PluginManager>();
+            PluginManager.Instance.InitManagers();
         }
     }
 }

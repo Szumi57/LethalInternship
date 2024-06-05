@@ -67,7 +67,7 @@
                                                          
 
 
-                                                         --> Interns on next moons : {2}
+                                                         --> Interns on next moon : {2}
 
                                                          Type 'buy' to order new interns, 'buy 2' to order 2 interns";
 
@@ -82,7 +82,7 @@
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM = " a maximum of";
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns. 
                                                                        
-                                                                       --> Interns on next moons : {2}
+                                                                       --> Interns on next moon : {2}
                                                                        
                                                                        Do you confirm you purchase ?
                                                                        (enter confirm or cancel)";

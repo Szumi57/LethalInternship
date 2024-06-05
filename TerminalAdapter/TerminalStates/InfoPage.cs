@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace LethalInternship.TerminalPluginParser.TerminalStates
+namespace LethalInternship.TerminalAdapter.TerminalStates
 {
     internal class InfoPage : TerminalState
     {
@@ -48,6 +48,11 @@ namespace LethalInternship.TerminalPluginParser.TerminalStates
             {
                 secondWord = words[1];
             }
+            else
+            {
+                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
+                return true;
+            }
 
             // secondWord number
             if (!secondWord.IsNullOrWhiteSpace()
@@ -58,7 +63,7 @@ namespace LethalInternship.TerminalPluginParser.TerminalStates
             }
             else
             {
-                terminalParser.TerminalState = new ChooseBuyNumberPage(this);
+                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
             }
 
             return true;

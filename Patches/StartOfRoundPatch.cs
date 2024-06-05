@@ -15,13 +15,27 @@ namespace LethalInternship.Patches
         [HarmonyPrefix]
         static void Awake_Prefix(StartOfRound __instance)
         {
-            Plugin.Logger.LogDebug("Initialize TerminalManager...");
+            Plugin.Logger.LogDebug("Initialize managers...");
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
-                GameObject terminalManager = Object.Instantiate(ManagersManager.Instance.TerminalManagerPrefab);
-                terminalManager.GetComponent<NetworkObject>().Spawn();
-                Plugin.Logger.LogDebug("TerminalManager started");
+                GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
+                objectManager.GetComponent<NetworkObject>().Spawn();
+
+                objectManager = Object.Instantiate(PluginManager.Instance.SaveManagerPrefab);
+                objectManager.GetComponent<NetworkObject>().Spawn();
+
+                objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
+                objectManager.GetComponent<NetworkObject>().Spawn();
+
+                Plugin.Logger.LogDebug("Managers started");
             }
+        }
+
+        [HarmonyPatch("ShipHasLeft")]
+        [HarmonyPrefix]
+        static void ShipHasLeft_PreFix()
+        {
+            InternManager.Instance.SyncUpdateAliveInternsToDropShip();
         }
 
         // todo remove log debug supression

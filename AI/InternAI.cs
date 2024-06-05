@@ -351,7 +351,7 @@ namespace LethalInternship.AI
         public PlayerControllerB? CheckLOSForInternHavingTargetInLOS(float width = 45f, int range = 60, int proximityAwareness = -1)
         {
             // Check for any interns that has target still in LOS
-            for (int i = StartOfRound.Instance.allPlayerScripts.Length - InternManager.AllInternAIs.Length; i < InternManager.AllEntitiesCount; i++)
+            for (int i = InternManager.Instance.IndexBeginToInterns; i < InternManager.Instance.AllEntitiesCount; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
                 if (intern.playerClientId == this.NpcController.Npc.playerClientId
@@ -361,7 +361,7 @@ namespace LethalInternship.AI
                     continue;
                 }
 
-                InternAI? internAI = InternManager.GetInternAI(i);
+                InternAI? internAI = InternManager.Instance.GetInternAI(i);
                 if (internAI == null
                     || internAI.targetPlayer == null
                     || internAI.State.GetAIState() == EnumAIStates.JustLostPlayer)
@@ -398,7 +398,7 @@ namespace LethalInternship.AI
             float num = 1000f;
             float num2 = 1000f;
             int num3 = -1;
-            for (int i = 0; i < StartOfRound.Instance.allPlayerScripts.Length - InternManager.AllInternAIs.Length; i++)
+            for (int i = 0; i < InternManager.Instance.IndexBeginToInterns; i++)
             {
                 PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
                 if (!PlayerIsTargetable(player))
@@ -445,7 +445,7 @@ namespace LethalInternship.AI
                 return false;
             }
 
-            return targetPlayer.isInElevator || InternManager.GetExpandedShipBounds().Contains(targetPlayer.transform.position);
+            return targetPlayer.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(targetPlayer.transform.position);
         }
 
         public bool SetDestinationToPositionInternAI(Vector3 position)
@@ -836,7 +836,7 @@ namespace LethalInternship.AI
                 return false;
             }
 
-            if ((grabbableObject.transform.position - InternManager.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
+            if ((grabbableObject.transform.position - InternManager.Instance.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
                     < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
             {
                 return false;

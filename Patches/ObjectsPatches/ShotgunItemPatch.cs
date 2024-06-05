@@ -17,7 +17,7 @@ namespace LethalInternship.Patches.ObjectsPatches
         {
             ulong localPlayerActualId = GameNetworkManager.Instance.localPlayerController.actualClientId;
 
-            for (int i = StartOfRound.Instance.allPlayerScripts.Length - InternManager.AllInternAIs.Length; i < InternManager.AllEntitiesCount; i++)
+            for (int i = InternManager.Instance.IndexBeginToInterns; i < InternManager.Instance.AllEntitiesCount; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
                 if (intern.isPlayerDead || !intern.isPlayerControlled)

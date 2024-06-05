@@ -32,7 +32,7 @@ namespace LethalInternship.Utils
         public static bool IsPlayerIntern(PlayerControllerB player)
         {
             if (player == null) return false;
-            InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
             return internAI != null;
         }
 
@@ -48,7 +48,7 @@ namespace LethalInternship.Utils
                 return true;
             }
 
-            InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
                 Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> OTHER PLAYER");
@@ -66,7 +66,7 @@ namespace LethalInternship.Utils
                 return false;
             }
 
-            InternAI? internAI = InternManager.GetInternAI((int)player.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
                 Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> OTHER PLAYER");

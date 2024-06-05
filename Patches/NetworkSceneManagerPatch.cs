@@ -13,7 +13,7 @@ namespace LethalInternship.Patches
         [HarmonyPostfix]
         public static void PopulateScenePlacedObjects_Postfix(ref Dictionary<uint, Dictionary<int, NetworkObject>> ___ScenePlacedObjects)
         {
-            InternManager.ResizeAndPopulateInterns();
+            InternManager.Instance.ResizeAndPopulateInterns();
         }
     }
 }

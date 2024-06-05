@@ -33,7 +33,7 @@ namespace LethalInternship.Patches.NpcPatches
                                   ref List<int> ___currentAnimationStateHash,
                                   ref List<int> ___previousAnimationStateHash)
         {
-            InternAI? internAI = InternManager.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId != __instance.playerClientId)
             {
                 return true;
@@ -65,7 +65,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool LateUpdate_PreFix(PlayerControllerB __instance)
         {
-            InternAI? internAI = InternManager.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
             {
                 LateUpdate_ReversePatch(internAI.NpcController.Npc);
@@ -81,7 +81,7 @@ namespace LethalInternship.Patches.NpcPatches
                                  ref Vector3 ___rightArmProceduralTargetBasePosition,
                                  ref int ___previousAnimationState)
         {
-            InternAI? internAI = InternManager.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
             {
                 //internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
@@ -154,7 +154,7 @@ namespace LethalInternship.Patches.NpcPatches
                 {
                     continue;
                 }
-                InternAI? intern = InternManager.GetInternAI((int)player.playerClientId);
+                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
                 if (intern == null)
                 {
                     continue;
@@ -212,7 +212,7 @@ namespace LethalInternship.Patches.NpcPatches
                 {
                     continue;
                 }
-                InternAI? intern = InternManager.GetInternAI((int)player.playerClientId);
+                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
                 if (intern == null)
                 {
                     continue;
@@ -1376,7 +1376,7 @@ namespace LethalInternship.Patches.NpcPatches
                 return;
             }
 
-            InternManager.SpawnIntern(__instance.transform, !__instance.isInsideFactory);
+            InternManager.Instance.SpawnIntern(__instance.transform, !__instance.isInsideFactory);
         }
 
         [HarmonyPatch("SetHoverTipAndCurrentInteractTrigger")]
@@ -1400,7 +1400,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 player.ShowNameBillboard();
 
-                InternAI? intern = InternManager.GetInternAI((int)player.playerClientId);
+                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
                 if (intern == null)
                 {
                     continue;

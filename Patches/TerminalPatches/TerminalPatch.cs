@@ -12,24 +12,6 @@ namespace LethalInternship.Patches.TerminalPatches
         [HarmonyPostfix]
         static void Start_Postfix(TerminalNodesList ___terminalNodes)
         {
-            foreach (var a in ___terminalNodes.specialNodes)
-            {
-                Plugin.Logger.LogDebug($"");
-                Plugin.Logger.LogDebug($"Special node {___terminalNodes.specialNodes.IndexOf(a)} : name {a.name}, display text {a.displayText}");
-                //PropertiesAndFieldsUtils.ListPropertiesAndFields(a, false, true);
-            }
-            foreach (var a in ___terminalNodes.terminalNodes)
-            {
-                Plugin.Logger.LogDebug($"\nNormal terminal node {___terminalNodes.terminalNodes.IndexOf(a)} : ");
-                PropertiesAndFieldsUtils.ListPropertiesAndFields(a, false, true);
-            }
-
-            Plugin.Logger.LogDebug($"");
-            foreach (var a in ___terminalNodes.allKeywords)
-            {
-                Plugin.Logger.LogDebug($"Keyword {Array.IndexOf(___terminalNodes.allKeywords, a)} : name {a.name}, word {a.word}, isVerb {a.isVerb}, defaultVerb {a.defaultVerb}");
-            }
-
             TerminalManager.Instance.AddTextToHelpTerminalNode(___terminalNodes);
         }
 

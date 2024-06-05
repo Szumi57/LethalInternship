@@ -5,7 +5,6 @@
         Error,
         WaitForMainCommand,
         Info,
-        ChooseBuyNumber,
         ConfirmCancelPurchase,
         AbortLanding,
         ConfirmCancelAbortLanding,

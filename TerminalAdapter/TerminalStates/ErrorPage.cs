@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace LethalInternship.TerminalPluginParser.TerminalStates
+namespace LethalInternship.TerminalAdapter.TerminalStates
 {
     internal class ErrorPage : TerminalState
     {

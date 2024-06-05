@@ -12,7 +12,7 @@ namespace LethalInternship.AI.AIStates
 
         private Vector3 shipBoundClosestPointFromIntern
         {
-            get { return InternManager.ShipBoundClosestPoint(npcController.Npc.transform.position); }
+            get { return InternManager.Instance.ShipBoundClosestPoint(npcController.Npc.transform.position); }
         }
 
         private float SqrHorizDistanceWithShipBoundPoint
