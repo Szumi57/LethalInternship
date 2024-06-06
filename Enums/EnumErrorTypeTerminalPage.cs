@@ -3,6 +3,7 @@
     internal enum EnumErrorTypeTerminalPage
     {
         Default,
-        CannotPurchase
+        CannotPurchase,
+        ShipLeavingMoon
     }
 }

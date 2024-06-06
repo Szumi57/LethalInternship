@@ -1,0 +1,54 @@
+﻿using HarmonyLib;
+using LethalInternship.Utils;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+
+namespace LethalInternship.Patches
+{
+    [HarmonyPatch(typeof(HUDManager))]
+    internal class HUDManagerPatch
+    {
+        static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IndexBeginOfInterns());
+
+        [HarmonyPatch("FillEndGameStats")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> FillEndGameStats_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 3; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //170
+                    && codes[i + 1].ToString() == "ldfld StartOfRound HUDManager::playersManager"
+                    && codes[i + 2].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 3].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Nop;
+                codes[startIndex + 2].operand = null;
+                codes[startIndex + 3].opcode = OpCodes.Call;
+                codes[startIndex + 3].operand = IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.Logger.LogError($"LethalInternship.Patches.FillEndGameStats_Transpiler could not use irl number of player in list.");
+            }
+
+            return codes.AsEnumerable();
+        }
+    }
+}

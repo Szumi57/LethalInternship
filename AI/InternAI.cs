@@ -56,6 +56,7 @@ namespace LethalInternship.AI
         //private Vector3 npcControllerLastPosition;
         private float timeSinceStuck;
         private bool hasTriedToJump = false;
+        private bool StuckTeleportTry1;
 
         [Space(3f)]
         private RaycastHit enemyRayHit;
@@ -106,7 +107,6 @@ namespace LethalInternship.AI
         public override void Start()
         {
             this.NpcController.Awake();
-            Log("Intern Spawned");
 
             //todo start bloodpools ?
 
@@ -115,36 +115,6 @@ namespace LethalInternship.AI
             {
                 AIIntervalTime = 0.3f;
             }
-
-            // Ladders
-            List<InteractTrigger> ladders = new List<InteractTrigger>();
-            InteractTrigger[] interactsTrigger = Resources.FindObjectsOfTypeAll<InteractTrigger>();
-            for (int i = 0; i < interactsTrigger.Length; i++)
-            {
-                if (interactsTrigger[i] == null)
-                {
-                    return;
-                }
-
-                if (interactsTrigger[i].isLadder && interactsTrigger[i].ladderHorizontalPosition != null)
-                {
-                    ladders.Add(interactsTrigger[i]);
-                    //Plugin.Logger.LogDebug($"adding ladder {i} horiz pos {interactsTrigger[i].ladderHorizontalPosition.position}");
-                    //Plugin.Logger.LogDebug($"---------------");
-                }
-            }
-            laddersInteractTrigger = ladders.ToArray();
-            Plugin.Logger.LogDebug($"Ladders found : {laddersInteractTrigger.Length}");
-
-            // Entrances
-            entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
-
-            // Doors
-            doorLocksArray = UnityEngine.Object.FindObjectsOfType<DoorLock>(includeInactive: false);
-
-            // Grabbableobject
-            HoarderBugAI.RefreshGrabbableObjectsInMapList();
-            ListInvalidObjects = new List<GrabbableObject>();
 
             try
             {
@@ -156,7 +126,6 @@ namespace LethalInternship.AI
                     creatureAnimator = gameObject.GetComponentInChildren<Animator>();
                 }
                 thisNetworkObject = gameObject.GetComponentInChildren<NetworkObject>();
-                serverPosition = transform.position;
                 //thisEnemyIndex = RoundManager.Instance.numberOfEnemiesInScene;
                 //RoundManager.Instance.numberOfEnemiesInScene++;
                 //isOutside = transform.position.y > -80f;
@@ -195,6 +164,7 @@ namespace LethalInternship.AI
             addPlayerVelocityToDestination = 3f;
 
             Init();
+            Log("Intern Spawned");
 
             // --- old code
             timeSinceHittingLocalPlayer = 0;
@@ -206,6 +176,21 @@ namespace LethalInternship.AI
 
         public void Init()
         {
+            // Ladders
+            laddersInteractTrigger = RefreshLaddersList();
+            Plugin.Logger.LogDebug($"Ladders found : {laddersInteractTrigger.Length}");
+
+            // Entrances
+            entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+
+            // Doors
+            doorLocksArray = UnityEngine.Object.FindObjectsOfType<DoorLock>(includeInactive: false);
+
+            // Grabbableobject
+            HoarderBugAI.RefreshGrabbableObjectsInMapList();
+            ListInvalidObjects = new List<GrabbableObject>();
+
+            // AI init
             this.ventAnimationFinished = true;
             this.transform.position = NpcController.Npc.transform.position;
             if (agent != null)
@@ -214,6 +199,7 @@ namespace LethalInternship.AI
                 this.agent.enabled = true;
                 this.agent.speed = 3.5f;
             }
+            this.serverPosition = transform.position;
             this.isEnemyDead = false;
             this.enabled = true;
 
@@ -351,7 +337,7 @@ namespace LethalInternship.AI
         public PlayerControllerB? CheckLOSForInternHavingTargetInLOS(float width = 45f, int range = 60, int proximityAwareness = -1)
         {
             // Check for any interns that has target still in LOS
-            for (int i = InternManager.Instance.IndexBeginToInterns; i < InternManager.Instance.AllEntitiesCount; i++)
+            for (int i = InternManager.Instance.IndexBeginOfInterns; i < InternManager.Instance.AllEntitiesCount; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
                 if (intern.playerClientId == this.NpcController.Npc.playerClientId
@@ -398,7 +384,7 @@ namespace LethalInternship.AI
             float num = 1000f;
             float num2 = 1000f;
             int num3 = -1;
-            for (int i = 0; i < InternManager.Instance.IndexBeginToInterns; i++)
+            for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
             {
                 PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
                 if (!PlayerIsTargetable(player))
@@ -457,7 +443,6 @@ namespace LethalInternship.AI
             return true;
         }
 
-        private bool StuckTeleportTry1;
         private void CheckIfStuck()
         {
             if (NpcController.HasToMove
@@ -610,6 +595,27 @@ namespace LethalInternship.AI
                 //    }
                 //}
             }
+        }
+
+        private InteractTrigger[] RefreshLaddersList()
+        {
+            List<InteractTrigger> ladders = new List<InteractTrigger>();
+            InteractTrigger[] interactsTrigger = Resources.FindObjectsOfTypeAll<InteractTrigger>();
+            for (int i = 0; i < interactsTrigger.Length; i++)
+            {
+                if (interactsTrigger[i] == null)
+                {
+                    continue;
+                }
+
+                if (interactsTrigger[i].isLadder && interactsTrigger[i].ladderHorizontalPosition != null)
+                {
+                    ladders.Add(interactsTrigger[i]);
+                    //Plugin.Logger.LogDebug($"adding ladder {i} horiz pos {interactsTrigger[i].ladderHorizontalPosition.position}");
+                    //Plugin.Logger.LogDebug($"---------------");
+                }
+            }
+            return ladders.ToArray();
         }
 
         public InteractTrigger? GetLadderIfWantsToUseLadder()

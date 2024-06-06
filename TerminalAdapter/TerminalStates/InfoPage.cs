@@ -42,6 +42,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.CannotPurchase);
                 return true;
             }
+            else if (StartOfRound.Instance.shipIsLeaving)
+            {
+                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.ShipLeavingMoon);
+                return true;
+            }
 
             string secondWord = string.Empty;
             if (words.Length > 1)
@@ -78,9 +83,26 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
             terminalNode.clearPreviousText = true;
 
-            int internsAvailable = Const.INTERN_AVAILABLE - terminalParser.NbInternsAlreadyBought;
+            string textInfoPage;
+            if (StartOfRound.Instance.inShipPhase || StartOfRound.Instance.shipIsLeaving)
+            {
+                // in space
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, InternManager.Instance.NbInternsPurchasable, InternManager.Instance.NbInternsToDropShip);
+            }
+            else
+            {
+                // on moon
+                string textNbInternsToDropShip = string.Empty;
+                int nbInternsToDropShip = InternManager.Instance.NbInternsToDropShip;
+                int nbInternsOnThisMoon = InternManager.Instance.NbInternsOwned - nbInternsToDropShip;
+                if (nbInternsToDropShip > 0 && !StartOfRound.Instance.shipIsLeaving)
+                {
+                    textNbInternsToDropShip = string.Format(Const.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
+                }
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, InternManager.Instance.NbInternsPurchasable, textNbInternsToDropShip, nbInternsOnThisMoon);
+            }
 
-            terminalNode.displayText = string.Format(Const.TEXT_INFO_PAGE, terminalParser.NbInternsAlreadyBought, internsAvailable, terminalParser.NbInternsAlreadyBought);
+            terminalNode.displayText = textInfoPage;
             return terminalNode;
         }
     }

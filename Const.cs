@@ -2,7 +2,9 @@
 {
     internal class Const
     {
-        public static readonly int INTERN_AVAILABLE = 16;
+        public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
+
+        public static readonly int INTERN_AVAILABLE_MAX = 16;
         public static readonly float EPSILON = 0.01f;
 
         public static readonly float INTERN_FOV = 90f;
@@ -62,32 +64,31 @@
         public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = $">{STRING_INTERNSHIP_PROGRAM_COMMAND.ToUpper()}\nNeed some help ? Try our new workforce, ready to assist you and gain experience\n\n";
 
 
-        public static readonly string TEXT_INFO_PAGE = @"Numbers of interns bought and alive : {0}
-                                                         Numbers of interns available : {1}
-                                                         
+        public static readonly string TEXT_INFO_PAGE_IN_SPACE = @"Numbers of interns purchasable : {0}
+                                                                  
+                                                                  
+                                                                  
+                                                                  --> Interns scheduled on next moon : {1}
+                                                                  
+                                                                  Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
+        public static readonly string TEXT_INFO_PAGE_INTERN_TO_DROPSHIP = "Interns waiting to land : {0}";
+        public static readonly string TEXT_INFO_PAGE_ON_MOON = @"Numbers of interns purchasable : {0}
+                                                                 
+                                                                 
+                                                                 {1}
+                                                                 --> Interns on this moon : {2}
+                                                                 
+                                                                 Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
 
-
-                                                         --> Interns on next moon : {2}
-
-                                                         Type 'buy' to order new interns, 'buy 2' to order 2 interns";
-
-        public static readonly string TEXT_CHOOSE_BUY_NUMBER_PAGE = @"How many interns to order ?
-
-                                                                      NO REFUNDS
-                                                                      As for items, the company immediately sends what you have purchased
-                                                                      NO REFUNDS
-
-                                                                      (enter valid number or 'cancel')";
 
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM = " a maximum of";
-        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns. 
-                                                                       
-                                                                       --> Interns on next moon : {2}
+        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns.
                                                                        
                                                                        Do you confirm you purchase ?
                                                                        (enter confirm or cancel)";
 
         public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
         public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";
+        public static readonly string TEXT_ERROR_SHIP_LEAVING = @"You can not buy when the ship is leaving the moon";
     }
 }

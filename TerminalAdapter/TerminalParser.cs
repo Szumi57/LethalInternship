@@ -10,11 +10,9 @@ namespace LethalInternship.TerminalAdapter
     internal class TerminalParser
     {
         public TerminalState TerminalState = null!;
-        public int NbInternsAlreadyBought;
 
-        public TerminalParser(int nbInternsAlreadyBought)
+        public TerminalParser()
         {
-            this.NbInternsAlreadyBought = nbInternsAlreadyBought;
             TerminalState = new WaitForMainCommandPage(this);
         }
 

@@ -60,16 +60,15 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
             terminalNode.clearPreviousText = true;
 
-            int internsAvailable = Const.INTERN_AVAILABLE - terminalParser.NbInternsAlreadyBought;
-            string invalidNumber = string.Empty;
+            int internsAvailable = InternManager.Instance.NbInternsPurchasable;
+            string textIfTooMuchOrdered = string.Empty;
             if (this.NbOrdered > internsAvailable)
             {
-                invalidNumber = Const.TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM;
+                textIfTooMuchOrdered = Const.TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM;
                 this.NbOrdered = internsAvailable;
             }
 
-            int totalNbInternsOnNextMoon = this.NbOrdered + terminalParser.NbInternsAlreadyBought;
-            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE, invalidNumber, this.NbOrdered, totalNbInternsOnNextMoon);
+            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE, textIfTooMuchOrdered, this.NbOrdered);
 
             return terminalNode;
         }

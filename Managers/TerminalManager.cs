@@ -55,7 +55,7 @@ namespace LethalInternship.Managers
         {
             if (terminalParser == null)
             {
-                terminalParser = new TerminalParser(InternManager.Instance.NbInternsToDropShip);
+                terminalParser = new TerminalParser();
             }
             return terminalParser.ParseCommand(command, ref terminal);
         }
@@ -75,8 +75,7 @@ namespace LethalInternship.Managers
 
         private void UpdatePurchaseAndCredits(int nbInternsBought, int credits)
         {
-            InternManager.Instance.NbInternsToDropShip += nbInternsBought;
-            terminalParser.NbInternsAlreadyBought = InternManager.Instance.NbInternsToDropShip;
+            InternManager.Instance.NewCommandOfInterns(nbInternsBought);
             Terminal.groupCredits = credits;
         }
 

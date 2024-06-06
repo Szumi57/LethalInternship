@@ -18,19 +18,30 @@ namespace LethalInternship.Managers
             if (NetworkManager.IsHost)
             {
                 FetchSaveFile();
-                InternManager.Instance.NbInternsToDropShip = Save.NbInternAliveAndOrdered;
-                SyncNbInternsToDropShipFromServerToClientRpc(InternManager.Instance.NbInternsToDropShip);
-                Plugin.Logger.LogDebug($"Init NbInternsToDropShip to {InternManager.Instance.NbInternsToDropShip}.");
+                LoadInfosInSave();
+                SyncNbInternsOwnedFromServerToClientRpc(InternManager.Instance.NbInternsOwned);
+                Plugin.Logger.LogDebug($"Init NbInternsOwned to {InternManager.Instance.NbInternsOwned}.");
             }
         }
 
         public void SavePluginInfos()
         {
-            Plugin.Logger.LogInfo($"Saving data fro LethalInternship plugin.");
+            Plugin.Logger.LogInfo($"Saving data for LethalInternship plugin.");
             string saveFile = GameNetworkManager.Instance.currentSaveFileName;
-            Save.NbInternAliveAndOrdered = InternManager.Instance.NbInternsToDropShip;
+            SaveInfosInSave();
             string json = JsonConvert.SerializeObject(Save);
             ES3.Save(key: SAVE_DATA_KEY, value: json, filePath: saveFile);
+        }
+
+        private void SaveInfosInSave()
+        {
+            Save.NbInternOwned = InternManager.Instance.NbInternsOwned;
+        }
+
+        private void LoadInfosInSave()
+        {
+            InternManager.Instance.NbInternsOwned = Save.NbInternOwned;
+            InternManager.Instance.NbInternsToDropShip = Save.NbInternOwned;
         }
 
         private void FetchSaveFile()
@@ -51,10 +62,11 @@ namespace LethalInternship.Managers
         }
 
         [ClientRpc]
-        private void SyncNbInternsToDropShipFromServerToClientRpc(int nbInternsBoughtSaveFromServer)
+        private void SyncNbInternsOwnedFromServerToClientRpc(int nbInternsOwnedSaveFromServer)
         {
-            Plugin.Logger.LogInfo($"Server send to clients to sync interns alive and ready to ${nbInternsBoughtSaveFromServer}, client execute...");
-            InternManager.Instance.NbInternsToDropShip = nbInternsBoughtSaveFromServer;
+            Plugin.Logger.LogInfo($"Server send to clients to sync interns alive and ready to ${nbInternsOwnedSaveFromServer}, client execute...");
+            InternManager.Instance.NbInternsOwned = nbInternsOwnedSaveFromServer;
+            InternManager.Instance.NbInternsToDropShip = nbInternsOwnedSaveFromServer;
         }
     }
 }

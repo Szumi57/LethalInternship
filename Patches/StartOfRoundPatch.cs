@@ -1,7 +1,9 @@
 ﻿using HarmonyLib;
 using LethalInternship.Managers;
+using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
@@ -11,6 +13,8 @@ namespace LethalInternship.Patches
     [HarmonyPatch(typeof(StartOfRound))]
     internal class StartOfRoundPatch
     {
+        static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IndexBeginOfInterns());
+
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
         static void Awake_Prefix(StartOfRound __instance)
@@ -35,7 +39,43 @@ namespace LethalInternship.Patches
         [HarmonyPrefix]
         static void ShipHasLeft_PreFix()
         {
-            InternManager.Instance.SyncUpdateAliveInternsToDropShip();
+            InternManager.Instance.SyncEndOfRoundInterns();
+        }
+
+        [HarmonyPatch("ReviveDeadPlayers")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ReviveDeadPlayers_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //410
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.Logger.LogError($"LethalInternship.Patches.StartOfRoundPatch.ReviveDeadPlayers_Transpiler could not use irl number of player in list.");
+            }
+
+            return codes.AsEnumerable();
         }
 
         // todo remove log debug supression

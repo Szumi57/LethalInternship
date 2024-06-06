@@ -481,25 +481,6 @@ namespace LethalInternship.Patches.NpcPatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count; i++)
-            {
-                if (codes[i].ToString() == "ldstr \"A player died. player object: \"") //76
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                codes[startIndex].operand = "An intern died. Intern object: ";
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not change string \"A player died. player object: \".");
-            }
-
-            // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 11; i++)
             {
                 if (codes[i].ToString() == "ldarg.0 NULL" //82

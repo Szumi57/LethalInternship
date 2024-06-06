@@ -6,7 +6,7 @@ using Unity.Netcode;
 namespace LethalInternship.Patches
 {
     [HarmonyPatch(typeof(NetworkSceneManager))]
-    [HarmonyAfter(MoreCompany.PluginInformation.PLUGIN_GUID)]
+    [HarmonyAfter(Const.MORECOMPANY_GUID)]
     internal class NetworkSceneManagerPatch
     {
         [HarmonyPatch("PopulateScenePlacedObjects")]

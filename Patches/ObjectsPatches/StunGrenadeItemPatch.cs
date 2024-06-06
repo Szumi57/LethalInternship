@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.ObjectsPatches
         [HarmonyPrefix]
         static bool SetControlTipForGrenade_PreFix(StunGrenadeItem __instance)
         {
-            return !InternManager.IsObjectHeldByIntern(__instance);
+            return !InternManager.Instance.IsObjectHeldByIntern(__instance);
         }
     }
 }

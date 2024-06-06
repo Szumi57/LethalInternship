@@ -8,7 +8,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(CrawlerAI))]
-    [HarmonyAfter(MoreCompany.PluginInformation.PLUGIN_GUID)]
+    [HarmonyAfter(Const.MORECOMPANY_GUID)]
     internal class CrawlerAIPatch
     {
         [HarmonyPatch("Start")]

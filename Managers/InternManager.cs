@@ -18,8 +18,11 @@ namespace LethalInternship.Managers
         public InternAI[] AllInternAIs = null!;
         public EnemyType InternNPCPrefab = null!;
 
+        public int NbInternsOwned;
         public int NbInternsToDropShip;
-        public int IndexBeginToInterns { get { return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length; } }
+
+        public int IndexBeginOfInterns { get { return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length; } }
+        public int NbInternsPurchasable { get { return Const.INTERN_AVAILABLE_MAX - NbInternsOwned; } }
 
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
@@ -52,33 +55,82 @@ namespace LethalInternship.Managers
             }
         }
 
-        public static bool AreInternsScheduledToLand()
+        public bool AreInternsScheduledToLand()
         {
-            return Instance.NbInternsToDropShip > 0;
+            return NbInternsToDropShip > 0;
         }
 
-        public void SyncUpdateAliveInternsToDropShip()
+        public bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
         {
-            NbInternsToDropShip = CountAliveInterns();
+            Transform localItemHolder = grabbableObject.parentObject;
+            PlayerControllerB playerHolder;
 
-            //if (base.IsOwner)
-            //{
-            //    SyncPurchaseAndCreditsFromServerToClientRpc(nbInternsBought, credits);
-            //}
-            //else
-            //{
-            //    SyncPurchaseAndCreditsFromClientToServerRpc(nbInternsBought, credits);
-            //}
+            if (localItemHolder == null)
+            {
+                playerHolder = grabbableObject.playerHeldBy;
+            }
+            else
+            {
+                playerHolder = localItemHolder.GetComponentInParent<PlayerControllerB>();
+            }
+
+            if (playerHolder == null) { return false; }
+            return GetInternAI((int)playerHolder.playerClientId) != null;
         }
 
-        private int CountAliveInterns()
+        public void SyncEndOfRoundInterns()
+        {
+            if (base.IsOwner)
+            {
+                SyncEndOfRoundInternsFromServerToClientRpc();
+            }
+            else
+            {
+                SyncEndOfRoundInternsFromClientToServerRpc();
+            }
+        }
+
+        [ServerRpc]
+        public void SyncEndOfRoundInternsFromClientToServerRpc()
+        {
+            Plugin.Logger.LogInfo($"Client send to server to sync end of round, calling ClientRpc...");
+            SyncEndOfRoundInternsFromServerToClientRpc();
+        }
+
+        [ClientRpc]
+        public void SyncEndOfRoundInternsFromServerToClientRpc()
+        {
+            Plugin.Logger.LogInfo($"Server send to clients to sync end of round, client execute...");
+            NbInternsOwned = CountAliveAndDisableInterns();
+            NbInternsToDropShip = NbInternsOwned;
+        }
+
+        public void NewCommandOfInterns(int nbOrdered)
+        {
+            if (StartOfRound.Instance.inShipPhase)
+            {
+                // in space
+                NbInternsOwned += nbOrdered;
+                NbInternsToDropShip = NbInternsOwned;
+            }
+            else
+            {
+                // on moon
+                NbInternsToDropShip = nbOrdered;
+                NbInternsOwned += NbInternsToDropShip;
+            }
+        }
+
+        private int CountAliveAndDisableInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
             int alive = 0;
-            for (int i = instance.allPlayerScripts.Length - AllInternAIs.Length; i < instance.allPlayerScripts.Length; i++)
+            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
             {
                 if (!instance.allPlayerScripts[i].isPlayerDead && instance.allPlayerScripts[i].isPlayerControlled)
                 {
+                    instance.allPlayerScripts[i].isPlayerControlled = false;
+                    instance.allPlayerObjects[i].SetActive(false);
                     alive++;
                 }
             }
@@ -95,8 +147,8 @@ namespace LethalInternship.Managers
                     pos = 0;
                 }
                 SpawnIntern(spawnPositions[pos++]);
-                Plugin.Logger.LogDebug($"pos {pos}, NbInternsToDropShip {NbInternsToDropShip}");
             }
+            NbInternsToDropShip = 0;
         }
 
         public void SpawnIntern(Transform positionTransform, bool isOutside = true)
@@ -140,7 +192,7 @@ namespace LethalInternship.Managers
             internController.sinkingValue = 0f;
 
             int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - AllInternAIs.Length);
-            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerClientId}");
+            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerUsername}");
             InternAI internAI = null!;
             internAI = AllInternAIs[indexNextIntern];
             if (internAI == null)
@@ -193,7 +245,7 @@ namespace LethalInternship.Managers
             StartOfRound instance = StartOfRound.Instance;
             //Plugin.Logger.LogDebug($"2 instance.allPlayerScripts.Length : {instance.allPlayerScripts.Length}");
             //Plugin.Logger.LogDebug($"2 instance.allPlayerObjects.Length : {instance.allPlayerScripts.Length}");
-            for (int i = instance.allPlayerScripts.Length - AllInternAIs.Length; i < instance.allPlayerScripts.Length; i++)
+            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
             {
                 if (!instance.allPlayerScripts[i].isPlayerControlled)
                 {
@@ -225,29 +277,24 @@ namespace LethalInternship.Managers
             return null;
         }
 
-        public static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
-        {
-            Transform localItemHolder = grabbableObject.parentObject;
-            PlayerControllerB playerHolder;
-
-            if (localItemHolder == null)
-            {
-                playerHolder = grabbableObject.playerHeldBy;
-            }
-            else
-            {
-                playerHolder = localItemHolder.GetComponentInParent<PlayerControllerB>();
-            }
-
-            if (playerHolder == null) { return false; }
-            return Instance.GetInternAI((int)playerHolder.playerClientId) != null;
-        }
-
         public void ResizeAndPopulateInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
+            if (AllPlayerObjectsBackUp != null && AllPlayerObjectsBackUp.Length > 0)
+            {
+                if (instance.allPlayerObjects.Length == AllEntitiesCount)
+                {
+                    // the arrays have not been resize between round
+                    return;
+                }
+            }
+
+            AllInternAIs = new InternAI[Const.INTERN_AVAILABLE_MAX];
+            AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE_MAX];
+            AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE_MAX];
+
             int irlPlayersCount = instance.allPlayerObjects.Length;
-            int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE;
+            int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE_MAX;
             Array.Resize(ref instance.allPlayerObjects, irlPlayersAndInternsCount);
             Array.Resize(ref instance.allPlayerScripts, irlPlayersAndInternsCount);
             Array.Resize(ref instance.gameStats.allPlayerStats, irlPlayersAndInternsCount);
@@ -255,19 +302,12 @@ namespace LethalInternship.Managers
             Plugin.Logger.LogDebug($"Resize for interns from irl players count of {irlPlayersCount} to {irlPlayersAndInternsCount}");
             AllEntitiesCount = irlPlayersAndInternsCount;
 
-            if (AllPlayerObjectsBackUp == null || AllPlayerObjectsBackUp.Length == 0)
-            {
-                AllInternAIs = new InternAI[Const.INTERN_AVAILABLE];
-                AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE];
-                AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE];
-            }
-
             GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
             for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
             {
                 if (AllPlayerObjectsBackUp[i] != null)
                 {
-                    Plugin.Logger.LogDebug($"use of backup : {AllPlayerObjectsBackUp[i]}");
+                    Plugin.Logger.LogDebug($"use of backup : {AllPlayerScriptsBackUp[i].playerUsername}");
                     instance.allPlayerObjects[i + irlPlayersCount] = AllPlayerObjectsBackUp[i];
                     instance.allPlayerScripts[i + irlPlayersCount] = AllPlayerScriptsBackUp[i];
                     instance.gameStats.allPlayerStats[i + irlPlayersCount] = new PlayerStats();
@@ -286,6 +326,7 @@ namespace LethalInternship.Managers
                 //todo unique name and unique id
                 internController.playerClientId = (ulong)(i + irlPlayersCount);
                 internController.actualClientId = internController.playerClientId;
+                internController.playerUsername = string.Format("Intern #{0}", internController.playerClientId);
                 internController.DropAllHeldItems(false, false);
 
                 internNPC.SetActive(false);

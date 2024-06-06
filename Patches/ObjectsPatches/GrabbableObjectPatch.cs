@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.Managers;
+using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -10,13 +11,13 @@ namespace LethalInternship.Patches.ObjectsPatches
     [HarmonyPatch(typeof(GrabbableObject))]
     internal class GrabbableObjectPatch
     {
-        static MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => InternManager.IsObjectHeldByIntern((GrabbableObject)new object()));
+        static MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsObjectHeldByIntern((GrabbableObject)new object()));
 
         [HarmonyPatch("SetControlTipsForItem")]
         [HarmonyPrefix]
         static bool SetControlTipsForItem_PreFix(GrabbableObject __instance)
         {
-            return !InternManager.IsObjectHeldByIntern(__instance);
+            return !InternManager.Instance.IsObjectHeldByIntern(__instance);
         }
 
         [HarmonyPatch("LateUpdate")]

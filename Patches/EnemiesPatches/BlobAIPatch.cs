@@ -4,7 +4,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(BlobAI))]
-    [HarmonyAfter(MoreCompany.PluginInformation.PLUGIN_GUID)]
+    [HarmonyAfter("me.swipez.melonloader.morecompany")]
     internal class BlobAIPatch
     {
         [HarmonyPatch("Start")]

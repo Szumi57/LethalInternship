@@ -151,7 +151,7 @@ namespace LethalInternship.Patches.NpcPatches
                 range = Mathf.Clamp(range, 0, 30);
             }
 
-            for (int i = InternManager.Instance.IndexBeginToInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
+            for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
                 if (!__instance.PlayerIsTargetable(intern))
@@ -207,7 +207,7 @@ namespace LethalInternship.Patches.NpcPatches
             PlayerControllerB internFound = null!;
 
             __instance.mostOptimalDistance = 2000f;
-            for (int i = InternManager.Instance.IndexBeginToInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
+            for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
 
@@ -280,7 +280,7 @@ namespace LethalInternship.Patches.NpcPatches
             __instance.mostOptimalDistance = 2000f;
             PlayerControllerB playerControllerB = __instance.targetPlayer;
             __instance.targetPlayer = null;
-            for (int i = InternManager.Instance.IndexBeginToInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
+            for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
 

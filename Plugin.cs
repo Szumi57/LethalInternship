@@ -48,6 +48,7 @@ namespace LethalInternship
             InitPluginManager();
 
             _harmony.PatchAll(typeof(GameNetworkManagerPatch));
+            _harmony.PatchAll(typeof(HUDManagerPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
             _harmony.PatchAll(typeof(NetworkObjectPatch));
             _harmony.PatchAll(typeof(SoundManagerPatch));

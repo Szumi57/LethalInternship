@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.MapPatches
     [HarmonyPatch(typeof(ItemDropship))]
     internal class ItemDropShipPatch
     {
-        static MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => InternManager.AreInternsScheduledToLand());
+        static MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.AreInternsScheduledToLand());
 
         [HarmonyPatch("LandShipOnServer")]
         [HarmonyReversePatch]
@@ -69,7 +69,7 @@ namespace LethalInternship.Patches.MapPatches
         [HarmonyPostfix]
         static void OpenShipDoorsOnServer_PostFix(ref ItemDropship __instance)
         {
-            if (!InternManager.AreInternsScheduledToLand())
+            if (!InternManager.Instance.AreInternsScheduledToLand())
             {
                 return;
             }

@@ -18,6 +18,21 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
         static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerIntern(new PlayerControllerB()));
 
+        public static bool AreInternsScheduledToLand()
+        {
+            return InternManager.Instance.AreInternsScheduledToLand();
+        }
+
+        public static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
+        {
+            return InternManager.Instance.IsObjectHeldByIntern(grabbableObject);
+        }
+
+        public static int IndexBeginOfInterns()
+        {
+            return InternManager.Instance.IndexBeginOfInterns;
+        }
+
         public static CodeInstruction CallIsPlayerLocalOrInternOwnerLocalMethod()
         {
             return new CodeInstruction(OpCodes.Call, IsPlayerLocalOrInternOwnerLocalMethod);

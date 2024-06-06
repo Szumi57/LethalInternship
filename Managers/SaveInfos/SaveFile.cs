@@ -5,6 +5,6 @@ namespace LethalInternship.Managers.SaveInfos
     [Serializable]
     internal class SaveFile
     {
-        public int NbInternAliveAndOrdered;
+        public int NbInternOwned;
     }
 }
