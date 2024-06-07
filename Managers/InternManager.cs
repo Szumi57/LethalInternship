@@ -257,8 +257,6 @@ namespace LethalInternship.Managers
 
         public InternAI? GetInternAI(int index)
         {
-            //Plugin.Logger.LogDebug($"1 instance.allPlayerScripts.Length : {StartOfRound.Instance.allPlayerScripts.Length}");
-            //Plugin.Logger.LogDebug($"1 instance.allPlayerObjects.Length : {StartOfRound.Instance.allPlayerObjects.Length}");
             if (AllInternAIs == null)
             {
                 return null;
@@ -277,6 +275,24 @@ namespace LethalInternship.Managers
             return null;
         }
 
+        public bool IsAIInternAi(EnemyAI ai)
+        {
+            if (AllInternAIs == null)
+            {
+                return false;
+            }
+
+            for(int i =0; i < AllInternAIs.Length; i++)
+            {
+                if (AllInternAIs[i] == ai)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void ResizeAndPopulateInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
@@ -288,10 +304,12 @@ namespace LethalInternship.Managers
                     return;
                 }
             }
-
-            AllInternAIs = new InternAI[Const.INTERN_AVAILABLE_MAX];
-            AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE_MAX];
-            AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE_MAX];
+            else
+            {
+                AllInternAIs = new InternAI[Const.INTERN_AVAILABLE_MAX];
+                AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE_MAX];
+                AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE_MAX];
+            }
 
             int irlPlayersCount = instance.allPlayerObjects.Length;
             int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE_MAX;

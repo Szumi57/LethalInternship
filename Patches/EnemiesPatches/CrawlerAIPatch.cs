@@ -13,10 +13,10 @@ namespace LethalInternship.Patches.EnemiesPatches
     {
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        static void Start_PostFix(ref CrawlerAI __instance)
+        static void Start_PostFix(ref Collider[] ___nearPlayerColliders)
         {
             Collider[] nearPlayerCollidersNewSize = new Collider[StartOfRound.Instance.allPlayerObjects.Length];
-            Traverse.Create(__instance).Field("nearPlayerColliders").SetValue(nearPlayerCollidersNewSize);
+            ___nearPlayerColliders = nearPlayerCollidersNewSize;
         }
 
         [HarmonyPatch("OnCollideWithPlayer")]

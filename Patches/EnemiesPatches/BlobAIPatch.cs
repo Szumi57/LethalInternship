@@ -4,15 +4,15 @@ using UnityEngine;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(BlobAI))]
-    [HarmonyAfter("me.swipez.melonloader.morecompany")]
+    [HarmonyAfter(Const.MORECOMPANY_GUID)]
     internal class BlobAIPatch
     {
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        static void Start_PostFix(ref BlobAI __instance)
+        static void Start_PostFix(ref Collider[] ___ragdollColliders)
         {
-            Collider[] nearPlayerCollidersNewSize = new Collider[StartOfRound.Instance.allPlayerObjects.Length];
-            Traverse.Create(__instance).Field("nearPlayerColliders").SetValue(nearPlayerCollidersNewSize);
+            Collider[] ragdollCollidersNewSize = new Collider[StartOfRound.Instance.allPlayerObjects.Length];
+            ___ragdollColliders = ragdollCollidersNewSize;
         }
     }
 }

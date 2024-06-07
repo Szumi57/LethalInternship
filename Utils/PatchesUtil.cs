@@ -44,6 +44,12 @@ namespace LethalInternship.Utils
             return IsPlayerLocalOrInternOwnerLocal(player);
         }
 
+        public static bool IsColliderInternOwnerLocal(Collider collider)
+        {
+            PlayerControllerB player = collider.gameObject.GetComponent<PlayerControllerB>();
+            return IsPlayerInternOwnerLocal(player);
+        }
+
         public static bool IsPlayerIntern(PlayerControllerB player)
         {
             if (player == null) return false;
@@ -70,7 +76,6 @@ namespace LethalInternship.Utils
                 return false;
             }
 
-            Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> {internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId}, internAI.OwnerClientId {internAI.OwnerClientId}, localPlayerController.actualClientId {GameNetworkManager.Instance.localPlayerController.actualClientId}");
             return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 

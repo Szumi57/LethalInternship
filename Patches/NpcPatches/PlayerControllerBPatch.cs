@@ -119,7 +119,7 @@ namespace LethalInternship.Patches.NpcPatches
             if (!PatchesUtil.IsPlayerIntern(__instance))
             {
                 // todo: Bootleg invincibility
-                //Plugin.Logger.LogDebug($"Bootleg invincibility (return false)");
+                Plugin.Logger.LogDebug($"Bootleg invincibility (return false)");
                 return false;
                 return true;
             }

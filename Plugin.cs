@@ -62,6 +62,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(BlobAIPatch));
             _harmony.PatchAll(typeof(CentipedeAIPatch));
             _harmony.PatchAll(typeof(CrawlerAIPatch));
+            _harmony.PatchAll(typeof(MouthDogAIPatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
             _harmony.PatchAll(typeof(SpringManAIPatch));
