@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             PlayerControllerB intern = other.gameObject.GetComponent<PlayerControllerB>();
-            if (!PatchesUtil.IsPlayerIntern(intern))
+            if (!InternManager.Instance.IsPlayerInternOwnerLocal(intern))
             {
                 return;
             }
@@ -62,7 +63,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             PlayerControllerB intern = other.gameObject.GetComponent<PlayerControllerB>();
-            if (!PatchesUtil.IsPlayerIntern(intern))
+            if (!InternManager.Instance.IsPlayerInternOwnerLocal(intern))
             {
                 return;
             }
@@ -73,7 +74,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
         [HarmonyPrefix]
         public static bool StopSinkingLocalPlayer_Prefix(QuicksandTrigger __instance, PlayerControllerB playerScript)
         {
-            if (!PatchesUtil.IsPlayerIntern(playerScript))
+            if (!InternManager.Instance.IsPlayerInternOwnerLocal(playerScript))
             {
                 return true;
             }

@@ -3,7 +3,7 @@ using LethalInternship.AI;
 using LethalInternship.Managers;
 using Unity.Netcode;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(NetworkObject))]
     internal class NetworkObjectPatch

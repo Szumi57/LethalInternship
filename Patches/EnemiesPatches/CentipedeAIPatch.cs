@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System;
 
@@ -24,7 +25,7 @@ namespace LethalInternship.Patches.EnemiesPatches
                         break;
                     }
 
-                    if (PatchesUtil.IsPlayerIntern(__instance.clingingToPlayer))
+                    if (InternManager.Instance.IsPlayerInternOwnerLocal(__instance.clingingToPlayer))
                     {
                         DamagePlayerOnIntervals_ReversePatch(__instance);
                     }

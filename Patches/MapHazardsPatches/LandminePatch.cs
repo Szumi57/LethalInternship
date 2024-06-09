@@ -1,6 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.Utils;
+using LethalInternship.Managers;
 using System;
 using UnityEngine;
 
@@ -29,7 +29,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             if (other.CompareTag("Player"))
             {
                 PlayerControllerB player = other.gameObject.GetComponent<PlayerControllerB>();
-                if (PatchesUtil.IsPlayerInternOwnerLocal(player))
+                if (InternManager.Instance.IsPlayerInternOwnerLocal(player))
                 {
                     if (!player.isPlayerDead)
                     {
@@ -59,7 +59,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             if (other.CompareTag("Player"))
             {
                 PlayerControllerB player = other.gameObject.GetComponent<PlayerControllerB>();
-                if (PatchesUtil.IsPlayerInternOwnerLocal(player))
+                if (InternManager.Instance.IsPlayerInternOwnerLocal(player))
                 {
                     if (!player.isPlayerDead)
                     {
@@ -74,5 +74,52 @@ namespace LethalInternship.Patches.MapHazardsPatches
         [HarmonyReversePatch]
         public static void TriggerMineOnLocalClientByExiting_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.EnemiesPatches.TriggerMineOnLocalClientByExiting");
 
+        [HarmonyPatch("SpawnExplosion")]
+        [HarmonyPostfix]
+        static void SpawnExplosion_PostFix(Vector3 explosionPosition, 
+                                           float killRange, 
+                                           float damageRange, 
+                                           int nonLethalDamage)
+        {
+            Collider[] array = Physics.OverlapSphere(explosionPosition, damageRange, 2621448, QueryTriggerInteraction.Collide);
+            RaycastHit raycastHit;
+            PlayerControllerB player;
+            for (int i = 0; i < array.Length; i++)
+            {
+                float distanceFromExplosion = Vector3.Distance(explosionPosition, array[i].transform.position);
+                if (distanceFromExplosion > 4f
+                    && Physics.Linecast(explosionPosition, array[i].transform.position + Vector3.up * 0.3f, out raycastHit, 256, QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+
+                if (array[i].gameObject.layer != 3)
+                {
+                    continue;
+                }
+
+                player = array[i].gameObject.GetComponent<PlayerControllerB>();
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (!InternManager.Instance.IsPlayerInternOwnerLocal(player))
+                {
+                    continue;
+                }
+
+                if (distanceFromExplosion < killRange)
+                {
+                    Vector3 vector = Vector3.Normalize(player.gameplayCamera.transform.position - explosionPosition) * 80f / Vector3.Distance(player.gameplayCamera.transform.position, explosionPosition);
+                    player.KillPlayer(vector, true, CauseOfDeath.Blast, 0);
+                }
+                else if (distanceFromExplosion < damageRange)
+                {
+                    Vector3 vector = Vector3.Normalize(player.gameplayCamera.transform.position - explosionPosition) * 80f / Vector3.Distance(player.gameplayCamera.transform.position, explosionPosition);
+                    player.DamagePlayer(nonLethalDamage, true, true, CauseOfDeath.Blast, 0, false, vector * 0.6f);
+                }
+            }
+        }
     }
 }

@@ -5,13 +5,11 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(HUDManager))]
     internal class HUDManagerPatch
     {
-        static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IndexBeginOfInterns());
-
         [HarmonyPatch("FillEndGameStats")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> FillEndGameStats_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -40,12 +38,12 @@ namespace LethalInternship.Patches
                 codes[startIndex + 2].opcode = OpCodes.Nop;
                 codes[startIndex + 2].operand = null;
                 codes[startIndex + 3].opcode = OpCodes.Call;
-                codes[startIndex + 3].operand = IndexBeginOfInternsMethod;
+                codes[startIndex + 3].operand = PatchesUtil.IndexBeginOfInternsMethod;
                 startIndex = -1;
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.FillEndGameStats_Transpiler could not use irl number of player in list.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.FillEndGameStats_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();

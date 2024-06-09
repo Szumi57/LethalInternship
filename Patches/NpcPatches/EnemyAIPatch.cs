@@ -14,8 +14,6 @@ namespace LethalInternship.Patches.NpcPatches
     [HarmonyPatch(typeof(EnemyAI))]
     internal class EnemyAIPatch
     {
-        static MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsColliderFromLocalOrInternOwnerLocal(new Collider()));
-
         [HarmonyPatch("ChangeOwnershipOfEnemy")]
         [HarmonyPrefix]
         static bool ChangeOwnershipOfEnemy_PreFix(ref ulong newOwnerClientId)
@@ -59,7 +57,7 @@ namespace LethalInternship.Patches.NpcPatches
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
                     new CodeInstruction(OpCodes.Ldarg_1),
-                    new CodeInstruction(OpCodes.Call, IsColliderFromLocalOrInternOwnerLocalMethod),
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsColliderFromLocalOrInternOwnerLocalMethod),
                     new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + 8].labels.First()/*IL_0051*/)
                 };
                 codes.InsertRange(startIndex + 1, codesToAdd);

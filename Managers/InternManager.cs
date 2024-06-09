@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
+using LethalLib.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -275,6 +276,18 @@ namespace LethalInternship.Managers
             return null;
         }
 
+        public InternAI? GetInternAIIfLocalIsOwner(int index)
+        {
+            InternAI? internAI = GetInternAI(index);
+            if (internAI != null
+                && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+            {
+                return internAI;
+            }
+
+            return null;
+        }
+
         public bool IsAIInternAi(EnemyAI ai)
         {
             if (AllInternAIs == null)
@@ -426,6 +439,59 @@ namespace LethalInternship.Managers
             Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
             shipBounds.Expand(6f);
             return shipBounds;
+        }
+
+        public bool IsPlayerLocalOrInternOwnerLocal(PlayerControllerB player)
+        {
+            if (player == null)
+            {
+                return false;
+            }
+            if (player == GameNetworkManager.Instance.localPlayerController)
+            {
+                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> LOCAL PLAYER");
+                return true;
+            }
+
+            InternAI? internAI = GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> OTHER PLAYER");
+                return false;
+            }
+
+            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public bool IsColliderFromLocalOrInternOwnerLocal(Collider collider)
+        {
+            PlayerControllerB player = collider.gameObject.GetComponent<PlayerControllerB>();
+            return IsPlayerLocalOrInternOwnerLocal(player);
+        }
+
+        public bool IsPlayerIntern(PlayerControllerB player)
+        {
+            if (player == null) return false;
+            InternAI? internAI = GetInternAI((int)player.playerClientId);
+            return internAI != null;
+        }
+
+        public bool IsPlayerInternOwnerLocal(PlayerControllerB player)
+        {
+            if (player == null)
+            {
+                return false;
+            }
+
+            InternAI? internAI = GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> OTHER PLAYER");
+                return false;
+            }
+
+            Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> {internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId}, internAI.OwnerClientId {internAI.OwnerClientId}, localPlayerController.actualClientId {GameNetworkManager.Instance.localPlayerController.actualClientId}");
+            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
     }
 }

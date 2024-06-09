@@ -3,18 +3,15 @@ using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(StartOfRound))]
     internal class StartOfRoundPatch
     {
-        static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IndexBeginOfInterns());
-
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
         static void Awake_Prefix(StartOfRound __instance)
@@ -48,7 +45,7 @@ namespace LethalInternship.Patches
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-            
+
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 2; i++)
             {
@@ -67,12 +64,12 @@ namespace LethalInternship.Patches
                 codes[startIndex + 1].opcode = OpCodes.Nop;
                 codes[startIndex + 1].operand = null;
                 codes[startIndex + 2].opcode = OpCodes.Call;
-                codes[startIndex + 2].operand = IndexBeginOfInternsMethod;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
                 startIndex = -1;
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.StartOfRoundPatch.ReviveDeadPlayers_Transpiler could not use irl number of player in list.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.ReviveDeadPlayers_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();
@@ -108,7 +105,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not remove laggy \"Refreshing voice playback objects\" debug log");
+                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not remove laggy \"Refreshing voice playback objects\" debug log");
             }
 
             // ----------------------------------------------------------------------
@@ -132,7 +129,7 @@ namespace LethalInternship.Patches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not remove laggy \"Skipping player\" debug log");
+                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not remove laggy \"Skipping player\" debug log");
             }
 
             // ----------------------------------------------------------------------

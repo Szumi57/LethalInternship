@@ -41,6 +41,7 @@ namespace LethalInternship.AI
         private float exhaustionEffectLerp;
 
         private bool wasUnderwaterLastFrame;
+        private float drowningTimer = 1f;
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
 
@@ -156,6 +157,8 @@ namespace LethalInternship.AI
                 UpdateTurnBodyTowardsDirection();
 
                 Npc.ForceTurnTowardsTarget();
+
+                SetFaceUnderwaterFilters();
 
                 if (IsWalking)
                 {
@@ -974,6 +977,31 @@ namespace LethalInternship.AI
                 return false;
             }
             return !ladder.isPlayingSpecialAnimation;
+        }
+
+        private void SetFaceUnderwaterFilters()
+        {
+            if (Npc.isPlayerDead)
+            {
+                return;
+            }
+            if (Npc.isUnderwater 
+                && Npc.underwaterCollider != null 
+                && Npc.underwaterCollider.bounds.Contains(Npc.gameplayCamera.transform.position))
+            {
+                Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 0f, 4f * Time.deltaTime);
+                this.drowningTimer -= Time.deltaTime / 10f;
+                if (this.drowningTimer < 0f)
+                {
+                    StartOfRound.Instance.drowningTimer = 1f;
+                    Npc.KillPlayer(Vector3.zero, true, CauseOfDeath.Drowning, 0);
+                }
+            }
+            else
+            {
+                Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
+                this.drowningTimer = Mathf.Clamp(StartOfRound.Instance.drowningTimer + Time.deltaTime, 0.1f, 1f);
+            }
         }
     }
 }

@@ -114,7 +114,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             {
                 codes[startIndex + 1].opcode = OpCodes.Nop;
                 codes[startIndex + 1].operand = null;
-                codes[startIndex + 2] = PatchesUtil.CallIsPlayerLocalOrInternOwnerLocalMethod();
+                codes[startIndex + 2] = new CodeInstruction(OpCodes.Call, PatchesUtil.IsPlayerLocalOrInternOwnerLocalMethod);
                 codes[startIndex + 3].opcode = OpCodes.Nop; // op_Equality
                 codes[startIndex + 3].operand = null;
                 startIndex = -1;

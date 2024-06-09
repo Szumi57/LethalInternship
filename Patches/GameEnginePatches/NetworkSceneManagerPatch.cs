@@ -3,7 +3,7 @@ using LethalInternship.Managers;
 using System.Collections.Generic;
 using Unity.Netcode;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(NetworkSceneManager))]
     [HarmonyAfter(Const.MORECOMPANY_GUID)]

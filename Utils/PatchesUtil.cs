@@ -1,101 +1,23 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Managers;
-using LethalInternship.Patches;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using UnityEngine;
 
 namespace LethalInternship.Utils
 {
     internal static class PatchesUtil
     {
-        public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
-        static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsPlayerIntern(new PlayerControllerB()));
+        public static readonly MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => AreInternsScheduledToLand());
+        public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
+        public static readonly MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsColliderFromLocalOrInternOwnerLocal(new Collider()));
+        public static readonly MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => IsObjectHeldByIntern((GrabbableObject)new object()));
+        public static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => IndexBeginOfInterns());
 
-        public static bool AreInternsScheduledToLand()
-        {
-            return InternManager.Instance.AreInternsScheduledToLand();
-        }
-
-        public static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
-        {
-            return InternManager.Instance.IsObjectHeldByIntern(grabbableObject);
-        }
-
-        public static int IndexBeginOfInterns()
-        {
-            return InternManager.Instance.IndexBeginOfInterns;
-        }
-
-        public static CodeInstruction CallIsPlayerLocalOrInternOwnerLocalMethod()
-        {
-            return new CodeInstruction(OpCodes.Call, IsPlayerLocalOrInternOwnerLocalMethod);
-        }
-
-        public static bool IsColliderFromLocalOrInternOwnerLocal(Collider collider)
-        {
-            PlayerControllerB player = collider.gameObject.GetComponent<PlayerControllerB>();
-            return IsPlayerLocalOrInternOwnerLocal(player);
-        }
-
-        public static bool IsColliderInternOwnerLocal(Collider collider)
-        {
-            PlayerControllerB player = collider.gameObject.GetComponent<PlayerControllerB>();
-            return IsPlayerInternOwnerLocal(player);
-        }
-
-        public static bool IsPlayerIntern(PlayerControllerB player)
-        {
-            if (player == null) return false;
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
-            return internAI != null;
-        }
-
-        public static bool IsPlayerLocalOrInternOwnerLocal(PlayerControllerB player)
-        {
-            if (player == null)
-            {
-                return false;
-            }
-            if (player == GameNetworkManager.Instance.localPlayerController)
-            {
-                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> LOCAL PLAYER");
-                return true;
-            }
-
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
-            if (internAI == null)
-            {
-                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> OTHER PLAYER");
-                return false;
-            }
-
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
-        }
-
-        public static bool IsPlayerInternOwnerLocal(PlayerControllerB player)
-        {
-            if (player == null)
-            {
-                return false;
-            }
-
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
-            if (internAI == null)
-            {
-                Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> OTHER PLAYER");
-                return false;
-            }
-
-            Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> {internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId}, internAI.OwnerClientId {internAI.OwnerClientId}, localPlayerController.actualClientId {GameNetworkManager.Instance.localPlayerController.actualClientId}");
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
-        }
+        private static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
 
         public static List<CodeInstruction> InsertIsPlayerInternInstructions(List<CodeInstruction> codes,
                                                                              ILGenerator generator,
@@ -157,6 +79,35 @@ namespace LethalInternship.Utils
                 };
 
             //codes.InsertRange(0, PatchesUtil.InsertLogOfFieldOfThis("isPlayerControlled {0}", AccessTools.Field(typeof(PlayerControllerB), "isPlayerControlled"), typeof(bool)));
+        }
+
+        private static bool AreInternsScheduledToLand()
+        {
+            return InternManager.Instance.AreInternsScheduledToLand();
+        }
+        private static bool IsPlayerLocalOrInternOwnerLocal(PlayerControllerB player)
+        {
+            return InternManager.Instance.IsPlayerLocalOrInternOwnerLocal(player);
+        }
+        private static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
+        {
+            return InternManager.Instance.IsObjectHeldByIntern(grabbableObject);
+        }
+        private static int IndexBeginOfInterns()
+        {
+            return InternManager.Instance.IndexBeginOfInterns;
+        }
+        private static bool IsColliderFromLocalOrInternOwnerLocal(Collider collider)
+        {
+            return InternManager.Instance.IsColliderFromLocalOrInternOwnerLocal(collider);
+        }
+        private static bool IsPlayerIntern(PlayerControllerB player)
+        {
+            return InternManager.Instance.IsPlayerIntern(player);
+        }
+        private static bool IsPlayerInternOwnerLocal(PlayerControllerB player)
+        {
+            return InternManager.Instance.IsPlayerInternOwnerLocal(player);
         }
     }
 }

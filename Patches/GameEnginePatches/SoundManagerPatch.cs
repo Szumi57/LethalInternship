@@ -8,13 +8,11 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(SoundManager))]
     internal class SoundManagerPatch
     {
-        static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IndexBeginOfInterns());
-
         [HarmonyPatch("SetPlayerPitch")]
         [HarmonyPrefix]
         static bool SetPlayerPitch_PreFix(int playerObjNum)
@@ -53,12 +51,12 @@ namespace LethalInternship.Patches
                 codes[startIndex + 1].opcode = OpCodes.Nop;
                 codes[startIndex + 1].operand = null;
                 codes[startIndex + 2].opcode = OpCodes.Call;
-                codes[startIndex + 2].operand = IndexBeginOfInternsMethod;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
                 startIndex = -1;
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.SoundManagerPatch.SetPlayerVoiceFilters_Transpiler could not use irl number of player in list.");
+                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.SoundManagerPatch.SetPlayerVoiceFilters_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();

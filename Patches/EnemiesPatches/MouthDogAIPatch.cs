@@ -29,16 +29,13 @@ namespace LethalInternship.Patches.EnemiesPatches
         [HarmonyPrefix]
         static bool KillPlayer_PreFix(int playerId)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAI(playerId);
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner(playerId);
             if (internAI == null)
             {
                 return true;
             }
 
-            if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
-            {
-                internAI.NpcController.Npc.KillPlayer(Vector3.zero, true, CauseOfDeath.Mauling, 0);
-            }
+            internAI.NpcController.Npc.KillPlayer(Vector3.zero, true, CauseOfDeath.Mauling, 0);
 
             return true;
         }
@@ -55,10 +52,10 @@ namespace LethalInternship.Patches.EnemiesPatches
                 return false;
             }
 
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)playerControllerB.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)playerControllerB.playerClientId);
             if (internAI == null)
             {
-                // Not intern
+                // Not intern or intern not owned by local
                 return true;
             }
 

@@ -33,7 +33,7 @@ namespace LethalInternship.Patches.NpcPatches
                                   ref List<int> ___currentAnimationStateHash,
                                   ref List<int> ___previousAnimationStateHash)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId != __instance.playerClientId)
             {
                 return true;
@@ -65,7 +65,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool LateUpdate_PreFix(PlayerControllerB __instance)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
             {
                 LateUpdate_ReversePatch(internAI.NpcController.Npc);
@@ -81,7 +81,7 @@ namespace LethalInternship.Patches.NpcPatches
                                  ref Vector3 ___rightArmProceduralTargetBasePosition,
                                  ref int ___previousAnimationState)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId == __instance.playerClientId)
             {
                 //internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
@@ -102,7 +102,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool DamagePlayer_PreFix(PlayerControllerB __instance)
         {
-            if (!PatchesUtil.IsPlayerIntern(__instance))
+            if (!InternManager.Instance.IsPlayerInternOwnerLocal(__instance))
             {
                 // todo: Bootleg invulnerability
                 //Plugin.Logger.LogDebug($"Bootleg invulnerability (return false)");
@@ -116,7 +116,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool KillPlayer_PreFix(PlayerControllerB __instance)
         {
-            if (!PatchesUtil.IsPlayerIntern(__instance))
+            if (!InternManager.Instance.IsPlayerInternOwnerLocal(__instance))
             {
                 // todo: Bootleg invincibility
                 Plugin.Logger.LogDebug($"Bootleg invincibility (return false)");

@@ -4,17 +4,13 @@ using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using UnityEngine;
 
 namespace LethalInternship.Patches.MapPatches
 {
     [HarmonyPatch(typeof(ItemDropship))]
     internal class ItemDropShipPatch
     {
-        static MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.AreInternsScheduledToLand());
-
         [HarmonyPatch("LandShipOnServer")]
         [HarmonyReversePatch]
         public static void LandShipOnServer_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.MapPatches.LandShipOnServer_ReversePatch");
@@ -50,7 +46,7 @@ namespace LethalInternship.Patches.MapPatches
 
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                                                         {
-                                                            new CodeInstruction(OpCodes.Call, AreInternsScheduledToLandMethod),
+                                                            new CodeInstruction(OpCodes.Call, PatchesUtil.AreInternsScheduledToLandMethod),
                                                             new CodeInstruction(OpCodes.Brtrue_S, labelToJumpTo)
                                                         };
                 codes.InsertRange(startIndex, codesToAdd);

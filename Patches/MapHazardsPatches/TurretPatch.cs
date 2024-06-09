@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,7 +102,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
         public static void DamagePlayersInLOS(Turret turret)
         {
             PlayerControllerB player = turret.CheckForPlayersInLineOfSight(3f, false);
-            if (PatchesUtil.IsPlayerLocalOrInternOwnerLocal(player))
+            if (InternManager.Instance.IsPlayerLocalOrInternOwnerLocal(player))
             {
                 if (player.health > 50)
                 {

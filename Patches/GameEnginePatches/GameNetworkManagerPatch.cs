@@ -1,10 +1,10 @@
 ﻿using HarmonyLib;
 using LethalInternship.Managers;
 
-namespace LethalInternship.Patches
+namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(GameNetworkManager))]
-    internal class GameNetworkManagerPatch 
+    internal class GameNetworkManagerPatch
     {
         [HarmonyPatch("SaveGame")]
         [HarmonyPostfix]

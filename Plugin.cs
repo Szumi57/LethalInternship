@@ -2,8 +2,8 @@
 using BepInEx.Logging;
 using HarmonyLib;
 using LethalInternship.Managers;
-using LethalInternship.Patches;
 using LethalInternship.Patches.EnemiesPatches;
+using LethalInternship.Patches.GameEnginePatches;
 using LethalInternship.Patches.MapHazardsPatches;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;

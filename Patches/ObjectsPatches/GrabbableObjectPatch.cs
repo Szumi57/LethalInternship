@@ -3,7 +3,6 @@ using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ObjectsPatches
@@ -11,8 +10,6 @@ namespace LethalInternship.Patches.ObjectsPatches
     [HarmonyPatch(typeof(GrabbableObject))]
     internal class GrabbableObjectPatch
     {
-        static MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsObjectHeldByIntern((GrabbableObject)new object()));
-
         [HarmonyPatch("SetControlTipsForItem")]
         [HarmonyPrefix]
         static bool SetControlTipsForItem_PreFix(GrabbableObject __instance)
@@ -76,7 +73,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
                     new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Call, IsObjectHeldByInternMethodInfo),
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsObjectHeldByInternMethodInfo),
                     new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + 4].labels.First()/*Label1*/)
                 };
                 codes.InsertRange(startIndex, codesToAdd);
