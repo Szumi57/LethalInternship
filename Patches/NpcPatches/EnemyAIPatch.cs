@@ -140,7 +140,7 @@ namespace LethalInternship.Patches.NpcPatches
 
         [HarmonyPatch("CheckLineOfSightForPlayer")]
         [HarmonyPostfix]
-        static void CheckLineOfSightForPlayer_PostFix(InternAI __instance, ref PlayerControllerB __result, float width, ref int range, int proximityAwareness)
+        static void CheckLineOfSightForPlayer_PostFix(EnemyAI __instance, ref PlayerControllerB __result, float width, ref int range, int proximityAwareness)
         {
             PlayerControllerB internFound = null!;
 
@@ -188,7 +188,7 @@ namespace LethalInternship.Patches.NpcPatches
                 if (__result == null || internFound == null) return;
                 Vector3 playerPosition = __result.gameplayCamera.transform.position;
                 Vector3 internPosition = internFound.gameplayCamera.transform.position;
-                Vector3 aiPosition = __instance.eye.position;
+                Vector3 aiPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
                 if ((internPosition - aiPosition).sqrMagnitude < (playerPosition - aiPosition).sqrMagnitude)
                 {
                     Plugin.Logger.LogDebug("intern closer");
@@ -200,7 +200,7 @@ namespace LethalInternship.Patches.NpcPatches
 
         [HarmonyPatch("GetClosestPlayer")]
         [HarmonyPostfix]
-        static void GetClosestPlayer_PostFix(InternAI __instance, ref PlayerControllerB __result, bool requireLineOfSight, bool cannotBeInShip, bool cannotBeNearShip)
+        static void GetClosestPlayer_PostFix(EnemyAI __instance, ref PlayerControllerB __result, bool requireLineOfSight, bool cannotBeInShip, bool cannotBeNearShip)
         {
             PlayerControllerB internFound = null!;
 
@@ -263,7 +263,7 @@ namespace LethalInternship.Patches.NpcPatches
                 if (__result == null || internFound == null) return;
                 Vector3 playerPosition = __result.gameplayCamera.transform.position;
                 Vector3 internPosition = internFound.gameplayCamera.transform.position;
-                Vector3 aiPosition = __instance.eye.position;
+                Vector3 aiPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
                 if ((internPosition - aiPosition).sqrMagnitude < (playerPosition - aiPosition).sqrMagnitude)
                 {
                     __result = internFound;
@@ -273,7 +273,7 @@ namespace LethalInternship.Patches.NpcPatches
 
         [HarmonyPatch("TargetClosestPlayer")]
         [HarmonyPostfix]
-        static void TargetClosestPlayer_PostFix(InternAI __instance, ref bool __result, float bufferDistance, bool requireLineOfSight, float viewWidth)
+        static void TargetClosestPlayer_PostFix(EnemyAI __instance, ref bool __result, float bufferDistance, bool requireLineOfSight, float viewWidth)
         {
             __instance.mostOptimalDistance = 2000f;
             PlayerControllerB playerControllerB = __instance.targetPlayer;

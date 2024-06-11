@@ -11,7 +11,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
     {
         [HarmonyPatch("OnTriggerStay")]
         [HarmonyPostfix]
-        public static void OnTriggerStay_Postfix(QuicksandTrigger __instance, Collider other)
+        public static void OnTriggerStay_Postfix(ref QuicksandTrigger __instance, Collider other)
         {
             if (!__instance.isWater && !other.gameObject.CompareTag("Player"))
             {
@@ -27,7 +27,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             if (__instance.isWater && !intern.isUnderwater)
             {
                 intern.underwaterCollider = __instance.gameObject.GetComponent<Collider>();
-                intern.isUnderwater = __instance;
+                intern.isUnderwater = true;
             }
             intern.statusEffectAudioIndex = __instance.audioClipIndex;
             if (intern.isSinking)
@@ -55,7 +55,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
 
         [HarmonyPatch("OnExit")]
         [HarmonyPostfix]
-        public static void OnExit_Postfix(QuicksandTrigger __instance, Collider other)
+        public static void OnExit_Postfix(ref QuicksandTrigger __instance, Collider other)
         {
             if (!other.CompareTag("Player"))
             {

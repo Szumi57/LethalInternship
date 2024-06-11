@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,8 +16,7 @@ namespace LethalInternship.Patches.EnemiesPatches
         [HarmonyPostfix]
         static void Start_PostFix(ref Collider[] ___nearPlayerColliders)
         {
-            Collider[] nearPlayerCollidersNewSize = new Collider[StartOfRound.Instance.allPlayerObjects.Length];
-            ___nearPlayerColliders = nearPlayerCollidersNewSize;
+            ___nearPlayerColliders = new Collider[InternManager.Instance.AllEntitiesCount];
         }
 
         [HarmonyPatch("OnCollideWithPlayer")]

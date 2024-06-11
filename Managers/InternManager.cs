@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
+using LethalInternship.Utils;
 using LethalLib.Modules;
 using System;
 using System.Collections.Generic;
@@ -16,15 +17,13 @@ namespace LethalInternship.Managers
         public static InternManager Instance { get; private set; } = null!;
 
         public int AllEntitiesCount;
-        public InternAI[] AllInternAIs = null!;
-        public EnemyType InternNPCPrefab = null!;
-
         public int NbInternsOwned;
         public int NbInternsToDropShip;
-
         public int IndexBeginOfInterns { get { return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length; } }
         public int NbInternsPurchasable { get { return Const.INTERN_AVAILABLE_MAX - NbInternsOwned; } }
 
+        private EnemyType InternNPCPrefab = null!;
+        private InternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
@@ -54,256 +53,6 @@ namespace LethalInternship.Managers
                     Object.DestroyImmediate(transform.gameObject);
                 }
             }
-        }
-
-        public bool AreInternsScheduledToLand()
-        {
-            return NbInternsToDropShip > 0;
-        }
-
-        public bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
-        {
-            Transform localItemHolder = grabbableObject.parentObject;
-            PlayerControllerB playerHolder;
-
-            if (localItemHolder == null)
-            {
-                playerHolder = grabbableObject.playerHeldBy;
-            }
-            else
-            {
-                playerHolder = localItemHolder.GetComponentInParent<PlayerControllerB>();
-            }
-
-            if (playerHolder == null) { return false; }
-            return GetInternAI((int)playerHolder.playerClientId) != null;
-        }
-
-        public void SyncEndOfRoundInterns()
-        {
-            if (base.IsOwner)
-            {
-                SyncEndOfRoundInternsFromServerToClientRpc();
-            }
-            else
-            {
-                SyncEndOfRoundInternsFromClientToServerRpc();
-            }
-        }
-
-        [ServerRpc]
-        public void SyncEndOfRoundInternsFromClientToServerRpc()
-        {
-            Plugin.Logger.LogInfo($"Client send to server to sync end of round, calling ClientRpc...");
-            SyncEndOfRoundInternsFromServerToClientRpc();
-        }
-
-        [ClientRpc]
-        public void SyncEndOfRoundInternsFromServerToClientRpc()
-        {
-            Plugin.Logger.LogInfo($"Server send to clients to sync end of round, client execute...");
-            NbInternsOwned = CountAliveAndDisableInterns();
-            NbInternsToDropShip = NbInternsOwned;
-        }
-
-        public void NewCommandOfInterns(int nbOrdered)
-        {
-            if (StartOfRound.Instance.inShipPhase)
-            {
-                // in space
-                NbInternsOwned += nbOrdered;
-                NbInternsToDropShip = NbInternsOwned;
-            }
-            else
-            {
-                // on moon
-                NbInternsToDropShip = nbOrdered;
-                NbInternsOwned += NbInternsToDropShip;
-            }
-        }
-
-        private int CountAliveAndDisableInterns()
-        {
-            StartOfRound instance = StartOfRound.Instance;
-            int alive = 0;
-            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
-            {
-                if (!instance.allPlayerScripts[i].isPlayerDead && instance.allPlayerScripts[i].isPlayerControlled)
-                {
-                    instance.allPlayerScripts[i].isPlayerControlled = false;
-                    instance.allPlayerObjects[i].SetActive(false);
-                    alive++;
-                }
-            }
-            return alive;
-        }
-
-        public void SpawnInternsFromDropShip(Transform[] spawnPositions)
-        {
-            int pos = 0;
-            for (int i = 0; i < NbInternsToDropShip; i++)
-            {
-                if (pos >= 3)
-                {
-                    pos = 0;
-                }
-                SpawnIntern(spawnPositions[pos++]);
-            }
-            NbInternsToDropShip = 0;
-        }
-
-        public void SpawnIntern(Transform positionTransform, bool isOutside = true)
-        {
-            StartOfRound instance = StartOfRound.Instance;
-            int indexNextPlayerObject = GetNextAvailablePlayerObject();
-            if (indexNextPlayerObject < 0)
-            {
-                Plugin.Logger.LogInfo($"No more intern available");
-                return;
-            }
-            Plugin.Logger.LogDebug($"indexNextPlayerObject {indexNextPlayerObject}");
-
-            Vector3 spawnPosition = positionTransform.position;
-            float yRot = positionTransform.eulerAngles.y;
-            Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
-
-            GameObject internObjectParent = instance.allPlayerObjects[indexNextPlayerObject];
-            internObjectParent.transform.position = spawnPosition;
-            internObjectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
-
-            PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
-            internController.isPlayerDead = false;
-            internController.isPlayerControlled = true;
-            internController.health = 50;
-            internController.DisablePlayerModel(internObjectParent, true, true);
-            internController.isInsideFactory = !isOutside;
-            internController.isMovementHindered = 0;
-            internController.criticallyInjured = false;
-            internController.bleedingHeavily = false;
-            internController.activatingItem = false;
-            internController.twoHanded = false;
-            internController.inSpecialInteractAnimation = false;
-            internController.freeRotationInInteractAnimation = false;
-            internController.disableSyncInAnimation = false;
-            internController.inAnimationWithEnemy = null;
-            internController.holdingWalkieTalkie = false;
-            internController.speakingToWalkieTalkie = false;
-            internController.isSinking = false;
-            internController.isUnderwater = false;
-            internController.sinkingValue = 0f;
-
-            int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - AllInternAIs.Length);
-            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerUsername}");
-            InternAI internAI = null!;
-            internAI = AllInternAIs[indexNextIntern];
-            if (internAI == null)
-            {
-                GameObject internPrefab = Object.Instantiate<GameObject>(InternNPCPrefab.enemyPrefab);
-                internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
-                internAI = internPrefab.GetComponent<InternAI>();
-                internAI.creatureAnimator = internController.playerBodyAnimator;
-                internAI.NpcController = new NpcController(internController);
-                internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
-
-
-                internAI.LineRenderer1 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer1.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer1.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer2 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer2.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer2.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer3 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer3.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer3.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer4 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer4.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer4.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer5 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer5.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer5.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                AllInternAIs[indexNextIntern] = internAI;
-            }
-
-            // Plug ai on intern body
-            internAI.transform.parent = internObjectParent.transform;
-
-            internAI.SetEnemyOutside(isOutside);
-            internAI.Init();
-
-            internObjectParent.SetActive(true);
-
-            // Unsuscribe from events to prevent double trigger
-            PlayerControllerBPatch.OnDisable_ReversePatch(internController);
-        }
-
-        private int GetNextAvailablePlayerObject()
-        {
-            StartOfRound instance = StartOfRound.Instance;
-            //Plugin.Logger.LogDebug($"2 instance.allPlayerScripts.Length : {instance.allPlayerScripts.Length}");
-            //Plugin.Logger.LogDebug($"2 instance.allPlayerObjects.Length : {instance.allPlayerScripts.Length}");
-            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
-            {
-                if (!instance.allPlayerScripts[i].isPlayerControlled)
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        public InternAI? GetInternAI(int index)
-        {
-            if (AllInternAIs == null)
-            {
-                return null;
-            }
-
-            int oldPlayersCount = StartOfRound.Instance.allPlayerObjects.Length - AllInternAIs.Length;
-            if (index < oldPlayersCount)
-            {
-                return null;
-            }
-
-            if (AllInternAIs.Length > 0)
-            {
-                return AllInternAIs[index == -1 ? 0 : index - oldPlayersCount];
-            }
-            return null;
-        }
-
-        public InternAI? GetInternAIIfLocalIsOwner(int index)
-        {
-            InternAI? internAI = GetInternAI(index);
-            if (internAI != null
-                && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
-            {
-                return internAI;
-            }
-
-            return null;
-        }
-
-        public bool IsAIInternAi(EnemyAI ai)
-        {
-            if (AllInternAIs == null)
-            {
-                return false;
-            }
-
-            for(int i =0; i < AllInternAIs.Length; i++)
-            {
-                if (AllInternAIs[i] == ai)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public void ResizeAndPopulateInterns()
@@ -397,6 +146,265 @@ namespace LethalInternship.Managers
             //}
         }
 
+        public void SpawnIntern(Transform positionTransform, bool isOutside = true)
+        {
+            StartOfRound instance = StartOfRound.Instance;
+            int indexNextPlayerObject = GetNextAvailablePlayerObject();
+            if (indexNextPlayerObject < 0)
+            {
+                Plugin.Logger.LogInfo($"No more intern available");
+                return;
+            }
+
+            Vector3 spawnPosition = positionTransform.position;
+            float yRot = positionTransform.eulerAngles.y;
+            Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
+
+            GameObject objectParent = instance.allPlayerObjects[indexNextPlayerObject];
+            objectParent.transform.position = spawnPosition;
+            objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
+
+            PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
+            internController.isPlayerDead = false;
+            internController.isPlayerControlled = true;
+            internController.health = 50;
+            internController.DisablePlayerModel(objectParent, true, true);
+            internController.isInsideFactory = !isOutside;
+            internController.isMovementHindered = 0;
+            internController.criticallyInjured = false;
+            internController.bleedingHeavily = false;
+            internController.activatingItem = false;
+            internController.twoHanded = false;
+            internController.inSpecialInteractAnimation = false;
+            internController.freeRotationInInteractAnimation = false;
+            internController.disableSyncInAnimation = false;
+            internController.inAnimationWithEnemy = null;
+            internController.holdingWalkieTalkie = false;
+            internController.speakingToWalkieTalkie = false;
+            internController.isSinking = false;
+            internController.isUnderwater = false;
+            internController.sinkingValue = 0f;
+
+            int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - AllInternAIs.Length);
+            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerUsername}");
+            InternAI internAI = AllInternAIs[indexNextIntern];
+            if (internAI == null)
+            {
+                GameObject internPrefab = Object.Instantiate<GameObject>(InternNPCPrefab.enemyPrefab);
+                internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
+                internAI = internPrefab.GetComponent<InternAI>();
+
+                internAI.creatureAnimator = internController.playerBodyAnimator;
+                internAI.NpcController = new NpcController(internController);
+                internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
+
+                internAI.LineRenderer1 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer1.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer1.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer2 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer2.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer2.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer3 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer3.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer3.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer4 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer4.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer4.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.LineRenderer5 = new GameObject().AddComponent<LineRenderer>();
+                internAI.LineRenderer5.gameObject.transform.SetParent(internAI.transform, false);
+                internAI.LineRenderer5.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+                internAI.InternId = indexNextIntern.ToString();
+                AllInternAIs[indexNextIntern] = internAI;
+            }
+
+            // Plug ai on intern body
+            internAI.transform.parent = objectParent.transform;
+
+            internAI.SetEnemyOutside(isOutside);
+            internAI.Init();
+
+            objectParent.SetActive(true);
+
+            // Unsuscribe from events to prevent double trigger
+            PlayerControllerBPatch.OnDisable_ReversePatch(internController);
+        }
+
+        public void SpawnInternsFromDropShip(Transform[] spawnPositions)
+        {
+            int pos = 0;
+            for (int i = 0; i < NbInternsToDropShip; i++)
+            {
+                if (pos >= 3)
+                {
+                    pos = 0;
+                }
+                SpawnIntern(spawnPositions[pos++]);
+            }
+            NbInternsToDropShip = 0;
+        }
+
+        public bool AreInternsScheduledToLand()
+        {
+            return NbInternsToDropShip > 0;
+        }
+
+        public bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
+        {
+            Transform localItemHolder = grabbableObject.parentObject;
+            PlayerControllerB playerHolder;
+
+            if (localItemHolder == null)
+            {
+                playerHolder = grabbableObject.playerHeldBy;
+            }
+            else
+            {
+                playerHolder = localItemHolder.GetComponentInParent<PlayerControllerB>();
+            }
+
+            if (playerHolder == null) { return false; }
+            return GetInternAI((int)playerHolder.playerClientId) != null;
+        }
+
+        public void SyncEndOfRoundInterns()
+        {
+            if (base.IsOwner)
+            {
+                SyncEndOfRoundInternsFromServerToClientRpc();
+            }
+            else
+            {
+                SyncEndOfRoundInternsFromClientToServerRpc();
+            }
+        }
+
+        [ServerRpc]
+        public void SyncEndOfRoundInternsFromClientToServerRpc()
+        {
+            Plugin.Logger.LogInfo($"Client send to server to sync end of round, calling ClientRpc...");
+            SyncEndOfRoundInternsFromServerToClientRpc();
+        }
+
+        [ClientRpc]
+        public void SyncEndOfRoundInternsFromServerToClientRpc()
+        {
+            Plugin.Logger.LogInfo($"Server send to clients to sync end of round, client execute...");
+            NbInternsOwned = CountAliveAndDisableInterns();
+            NbInternsToDropShip = NbInternsOwned;
+        }
+
+        public void NewCommandOfInterns(int nbOrdered)
+        {
+            if (StartOfRound.Instance.inShipPhase)
+            {
+                // in space
+                NbInternsOwned += nbOrdered;
+                NbInternsToDropShip = NbInternsOwned;
+            }
+            else
+            {
+                // on moon
+                NbInternsToDropShip = nbOrdered;
+                NbInternsOwned += NbInternsToDropShip;
+            }
+        }
+
+        private int CountAliveAndDisableInterns()
+        {
+            StartOfRound instance = StartOfRound.Instance;
+            int alive = 0;
+            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
+            {
+                if (!instance.allPlayerScripts[i].isPlayerDead && instance.allPlayerScripts[i].isPlayerControlled)
+                {
+                    instance.allPlayerScripts[i].isPlayerControlled = false;
+                    instance.allPlayerObjects[i].SetActive(false);
+                    alive++;
+                }
+            }
+            return alive;
+        }
+
+        private int GetNextAvailablePlayerObject()
+        {
+            StartOfRound instance = StartOfRound.Instance;
+            //Plugin.Logger.LogDebug($"2 instance.allPlayerScripts.Length : {instance.allPlayerScripts.Length}");
+            //Plugin.Logger.LogDebug($"2 instance.allPlayerObjects.Length : {instance.allPlayerScripts.Length}");
+            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
+            {
+                if (!instance.allPlayerScripts[i].isPlayerControlled)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public InternAI? GetInternAI(int index)
+        {
+            if (AllInternAIs == null)
+            {
+                return null;
+            }
+
+            int oldPlayersCount = StartOfRound.Instance.allPlayerObjects.Length - AllInternAIs.Length;
+            if (index < IndexBeginOfInterns)
+            {
+                return null;
+            }
+
+            if (AllInternAIs.Length > 0)
+            {
+                return AllInternAIs[index < 0 ? 0 : index - oldPlayersCount];
+            }
+            return null;
+        }
+
+        public InternAI? GetInternAIIfLocalIsOwner(int index)
+        {
+            InternAI? internAI = GetInternAI(index);
+            if (internAI != null
+                && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+            {
+                return internAI;
+            }
+
+            return null;
+        }
+
+        public bool IsIdPlayerIntern(int id)
+        {
+            if (AllInternAIs == null)
+            {
+                return false;
+            }
+
+            return id >= IndexBeginOfInterns;
+        }
+
+        public bool IsAIInternAi(EnemyAI ai)
+        {
+            if (AllInternAIs == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < AllInternAIs.Length; i++)
+            {
+                if (AllInternAIs[i] == ai)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void SpawnNetworkObjectsOfGameObject(GameObject gameObject)
         {
             var listNetworkObjects = gameObject.GetComponentsInChildren<NetworkObject>();
@@ -449,14 +457,12 @@ namespace LethalInternship.Managers
             }
             if (player == GameNetworkManager.Instance.localPlayerController)
             {
-                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> LOCAL PLAYER");
                 return true;
             }
 
             InternAI? internAI = GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
-                Plugin.Logger.LogDebug($"IsPlayerLocalOrInternOwnerLocal -> OTHER PLAYER");
                 return false;
             }
 
@@ -486,11 +492,20 @@ namespace LethalInternship.Managers
             InternAI? internAI = GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
-                Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> OTHER PLAYER");
                 return false;
             }
 
-            Plugin.Logger.LogDebug($"IsPlayerInternOwnerLocal -> {internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId}, internAI.OwnerClientId {internAI.OwnerClientId}, localPlayerController.actualClientId {GameNetworkManager.Instance.localPlayerController.actualClientId}");
+            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public bool IsIdPlayerInternOwnerLocal(int idPlayer)
+        {
+            InternAI? internAI = GetInternAI(idPlayer);
+            if (internAI == null)
+            {
+                return false;
+            }
+
             return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
     }

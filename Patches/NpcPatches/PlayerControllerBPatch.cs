@@ -23,11 +23,16 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance,
                                   ref bool ___isCameraDisabled,
-                                  bool ___isJumping,
+                                  ref bool ___isJumping,
                                   ref float ___crouchMeter,
                                   ref bool ___isWalking,
-                                  bool ___disabledJetpackControlsThisFrame,
+                                  ref float ___playerSlidingTimer,
+                                  ref bool ___disabledJetpackControlsThisFrame,
+                                  ref bool ___startedJetpackControls,
                                   float ___updatePlayerAnimationsInterval,
+                                  ref float ___timeSinceTakingGravityDamage,
+                                  ref bool ___teleportingThisFrame,
+                                  ref float ___previousFrameDeltaTime,
                                   float ___currentAnimationSpeed,
                                   float ___previousAnimationSpeed,
                                   ref List<int> ___currentAnimationStateHash,
@@ -43,8 +48,15 @@ namespace LethalInternship.Patches.NpcPatches
             internAI.NpcController.IsJumping = ___isJumping;
             internAI.NpcController.CrouchMeter = ___crouchMeter;
             internAI.NpcController.IsWalking = ___isWalking;
+            internAI.NpcController.PlayerSlidingTimer = ___playerSlidingTimer;
+
             internAI.NpcController.DisabledJetpackControlsThisFrame = ___disabledJetpackControlsThisFrame;
+            internAI.NpcController.StartedJetpackControls = ___startedJetpackControls;
             internAI.NpcController.UpdatePlayerAnimationsInterval = ___updatePlayerAnimationsInterval;
+            internAI.NpcController.TimeSinceTakingGravityDamage = ___timeSinceTakingGravityDamage;
+            internAI.NpcController.TeleportingThisFrame = ___teleportingThisFrame;
+            internAI.NpcController.PreviousFrameDeltaTime = ___previousFrameDeltaTime;
+
             internAI.NpcController.CurrentAnimationSpeed = ___currentAnimationSpeed;
             internAI.NpcController.PreviousAnimationSpeed = ___previousAnimationSpeed;
             internAI.NpcController.CurrentAnimationStateHash = ___currentAnimationStateHash;
@@ -53,10 +65,19 @@ namespace LethalInternship.Patches.NpcPatches
             internAI.NpcController.Update();
 
             ___isCameraDisabled = internAI.NpcController.IsCameraDisabled;
+            ___isJumping = internAI.NpcController.IsJumping;
             ___crouchMeter = internAI.NpcController.CrouchMeter;
             ___isWalking = internAI.NpcController.IsWalking;
+            ___playerSlidingTimer = internAI.NpcController.PlayerSlidingTimer;
+
+            ___disabledJetpackControlsThisFrame = internAI.NpcController.DisabledJetpackControlsThisFrame;
+            ___startedJetpackControls = internAI.NpcController.StartedJetpackControls;
             ___currentAnimationStateHash = internAI.NpcController.CurrentAnimationStateHash;
             ___previousAnimationStateHash = internAI.NpcController.PreviousAnimationStateHash;
+            ___timeSinceTakingGravityDamage = internAI.NpcController.TimeSinceTakingGravityDamage;
+            ___teleportingThisFrame = internAI.NpcController.TeleportingThisFrame;
+            ___previousFrameDeltaTime = internAI.NpcController.PreviousFrameDeltaTime;
+            internAI.NpcController.StartedJetpackControls = ___startedJetpackControls;
 
             return false;
         }

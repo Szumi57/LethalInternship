@@ -99,7 +99,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             return codes.AsEnumerable();
         }
 
-        public static void DamagePlayersInLOS(Turret turret)
+        private static void DamagePlayersInLOS(Turret turret)
         {
             PlayerControllerB player = turret.CheckForPlayersInLineOfSight(3f, false);
             if (InternManager.Instance.IsPlayerLocalOrInternOwnerLocal(player))

@@ -25,9 +25,9 @@ These passionate workers are available in a new section of your shop.
 <br/>The moons are not very welcoming and the interns may have (some) difficulties to navigate smoothly in those tricky areas.
 <br/>
 <br/>**They are fragile**
-<br/>But replaceable, less life points and can carry only one object at a time
+<br/>But replaceable, less life points and can carry only one object at a time.
 <br/>Be patient, they are learning, just like you not so long ago. 
 
 ## On a more serious note
-This mod is very alpha and a I still need to do a lot of polishing.
+This mod is very alpha and I still need to do a lot of polishing.
 <br/>I'm just happy to share this project with you, in hope that you find it fun and enjoyable.

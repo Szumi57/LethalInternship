@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
@@ -11,8 +12,7 @@ namespace LethalInternship.Patches.EnemiesPatches
         [HarmonyPostfix]
         static void Start_PostFix(ref Collider[] ___ragdollColliders)
         {
-            Collider[] ragdollCollidersNewSize = new Collider[StartOfRound.Instance.allPlayerObjects.Length];
-            ___ragdollColliders = ragdollCollidersNewSize;
+            ___ragdollColliders = new Collider[InternManager.Instance.AllEntitiesCount];
         }
     }
 }

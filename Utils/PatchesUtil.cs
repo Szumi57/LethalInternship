@@ -16,6 +16,7 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsColliderFromLocalOrInternOwnerLocal(new Collider()));
         public static readonly MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => IsObjectHeldByIntern((GrabbableObject)new object()));
         public static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => IndexBeginOfInterns());
+        public static readonly MethodInfo IsIdPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsIdPlayerIntern(new int()));
 
         private static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
 
@@ -105,9 +106,9 @@ namespace LethalInternship.Utils
         {
             return InternManager.Instance.IsPlayerIntern(player);
         }
-        private static bool IsPlayerInternOwnerLocal(PlayerControllerB player)
+        private static bool IsIdPlayerIntern(int id)
         {
-            return InternManager.Instance.IsPlayerInternOwnerLocal(player);
+            return InternManager.Instance.IsIdPlayerIntern(id);
         }
     }
 }

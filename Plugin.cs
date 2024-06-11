@@ -60,8 +60,12 @@ namespace LethalInternship
 
             // Enemies
             _harmony.PatchAll(typeof(BlobAIPatch));
+            _harmony.PatchAll(typeof(ButlerBeesEnemyAIPatch));
+            _harmony.PatchAll(typeof(ButlerEnemyAIPatch));
             _harmony.PatchAll(typeof(CentipedeAIPatch));
             _harmony.PatchAll(typeof(CrawlerAIPatch));
+            _harmony.PatchAll(typeof(FlowerSnakeEnemyPatch));
+            _harmony.PatchAll(typeof(ForestGiantAIPatch));
             _harmony.PatchAll(typeof(MouthDogAIPatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
@@ -79,6 +83,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(TurretPatch));
 
             // Objects
+            _harmony.PatchAll(typeof(DeadBodyInfoPatch));
             _harmony.PatchAll(typeof(GrabbableObjectPatch));
             _harmony.PatchAll(typeof(ShotgunItemPatch));
             _harmony.PatchAll(typeof(StunGrenadeItemPatch));

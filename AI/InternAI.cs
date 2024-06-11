@@ -16,6 +16,7 @@ using UnityEngine.AI;
 using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.AI
 {
@@ -86,6 +87,7 @@ namespace LethalInternship.AI
         private float timerCheckDoor;
         private float timerCheckLadders;
 
+        public string InternId = "Not initialized";
         public NpcController NpcController = null!;
         public LineRenderer LineRenderer1 = null!;
         public LineRenderer LineRenderer2 = null!;
@@ -107,8 +109,6 @@ namespace LethalInternship.AI
         public override void Start()
         {
             this.NpcController.Awake();
-
-            //todo start bloodpools ?
 
             // AIIntervalTime
             if (AIIntervalTime == 0f)
@@ -180,11 +180,11 @@ namespace LethalInternship.AI
             laddersInteractTrigger = RefreshLaddersList();
             Plugin.Logger.LogDebug($"Ladders found : {laddersInteractTrigger.Length}");
 
-            // Entrances
-            entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+            // Entrancesz
+            entrancesTeleportArray = Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
 
             // Doors
-            doorLocksArray = UnityEngine.Object.FindObjectsOfType<DoorLock>(includeInactive: false);
+            doorLocksArray = Object.FindObjectsOfType<DoorLock>(includeInactive: false);
 
             // Grabbableobject
             HoarderBugAI.RefreshGrabbableObjectsInMapList();
@@ -276,10 +276,10 @@ namespace LethalInternship.AI
 
         public override void DoAIInterval()
         {
-            if (isEnemyDead || StartOfRound.Instance.allPlayersDead)
+            if (isEnemyDead || NpcController.Npc.isPlayerDead || StartOfRound.Instance.allPlayersDead)
             {
                 return;
-            };
+            }
 
             State.DoAI();
 
@@ -288,7 +288,7 @@ namespace LethalInternship.AI
 
         public void OrderMoveToDestination()
         {
-            if (agent.isActiveAndEnabled)
+            if (agent.isActiveAndEnabled && !isEnemyDead && !NpcController.Npc.isPlayerDead)
             {
                 agent.SetDestination(destination);
             }
@@ -455,7 +455,7 @@ namespace LethalInternship.AI
                 bool isUsingLadder = UseLadderIfNeeded();
 
                 // Check for hole
-                if (!isOpeningDoor && !isUsingLadder)
+                if (!isOpeningDoor && !isUsingLadder && !NpcController.Npc.jetpackControls)
                 {
                     if (Time.timeSinceLevelLoad - State.TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
                     {
@@ -1018,7 +1018,6 @@ namespace LethalInternship.AI
             {
                 return;
             }
-
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 5f, -1);
             if (IsOwner)
             {
@@ -1127,6 +1126,14 @@ namespace LethalInternship.AI
                 timeSinceHittingLocalPlayer = 0f;
                 playerControllerB.DamagePlayer(20);
             }
+        }
+
+        public override void OnCollideWithEnemy(Collider other, EnemyAI collidedEnemy = null)
+        {
+            Physics.IgnoreCollision(this.NpcController.Npc.GetComponent<Collider>(), other);
+            //Physics.IgnoreCollision(this.GetComponent<Collider>(), other);
+            Plugin.Logger.LogDebug(base.gameObject.name + " collided with enemy!: " + other.gameObject.name);
+            
         }
 
         public override void HitEnemy(int force = 1, PlayerControllerB? playerWhoHit = null, bool playHitSFX = false, int hitID = -1)
