@@ -48,6 +48,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
 
             // ----------------------------------------------------------------------
+            // Replace on all occurences localPlayerController by the player from getComponent just before, so the player is local or intern
             for (var i = 0; i < codes.Count - 1; i++)
             {
                 if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()"

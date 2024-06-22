@@ -142,4 +142,22 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
     }
+
+    [HarmonyPatch(typeof(EnemyAICollisionDetect))]
+    internal class EnemyAICollisionDetectPatch
+    {
+        [HarmonyPatch("OnTriggerStay")]
+        [HarmonyPrefix]
+        static void OnTriggerStay_Prefix(EnemyAICollisionDetect __instance, Collider other)
+        {
+            if (other.CompareTag("Player") )
+            {
+                //Plugin.Logger.LogDebug($"{__instance.mainScript.enemyType.enemyName} (only when grounded {__instance.onlyCollideWhenGrounded}) collide with other.name {other.name} other.tag {other.tag}");
+            }
+            if (other.CompareTag("Enemy"))
+            {
+                //Plugin.Logger.LogDebug($"{__instance.mainScript.enemyType.enemyName} (only when grounded {__instance.onlyCollideWhenGrounded}) (can collide with enemies {__instance.canCollideWithEnemies}) collide with enemy other.name {other.name} other.tag {other.tag}");
+            }
+        }
+    }
 }

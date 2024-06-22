@@ -33,7 +33,7 @@ namespace LethalInternship.AI
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
 
-        public bool IsCameraDisabled = true;
+        public bool IsCameraDisabled;
         public bool IsJumping;
         public float CrouchMeter;
         public bool IsWalking;
@@ -50,6 +50,7 @@ namespace LethalInternship.AI
         public float TimeSinceTakingGravityDamage;
         public bool TeleportingThisFrame;
         public float PreviousFrameDeltaTime;
+        public float CameraUp;
         // Orders
         private EnumObjectsLookingAt enumObjectsLookingAt;
         //private bool hasToLookAtPlayer = false;
@@ -63,6 +64,7 @@ namespace LethalInternship.AI
         private Vector3 positionToLookAt;
         private float floatSprint;
         private Coroutine jumpCoroutine = null!;
+        private RaycastHit hit;
 
         public NpcController(PlayerControllerB npc)
         {
@@ -72,34 +74,33 @@ namespace LethalInternship.AI
         public void Awake()
         {
             Plugin.Logger.LogDebug("Awake intern controller.");
-            //Npc.isHostPlayerObject = false;
+            Npc.isHostPlayerObject = false;
             //Npc.playerActions = new PlayerActions();
-            //this.PreviousAnimationState = 0;
-            //Npc.serverPlayerPosition = Npc.transform.position;
-            //Npc.gameplayCamera.enabled = false;
-            //Npc.visorCamera.enabled = false;
-            //Npc.thisPlayerModel.enabled = true;
-            //Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-            //Npc.thisPlayerModelArms.enabled = false;
-            //Npc.gameplayCamera.enabled = false;
+            this.PreviousAnimationState = 0;
+            Npc.serverPlayerPosition = Npc.transform.position;
+            Npc.gameplayCamera.enabled = false;
+            Npc.visorCamera.enabled = false;
+            Npc.thisPlayerModel.enabled = true;
+            Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+            Npc.thisPlayerModelArms.enabled = false;
             //PreviousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
             //CurrentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
             //if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.otherClientsAnimatorController)
             //{
             //    Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
             //}
-            //this.IsCameraDisabled = true;
-            //Npc.sprintMeter = 1f;
+            this.IsCameraDisabled = true;
+            Npc.sprintMeter = 1f;
             Npc.ItemSlots = new GrabbableObject[1];
-            //RightArmProceduralTargetBasePosition = Npc.rightArmProceduralTarget.localPosition;
+            RightArmProceduralTargetBasePosition = Npc.rightArmProceduralTarget.localPosition;
             Npc.playerUsername = string.Format("Intern #{0}", Npc.playerClientId);
             Npc.usernameBillboardText.text = Npc.playerUsername;
-            //Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
-            //if (Npc.gameObject.GetComponent<Rigidbody>())
-            //{
-            //    Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
-            //}
-            //Npc.gameObject.GetComponent<CharacterController>().enabled = false;
+            Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
+            if (Npc.gameObject.GetComponent<Rigidbody>())
+            {
+                Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
+            }
+            Npc.gameObject.GetComponent<CharacterController>().enabled = false;
             //Npc.syncFullRotation = Npc.transform.eulerAngles;
         }
 
@@ -110,9 +111,11 @@ namespace LethalInternship.AI
                 if (IsCameraDisabled)
                 {
                     IsCameraDisabled = false;
+                    Npc.gameplayCamera.enabled = false;
+                    Npc.visorCamera.enabled = false;
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-                    Npc.gameObject.GetComponent<CharacterController>().enabled = true;
+                    Npc.mapRadarDirectionIndicator.enabled = false;
                     PreviousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
                     CurrentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
                     if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.localClientAnimatorController)
@@ -120,6 +123,13 @@ namespace LethalInternship.AI
                         Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.localClientAnimatorController;
                     }
                 }
+
+                if (Npc.thisController.enabled != !Npc.inSpecialInteractAnimation)
+                {
+                    Npc.thisController.enabled = !Npc.inSpecialInteractAnimation;
+                }
+
+                Npc.rightArmProceduralRig.weight = Mathf.Lerp(Npc.rightArmProceduralRig.weight, 0f, 25f * Time.deltaTime);
 
                 if (this.HasToMove)
                 {
@@ -327,10 +337,10 @@ namespace LethalInternship.AI
                             rotation = Npc.jetpackTurnCompass.rotation;
                             Vector3 a2 = new Vector3(
                                 Mathf.Clamp(
-                                    Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), 
-                                -Npc.maxJetpackAngle, Npc.maxJetpackAngle), 
+                                    Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity),
+                                -Npc.maxJetpackAngle, Npc.maxJetpackAngle),
                                 Mathf.Clamp(
-                                    Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle), 
+                                    Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle),
                                 Mathf.Clamp(Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle));
                             Npc.jetpackTurnCompass.Rotate(a2 * Time.deltaTime, Space.Self);
                             if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
@@ -576,7 +586,7 @@ namespace LethalInternship.AI
                             if (TimeSinceTakingGravityDamage > 0.6f && Npc.velocityAverageCount > 4)
                             {
                                 float num8 = Vector3.Angle(Npc.transform.up, Vector3.up);
-                                if (Physics.CheckSphere(Npc.gameplayCamera.transform.position, 0.5f, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore) 
+                                if (Physics.CheckSphere(Npc.gameplayCamera.transform.position, 0.5f, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)
                                     || (num8 > 65f && Physics.CheckSphere(Npc.lowerSpine.position, 0.5f, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)))
                                 {
                                     if (Npc.averageVelocity > 17f)
@@ -645,6 +655,8 @@ namespace LethalInternship.AI
                     }
                 }
                 TeleportingThisFrame = false;
+                Npc.playerEye.position = Npc.gameplayCamera.transform.position;
+                Npc.playerEye.rotation = Npc.gameplayCamera.transform.rotation;
 
                 // Rotations
                 this.UpdateLookAt();
@@ -668,6 +680,8 @@ namespace LethalInternship.AI
                 if (!this.IsCameraDisabled)
                 {
                     this.IsCameraDisabled = true;
+                    Npc.gameplayCamera.enabled = false;
+                    Npc.visorCamera.enabled = false;
                     Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.mapRadarDirectionIndicator.enabled = false;
@@ -676,75 +690,72 @@ namespace LethalInternship.AI
                     {
                         Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
                     }
+
                     if (Npc.gameObject.GetComponent<Rigidbody>())
                     {
                         Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
                     }
                 }
-            }
 
-            if (!Npc.isTestingPlayer && !Npc.isPlayerDead && Npc.isPlayerControlled)
-            {
-                //if (!Npc.disableSyncInAnimation)
-                //{
-                //    if (Npc.snapToServerPosition)
-                //    {
-                //        Npc.transform.localPosition = Vector3.Lerp(Npc.transform.localPosition, Npc.serverPlayerPosition, 16f * Time.deltaTime);
-                //    }
-                //    else
-                //    {
-                //        float num10 = 8f;
-                //        if (Npc.jetpackControls)
-                //        {
-                //            num10 = 15f;
-                //        }
-                //        float num11 = Mathf.Clamp(num10 * Vector3.Distance(Npc.transform.localPosition, Npc.serverPlayerPosition), 0.9f, 300f);
-                //        Npc.transform.localPosition = Vector3.MoveTowards(Npc.transform.localPosition, Npc.serverPlayerPosition, num11 * Time.deltaTime);
-                //    }
-                //}
-                //if (Npc.jetpackControls || Npc.disablingJetpackControls || Npc.isClimbingLadder)
-                //{
-                //    if (!Npc.disableSyncInAnimation)
-                //    {
-                //        RoundManager.Instance.tempTransform.rotation = Quaternion.Euler(Npc.syncFullRotation);
-                //        Npc.transform.rotation = Quaternion.Lerp(Quaternion.Euler(Npc.transform.eulerAngles), Quaternion.Euler(Npc.syncFullRotation), 8f * Time.deltaTime);
-                //    }
-                //}
-                //else
-                //{
-                //    Npc.syncFullRotation = Npc.transform.eulerAngles;
-                //    if (!Npc.disableSyncInAnimation)
-                //    {
-                //        Npc.transform.eulerAngles = new Vector3(Npc.transform.eulerAngles.x, Mathf.LerpAngle(Npc.transform.eulerAngles.y, this.targetYRot, 14f * Time.deltaTime), Npc.transform.eulerAngles.z);
-                //    }
-                //    if (!Npc.inSpecialInteractAnimation && !Npc.disableSyncInAnimation)
-                //    {
-                //        Vector3 localEulerAngles2 = Npc.transform.localEulerAngles;
-                //        localEulerAngles2.x = Mathf.LerpAngle(localEulerAngles2.x, 0f, 25f * Time.deltaTime);
-                //        localEulerAngles2.z = Mathf.LerpAngle(localEulerAngles2.z, 0f, 25f * Time.deltaTime);
-                //        Npc.transform.localEulerAngles = localEulerAngles2;
-                //    }
-                //}
-                //Npc.playerEye.position = Npc.gameplayCamera.transform.position;
-                //Npc.playerEye.localEulerAngles = new Vector3(this.targetLookRot, 0f, 0f);
-                //Npc.playerEye.eulerAngles = new Vector3(Npc.playerEye.eulerAngles.x, this.targetYRot, Npc.playerEye.eulerAngles.z);
-            }
-            else if ((Npc.isPlayerDead || !Npc.isPlayerControlled) && Npc.setPositionOfDeadPlayer)
-            {
-                Npc.transform.position = Npc.playersManager.notSpawnedPosition.position;
-            }
-            if (Npc.isInGameOverAnimation > 0f && Npc.deadBody != null && Npc.deadBody.gameObject.activeSelf)
-            {
-                Npc.isInGameOverAnimation -= Time.deltaTime;
-            }
-            else if (!Npc.hasBegunSpectating)
-            {
-                if (Npc.deadBody != null)
+                if (!Npc.isTestingPlayer && !Npc.isPlayerDead && Npc.isPlayerControlled)
                 {
-                    Debug.Log(Npc.deadBody.gameObject.activeSelf);
+                    if (!Npc.disableSyncInAnimation)
+                    {
+                        if (Npc.snapToServerPosition)
+                        {
+                            Npc.transform.localPosition = Vector3.Lerp(Npc.transform.localPosition, Npc.serverPlayerPosition, 16f * Time.deltaTime);
+                        }
+                        else
+                        {
+                            float num10 = 8f;
+                            if (Npc.jetpackControls)
+                            {
+                                num10 = 15f;
+                            }
+                            float num11 = Mathf.Clamp(num10 * Vector3.Distance(Npc.transform.localPosition, Npc.serverPlayerPosition), 0.9f, 300f);
+                            Npc.transform.localPosition = Vector3.MoveTowards(Npc.transform.localPosition, Npc.serverPlayerPosition, num11 * Time.deltaTime);
+                        }
+                    }
+                    //if (Npc.jetpackControls || Npc.disablingJetpackControls || Npc.isClimbingLadder)
+                    //{
+                    //    if (!Npc.disableSyncInAnimation)
+                    //    {
+                    //        RoundManager.Instance.tempTransform.rotation = Quaternion.Euler(Npc.syncFullRotation);
+                    //        Npc.transform.rotation = Quaternion.Lerp(Quaternion.Euler(Npc.transform.eulerAngles), Quaternion.Euler(Npc.syncFullRotation), 8f * Time.deltaTime);
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    Npc.syncFullRotation = Npc.transform.eulerAngles;
+                    //    if (!Npc.disableSyncInAnimation)
+                    //    {
+                    //        Npc.transform.eulerAngles = new Vector3(Npc.transform.eulerAngles.x, Mathf.LerpAngle(Npc.transform.eulerAngles.y, this.targetYRot, 14f * Time.deltaTime), Npc.transform.eulerAngles.z);
+                    //    }
+                    //    if (!Npc.inSpecialInteractAnimation && !Npc.disableSyncInAnimation)
+                    //    {
+                    //        Vector3 localEulerAngles2 = Npc.transform.localEulerAngles;
+                    //        localEulerAngles2.x = Mathf.LerpAngle(localEulerAngles2.x, 0f, 25f * Time.deltaTime);
+                    //        localEulerAngles2.z = Mathf.LerpAngle(localEulerAngles2.z, 0f, 25f * Time.deltaTime);
+                    //        Npc.transform.localEulerAngles = localEulerAngles2;
+                    //    }
+                    //}
+                    //Npc.playerEye.position = Npc.gameplayCamera.transform.position;
+                    //Npc.playerEye.localEulerAngles = new Vector3(this.targetLookRot, 0f, 0f);
+                    //Npc.playerEye.eulerAngles = new Vector3(Npc.playerEye.eulerAngles.x, this.targetYRot, Npc.playerEye.eulerAngles.z);
                 }
-                Npc.isInGameOverAnimation = 0f;
-                Npc.hasBegunSpectating = true;
+                else if ((Npc.isPlayerDead || !Npc.isPlayerControlled) && Npc.setPositionOfDeadPlayer)
+                {
+                    Npc.transform.position = Npc.playersManager.notSpawnedPosition.position;
+                }
+                if (Npc.isInGameOverAnimation > 0f && Npc.deadBody != null && Npc.deadBody.gameObject.activeSelf)
+                {
+                    Npc.isInGameOverAnimation -= Time.deltaTime;
+                }
+                else if (!Npc.hasBegunSpectating)
+                {
+                    Npc.isInGameOverAnimation = 0f;
+                    Npc.hasBegunSpectating = true;
+                }
             }
 
             Npc.timeSincePlayerMoving += Time.deltaTime;
@@ -767,6 +778,11 @@ namespace LethalInternship.AI
             }
             else
             {
+                if ((!Npc.isClimbingLadder && !Npc.inShockingMinigame) || Npc.freeRotationInInteractAnimation)
+                {
+                    CameraUp = Mathf.Lerp(CameraUp, 0f, 5f * Time.deltaTime);
+                    Npc.gameplayCamera.transform.localEulerAngles = new Vector3(CameraUp, Npc.gameplayCamera.transform.localEulerAngles.y, Npc.gameplayCamera.transform.localEulerAngles.z);
+                }
                 Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 1f, Time.deltaTime * 20f);
                 Npc.playerModelArmsMetarig.localEulerAngles = new Vector3(-90f, 0f, 0f);
             }
@@ -858,7 +874,16 @@ namespace LethalInternship.AI
                 Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands"), this.upperBodyAnimationsWeight);
             }
             Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("SpecialAnimations"), Npc.specialAnimationWeight);
-
+            if (Npc.inSpecialInteractAnimation && !Npc.inShockingMinigame)
+            {
+                Npc.cameraLookRig1.weight = Mathf.Lerp(Npc.cameraLookRig1.weight, 0f, Time.deltaTime * 25f);
+                Npc.cameraLookRig2.weight = Mathf.Lerp(Npc.cameraLookRig1.weight, 0f, Time.deltaTime * 25f);
+            }
+            else
+            {
+                Npc.cameraLookRig1.weight = 0.45f;
+                Npc.cameraLookRig2.weight = 1f;
+            }
             if (Npc.isExhausted)
             {
                 this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 1f, 10f * Time.deltaTime);
@@ -868,6 +893,15 @@ namespace LethalInternship.AI
                 this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 0f, 10f * Time.deltaTime);
             }
             Npc.playerBodyAnimator.SetFloat("tiredAmount", this.exhaustionEffectLerp);
+
+            if (Physics.Raycast(Npc.lineOfSightCube.position, Npc.lineOfSightCube.forward, out hit, 10f, Npc.playersManager.collidersAndRoomMask, QueryTriggerInteraction.Ignore))
+            {
+                Npc.lineOfSightCube.localScale = new Vector3(1.5f, 1.5f, hit.distance);
+            }
+            else
+            {
+                Npc.lineOfSightCube.localScale = new Vector3(1.5f, 1.5f, 10f);
+            }
         }
 
         public void OrderToMove()
@@ -1021,13 +1055,10 @@ namespace LethalInternship.AI
                     if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
                     {
                         Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-                        //Quaternion previousCameraRotation = Npc.gameplayCamera.transform.rotation;
                         Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
 
                         if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 20f)
                         {
-                            //Npc.gameplayCamera.transform.rotation = previousCameraRotation;
-
                             if (this.HasToMove)
                                 enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
                             else
@@ -1054,6 +1085,11 @@ namespace LethalInternship.AI
 
         public bool CanUseLadder(InteractTrigger ladder)
         {
+            if (ladder.usingLadder)
+            {
+                return false;
+            }
+
             if ((this.Npc.isHoldingObject && !ladder.oneHandedItemAllowed)
                 || (this.Npc.twoHanded &&
                                    (!ladder.twoHandedItemAllowed || ladder.specialCharacterAnimation)))
@@ -1088,7 +1124,13 @@ namespace LethalInternship.AI
             {
                 return false;
             }
-            return !ladder.isPlayingSpecialAnimation;
+
+            if (ladder.isPlayingSpecialAnimation)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void SetFaceUnderwaterFilters()

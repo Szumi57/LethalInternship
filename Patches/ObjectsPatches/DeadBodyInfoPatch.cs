@@ -1,12 +1,9 @@
 ﻿using HarmonyLib;
 using LethalInternship.Utils;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
-using UnityEngine;
 
 namespace LethalInternship.Patches.ObjectsPatches
 {

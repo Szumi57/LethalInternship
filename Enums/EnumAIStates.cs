@@ -7,6 +7,7 @@
         JustLostPlayer,
         ChillWithPlayer,
         FetchingObject,
-        PlayerInShip
+        PlayerInShip,
+        Panik
     }
 }

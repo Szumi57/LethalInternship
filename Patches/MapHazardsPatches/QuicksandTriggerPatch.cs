@@ -1,7 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.Managers;
-using LethalInternship.Utils;
 using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches

@@ -10,7 +10,7 @@ namespace LethalInternship.AI.AIStates
         public override EnumAIStates GetAIState() { return STATE; }
 
         private float lookingAroundTimer;
-        private float SqrDistanceWithTargetLastKnownPosition
+        private float SqrDistanceToTargetLastKnownPosition
         {
             get
             {
@@ -33,6 +33,14 @@ namespace LethalInternship.AI.AIStates
 
         public override void DoAI()
         {
+            // Check for enemies
+            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (enemyAI != null)
+            {
+                ai.State = new PanikState(this, enemyAI);
+                return;
+            }
+
             if (lookingAroundTimer > Const.TIMER_LOOKING_AROUND)
             {
                 lookingAroundTimer = 0f;
@@ -49,7 +57,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Check for object to grab
-            if (ai.HandsFree())
+            if (ai.AreHandsFree())
             {
                 GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
                 if (grabbableObject != null)
@@ -65,63 +73,48 @@ namespace LethalInternship.AI.AIStates
                 ai.State = new SearchingForPlayerState(this);
                 return;
             }
-            ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
 
-            if (SqrDistanceWithTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
-            {
-                npcController.OrderToStopSprint();
-            }
-            else
-            {
-                npcController.OrderToSprint();
-            }
-
-            Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} distance to last position {Vector3.Distance(targetLastKnownPosition.Value, npcController.Npc.transform.position)}");
-            if (SqrDistanceWithTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_LAST_KNOWN_POSITION * Const.DISTANCE_CLOSE_ENOUGH_LAST_KNOWN_POSITION)
+            Plugin.Logger.LogDebug($"{npcController.Npc.playerUsername} distance to last position {Vector3.Distance(targetLastKnownPosition.Value, npcController.Npc.transform.position)}");
+            if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
                 // Check for teleport entrance
                 if (Time.timeSinceLevelLoad - TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
                 {
                     EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcController.Npc.transform.position);
-                    if (entrance != null)
+                    Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
+                    if (entranceTeleportPos.HasValue)
                     {
-                        Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
-                        if (entranceTeleportPos.HasValue)
-                        {
-                            targetLastKnownPosition = ai.targetPlayer.transform.position;
-                            Plugin.Logger.LogDebug($"======== TeleportInternAndSync {ai.NpcController.Npc.playerUsername} !!!!!!!!!!!!!!! ");
-                            ai.TeleportInternAndSync(entranceTeleportPos.Value, !ai.isOutside, true);
-                            ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
-                            return;
-                        }
+                        Plugin.Logger.LogDebug($"======== TeleportInternAndSync {ai.NpcController.Npc.playerUsername} !!!!!!!!!!!!!!! ");
+                        ai.TeleportInternAndSync(entranceTeleportPos.Value, !ai.isOutside, true);
+                        targetLastKnownPosition = ai.targetPlayer.transform.position;
                     }
-
-                    PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                    if (player == null)
+                    else
                     {
-                        player = ai.CheckLOSForInternHavingTargetInLOS(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                    }
-                    if (player != null)
-                    {
-                        // Target found
-                        targetLastKnownPosition = player.transform.position;
-                        ai.State = new GetCloseToPlayerState(this);
+                        // Start looking around
+                        lookingAroundTimer += ai.AIIntervalTime;
                         return;
                     }
-
-                    // Start looking around
-                    lookingAroundTimer += ai.AIIntervalTime;
-                    return;
                 }
             }
 
-            PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (target != null)
             {
                 // Target found
                 targetLastKnownPosition = target.transform.position;
                 ai.State = new GetCloseToPlayerState(this);
                 return;
+            }
+
+            ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
+
+            if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
+            {
+                npcController.OrderToStopSprint();
+            }
+            else
+            {
+                npcController.OrderToSprint();
             }
 
             ai.OrderMoveToDestination();

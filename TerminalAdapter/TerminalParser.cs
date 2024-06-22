@@ -1,9 +1,6 @@
-﻿using LethalInternship.Enums;
-using LethalInternship.Patches.TerminalPatches;
+﻿using LethalInternship.Patches.TerminalPatches;
 using LethalInternship.TerminalAdapter.TerminalStates;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LethalInternship.TerminalAdapter
 {

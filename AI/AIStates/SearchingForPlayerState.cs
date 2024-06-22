@@ -15,8 +15,16 @@ namespace LethalInternship.AI.AIStates
 
         public override void DoAI()
         {
+            // Check for enemies
+            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (enemyAI != null)
+            {
+                ai.State = new PanikState(this, enemyAI);
+                return;
+            }
+
             // Check for object to grab
-            if (ai.HandsFree())
+            if (ai.AreHandsFree())
             {
                 GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
                 if (grabbableObject != null)
@@ -26,7 +34,7 @@ namespace LethalInternship.AI.AIStates
                 }
             }
 
-            player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, 60, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (player != null)
             {
                 // new target

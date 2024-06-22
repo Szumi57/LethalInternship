@@ -1,8 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
-using LethalInternship.Utils;
-using LethalLib.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -184,6 +182,19 @@ namespace LethalInternship.Managers
             internController.isSinking = false;
             internController.isUnderwater = false;
             internController.sinkingValue = 0f;
+
+            //foreach (var a in internController.quickMenuManager.testAllEnemiesLevel.Enemies)
+            //{
+            //    Plugin.Logger.LogDebug($"\"{a.enemyType.enemyName}\" {a.enemyType.name}");
+            //}
+            //foreach (var a in internController.quickMenuManager.testAllEnemiesLevel.OutsideEnemies)
+            //{
+            //    Plugin.Logger.LogDebug($"\"{a.enemyType.enemyName}\" {a.enemyType.name}");
+            //}
+            //foreach (var a in internController.quickMenuManager.testAllEnemiesLevel.DaytimeEnemies)
+            //{
+            //    Plugin.Logger.LogDebug($"\"{a.enemyType.enemyName}\" {a.enemyType.name}");
+            //}
 
             int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - AllInternAIs.Length);
             Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerUsername}");

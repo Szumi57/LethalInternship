@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using GameNetcodeStuff;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
 using UnityEngine;
@@ -33,6 +34,14 @@ namespace LethalInternship.AI.AIStates
 
         public override void DoAI()
         {
+            // Check for enemies
+            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (enemyAI != null)
+            {
+                ai.State = new PanikState(this, enemyAI);
+                return;
+            }
+
             if (ai.targetPlayer == null)
             {
                 ai.State = new SearchingForPlayerState(this);
@@ -55,12 +64,30 @@ namespace LethalInternship.AI.AIStates
             if (SqrHorizDistanceWithShipBoundPoint < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)
             {
                 PlayerControllerBPatch.InternDropIfHoldingAnItem(ai.NpcController.Npc);
+                
+                // Looking
+                PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                if (playerToLook != null)
+                {
+                    npcController.OrderToLookAtPlayer(playerToLook);
+                }
+                else
+                {
+                    npcController.OrderToLookForward();
+                }
+
                 // Chill
                 ai.StopMoving();
                 return;
             }
 
             ai.SetDestinationToPositionInternAI(shipBoundClosestPointFromIntern);
+            if (SqrHorizDistanceWithShipBoundPoint > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
+            {
+                npcController.OrderToSprint();
+                // todo rpc
+                //    SetRunningServerRpc(true);
+            }
             ai.OrderMoveToDestination();
         }
     }

@@ -1,7 +1,4 @@
 ﻿using LethalInternship.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 namespace LethalInternship.TerminalAdapter.TerminalStates

@@ -10,21 +10,6 @@ namespace LethalInternship.Patches.MapPatches
     internal class InteractTriggerPatch
     {
         [HarmonyPatch("Interact")]
-        [HarmonyPrefix]
-        static bool Interact_PreFix(InteractTrigger __instance)
-        {
-            if (!__instance.interactable || __instance.isPlayingSpecialAnimation || __instance.usingLadder)
-            {
-                if (__instance.usingLadder)
-                {
-                    Plugin.Logger.LogDebug("why cancel ????");
-                }
-            }
-
-            return true;
-        }
-
-        [HarmonyPatch("Interact")]
         [HarmonyReversePatch]
         public static void Interact_ReversePatch(object instance, Transform playerTransform)
         {
@@ -59,7 +44,7 @@ namespace LethalInternship.Patches.MapPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchBeginGrabObject_ReversePatch could not remove hitray condition");
+                    Plugin.Logger.LogError($"LethalInternship.Patches.MapPatches.InteractTriggerPatch.Interact_ReversePatch could not remove CancelLadderAnimation");
                 }
 
                 //Plugin.Logger.LogDebug($"Interact ======================");
@@ -74,13 +59,6 @@ namespace LethalInternship.Patches.MapPatches
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             _ = Transpiler(null);
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-        }
-
-        [HarmonyPatch("CancelLadderAnimation")]
-        [HarmonyPostfix]
-        static void CancelLadderAnimation_PostFix(InteractTrigger __instance)
-        {
-            Plugin.Logger.LogDebug("wtf!!!!!");
         }
     }
 }

@@ -18,8 +18,7 @@ namespace LethalInternship
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID)]
     public class Plugin : BaseUnityPlugin {
-        // It is a good idea for our GUID to be more unique than only the plugin name. Notice that it is used in the BepInPlugin attribute.
-        // The GUID is also used for the config file name by default.
+
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
         public static AssetBundle ModAssets = null!;        
@@ -69,6 +68,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(MouthDogAIPatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
+            _harmony.PatchAll(typeof(SandWormAIPatch));
             _harmony.PatchAll(typeof(SpringManAIPatch));
 
             // Map
@@ -90,6 +90,8 @@ namespace LethalInternship
 
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));
+
+            _harmony.PatchAll(typeof(EnemyAICollisionDetectPatch));
 
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }

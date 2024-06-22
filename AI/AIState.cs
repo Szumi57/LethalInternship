@@ -11,6 +11,9 @@ namespace LethalInternship.AI
 
         protected Vector3? targetLastKnownPosition;
         protected GrabbableObject? targetItem;
+
+        protected Coroutine? panikCoroutine;
+        protected Transform? enemyTransform;
         
         public float TimeSinceUsingEntrance { get; set; }
 
@@ -19,6 +22,9 @@ namespace LethalInternship.AI
             this.targetLastKnownPosition = newState.targetLastKnownPosition;
             this.targetItem = newState.targetItem;
             this.TimeSinceUsingEntrance = newState.TimeSinceUsingEntrance;
+            
+            this.panikCoroutine = newState.panikCoroutine;
+            this.enemyTransform = newState.enemyTransform;
         }
 
         protected AIState(InternAI ai)

@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using BepInEx.Configuration;
+using System.Collections.Generic;
 using System.Reflection;
-using BepInEx;
-using BepInEx.Configuration;
 
-namespace LethalInternship {
+namespace LethalInternship
+{
     public class Config
     {
         // For more info on custom configs, see https://lethal.wiki/dev/intermediate/custom-configs

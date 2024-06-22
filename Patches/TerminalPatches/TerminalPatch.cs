@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using LethalInternship.Managers;
-using LethalInternship.Utils;
 using System;
 
 namespace LethalInternship.Patches.TerminalPatches

@@ -36,7 +36,8 @@ namespace LethalInternship.Patches.NpcPatches
                                   float ___currentAnimationSpeed,
                                   float ___previousAnimationSpeed,
                                   ref List<int> ___currentAnimationStateHash,
-                                  ref List<int> ___previousAnimationStateHash)
+                                  ref List<int> ___previousAnimationStateHash,
+                                  ref float ___cameraUp)
         {
             InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
             if (internAI?.NpcController.Npc.playerClientId != __instance.playerClientId)
@@ -61,6 +62,8 @@ namespace LethalInternship.Patches.NpcPatches
             internAI.NpcController.PreviousAnimationSpeed = ___previousAnimationSpeed;
             internAI.NpcController.CurrentAnimationStateHash = ___currentAnimationStateHash;
             internAI.NpcController.PreviousAnimationStateHash = ___previousAnimationStateHash;
+            
+            internAI.NpcController.CameraUp = ___cameraUp;
 
             internAI.NpcController.Update();
 
@@ -77,7 +80,8 @@ namespace LethalInternship.Patches.NpcPatches
             ___timeSinceTakingGravityDamage = internAI.NpcController.TimeSinceTakingGravityDamage;
             ___teleportingThisFrame = internAI.NpcController.TeleportingThisFrame;
             ___previousFrameDeltaTime = internAI.NpcController.PreviousFrameDeltaTime;
-            internAI.NpcController.StartedJetpackControls = ___startedJetpackControls;
+
+            ___cameraUp = internAI.NpcController.CameraUp;
 
             return false;
         }

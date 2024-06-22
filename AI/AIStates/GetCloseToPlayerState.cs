@@ -35,6 +35,14 @@ namespace LethalInternship.AI.AIStates
 
         public override void DoAI()
         {
+            // Check for enemies
+            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (enemyAI != null)
+            {
+                ai.State = new PanikState(this, enemyAI);
+                return;
+            }
+
             if (ai.targetPlayer == null)
             {
                 if (this.targetLastKnownPosition.HasValue)
@@ -61,6 +69,40 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
+            // Check for object to grab
+            if (ai.AreHandsFree())
+            {
+                GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
+                if (grabbableObject != null)
+                {
+                    ai.State = new FetchingObjectState(this, grabbableObject);
+                    return;
+                }
+            }
+
+            // Target is in awarness range
+            if (SqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
+                    && SqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
+            {
+                targetLastKnownPosition = ai.targetPlayer.transform.position;
+                ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
+            }
+            else
+            {
+                Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} no see target, still in range ? too far {SqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {SqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
+                PlayerControllerB? checkTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                if (checkTarget == null)
+                {
+                    ai.State = new JustLostPlayerState(this);
+                    return;
+                }
+                else
+                {
+                    targetLastKnownPosition = ai.targetPlayer.transform.position;
+                    ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
+                }
+            }
+
             // Follow player
             //Plugin.Logger.LogDebug($"sqrHorizontalDistanceWithTarget {sqrHorizontalDistanceWithTarget}, sqrVerticalDistanceWithTarget {sqrVerticalDistanceWithTarget}");
             if (SqrHorizontalDistanceWithTarget > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING
@@ -81,40 +123,6 @@ namespace LethalInternship.AI.AIStates
                 npcController.OrderToStopSprint();
                 // todo rpc
                 //    SetRunningServerRpc(false);
-            }
-
-            // Check for object to grab
-            if (ai.HandsFree())
-            {
-                GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
-                if (grabbableObject != null)
-                {
-                    ai.State = new FetchingObjectState(this, grabbableObject);
-                    return;
-                }
-            }
-
-            // Target is in awarness range
-            if (SqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
-                    && SqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
-            {
-                targetLastKnownPosition = ai.targetPlayer.transform.position;
-                ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
-            }
-            else
-            {
-                Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} no see target, still in range ? too far {SqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {SqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
-                PlayerControllerB? checkTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, 50, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                if (checkTarget == null)
-                {
-                    ai.State = new JustLostPlayerState(this);
-                    return;
-                }
-                else
-                {
-                    targetLastKnownPosition = ai.targetPlayer.transform.position;
-                    ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
-                }
             }
 
             ai.OrderMoveToDestination();
