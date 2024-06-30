@@ -60,38 +60,24 @@ namespace LethalInternship.Managers
             return terminalParser.ParseCommand(command, ref terminal);
         }
 
-        public void SyncPurchaseAndCredits(int nbInternsBought, int credits)
-        {
-            Plugin.Logger.LogInfo($"base.IsOwner {base.IsOwner}, base.IsHost {base.IsHost}, IsHost {NetworkManager.IsHost}");
-            if (base.IsOwner)
-            {
-                SyncPurchaseAndCreditsFromServerToClientRpc(nbInternsBought, credits);
-            }
-            else
-            {
-                SyncPurchaseAndCreditsFromClientToServerRpc(nbInternsBought, credits);
-            }
-        }
-
-        private void UpdatePurchaseAndCredits(int nbInternsBought, int credits)
-        {
-            InternManager.Instance.NewCommandOfInterns(nbInternsBought);
-            Terminal.groupCredits = credits;
-        }
-
-
         [ServerRpc(RequireOwnership = false)]
-        private void SyncPurchaseAndCreditsFromClientToServerRpc(int nbInternsBought, int credits)
+        public void PurchaseAndCreditsServerRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
         {
-            Plugin.Logger.LogInfo($"Client send to server to sync credits to ${credits}, calling ClientRpc...");
-            SyncPurchaseAndCreditsFromServerToClientRpc(nbInternsBought, credits);
+            Plugin.Logger.LogInfo($"Client send to server to sync credits to ${newCredits}, calling ClientRpc...");
+            PurchaseAndCreditsClientRpc(nbInternsOwned, nbInternToDropShip, newCredits);
         }
 
         [ClientRpc]
-        private void SyncPurchaseAndCreditsFromServerToClientRpc(int nbInternsBought, int newCredits)
+        private void PurchaseAndCreditsClientRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
         {
             Plugin.Logger.LogInfo($"Server send to clients to sync credits to ${newCredits}, client execute...");
-            UpdatePurchaseAndCredits(nbInternsBought, newCredits);
+            UpdatePurchaseAndCredits(nbInternsOwned, nbInternToDropShip, newCredits);
+        }
+
+        private void UpdatePurchaseAndCredits(int nbInternsOwned, int nbInternToDropShip, int newCredits)
+        {
+            InternManager.Instance.UpdateInternsOrdered(nbInternsOwned, nbInternToDropShip);
+            GetTerminal().groupCredits = newCredits;
         }
     }
 }

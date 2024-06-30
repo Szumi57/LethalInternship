@@ -82,7 +82,7 @@ namespace LethalInternship.AI.AIStates
             PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (playerToLook != null)
             {
-                npcController.OrderToLookAtPlayer(playerToLook);
+                npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
             }
             else
             {

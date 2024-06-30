@@ -38,8 +38,7 @@ namespace LethalInternship.AI.AIStates
             if (player != null)
             {
                 // new target
-                ai.AssignTargetAndSetMovingTo(player);
-                ai.State = new GetCloseToPlayerState(this);
+                ai.SyncAssignTargetAndSetMovingTo(player);
                 return;
             }
 

@@ -11,9 +11,9 @@ namespace LethalInternship.Patches.GameEnginePatches
     {
         [HarmonyPatch("PopulateScenePlacedObjects")]
         [HarmonyPostfix]
-        public static void PopulateScenePlacedObjects_Postfix(ref Dictionary<uint, Dictionary<int, NetworkObject>> ___ScenePlacedObjects)
+        public static void PopulateScenePlacedObjects_Postfix(Dictionary<uint, Dictionary<int, NetworkObject>> ___ScenePlacedObjects)
         {
-            InternManager.Instance.ResizeAndPopulateInterns();
+            //InternManager.Instance.ResizeAndPopulateInterns(___ScenePlacedObjects);
         }
     }
 }

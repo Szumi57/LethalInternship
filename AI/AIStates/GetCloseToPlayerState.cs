@@ -33,6 +33,14 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        public GetCloseToPlayerState(InternAI ai) : base(ai) 
+        {
+            if (searchForPlayers.inProgress)
+            {
+                ai.StopSearch(searchForPlayers, true);
+            }
+        }
+
         public override void DoAI()
         {
             // Check for enemies
@@ -85,7 +93,7 @@ namespace LethalInternship.AI.AIStates
                     && SqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
             {
                 targetLastKnownPosition = ai.targetPlayer.transform.position;
-                ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
+                ai.SyncAssignTargetAndSetMovingTo(ai.targetPlayer);
             }
             else
             {
@@ -99,7 +107,7 @@ namespace LethalInternship.AI.AIStates
                 else
                 {
                     targetLastKnownPosition = ai.targetPlayer.transform.position;
-                    ai.AssignTargetAndSetMovingTo(ai.targetPlayer);
+                    ai.SyncAssignTargetAndSetMovingTo(ai.targetPlayer);
                 }
             }
 

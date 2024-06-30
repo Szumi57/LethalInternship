@@ -10,6 +10,7 @@ using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -17,35 +18,60 @@ namespace LethalInternship
 {
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID)]
-    public class Plugin : BaseUnityPlugin {
-
+    public class Plugin : BaseUnityPlugin
+    {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
-        public static AssetBundle ModAssets = null!;        
-        
+        public static AssetBundle ModAssets = null!;
+
+        internal static EnemyType InternNPCPrefab = null!;
         internal static new ManualLogSource Logger = null!;
         internal static Config BoundConfig { get; private set; } = null!;
 
         private readonly Harmony _harmony = new(ModGUID);
 
-        private void Awake() {
-
+        private void Awake()
+        {
             Logger = base.Logger;
 
             BoundConfig = new Config(base.Config);
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
-            
+
             var bundleName = "modassets";
             ModAssets = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Info.Location), bundleName));
-            if (ModAssets == null) {
+            if (ModAssets == null)
+            {
                 Logger.LogError($"Failed to load custom assets.");
                 return;
             }
 
+            // Load intern prefab
+            InternNPCPrefab = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
+            if (InternNPCPrefab == null)
+            {
+                Logger.LogError($"InternNPC prefab.");
+                return;
+            }
+            foreach (var transform in InternNPCPrefab.enemyPrefab.GetComponentsInChildren<Transform>()
+                                                               .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
+                                                                                            //&& x.name != "ScanNode"
+                                                                                            && x.name != "MapDot"
+                                                                                            //&& x.name != "Collision"
+                                                                                            && x.name != "TurnCompass"
+                                                                                            && x.name != "CreatureSFX"
+                                                                                            //&& x.name != "CreatureVoice"
+                                                                                            )
+                                                               .ToList())
+            {
+                Object.DestroyImmediate(transform.gameObject);
+            }
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(InternNPCPrefab.enemyPrefab);
+
             InitPluginManager();
 
+            // Game engine
             _harmony.PatchAll(typeof(GameNetworkManagerPatch));
             _harmony.PatchAll(typeof(HUDManagerPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));
@@ -91,12 +117,11 @@ namespace LethalInternship
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));
 
-            _harmony.PatchAll(typeof(EnemyAICollisionDetectPatch));
-
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }
 
-        private static void InitializeNetworkBehaviours() {
+        private static void InitializeNetworkBehaviours()
+        {
             // See https://github.com/EvaisaDev/UnityNetcodePatcher?tab=readme-ov-file#preparing-mods-for-patching
             var types = Assembly.GetExecutingAssembly().GetTypes();
             foreach (var type in types)

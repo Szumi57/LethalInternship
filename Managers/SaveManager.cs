@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Managers.SaveInfos;
 using Newtonsoft.Json;
+using System;
 using Unity.Netcode;
 
 namespace LethalInternship.Managers
@@ -12,6 +13,8 @@ namespace LethalInternship.Managers
 
         public SaveFile Save { get; internal set; } = null!;
 
+        private ClientRpcParams ClientRpcParams = new ClientRpcParams();
+
         private void Awake()
         {
             Instance = this;
@@ -19,13 +22,17 @@ namespace LethalInternship.Managers
             {
                 FetchSaveFile();
                 LoadInfosInSave();
-                SyncNbInternsOwnedFromServerToClientRpc(InternManager.Instance.NbInternsOwned);
                 Plugin.Logger.LogDebug($"Init NbInternsOwned to {InternManager.Instance.NbInternsOwned}.");
             }
         }
 
         public void SavePluginInfos()
         {
+            if (!NetworkManager.IsHost)
+            {
+                return;
+            }
+
             Plugin.Logger.LogInfo($"Saving data for LethalInternship plugin.");
             string saveFile = GameNetworkManager.Instance.currentSaveFileName;
             SaveInfosInSave();
@@ -47,26 +54,49 @@ namespace LethalInternship.Managers
         private void FetchSaveFile()
         {
             string saveFile = GameNetworkManager.Instance.currentSaveFileName;
-            
-            string json = (string)ES3.Load(key: SAVE_DATA_KEY, defaultValue: null, filePath: saveFile);
-            if (json != null)
+
+            try
             {
-                Plugin.Logger.LogInfo($"Loading save file.");
-                Save = JsonConvert.DeserializeObject<SaveFile>(json) ?? new SaveFile();
+                string json = (string)ES3.Load(key: SAVE_DATA_KEY, defaultValue: null, filePath: saveFile);
+                if (json != null)
+                {
+                    Plugin.Logger.LogInfo($"Loading save file.");
+                    Save = JsonConvert.DeserializeObject<SaveFile>(json) ?? new SaveFile();
+                }
+                else
+                {
+                    Plugin.Logger.LogInfo($"No save file found for slot. Creating new.");
+                    Save = new SaveFile();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Plugin.Logger.LogInfo($"No save file found for slot. Creating new.");
-                Save = new SaveFile();
+                Plugin.Logger.LogError($"Error when loading save file : {ex.Message}");
             }
         }
 
-        [ClientRpc]
-        private void SyncNbInternsOwnedFromServerToClientRpc(int nbInternsOwnedSaveFromServer)
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncNbInternsOwnedServerRpc(ulong clientId)
         {
-            Plugin.Logger.LogInfo($"Server send to clients to sync interns alive and ready to ${nbInternsOwnedSaveFromServer}, client execute...");
-            InternManager.Instance.NbInternsOwned = nbInternsOwnedSaveFromServer;
-            InternManager.Instance.NbInternsToDropShip = nbInternsOwnedSaveFromServer;
+            ClientRpcParams.Send = new ClientRpcSendParams()
+            {
+                TargetClientIds = new ulong[] { clientId }
+            };
+
+            SyncNbInternsOwnedClientRpc(InternManager.Instance.NbInternsOwned, InternManager.Instance.NbInternsToDropShip, ClientRpcParams);
+        }
+
+        [ClientRpc]
+        private void SyncNbInternsOwnedClientRpc(int nbInternsOwned, int NbInternsToDropShip, ClientRpcParams clientRpcParams = default)
+        {
+            if (IsOwner)
+            {
+                return;
+            }
+
+            Plugin.Logger.LogInfo($"Client: sync interns alive and ready to {nbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip} client execute...");
+            InternManager.Instance.NbInternsOwned = nbInternsOwned;
+            InternManager.Instance.NbInternsToDropShip = NbInternsToDropShip;
         }
     }
 }

@@ -37,10 +37,15 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
 
             if (Const.STRING_CONFIRM_COMMAND.Contains(firstWord))
             {
+                InternManager instanceIM = InternManager.Instance;
+                TerminalManager instanceTM = TerminalManager.Instance;
+
                 // Confirm
-                int cost = TerminalManager.Instance.GetTerminal().groupCredits - (Const.PRICE_INTERN * this.NbOrdered);
-                TerminalManager.Instance.SyncPurchaseAndCredits(this.NbOrdered, cost);
-                Plugin.Logger.LogDebug($"NbInternsToDropShip confirmed {InternManager.Instance.NbInternsToDropShip}");
+                int newCredits = instanceTM.GetTerminal().groupCredits - (Const.PRICE_INTERN * this.NbOrdered);
+                instanceIM.AddNewCommandOfInterns(this.NbOrdered);
+                instanceTM.GetTerminal().groupCredits = newCredits;
+
+                instanceTM.PurchaseAndCreditsServerRpc(instanceIM.NbInternsOwned, instanceIM.NbInternsToDropShip, newCredits);
 
                 terminalParser.TerminalState = new InfoPage(this);
                 return true;

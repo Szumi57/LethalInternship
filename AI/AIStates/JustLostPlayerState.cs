@@ -78,7 +78,7 @@ namespace LethalInternship.AI.AIStates
             if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
                 // Check for teleport entrance
-                if (Time.timeSinceLevelLoad - TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
+                if (Time.timeSinceLevelLoad - ai.TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
                 {
                     EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcController.Npc.transform.position);
                     Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);

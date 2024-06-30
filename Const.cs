@@ -3,9 +3,12 @@
     internal class Const
     {
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
+        public static readonly float EPSILON = 0.01f;
+        public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
 
         public static readonly int INTERN_AVAILABLE_MAX = 16;
-        public static readonly float EPSILON = 0.01f;
+        public static readonly int INTERN_MAX_HEALTH = 50;
+        public static readonly float SIZE_SCALE_INTERN = 0.85f;
 
         public static readonly float INTERN_FOV = 90f;
         public static readonly int INTERN_ENTITIES_RANGE = 40;

@@ -46,7 +46,8 @@ namespace LethalInternship.AI.AIStates
             {
                 if (!npcController.Npc.inAnimationWithEnemy && !npcController.Npc.activatingItem)
                 {
-                    PlayerControllerBPatch.BeginGrabObject_ReversePatch(npcController.Npc, this.targetItem);
+                    //PlayerControllerBPatch.BeginGrabObject_ReversePatch(npcController.Npc, this.targetItem);
+                    ai.GrabItemServerRpc(this.targetItem.NetworkObject);
                     if (ai.AreHandsFree())
                     {
                         // Problem with taking object

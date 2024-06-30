@@ -1,15 +1,65 @@
 ﻿using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
+using LethalInternship.Utils;
+using LethalLib.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace LethalInternship.Managers
 {
+    internal class NetworkPrefabInstanceHandler : INetworkPrefabInstanceHandler
+    {
+        public uint Id;
+        private GameObject _gameObject;
+        public NetworkPrefabInstanceHandler(ulong playerId, GameObject gameObject)
+        {
+            _gameObject = gameObject;
+
+            byte[] value = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + gameObject.name + playerId));
+            Id = BitConverter.ToUInt32(value, 0);
+        }
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        {
+            Type type = typeof(NetworkObject);
+            FieldInfo fieldInfo = type.GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            var networkObject = _gameObject.GetComponent<NetworkObject>();
+            fieldInfo.SetValue(networkObject, Id);
+            return networkObject;
+        }
+        public void Destroy(NetworkObject networkObject) { }
+    }
+
+    internal class NoHashNetworkPrefabInstanceHandler : INetworkPrefabInstanceHandler
+    {
+        public uint Id;
+        private NetworkObject _gameObject;
+        public NoHashNetworkPrefabInstanceHandler(NetworkObject gameObject)
+        {
+            _gameObject = gameObject;
+
+            Type type = typeof(NetworkObject);
+            FieldInfo fieldInfo = type.GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
+            Id = (uint)fieldInfo.GetValue(gameObject);
+        }
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        {
+            var networkObject = _gameObject.GetComponent<NetworkObject>();
+            return networkObject;
+        }
+        public void Destroy(NetworkObject networkObject) { }
+    }
+
     internal class InternManager : NetworkBehaviour
     {
         public static InternManager Instance { get; private set; } = null!;
@@ -17,10 +67,19 @@ namespace LethalInternship.Managers
         public int AllEntitiesCount;
         public int NbInternsOwned;
         public int NbInternsToDropShip;
-        public int IndexBeginOfInterns { get { return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length; } }
+        public int IndexBeginOfInterns
+        {
+            get
+            {
+                if (AllInternAIs == null)
+                {
+                    ResizeAndPopulateInterns();
+                }
+                return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length;
+            }
+        }
         public int NbInternsPurchasable { get { return Const.INTERN_AVAILABLE_MAX - NbInternsOwned; } }
 
-        private EnemyType InternNPCPrefab = null!;
         private InternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
@@ -28,32 +87,9 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
-            Init();
         }
 
-        private void Init()
-        {
-            //
-            InternNPCPrefab = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
-            if (InternNPCPrefab != null)
-            {
-                foreach (var transform in InternNPCPrefab.enemyPrefab.GetComponentsInChildren<Transform>()
-                                                                   .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
-                                                                                                //&& x.name != "ScanNode"
-                                                                                                && x.name != "MapDot"
-                                                                                                //&& x.name != "Collision"
-                                                                                                && x.name != "TurnCompass"
-                                                                                                && x.name != "CreatureSFX"
-                                                                                                //&& x.name != "CreatureVoice"
-                                                                                                )
-                                                                   .ToList())
-                {
-                    Object.DestroyImmediate(transform.gameObject);
-                }
-            }
-        }
-
-        public void ResizeAndPopulateInterns()
+        public void ResizeAndPopulateInterns()//Dictionary<uint, Dictionary<int, NetworkObject>> scenePlacedObjects)
         {
             StartOfRound instance = StartOfRound.Instance;
             if (AllPlayerObjectsBackUp != null && AllPlayerObjectsBackUp.Length > 0)
@@ -61,6 +97,28 @@ namespace LethalInternship.Managers
                 if (instance.allPlayerObjects.Length == AllEntitiesCount)
                 {
                     // the arrays have not been resize between round
+                    Plugin.Logger.LogDebug($"The arrays have not been resize between round {instance.allPlayerObjects.Length}, AllEntitiesCount {AllEntitiesCount}, AllInternAIs {AllInternAIs} {AllInternAIs?.Length}");
+
+                    //NetworkObject networkObject = internObject.GetComponent<NetworkObject>();
+                    //byte[] hashBytevalue = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObject.name + indexPlusIrlPlayersCount));
+                    //uint hash = BitConverter.ToUInt32(hashBytevalue, 0);
+                    //fieldGlobalObjectIdHash.SetValue(networkObject, hash);
+
+                    //Scene scene = networkObject.gameObject.scene;
+                    //int handle = scene.handle;
+                    //uint keyHash = hash;
+                    //if (!scenePlacedObjects.ContainsKey(keyHash))
+                    //{
+                    //    scenePlacedObjects.Add(keyHash, new Dictionary<int, NetworkObject>());
+                    //}
+                    //if (scenePlacedObjects[keyHash].ContainsKey(handle))
+                    //{
+                    //    string arg = scenePlacedObjects[keyHash][handle] != null ? scenePlacedObjects[keyHash][handle].name : "Null Entry";
+                    //    throw new Exception(networkObject.name + " tried to registered with ScenePlacedObjects which already contains " + string.Format("the same {0} value {1} for {2}!", "GlobalObjectIdHash", keyHash, arg));
+                    //}
+                    //scenePlacedObjects[keyHash].Add(handle, networkObject);
+
+
                     return;
                 }
             }
@@ -80,43 +138,96 @@ namespace LethalInternship.Managers
             Plugin.Logger.LogDebug($"Resize for interns from irl players count of {irlPlayersCount} to {irlPlayersAndInternsCount}");
             AllEntitiesCount = irlPlayersAndInternsCount;
 
+            FieldInfo fieldGlobalObjectIdHash = typeof(NetworkObject).GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
+
             GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
             for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
             {
+                int indexPlusIrlPlayersCount = i + irlPlayersCount;
                 if (AllPlayerObjectsBackUp[i] != null)
                 {
+                    //Plugin.Logger.LogDebug($"backup playerClientId {AllPlayerScriptsBackUp[i].playerClientId}");
+                    //var aab = AllPlayerObjectsBackUp[i].GetComponentsInChildren<NetworkObject>();
+                    //foreach (NetworkObject a in aab)
+                    //{
+                    //    Plugin.Logger.LogDebug($"back up hash ? {a.gameObject} {a.gameObject.name} hash {a.PrefabIdHash} {fieldInfo.GetValue(a)}");
+                    //}
+
                     Plugin.Logger.LogDebug($"use of backup : {AllPlayerScriptsBackUp[i].playerUsername}");
-                    instance.allPlayerObjects[i + irlPlayersCount] = AllPlayerObjectsBackUp[i];
-                    instance.allPlayerScripts[i + irlPlayersCount] = AllPlayerScriptsBackUp[i];
-                    instance.gameStats.allPlayerStats[i + irlPlayersCount] = new PlayerStats();
-                    instance.playerSpawnPositions[i + irlPlayersCount] = instance.playerSpawnPositions[3];
+                    instance.allPlayerObjects[indexPlusIrlPlayersCount] = AllPlayerObjectsBackUp[i];
+                    instance.allPlayerScripts[indexPlusIrlPlayersCount] = AllPlayerScriptsBackUp[i];
+                    instance.gameStats.allPlayerStats[indexPlusIrlPlayersCount] = new PlayerStats();
+                    instance.playerSpawnPositions[indexPlusIrlPlayersCount] = instance.playerSpawnPositions[3];
                     continue;
                 }
 
-                GameObject internNPC = Object.Instantiate<GameObject>(internObjectParent, Vector3.zero, Quaternion.identity);
-                SpawnNetworkObjectsOfGameObject(internNPC);
+                GameObject internObject = Object.Instantiate<GameObject>(internObjectParent, internObjectParent.transform.parent);
 
-                PlayerControllerB internController = internNPC.GetComponentInChildren<PlayerControllerB>();
+                //NetworkObject networkObject = internObject.GetComponent<NetworkObject>();
+                //byte[] hashBytevalue = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObject.name + indexPlusIrlPlayersCount));
+                //uint hash = BitConverter.ToUInt32(hashBytevalue, 0);
+                //fieldGlobalObjectIdHash.SetValue(networkObject, hash);
+
+                //Scene scene = networkObject.gameObject.scene;
+                //int handle = scene.handle;
+                //uint keyHash = hash;
+                //if (!scenePlacedObjects.ContainsKey(keyHash))
+                //{
+                //    scenePlacedObjects.Add(keyHash, new Dictionary<int, NetworkObject>());
+                //}
+                //if (scenePlacedObjects[keyHash].ContainsKey(handle))
+                //{
+                //    string arg = scenePlacedObjects[keyHash][handle] != null ? scenePlacedObjects[keyHash][handle].name : "Null Entry";
+                //    throw new Exception(networkObject.name + " tried to registered with ScenePlacedObjects which already contains " + string.Format("the same {0} value {1} for {2}!", "GlobalObjectIdHash", keyHash, arg));
+                //}
+                //scenePlacedObjects[keyHash].Add(handle, networkObject);
+
+                PlayerControllerB internController = internObject.GetComponentInChildren<PlayerControllerB>();
+                //todo unique name and unique id
+                internController.playerClientId = (ulong)(indexPlusIrlPlayersCount);
                 internController.isPlayerDead = false;
                 internController.isPlayerControlled = false;
-                internController.transform.localScale *= 0.85f;
-
-                //todo unique name and unique id
-                internController.playerClientId = (ulong)(i + irlPlayersCount);
+                internController.transform.localScale = new Vector3(Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN);
                 internController.actualClientId = internController.playerClientId;
-                internController.playerUsername = string.Format("Intern #{0}", internController.playerClientId);
+                internController.playerUsername = string.Format("Intern #{0}", internController.playerClientId - (ulong)irlPlayersCount);
                 internController.DropAllHeldItems(false, false);
 
-                internNPC.SetActive(false);
+                instance.allPlayerObjects[indexPlusIrlPlayersCount] = internObject;
+                instance.allPlayerScripts[indexPlusIrlPlayersCount] = internController;
+                instance.gameStats.allPlayerStats[indexPlusIrlPlayersCount] = new PlayerStats();
+                instance.playerSpawnPositions[indexPlusIrlPlayersCount] = instance.playerSpawnPositions[3];
 
-                instance.allPlayerObjects[i + irlPlayersCount] = internNPC;
-                instance.allPlayerScripts[i + irlPlayersCount] = internController;
-                instance.gameStats.allPlayerStats[i + irlPlayersCount] = new PlayerStats();
-                instance.playerSpawnPositions[i + irlPlayersCount] = instance.playerSpawnPositions[3];
-
-                AllPlayerObjectsBackUp[i] = internNPC;
+                AllPlayerObjectsBackUp[i] = internObject;
                 AllPlayerScriptsBackUp[i] = internController;
+
+                //var handler = new NetworkPrefabInstanceHandler(internController.playerClientId, internObject);
+                //Plugin.Logger.LogDebug($"AddHandler ? {NetworkManager.Singleton.PrefabHandler.AddHandler(handler.Id, handler)}");
+
+                //var handler = new NoHashNetworkPrefabInstanceHandler(internObject.GetComponent<NetworkObject>());
+                //Plugin.Logger.LogDebug($"AddHandler ? {NetworkManager.Singleton.PrefabHandler.AddHandler(handler.Id, handler)}");
+
+                //Plugin.Logger.LogDebug($"playerClientId {internController.playerClientId}");
+                //var aa = internObject.GetComponentsInChildren<NetworkObject>();
+                //foreach (NetworkObject networkObject in aa)
+                //{
+                //    if (!NetworkManager.Singleton.NetworkConfig.Prefabs.Contains(networkObject.gameObject))
+                //    {
+                //        NetworkManager.NetworkConfig.ForceSamePrefabs = false;
+                //        //byte[] value = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObject.name + internController.playerClientId));
+                //        //fieldInfo.SetValue(networkObject, BitConverter.ToUInt32(value, 0));
+                //        NetworkManager.Singleton.AddNetworkPrefab(networkObject.gameObject);
+                //        NetworkManager.NetworkConfig.ForceSamePrefabs = true;
+                //    }
+                //    Plugin.Logger.LogDebug($"hash ? {networkObject.gameObject} {networkObject.gameObject.name} hash {networkObject.PrefabIdHash} {fieldInfo.GetValue(networkObject)}");
+                //}
+
+                internObject.SetActive(false);
             }
+
+            //foreach(var a in NetworkManager.Singleton.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks)
+            //{
+            //    Plugin.Logger.LogDebug($"hash ? {a.Key} {a.Value.Prefab.name}");
+            //}
 
             //foreach (InternAI ai in InternAIs)
             //{
@@ -144,9 +255,11 @@ namespace LethalInternship.Managers
             //}
         }
 
-        public void SpawnIntern(Transform positionTransform, bool isOutside = true)
+        #region Spawn Intern
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SpawnInternServerRpc(Vector3 spawnPosition, float yRot, bool isOutside)
         {
-            StartOfRound instance = StartOfRound.Instance;
             int indexNextPlayerObject = GetNextAvailablePlayerObject();
             if (indexNextPlayerObject < 0)
             {
@@ -154,10 +267,154 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            Vector3 spawnPosition = positionTransform.position;
-            float yRot = positionTransform.eulerAngles.y;
-            Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
+            int indexNextIntern = indexNextPlayerObject - (StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length);
+            NetworkObjectReference networkObjectReferenceInternAI = SpawnOrUseInternAI(indexNextIntern);
+            NetworkObjectReference networkObjectReferenceObjectParent = default; //SpawnObjectIntern(indexNextPlayerObject);
+            SpawnInternClientRpc(networkObjectReferenceInternAI, networkObjectReferenceObjectParent,
+                                 indexNextIntern, indexNextPlayerObject,
+                                 spawnPosition, yRot, isOutside);
+        }
 
+        private NetworkObjectReference SpawnOrUseInternAI(int indexNextIntern)
+        {
+            InternAI internAI = AllInternAIs[indexNextIntern];
+            if (internAI != null)
+            {
+                return AllInternAIs[indexNextIntern].NetworkObject;
+            }
+
+            GameObject internPrefab = Object.Instantiate<GameObject>(Plugin.InternNPCPrefab.enemyPrefab);
+            AllInternAIs[indexNextIntern] = internPrefab.GetComponent<InternAI>();
+
+            NetworkObject networkObject = internPrefab.GetComponentInChildren<NetworkObject>();
+            networkObject.Spawn(true);
+
+            return networkObject;
+        }
+
+        [ClientRpc]
+        private void SpawnInternClientRpc(NetworkObjectReference networkObjectReferenceInternAI, NetworkObjectReference networkObjectReferenceObjectParent,
+                                             int indexNextIntern, int indexNextPlayerObject,
+                                             Vector3 spawnPosition, float yRot, bool isOutside)
+        {
+            Plugin.Logger.LogInfo($"Client receive NOR after spawned on server...");
+
+            StartOfRound instance = StartOfRound.Instance;
+
+            networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
+            InternAI internAI = networkObjectInternAI.gameObject.GetComponent<InternAI>();
+            AllInternAIs[indexNextIntern] = internAI;
+
+            //networkObjectReferenceObjectParent.TryGet(out NetworkObject networkObjectObjectParent);
+            //GameObject objectParent = networkObjectObjectParent.gameObject;
+            //instance.allPlayerObjects[indexNextPlayerObject] = objectParent;
+            //instance.allPlayerScripts[indexNextPlayerObject] = objectParent.GetComponent<PlayerControllerB>();
+
+            //Type type = typeof(NetworkObject);
+            //FieldInfo fieldInfo = type.GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
+            //var aa = objectParent.GetComponentsInChildren<NetworkObject>();
+            //foreach (NetworkObject a in aa)
+            //{
+            //    Plugin.Logger.LogDebug($"spawned hash ? {a.gameObject} {a.gameObject.name} hash {a.PrefabIdHash} {fieldInfo.GetValue(a)}");
+            //}
+
+            internAI.SetEnemyOutside(isOutside);
+            InitInternSpawning(internAI, indexNextPlayerObject, spawnPosition, yRot, isOutside);
+        }
+
+        private NetworkObjectReference SpawnObjectIntern(int indexNextPlayerObject)
+        {
+            GameObject objectParent = StartOfRound.Instance.allPlayerObjects[indexNextPlayerObject];
+            return SpawnNetworkObjectsOfGameObject(objectParent, NetworkManager.ServerClientId);
+        }
+
+        private NetworkObject SpawnNetworkObjectsOfGameObject(GameObject gameObject, ulong playerId)
+        {
+            gameObject.SetActive(true);
+            var listNetworkObjects = gameObject.GetComponentsInChildren<NetworkObject>();
+            NetworkObject networkObjectRoot = null!;
+            List<Tuple<NetworkObject, Transform>> listTupleTransformParentChild = new List<Tuple<NetworkObject, Transform>>();
+
+            Type type = typeof(NetworkObject);
+            FieldInfo fieldInfo = type.GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            foreach (NetworkObject networkObject in listNetworkObjects)
+            {
+                if (networkObject.transform.parent == null)
+                {
+                    networkObjectRoot = networkObject;
+                    continue;
+                }
+
+                //LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(networkObject.gameObject);
+
+                if (!NetworkManager.Singleton.NetworkConfig.Prefabs.Contains(networkObject.gameObject))
+                {
+                    //NetworkManager.NetworkConfig.ForceSamePrefabs = false;
+                    //byte[] value = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObject.name + playerId));
+                    //fieldInfo.SetValue(networkObject, BitConverter.ToUInt32(value, 0));
+                    //NetworkManager.Singleton.AddNetworkPrefab(networkObject.gameObject);
+                    //Plugin.Logger.LogDebug($"AddNetworkPrefab {networkObject.gameObject} {networkObject.gameObject.name} {networkObject.PrefabIdHash}");
+                    //NetworkManager.NetworkConfig.ForceSamePrefabs = true;
+                }
+
+                listTupleTransformParentChild.Add(new Tuple<NetworkObject, Transform>(networkObject, networkObject.transform.parent));
+                if (!networkObject.IsSpawned)
+                {
+                    networkObject.Spawn(true);
+                }
+                Plugin.Logger.LogDebug($"++ {networkObject.gameObject} {networkObject.gameObject.name} IsSpawned {networkObject.IsSpawned}");
+                Plugin.Logger.LogDebug($"hash ? {networkObject.gameObject} {networkObject.gameObject.name} hash {networkObject.PrefabIdHash} {fieldInfo.GetValue(networkObject)}");
+            }
+
+            if (!NetworkManager.Singleton.NetworkConfig.Prefabs.Contains(networkObjectRoot.gameObject))
+            {
+                //NetworkManager.NetworkConfig.ForceSamePrefabs = false;
+                //byte[] value = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObjectRoot.name + playerId));
+                //fieldInfo.SetValue(networkObjectRoot, BitConverter.ToUInt32(value, 0));
+                //NetworkManager.Singleton.AddNetworkPrefab(networkObjectRoot.gameObject);
+                //Plugin.Logger.LogDebug($"root -- {networkObjectRoot.gameObject} {networkObjectRoot.gameObject.name} {networkObjectRoot.PrefabIdHash}");
+                //NetworkManager.NetworkConfig.ForceSamePrefabs = true;
+            }
+            if (!networkObjectRoot.IsSpawned)
+            {
+                networkObjectRoot.Spawn(true);
+            }
+            Plugin.Logger.LogDebug($"root ++ {networkObjectRoot.gameObject} {networkObjectRoot.gameObject.name} IsSpawned {networkObjectRoot.IsSpawned}");
+
+            // Reparent what has been lost with spawn
+            foreach (Tuple<NetworkObject, Transform> tupleTransformParentChild in listTupleTransformParentChild)
+            {
+                NetworkObject networkObject = tupleTransformParentChild.Item1;
+                networkObject.enabled = false;
+                networkObject.AutoObjectParentSync = false;
+
+                networkObject.transform.parent = tupleTransformParentChild.Item2;
+
+                networkObject.enabled = true;
+                networkObject.AutoObjectParentSync = true;
+            }
+
+            //Plugin.Logger.LogDebug($"581939109 {PropertiesAndFieldsUtils.GetNetworkObjectByHash(581939109)}");
+            //Plugin.Logger.LogDebug($"2946656848 {PropertiesAndFieldsUtils.GetNetworkObjectByHash(2946656848)}");
+            //Plugin.Logger.LogDebug($"1429679652 {PropertiesAndFieldsUtils.GetNetworkObjectByHash(1429679652)}");
+            //Plugin.Logger.LogDebug($"4114126056 {PropertiesAndFieldsUtils.GetNetworkObjectByHash(4114126056)}");
+            //Plugin.Logger.LogDebug($"1493017890 {PropertiesAndFieldsUtils.GetNetworkObjectByHash(1493017890)}");
+
+            //Player(3)(Clone)(UnityEngine.GameObject) Player(3)(Clone) hash 1493017890
+            //ServerItemHolder(UnityEngine.GameObject) ServerItemHolder hash 2946656848
+            //LocalItemHolder(UnityEngine.GameObject) LocalItemHolder hash 1429679652
+            //PlayerPhysicsBox(UnityEngine.GameObject) PlayerPhysicsBox hash 4114126056
+
+            return networkObjectRoot;
+        }
+
+        private void InitInternSpawning(InternAI internAI, int indexNextPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
+        {
+            Plugin.Logger.LogDebug($"InitIntern AllEntitiesCount {AllEntitiesCount}, AllInternAIs {AllInternAIs} {AllInternAIs?.Length}");
+
+            StartOfRound instance = StartOfRound.Instance;
+            Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
             GameObject objectParent = instance.allPlayerObjects[indexNextPlayerObject];
             objectParent.transform.position = spawnPosition;
             objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
@@ -165,10 +422,11 @@ namespace LethalInternship.Managers
             PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
             internController.isPlayerDead = false;
             internController.isPlayerControlled = true;
-            internController.health = 50;
+            internController.health = Const.INTERN_MAX_HEALTH;
             internController.DisablePlayerModel(objectParent, true, true);
             internController.isInsideFactory = !isOutside;
             internController.isMovementHindered = 0;
+            internController.hinderedMultiplier = 1f;
             internController.criticallyInjured = false;
             internController.bleedingHeavily = false;
             internController.activatingItem = false;
@@ -182,68 +440,40 @@ namespace LethalInternship.Managers
             internController.isSinking = false;
             internController.isUnderwater = false;
             internController.sinkingValue = 0f;
+            internController.sourcesCausingSinking = 0;
+            internController.isClimbingLadder = false;
+            internController.disableLookInput = true;
+            internController.setPositionOfDeadPlayer = false;
+            internController.mapRadarDotAnimator.SetBool("dead", false);
+            internController.externalForceAutoFade = Vector3.zero;
+            internController.voiceMuffledByEnemy = false;
+            internController.playerBodyAnimator.SetBool("Limp", false);
+            AccessTools.Field(typeof(PlayerControllerB), "updatePositionForNewlyJoinedClient").SetValue(internController, true);
 
-            //foreach (var a in internController.quickMenuManager.testAllEnemiesLevel.Enemies)
-            //{
-            //    Plugin.Logger.LogDebug($"\"{a.enemyType.enemyName}\" {a.enemyType.name}");
-            //}
-            //foreach (var a in internController.quickMenuManager.testAllEnemiesLevel.OutsideEnemies)
-            //{
-            //    Plugin.Logger.LogDebug($"\"{a.enemyType.enemyName}\" {a.enemyType.name}");
-            //}
-            //foreach (var a in internController.quickMenuManager.testAllEnemiesLevel.DaytimeEnemies)
-            //{
-            //    Plugin.Logger.LogDebug($"\"{a.enemyType.enemyName}\" {a.enemyType.name}");
-            //}
-
-            int indexNextIntern = indexNextPlayerObject - (instance.allPlayerScripts.Length - AllInternAIs.Length);
-            Plugin.Logger.LogDebug($"Adding AI for intern {indexNextIntern} for body {internController.playerUsername}");
-            InternAI internAI = AllInternAIs[indexNextIntern];
-            if (internAI == null)
-            {
-                GameObject internPrefab = Object.Instantiate<GameObject>(InternNPCPrefab.enemyPrefab);
-                internPrefab.GetComponentInChildren<NetworkObject>().Spawn(true);
-                internAI = internPrefab.GetComponent<InternAI>();
-
-                internAI.creatureAnimator = internController.playerBodyAnimator;
-                internAI.NpcController = new NpcController(internController);
-                internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
-
-                internAI.LineRenderer1 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer1.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer1.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer2 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer2.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer2.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer3 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer3.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer3.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer4 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer4.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer4.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.LineRenderer5 = new GameObject().AddComponent<LineRenderer>();
-                internAI.LineRenderer5.gameObject.transform.SetParent(internAI.transform, false);
-                internAI.LineRenderer5.gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-                internAI.InternId = indexNextIntern.ToString();
-                AllInternAIs[indexNextIntern] = internAI;
-            }
+            internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();
+            Plugin.Logger.LogDebug($"Adding AI \"{internAI.InternId}\" for body {internController.playerUsername}");
+            internAI.creatureAnimator = internController.playerBodyAnimator;
+            internAI.NpcController = new NpcController(internController);
+            internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
 
             // Plug ai on intern body
+            internAI.enabled = false;
+            internAI.NetworkObject.AutoObjectParentSync = false;
             internAI.transform.parent = objectParent.transform;
-
-            internAI.SetEnemyOutside(isOutside);
-            internAI.Init();
+            internAI.NetworkObject.AutoObjectParentSync = true;
+            internAI.enabled = true;
 
             objectParent.SetActive(true);
 
             // Unsuscribe from events to prevent double trigger
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
+
+            internAI.Init();
         }
+
+        #endregion
+
+        #region SpawnInternsFromDropShip
 
         public void SpawnInternsFromDropShip(Transform[] spawnPositions)
         {
@@ -254,10 +484,25 @@ namespace LethalInternship.Managers
                 {
                     pos = 0;
                 }
-                SpawnIntern(spawnPositions[pos++]);
+                Transform transform = spawnPositions[pos++];
+                SpawnInternServerRpc(transform.position, transform.eulerAngles.y, true);
             }
+            EndSpawnInternsFromDropShipServerRpc();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void EndSpawnInternsFromDropShipServerRpc()
+        {
+            EndSpawnInternsFromDropShipClientRpc();
+        }
+
+        [ClientRpc]
+        private void EndSpawnInternsFromDropShipClientRpc()
+        {
             NbInternsToDropShip = 0;
         }
+
+        #endregion
 
         public bool AreInternsScheduledToLand()
         {
@@ -284,7 +529,12 @@ namespace LethalInternship.Managers
 
         public void SyncEndOfRoundInterns()
         {
-            if (base.IsOwner)
+            if (!base.IsOwner)
+            {
+                return;
+            }
+
+            if (base.IsServer)
             {
                 SyncEndOfRoundInternsFromServerToClientRpc();
             }
@@ -309,20 +559,28 @@ namespace LethalInternship.Managers
             NbInternsToDropShip = NbInternsOwned;
         }
 
-        public void NewCommandOfInterns(int nbOrdered)
+        public void AddNewCommandOfInterns(int nbOrdered)
         {
             if (StartOfRound.Instance.inShipPhase)
             {
                 // in space
                 NbInternsOwned += nbOrdered;
                 NbInternsToDropShip = NbInternsOwned;
+                Plugin.Logger.LogDebug($"In space NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
             }
             else
             {
                 // on moon
-                NbInternsToDropShip = nbOrdered;
-                NbInternsOwned += NbInternsToDropShip;
+                NbInternsToDropShip += nbOrdered;
+                NbInternsOwned += nbOrdered;
+                Plugin.Logger.LogDebug($"On moon NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
             }
+        }
+
+        public void UpdateInternsOrdered(int nbInternsOwned, int nbInternToDropShip)
+        {
+            NbInternsOwned = nbInternsOwned;
+            NbInternsToDropShip = nbInternToDropShip;
         }
 
         private int CountAliveAndDisableInterns()
@@ -388,6 +646,29 @@ namespace LethalInternship.Managers
             return null;
         }
 
+        public InternAI? GetInternAiObjectOwnerOf(GrabbableObject grabbableObject)
+        {
+            foreach (var internAI in AllInternAIs)
+            {
+                if (!internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.HeldItem == null)
+                {
+                    return null;
+                }
+
+                if (internAI.HeldItem == grabbableObject)
+                {
+                    return internAI;
+                }
+            }
+
+            return null;
+        }
+
         public bool IsIdPlayerIntern(int id)
         {
             if (AllInternAIs == null)
@@ -414,38 +695,6 @@ namespace LethalInternship.Managers
             }
 
             return false;
-        }
-
-        private void SpawnNetworkObjectsOfGameObject(GameObject gameObject)
-        {
-            var listNetworkObjects = gameObject.GetComponentsInChildren<NetworkObject>();
-            NetworkObject networkObjectRoot = null!;
-            List<Tuple<NetworkObject, Transform>> listTupleTransformParentChild = new List<Tuple<NetworkObject, Transform>>();
-            foreach (NetworkObject networkObject in listNetworkObjects)
-            {
-                if (networkObject.transform.parent == null)
-                {
-                    networkObjectRoot = networkObject;
-                    continue;
-                }
-
-                listTupleTransformParentChild.Add(new Tuple<NetworkObject, Transform>(networkObject, networkObject.transform.parent));
-                networkObject.Spawn(true);
-            }
-            networkObjectRoot.Spawn(true);
-
-            // Reparent what has been lost with spawn
-            foreach (Tuple<NetworkObject, Transform> tupleTransformParentChild in listTupleTransformParentChild)
-            {
-                NetworkObject networkObject = tupleTransformParentChild.Item1;
-                networkObject.enabled = false;
-                networkObject.AutoObjectParentSync = false;
-
-                networkObject.transform.parent = tupleTransformParentChild.Item2;
-
-                networkObject.enabled = true;
-                networkObject.AutoObjectParentSync = true;
-            }
         }
 
         public Vector3 ShipBoundClosestPoint(Vector3 fromPoint)

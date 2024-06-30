@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Unity.Netcode;
+using UnityEngine;
 
 namespace LethalInternship.Utils
 {
@@ -33,7 +35,7 @@ namespace LethalInternship.Utils
                     continue;
                 }
 
-                Plugin.Logger.LogDebug($" Object {i}: \"{nameOfObject(obj, arrObjProperties)}\"");
+                Plugin.Logger.LogDebug($" Object {i}: \"{NameOfObject(obj, arrObjProperties)}\"");
             }
         }
 
@@ -61,7 +63,7 @@ namespace LethalInternship.Utils
                     LogProperties(array[i], typeObj, arrObjProperties);
                 }
                 Plugin.Logger.LogDebug(" ");
-                Plugin.Logger.LogDebug($"- Fields of \"{nameOfObject(array[i], arrObjProperties)}\" of type \"{typeObj}\" :");
+                Plugin.Logger.LogDebug($"- Fields of \"{NameOfObject(array[i], arrObjProperties)}\" of type \"{typeObj}\" :");
                 if (hasToListFields)
                 {
                     LogFields(array[i], typeObj, arrObjFields);
@@ -78,12 +80,32 @@ namespace LethalInternship.Utils
                 LogProperties(obj, typeObj, arrObjProperties);
             }
             Plugin.Logger.LogDebug(" ");
-            Plugin.Logger.LogDebug($"- Fields of \"{nameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
+            Plugin.Logger.LogDebug($"- Fields of \"{NameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
             FieldInfo[] arrObjFields = GetAllFields(typeObj);
             if (hasToListFields)
             {
                 LogFields(obj, typeObj, arrObjFields);
             }
+        }
+
+        public static NetworkObject? GetNetworkObjectByHash(uint hashID)
+        {
+            FieldInfo info = typeof(NetworkObject).GetField("GlobalObjectIdHash", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (info == null)
+            {
+                Plugin.Logger.LogError("GlobalObjectIdHash field is null.");
+                return null;
+            }
+            foreach (NetworkObject obj in Resources.FindObjectsOfTypeAll<NetworkObject>())
+            {
+                uint GlobalObjectIdHash = (uint)info.GetValue(obj);
+                if (GlobalObjectIdHash == hashID)
+                {
+                    return obj;
+                }
+            }
+
+            return null;
         }
 
         private static void LogProperties<T>(T obj, Type typeObj, PropertyInfo[] arrObjProperties)
@@ -95,14 +117,14 @@ namespace LethalInternship.Utils
             }
 
             Plugin.Logger.LogDebug(" ");
-            Plugin.Logger.LogDebug($"- Properties of \"{nameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
+            Plugin.Logger.LogDebug($"- Properties of \"{NameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
             foreach (PropertyInfo prop in arrObjProperties)
             {
                 Plugin.Logger.LogDebug($" {prop.Name} = {GetValueOfProperty(obj, prop)}");
             }
         }
 
-        private static string nameOfObject<T>(T obj, PropertyInfo[] propertyInfos)
+        private static string NameOfObject<T>(T obj, PropertyInfo[] propertyInfos)
         {
             object? objNameProperty = GetValueOfProperty(obj, propertyInfos.FirstOrDefault(x => x.Name == "name"));
             return objNameProperty == null ? "name null" : objNameProperty.ToString();

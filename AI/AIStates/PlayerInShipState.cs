@@ -63,13 +63,17 @@ namespace LethalInternship.AI.AIStates
 
             if (SqrHorizDistanceWithShipBoundPoint < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)
             {
-                PlayerControllerBPatch.InternDropIfHoldingAnItem(ai.NpcController.Npc);
-                
+                if (!ai.AreHandsFree())
+                {
+                    // Intern drop item
+                    ai.DropItemServerRpc();
+                }
+
                 // Looking
                 PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
                 if (playerToLook != null)
                 {
-                    npcController.OrderToLookAtPlayer(playerToLook);
+                    npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
                 }
                 else
                 {

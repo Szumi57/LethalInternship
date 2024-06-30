@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Managers;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,16 +102,25 @@ namespace LethalInternship.Patches.MapHazardsPatches
         private static void DamagePlayersInLOS(Turret turret)
         {
             PlayerControllerB player = turret.CheckForPlayersInLineOfSight(3f, false);
-            if (InternManager.Instance.IsPlayerLocalOrInternOwnerLocal(player))
+            if (player == null)
             {
-                if (player.health > 50)
-                {
-                    player.DamagePlayer(50, true, true, CauseOfDeath.Gunshots, 0, false, default(Vector3));
-                }
-                else
-                {
-                    player.KillPlayer(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0);
-                }
+                return;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)player.playerClientId);
+            if (internAI == null)
+            {
+                return;
+            }
+
+            if (player.health > 50)
+            {
+                internAI.SyncDamageIntern(50, CauseOfDeath.Gunshots, 0, false, default(Vector3));
+            }
+            else
+            {
+                Plugin.Logger.LogDebug($"SyncKillIntern from turret for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                internAI.SyncKillIntern(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0);
             }
         }
     }

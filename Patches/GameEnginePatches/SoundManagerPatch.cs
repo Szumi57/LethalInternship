@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using Discord;
+using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
@@ -6,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using NetworkManager = Unity.Netcode.NetworkManager;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
@@ -18,6 +21,18 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InternAI? internAI = InternManager.Instance.GetInternAI(playerObjNum);
             if (internAI != null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        [HarmonyPatch("Update")]
+        [HarmonyPrefix]
+        static bool Update_PreFix(ref PlayerControllerB ___localPlayer)
+        {
+            ___localPlayer = GameNetworkManager.Instance.localPlayerController;
+            if( ___localPlayer == null || NetworkManager.Singleton == null) 
             {
                 return false;
             }

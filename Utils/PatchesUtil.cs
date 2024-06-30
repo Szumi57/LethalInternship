@@ -11,12 +11,20 @@ namespace LethalInternship.Utils
 {
     internal static class PatchesUtil
     {
+        public static readonly FieldInfo FieldInfoWasUnderwaterLastFrame = AccessTools.Field(typeof(PlayerControllerB), "wasUnderwaterLastFrame");
+        public static readonly FieldInfo FieldInfoPlayerClientId = AccessTools.Field(typeof(PlayerControllerB), "playerClientId");
+
         public static readonly MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => AreInternsScheduledToLand());
         public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsColliderFromLocalOrInternOwnerLocal(new Collider()));
         public static readonly MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => IsObjectHeldByIntern((GrabbableObject)new object()));
         public static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => IndexBeginOfInterns());
         public static readonly MethodInfo IsIdPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsIdPlayerIntern(new int()));
+        public static readonly MethodInfo IsPlayerInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternOwnerLocal(new PlayerControllerB()));
+        public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
+        
+        public static readonly MethodInfo UpdatePlayerAnimationServerRpcMethod = SymbolExtensions.GetMethodInfo(() => UpdatePlayerAnimationServerRpc(new ulong(), new int(), new int()));
+        public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
 
         private static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
 
@@ -82,6 +90,43 @@ namespace LethalInternship.Utils
             //codes.InsertRange(0, PatchesUtil.InsertLogOfFieldOfThis("isPlayerControlled {0}", AccessTools.Field(typeof(PlayerControllerB), "isPlayerControlled"), typeof(bool)));
         }
 
+        public static List<CodeInstruction> InsertIsBypass(List<CodeInstruction> codes,
+                                                           ILGenerator generator,
+                                                           int startIndex,
+                                                           int indexToJumpTo)
+        {
+            Label labelToJumpTo;
+            List<Label> labelsOfStartCode = codes[startIndex].labels;
+            List<Label> labelsOfCodeToJumpTo = codes[startIndex + indexToJumpTo].labels;
+            List<CodeInstruction> codesToAdd;
+
+            // Define label for the jump
+            labelToJumpTo = generator.DefineLabel();
+            labelsOfCodeToJumpTo.Add(labelToJumpTo);
+
+            // Rearrange label if start is a destination label for a previous code
+            if (labelsOfStartCode.Count > 0)
+            {
+                codes.Insert(startIndex + 1, new CodeInstruction(codes[startIndex].opcode, codes[startIndex].operand));
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                startIndex++;
+            }
+
+            codesToAdd = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Call, DisableOriginalGameDebugLogsMethod),
+                new CodeInstruction(OpCodes.Brtrue_S, labelToJumpTo)
+            };
+            codes.InsertRange(startIndex, codesToAdd);
+            return codes;
+        }
+
+        private static bool DisableOriginalGameDebugLogs()
+        {
+            return Const.DISABLE_ORIGINAL_GAME_DEBUG_LOGS;
+        }
+
         private static bool AreInternsScheduledToLand()
         {
             return InternManager.Instance.AreInternsScheduledToLand();
@@ -109,6 +154,21 @@ namespace LethalInternship.Utils
         private static bool IsIdPlayerIntern(int id)
         {
             return InternManager.Instance.IsIdPlayerIntern(id);
+        }
+        private static bool IsPlayerInternOwnerLocal(PlayerControllerB player)
+        {
+            return InternManager.Instance.IsPlayerInternOwnerLocal(player);
+        }
+
+        private static void UpdatePlayerAnimationServerRpc(ulong playerClientId, int animationState, float animationSpeed)
+        {
+            InternManager.Instance.GetInternAI((int)playerClientId)?.UpdatePlayerAnimationServerRpc(animationState,
+                                                                                                    animationSpeed);
+        }
+
+        private static void SyncJump(ulong playerClientId)
+        {
+            InternManager.Instance.GetInternAI((int)playerClientId)?.SyncJump();
         }
     }
 }

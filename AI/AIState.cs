@@ -15,13 +15,11 @@ namespace LethalInternship.AI
         protected Coroutine? panikCoroutine;
         protected Transform? enemyTransform;
         
-        public float TimeSinceUsingEntrance { get; set; }
 
         protected AIState(AIState newState) : this(newState.ai)
         {
             this.targetLastKnownPosition = newState.targetLastKnownPosition;
             this.targetItem = newState.targetItem;
-            this.TimeSinceUsingEntrance = newState.TimeSinceUsingEntrance;
             
             this.panikCoroutine = newState.panikCoroutine;
             this.enemyTransform = newState.enemyTransform;
@@ -35,7 +33,7 @@ namespace LethalInternship.AI
             }
 
             this.ai = ai;
-            this.ai.SwitchToBehaviourState((int)this.GetAIState());
+            //this.ai.SwitchToBehaviourState((int)this.GetAIState());
 
             this.npcController = ai.NpcController;
             Plugin.Logger.LogDebug($"Intern {npcController.Npc.playerClientId} new state :                 {this.GetAIState()}");
