@@ -24,6 +24,12 @@
 
         public static readonly float DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 1f;
 
+        public static readonly int COMPANY_BUILDING_MOON_ID = 3;
+
+        // Debug
+        public static readonly bool DRAW_LINES = false;
+        public static readonly bool SHOW_LOG_DEBUG = true;
+
         // GetCloseToPlayerState
         public static readonly float DISTANCE_START_RUNNING = 10f;
         public static readonly float DISTANCE_STOP_RUNNING = 8f;
@@ -35,7 +41,7 @@
         // JustLostPlayerState
         public static readonly float TIMER_LOOKING_AROUND = 4f;
         public static readonly float DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION = 2f;
-        public static readonly float WAIT_TIME_TO_TELEPORT = 0.7f;
+        public static readonly float WAIT_TIME_TO_TELEPORT = 1f;
         public static readonly float DISTANCE_TO_ENTRANCE = 4f;
 
         // ChillWithPlayerState
@@ -52,11 +58,10 @@
         public static readonly float DISTANCE_FLEEING = 20f;
         public static readonly float DISTANCE_FLEEING_NO_LOS = 5f;
 
-        public static readonly float DISTANCE_AI_FROM_LADDER = 5f;
-        public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2f;
+        public static readonly float DISTANCE_AI_FROM_LADDER = 3.5f;
+        public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
-        public static readonly float TIMER_CHECK_LADDERS = 1.2f;
 
         // Terminal
         public static readonly int PRICE_INTERN = 19;

@@ -22,9 +22,10 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo IsIdPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsIdPlayerIntern(new int()));
         public static readonly MethodInfo IsPlayerInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
-        
+
         public static readonly MethodInfo UpdatePlayerAnimationServerRpcMethod = SymbolExtensions.GetMethodInfo(() => UpdatePlayerAnimationServerRpc(new ulong(), new int(), new int()));
         public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
+        public static readonly MethodInfo SyncLandFromJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncLandFromJump(new ulong(), new bool()));
 
         private static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
 
@@ -169,6 +170,11 @@ namespace LethalInternship.Utils
         private static void SyncJump(ulong playerClientId)
         {
             InternManager.Instance.GetInternAI((int)playerClientId)?.SyncJump();
+        }
+
+        private static void SyncLandFromJump(ulong playerClientId, bool fallHard)
+        {
+            InternManager.Instance.GetInternAI((int)playerClientId)?.SyncLandFromJump(fallHard);
         }
     }
 }

@@ -506,6 +506,12 @@ namespace LethalInternship.Managers
 
         public bool AreInternsScheduledToLand()
         {
+            // no drop of interns on company building moon
+            if (StartOfRound.Instance.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID)
+            {
+                return false;
+            }
+
             return NbInternsToDropShip > 0;
         }
 
@@ -586,6 +592,11 @@ namespace LethalInternship.Managers
         private int CountAliveAndDisableInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
+            if(instance.currentLevel.levelID == 3)
+            {
+                return NbInternsOwned;
+            }
+
             int alive = 0;
             for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
             {

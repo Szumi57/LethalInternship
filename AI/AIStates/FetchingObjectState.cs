@@ -42,18 +42,11 @@ namespace LethalInternship.AI.AIStates
             }
 
             Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} try to grab {this.targetItem.name}");
-            if ((ai.destination - npcController.Npc.transform.position).sqrMagnitude < npcController.Npc.grabDistance * npcController.Npc.grabDistance)
+            if ((this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Const.SIZE_SCALE_INTERN)
             {
                 if (!npcController.Npc.inAnimationWithEnemy && !npcController.Npc.activatingItem)
                 {
-                    //PlayerControllerBPatch.BeginGrabObject_ReversePatch(npcController.Npc, this.targetItem);
                     ai.GrabItemServerRpc(this.targetItem.NetworkObject);
-                    if (ai.AreHandsFree())
-                    {
-                        // Problem with taking object
-                        ai.ListInvalidObjects.Add(this.targetItem);
-                    }
-
                     this.targetItem = null;
                     ai.State = new GetCloseToPlayerState(this);
                     return;

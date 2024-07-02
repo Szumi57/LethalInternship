@@ -178,7 +178,7 @@ namespace LethalInternship.Patches.NpcPatches
         static bool DamagePlayerFromOtherClientServerRpc_PreFix(PlayerControllerB __instance,
                                                                 int damageAmount, Vector3 hitDirection, int playerWhoHit)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
             if (internAI != null)
             {
                 Plugin.Logger.LogDebug($"SyncDamageInternFromOtherClient called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
@@ -310,6 +310,21 @@ namespace LethalInternship.Patches.NpcPatches
                     intern.SyncAssignTargetAndSetMovingTo(__instance);
                 }
 
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPatch("UpdateSpecialAnimationValue")]
+        [HarmonyPrefix]
+        static bool UpdateSpecialAnimationValue_PreFix(PlayerControllerB __instance,
+                                                       bool specialAnimation, short yVal, float timed, bool climbingLadder)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                internAI.UpdateSpecialAnimationValue(specialAnimation, yVal, timed, climbingLadder);
                 return false;
             }
 
@@ -1095,7 +1110,51 @@ namespace LethalInternship.Patches.NpcPatches
 
         [HarmonyPatch("PlayerHitGroundEffects")]
         [HarmonyReversePatch]
-        public static void PlayerHitGroundEffects_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatchPlayerHitGroundEffects_ReversePatch");
+        public static void PlayerHitGroundEffects_ReversePatch(object instance)
+        {
+            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var startIndex = -1;
+                List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 5; i++)
+                {
+                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 33
+                        && codes[i + 5].ToString().StartsWith("call void GameNetcodeStuff.PlayerControllerB::LandFromJumpServerRpc(bool fallHard)")) // 38
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex + 5].operand = PatchesUtil.SyncLandFromJumpMethod;
+                    codes.Insert(startIndex+1, new CodeInstruction(OpCodes.Ldfld, PatchesUtil.FieldInfoPlayerClientId));
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch could not use jump from land method for intern");
+                }
+
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+
+                return codes.AsEnumerable();
+            }
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+            _ = Transpiler(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+        }
 
         [HarmonyPatch("CheckConditionsForEmote")]
         [HarmonyReversePatch]
@@ -1563,6 +1622,52 @@ namespace LethalInternship.Patches.NpcPatches
                 else
                 {
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerAnimationClientRpc_ReversePatch could not bypass rpc stuff");
+                }
+
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+                return codes.AsEnumerable();
+            }
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+            _ = Transpiler(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+        }
+
+        [HarmonyPatch("IsInSpecialAnimationClientRpc")]
+        [HarmonyReversePatch]
+        public static void IsInSpecialAnimationClientRpc_ReversePatch(object instance, bool specialAnimation, float timed, bool climbingLadder)
+        {
+            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var startIndex = -1;
+                List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 3; i++)
+                {
+                    if (codes[i].ToString().StartsWith("call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()")// 70
+                        && codes[i + 3].ToString().StartsWith("ldstr \"Setting animation on client\""))// 73
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes.Insert(0, new CodeInstruction(OpCodes.Br, codes[startIndex + 3].labels[0]));
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.IsInSpecialAnimationClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
                 //for (var i = 0; i < codes.Count; i++)

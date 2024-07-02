@@ -13,18 +13,18 @@ namespace LethalInternship.AI
     {
         public PlayerControllerB Npc { get; set; } = null!;
 
-        private InternAI? InternAIOwned
+        private InternAI? InternAIOwner
         {
             get
             {
-                if (_internAIOwned == null)
+                if (_internAIOwner == null)
                 {
-                    _internAIOwned = InternManager.Instance.GetInternAIIfLocalIsOwner((int)Npc.playerClientId);
+                    _internAIOwner = InternManager.Instance.GetInternAIIfLocalIsOwner((int)Npc.playerClientId);
                 }
-                return _internAIOwned;
+                return _internAIOwner;
             }
         }
-        private InternAI? _internAIOwned;
+        private InternAI? _internAIOwner;
 
         private int movementHinderedPrev;
         private float sprintMultiplier = 1f;
@@ -73,12 +73,11 @@ namespace LethalInternship.AI
         public float UpdatePlayerLookInterval;
         public int PlayerMask;
 
-        private int oldIntEnumObjectsLookingAt;
-        private Vector3 oldPositionToUpdateTurnBodyTowardsTo;
-        private Vector3 oldPositionPlayerEyeToLookAt;
-        private Vector3 oldPositionToLookAt;
+        private int oldSentIntEnumObjectsLookingAt;
+        private Vector3 oldSentDirectionToUpdateTurnBodyTowardsTo;
+        private Vector3 oldSentPositionPlayerEyeToLookAt;
+        private Vector3 oldSentPositionToLookAt;
 
-        private Vector3 positionToUpdateTurnBodyTowardsTo;
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 directionToUpdateTurnBodyTowardsToNormalized;
         private Vector3 positionPlayerEyeToLookAt;
@@ -87,7 +86,8 @@ namespace LethalInternship.AI
 
         private Vector2 lastMoveVector;
         private float floatSprint;
-        private Coroutine jumpCoroutine = null!;
+        private bool goDownLadder;
+
         private RaycastHit hit;
 
         public NpcController(PlayerControllerB npc)
@@ -169,7 +169,7 @@ namespace LethalInternship.AI
                         var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
 
                         this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
-                        if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
+                        if (turnSpeed < 0.15f || this.lastMoveVector.y < 0.2f)
                         {
                             floatSprint = 0f;
                         }
@@ -275,7 +275,7 @@ namespace LethalInternship.AI
                 if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
                 {
                     Npc.performingEmote = false;
-                    Npc.StopPerformingEmoteServerRpc();
+                    this.InternAIOwner?.SyncStopPerformingEmote();
                     Npc.timeSinceStartingEmote = 0f;
                 }
                 Npc.timeSinceStartingEmote += Time.deltaTime;
@@ -285,7 +285,7 @@ namespace LethalInternship.AI
                     if (Npc.isSinking)
                     {
                         Npc.isSinking = false;
-                        Npc.StopSinkingServerRpc();
+                        this.InternAIOwner?.SyncChangeSinkingState(false);
                     }
                 }
                 else
@@ -296,18 +296,18 @@ namespace LethalInternship.AI
                         if (!Npc.CheckConditionsForSinkingInQuicksand())
                         {
                             Npc.isSinking = false;
-                            Npc.StopSinkingServerRpc();
+                            this.InternAIOwner?.SyncChangeSinkingState(false);
                         }
                     }
                     else if (!Npc.isSinking && Npc.CheckConditionsForSinkingInQuicksand())
                     {
                         Npc.isSinking = true;
-                        Npc.StartSinkingServerRpc(Npc.sinkingSpeedMultiplier, Npc.statusEffectAudioIndex);
+                        this.InternAIOwner?.SyncChangeSinkingState(true, Npc.sinkingSpeedMultiplier, Npc.statusEffectAudioIndex);
                     }
                     if (Npc.sinkingValue >= 1f)
                     {
                         Plugin.Logger.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
-                        this.InternAIOwned?.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0);
+                        this.InternAIOwner?.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0);
                     }
                     else if (Npc.sinkingValue > 0.5f)
                     {
@@ -335,8 +335,7 @@ namespace LethalInternship.AI
                     if (Npc.disablingJetpackControls && Npc.thisController.isGrounded)
                     {
                         this.disabledJetpackControlsThisFrame = true;
-                        Npc.DisableJetpackControlsLocally();
-                        Npc.DisableJetpackModeServerRpc();
+                        this.InternAIOwner?.SyncDisableJetpackMode();
                     }
                     else if (!Npc.thisController.isGrounded)
                     {
@@ -619,18 +618,18 @@ namespace LethalInternship.AI
                                     {
                                         Debug.Log("Take damage a");
                                         TimeSinceTakingGravityDamage = 0f;
-                                        this.InternAIOwned?.SyncDamageIntern(Mathf.Clamp(85, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                        this.InternAIOwner?.SyncDamageIntern(Mathf.Clamp(85, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                     }
                                     else if (Npc.averageVelocity > 9f)
                                     {
                                         Debug.Log("Take damage b");
-                                        this.InternAIOwned?.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                        this.InternAIOwner?.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                         TimeSinceTakingGravityDamage = 0.35f;
                                     }
                                     else if (num8 > 60f && Npc.averageVelocity > 6f)
                                     {
                                         Debug.Log("Take damage c");
-                                        this.InternAIOwned?.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                        this.InternAIOwner?.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                         TimeSinceTakingGravityDamage = 0f;
                                     }
                                 }
@@ -666,18 +665,14 @@ namespace LethalInternship.AI
                     Npc.externalForces = Vector3.zero;
                     Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 5f * Time.deltaTime);
 
-                    if (directionToUpdateTurnBodyTowardsTo.y < 0f)
+                    if (goDownLadder)
                     {
                         direction = -Npc.thisPlayerBody.up;
-                        origin = Npc.transform.position;
+                        origin = Npc.gameplayCamera.transform.position;// Npc.transform.position;
                     }
                     if (!Physics.Raycast(origin, direction, 0.15f, instanceSOR.allPlayersCollideWithMask, QueryTriggerInteraction.Ignore))
                     {
                         Npc.thisPlayerBody.transform.position += direction * (Const.BASE_MAX_SPEED * Npc.climbSpeed * Time.deltaTime);
-                    }
-                    else
-                    {
-                        Npc.CancelSpecialTriggerAnimations();
                     }
                 }
                 TeleportingThisFrame = false;
@@ -722,7 +717,7 @@ namespace LethalInternship.AI
                 }
 
                 // Sync position and rotations
-                if (!Npc.isTestingPlayer && !Npc.isPlayerDead && Npc.isPlayerControlled)
+                if (!Npc.isPlayerDead && Npc.isPlayerControlled)
                 {
                     if (!Npc.disableSyncInAnimation)
                     {
@@ -1071,28 +1066,33 @@ namespace LethalInternship.AI
             int newIntEnumObjectsLookingAt = (int)this.enumObjectsLookingAt;
             Vector3 newPlayerEyeToLookAt = this.positionPlayerEyeToLookAt;
             Vector3 newPositionPlayerToLookAt = this.positionToLookAt;
-            Vector3 newPositionToUpdateTurnBodyTowardsTo = this.positionToUpdateTurnBodyTowardsTo;
+            Vector3 newDirectionToUpdateTurnBodyTowardsTo = this.directionToUpdateTurnBodyTowardsTo;
 
-            if (this.oldIntEnumObjectsLookingAt == newIntEnumObjectsLookingAt
-                && this.oldPositionPlayerEyeToLookAt == newPlayerEyeToLookAt
-                && this.oldPositionToLookAt == newPositionPlayerToLookAt
-                && this.oldPositionToUpdateTurnBodyTowardsTo == newPositionToUpdateTurnBodyTowardsTo)
+            if (this.oldSentIntEnumObjectsLookingAt == newIntEnumObjectsLookingAt
+                && this.oldSentPositionPlayerEyeToLookAt == newPlayerEyeToLookAt
+                && this.oldSentPositionToLookAt == newPositionPlayerToLookAt
+                && this.oldSentDirectionToUpdateTurnBodyTowardsTo == newDirectionToUpdateTurnBodyTowardsTo)
             {
                 return;
             }
 
-            this.oldIntEnumObjectsLookingAt = newIntEnumObjectsLookingAt;
-            this.oldPositionPlayerEyeToLookAt = newPlayerEyeToLookAt;
-            this.oldPositionToLookAt = newPositionPlayerToLookAt;
-            this.oldPositionToUpdateTurnBodyTowardsTo = newPositionToUpdateTurnBodyTowardsTo;
-
             if (this.UpdatePlayerLookInterval > 0.25f && Physics.OverlapSphere(Npc.transform.position, 35f, this.PlayerMask).Length != 0)
             {
                 this.UpdatePlayerLookInterval = 0f;
-                InternManager.Instance.GetInternAI((int)Npc.playerClientId)?.SyncUpdatePlayerRotationAndLook(newPositionToUpdateTurnBodyTowardsTo,
+                if (Npc.isClimbingLadder)
+                {
+                    Plugin.Logger.LogDebug($"(Client = {Npc.NetworkManager.LocalClientId}) (owner = {InternAIOwner != null}) send turn body new direction {newDirectionToUpdateTurnBodyTowardsTo}");
+                }
+
+                InternManager.Instance.GetInternAI((int)Npc.playerClientId)?.SyncUpdatePlayerRotationAndLook(newDirectionToUpdateTurnBodyTowardsTo,
                                                                                                              newIntEnumObjectsLookingAt,
                                                                                                              newPlayerEyeToLookAt,
                                                                                                              newPositionPlayerToLookAt);
+
+                this.oldSentIntEnumObjectsLookingAt = newIntEnumObjectsLookingAt;
+                this.oldSentPositionPlayerEyeToLookAt = newPlayerEyeToLookAt;
+                this.oldSentPositionToLookAt = newPositionPlayerToLookAt;
+                this.oldSentDirectionToUpdateTurnBodyTowardsTo = newDirectionToUpdateTurnBodyTowardsTo;
             }
         }
 
@@ -1166,19 +1166,18 @@ namespace LethalInternship.AI
             Npc.Crouch(!Npc.isCrouching);
         }
 
-        public void SetTurnBodyTowardsDirection(Vector3 positionDirection)
+        public void SetTurnBodyTowardsDirectionWithPosition(Vector3 positionDirection)
         {
-            positionToUpdateTurnBodyTowardsTo = positionDirection;
-            directionToUpdateTurnBodyTowardsTo = positionToUpdateTurnBodyTowardsTo - Npc.thisController.transform.position;
+            directionToUpdateTurnBodyTowardsTo = positionDirection - Npc.thisController.transform.position;
+            directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
+        }
+        public void SetTurnBodyTowardsDirection(Vector3 direction)
+        {
+            directionToUpdateTurnBodyTowardsTo = direction;
             directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
         }
         private void UpdateTurnBodyTowardsDirection()
         {
-            if (Npc.inSpecialInteractAnimation)
-            {
-                return;
-            }
-
             Vector3 direction = directionToUpdateTurnBodyTowardsTo;
             if (DirectionNotZero(direction.x) || DirectionNotZero(direction.z))
             {
@@ -1236,7 +1235,7 @@ namespace LethalInternship.AI
                             if (this.HasToMove)
                                 enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
                             else
-                                SetTurnBodyTowardsDirection(positionPlayerEyeToLookAt);
+                                SetTurnBodyTowardsDirectionWithPosition(positionPlayerEyeToLookAt);
                         }
                     }
                     break;
@@ -1254,7 +1253,7 @@ namespace LethalInternship.AI
                             if (this.HasToMove)
                                 enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
                             else
-                                SetTurnBodyTowardsDirection(positionToLookAt);
+                                SetTurnBodyTowardsDirectionWithPosition(positionToLookAt);
                         }
                     }
                     break;
@@ -1268,6 +1267,11 @@ namespace LethalInternship.AI
             //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.rotation}");
             //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.position}");
             //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.gameObject.name}, {Npc.localItemHolder.parent?.gameObject.name}, {Npc.localItemHolder.parent?.parent?.gameObject.name}");
+        }
+
+        public void OrderToGoUpDownLadder(bool hasToGoDown)
+        {
+            this.goDownLadder = hasToGoDown;
         }
 
         private bool DirectionNotZero(float direction)

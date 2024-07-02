@@ -73,6 +73,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
 
         public override TerminalNode? DisplayNode()
         {
+            StartOfRound instanceSOR = StartOfRound.Instance; 
+            InternManager instanceIM = InternManager.Instance;
+
             if (!dictTerminalNodeByState.TryGetValue(this.GetTerminalState(), out TerminalNode terminalNode))
             {
                 terminalNode = ScriptableObject.CreateInstance<TerminalNode>();
@@ -81,22 +84,25 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             terminalNode.clearPreviousText = true;
 
             string textInfoPage;
-            if (StartOfRound.Instance.inShipPhase || StartOfRound.Instance.shipIsLeaving)
+            if (instanceSOR.inShipPhase 
+                || instanceSOR.shipIsLeaving
+                || instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID)
             {
-                // in space
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, InternManager.Instance.NbInternsPurchasable, InternManager.Instance.NbInternsToDropShip);
+                // in space or on company building moon
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, instanceIM.NbInternsPurchasable, instanceIM.NbInternsToDropShip);
             }
             else
             {
                 // on moon
                 string textNbInternsToDropShip = string.Empty;
-                int nbInternsToDropShip = InternManager.Instance.NbInternsToDropShip;
-                int nbInternsOnThisMoon = InternManager.Instance.NbInternsOwned - nbInternsToDropShip;
-                if (nbInternsToDropShip > 0 && !StartOfRound.Instance.shipIsLeaving)
+                int nbInternsToDropShip = instanceIM.NbInternsToDropShip;
+                int nbInternsOnThisMoon = instanceIM.NbInternsOwned - nbInternsToDropShip;
+                if (nbInternsToDropShip > 0 
+                    && !instanceSOR.shipIsLeaving)
                 {
                     textNbInternsToDropShip = string.Format(Const.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, InternManager.Instance.NbInternsPurchasable, textNbInternsToDropShip, nbInternsOnThisMoon);
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, instanceIM.NbInternsPurchasable, textNbInternsToDropShip, nbInternsOnThisMoon);
             }
 
             terminalNode.displayText = textInfoPage;

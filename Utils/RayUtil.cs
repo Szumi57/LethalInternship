@@ -4,7 +4,7 @@ namespace LethalInternship.Utils
 {
     internal class RayUtil
     {
-        public static bool RayCastAndDraw(LineRenderer lr, Vector3 origin, Vector3 directionOrigin, float angle, float length)
+        public static bool RayCastAndDraw(LineRenderer? lr, Vector3 origin, Vector3 directionOrigin, float angle, float length)
         {
             Vector3 axis = Vector3.Cross(directionOrigin, Vector3.up);
             if (axis == Vector3.zero) axis = Vector3.right;
@@ -21,7 +21,7 @@ namespace LethalInternship.Utils
             }
         }
 
-        public static bool RayCastForwardAndDraw(LineRenderer lr, Vector3 origin, Vector3 directionForward, float length)
+        public static bool RayCastForwardAndDraw(LineRenderer? lr, Vector3 origin, Vector3 directionForward, float length)
         {
             Ray ray = new Ray(origin, directionForward);
             if (Physics.Raycast(ray, length, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))
@@ -36,7 +36,7 @@ namespace LethalInternship.Utils
             }
         }
 
-        public static bool RayCastDownAndDraw(LineRenderer lr, Vector3 origin, Vector3 directionDown, float length)
+        public static bool RayCastDownAndDraw(LineRenderer? lr, Vector3 origin, Vector3 directionDown, float length)
         {
             Ray ray = new Ray(origin, directionDown);
             if (Physics.Raycast(ray, length, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))

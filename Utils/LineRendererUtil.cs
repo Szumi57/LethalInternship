@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Data;
+using UnityEngine;
 
 namespace LethalInternship.Utils
 {
@@ -14,8 +15,13 @@ namespace LethalInternship.Utils
             this._transformToParent = transformToParent;
         }
 
-        public LineRenderer GetLineRenderer()
+        public LineRenderer? GetLineRenderer()
         {
+            if (!Const.DRAW_LINES)
+            {
+                return null;
+            }
+
             for (int i = 0; i < _listLineRenderers.Length; i++)
             {
                 if (_listLineRenderers[i] == null)
