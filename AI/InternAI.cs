@@ -626,7 +626,9 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (NpcController.Npc.jetpackControls || NpcController.Npc.isClimbingLadder)
+            if (NpcController.Npc.jetpackControls
+                || NpcController.Npc.isClimbingLadder
+                || NpcController.IsJumping)
             {
                 return;
             }
@@ -1449,6 +1451,11 @@ namespace LethalInternship.AI
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                Plugin.Logger.LogError($"GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                return;
+            }
 
             if (this.HeldItem == grabbableObject)
             {
@@ -1480,6 +1487,7 @@ namespace LethalInternship.AI
             NpcController.Npc.twoHanded = grabbableObject.itemProperties.twoHanded;
             NpcController.Npc.twoHandedAnimation = grabbableObject.itemProperties.twoHandedAnimation;
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
+            NpcController.GrabbedObjectValidated = true;
             if (grabbableObject.itemProperties.grabSFX != null)
             {
                 NpcController.Npc.itemAudio.PlayOneShot(grabbableObject.itemProperties.grabSFX, 1f);
@@ -1501,23 +1509,29 @@ namespace LethalInternship.AI
 
         private IEnumerator GrabAnimationCoroutine()
         {
-            yield return new WaitForSeconds(this.HeldItem.itemProperties.grabAnimationTime);
-            this.SetSpecialGrabAnimationBool(false, this.HeldItem);
+            if (this.HeldItem != null)
+            {
+                float grabAnimationTime = this.HeldItem.itemProperties.grabAnimationTime > 0f ? this.HeldItem.itemProperties.grabAnimationTime : 0.4f;
+                yield return new WaitForSeconds(grabAnimationTime - 0.2f);
+                NpcController.Npc.playerBodyAnimator.SetBool("GrabValidated", true);
+                NpcController.Npc.isGrabbingObjectAnimation = false;
+            }
             yield break;
         }
 
-        private void SetSpecialGrabAnimationBool(bool setBool, GrabbableObject currentItem)
+        private void SetSpecialGrabAnimationBool(bool setBool, GrabbableObject? item)
         {
             NpcController.Npc.playerBodyAnimator.SetBool("Grab", setBool);
-            if (!string.IsNullOrEmpty(currentItem.itemProperties.grabAnim))
+            if (item != null
+                && !string.IsNullOrEmpty(item.itemProperties.grabAnim))
             {
                 try
                 {
-                    NpcController.Npc.playerBodyAnimator.SetBool(currentItem.itemProperties.grabAnim, setBool);
+                    NpcController.Npc.playerBodyAnimator.SetBool(item.itemProperties.grabAnim, setBool);
                 }
                 catch (Exception)
                 {
-                    Plugin.Logger.LogError("An item tried to set an animator bool which does not exist: " + currentItem.itemProperties.grabAnim);
+                    Plugin.Logger.LogError("An item tried to set an animator bool which does not exist: " + item.itemProperties.grabAnim);
                 }
             }
         }
@@ -1560,6 +1574,7 @@ namespace LethalInternship.AI
             grabbableObject.DiscardItemFromEnemy();
             grabbableObject.isHeld = false;
             grabbableObject.isPocketed = false;
+            this.SetSpecialGrabAnimationBool(false, grabbableObject);
             NpcController.Npc.playerBodyAnimator.SetBool("cancelHolding", true);
             NpcController.Npc.playerBodyAnimator.SetTrigger("Throw");
 
@@ -1570,6 +1585,7 @@ namespace LethalInternship.AI
             NpcController.Npc.twoHanded = false;
             NpcController.Npc.twoHandedAnimation = false;
             NpcController.Npc.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
+            NpcController.GrabbedObjectValidated = false;
         }
 
         #endregion

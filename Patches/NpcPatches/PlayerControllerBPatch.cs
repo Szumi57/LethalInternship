@@ -102,7 +102,6 @@ namespace LethalInternship.Patches.NpcPatches
         static bool LateUpdate_PreFix(PlayerControllerB __instance,
                                       ref bool ___isWalking,
                                       ref bool ___updatePositionForNewlyJoinedClient,
-                                      bool ___grabbedObjectValidated,
                                       ref float ___updatePlayerLookInterval,
                                       int ___playerMask)
         {
@@ -111,7 +110,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 internAI.NpcController.IsWalking = ___isWalking;
                 internAI.NpcController.UpdatePositionForNewlyJoinedClient = ___updatePositionForNewlyJoinedClient;
-                internAI.NpcController.GrabbedObjectValidated = ___grabbedObjectValidated;
                 internAI.NpcController.UpdatePlayerLookInterval = ___updatePlayerLookInterval;
                 internAI.NpcController.PlayerMask = ___playerMask;
 

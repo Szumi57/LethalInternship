@@ -668,10 +668,10 @@ namespace LethalInternship.Managers
                     || !internAI.NpcController.Npc.isPlayerControlled
                     || internAI.HeldItem == null)
                 {
-                    return null;
+                    continue;
                 }
 
-                if (internAI.HeldItem == grabbableObject)
+                if (internAI.HeldItem.NetworkObjectId == grabbableObject.NetworkObjectId)
                 {
                     return internAI;
                 }
