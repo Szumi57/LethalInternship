@@ -13,6 +13,8 @@ namespace LethalInternship.Utils
     {
         public static readonly FieldInfo FieldInfoWasUnderwaterLastFrame = AccessTools.Field(typeof(PlayerControllerB), "wasUnderwaterLastFrame");
         public static readonly FieldInfo FieldInfoPlayerClientId = AccessTools.Field(typeof(PlayerControllerB), "playerClientId");
+        public static readonly FieldInfo FieldInfoPreviousAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "previousAnimationStateHash");
+        public static readonly FieldInfo FieldInfoCurrentAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "currentAnimationStateHash");
 
         public static readonly MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => AreInternsScheduledToLand());
         public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
@@ -84,11 +86,8 @@ namespace LethalInternship.Utils
                 {
                     new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(Plugin), "Logger")),
                     new CodeInstruction(OpCodes.Ldstr, log),
-                    new CodeInstruction(OpCodes.Call, SymbolExtensions.GetMethodInfo(() => String.Format(new String(new char[]{ })))),
                     new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => Plugin.Logger.LogDebug(new object()))),
                 };
-
-            //codes.InsertRange(0, PatchesUtil.InsertLogOfFieldOfThis("isPlayerControlled {0}", AccessTools.Field(typeof(PlayerControllerB), "isPlayerControlled"), typeof(bool)));
         }
 
         public static List<CodeInstruction> InsertIsBypass(List<CodeInstruction> codes,

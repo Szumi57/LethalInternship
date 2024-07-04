@@ -1,9 +1,13 @@
-﻿using GameNetcodeStuff;
+﻿using BepInEx;
+using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
+using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -14,6 +18,27 @@ namespace LethalInternship.AI
     internal class NpcController
     {
         public PlayerControllerB Npc { get; set; } = null!;
+
+        public bool HasToMove { get { return lastMoveVector.y > 0f; } }
+
+        // Public variables to pass to patch
+        public bool IsCameraDisabled;
+        public bool IsJumping;
+        public float CrouchMeter;
+        public bool IsWalking;
+        public float PlayerSlidingTimer;
+        public bool DisabledJetpackControlsThisFrame;
+        public bool StartedJetpackControls;
+        public Vector3 RightArmProceduralTargetBasePosition;
+        public float TimeSinceTakingGravityDamage;
+        public bool TeleportingThisFrame;
+        public float PreviousFrameDeltaTime;
+        public float CameraUp;
+
+        public bool UpdatePositionForNewlyJoinedClient;
+        public bool GrabbedObjectValidated;
+        public float UpdatePlayerLookInterval;
+        public int PlayerMask;
 
         private InternAI InternAIController
         {
@@ -43,6 +68,7 @@ namespace LethalInternship.AI
         private int oldConnectedPlayersAmount;
 
         private Collider[] nearByPlayers = new Collider[4];
+        private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
 
         private float upperBodyAnimationsWeight;
         private float exhaustionEffectLerp;
@@ -51,33 +77,7 @@ namespace LethalInternship.AI
         private float drowningTimer = 1f;
         private bool disabledJetpackControlsThisFrame;
 
-        public bool HasToMove { get { return lastMoveVector.y > 0f; } }
         private EnumObjectsLookingAt enumObjectsLookingAt;
-
-        // Public variables to pass to patch
-        public bool IsCameraDisabled;
-        public bool IsJumping;
-        public float CrouchMeter;
-        public bool IsWalking;
-        public float PlayerSlidingTimer;
-        public bool DisabledJetpackControlsThisFrame;
-        public bool StartedJetpackControls;
-        public float UpdatePlayerAnimationsInterval;
-        public float CurrentAnimationSpeed;
-        public float PreviousAnimationSpeed;
-        public List<int> CurrentAnimationStateHash = new List<int>();
-        public List<int> PreviousAnimationStateHash = new List<int>();
-        public Vector3 RightArmProceduralTargetBasePosition;
-        public int PreviousAnimationState;
-        public float TimeSinceTakingGravityDamage;
-        public bool TeleportingThisFrame;
-        public float PreviousFrameDeltaTime;
-        public float CameraUp;
-
-        public bool UpdatePositionForNewlyJoinedClient;
-        public bool GrabbedObjectValidated;
-        public float UpdatePlayerLookInterval;
-        public int PlayerMask;
 
         private int oldSentIntEnumObjectsLookingAt;
         private Vector3 oldSentDirectionToUpdateTurnBodyTowardsTo;
@@ -105,20 +105,14 @@ namespace LethalInternship.AI
         {
             Plugin.Logger.LogDebug("Awake intern controller.");
             Npc.isHostPlayerObject = false;
-            //Npc.playerActions = new PlayerActions();
-            this.PreviousAnimationState = 0;
             Npc.serverPlayerPosition = Npc.transform.position;
             Npc.gameplayCamera.enabled = false;
             Npc.visorCamera.enabled = false;
             Npc.thisPlayerModel.enabled = true;
             Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             Npc.thisPlayerModelArms.enabled = false;
-            PreviousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
-            CurrentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
-            if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.localClientAnimatorController)
-            {
-                Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.localClientAnimatorController;
-            }
+            PatchesUtil.FieldInfoPreviousAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
+            PatchesUtil.FieldInfoCurrentAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
             this.IsCameraDisabled = true;
             Npc.sprintMeter = 1f;
             Npc.ItemSlots = new GrabbableObject[1];
@@ -130,26 +124,15 @@ namespace LethalInternship.AI
                 Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
             }
             Npc.gameObject.GetComponent<CharacterController>().enabled = false;
-            //Npc.syncFullRotation = Npc.transform.eulerAngles;
         }
 
         public void Update()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
 
-            if (InternManager.Instance.IsPlayerInternOwnerLocal(Npc) && Npc.isPlayerControlled)
+            if (InternAIController.IsClientOwnerOfIntern() && Npc.isPlayerControlled)
             {
-                if (IsCameraDisabled)
-                {
-                    IsCameraDisabled = false;
-                    Npc.gameplayCamera.enabled = false;
-                    Npc.visorCamera.enabled = false;
-                    Npc.thisPlayerModelArms.enabled = false;
-                    Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-                    Npc.mapRadarDirectionIndicator.enabled = false;
-                    PreviousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
-                    CurrentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
-                }
+                UpdateOwnerChanged(true);
 
                 if (Npc.thisController.enabled != !Npc.inSpecialInteractAnimation)
                 {
@@ -171,7 +154,7 @@ namespace LethalInternship.AI
                         var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
 
                         this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
-                        if (turnSpeed < 0.15f || this.lastMoveVector.y < 0.2f)
+                        if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
                         {
                             floatSprint = 0f;
                         }
@@ -197,9 +180,9 @@ namespace LethalInternship.AI
                     {
                         IsWalking = false;
                         Npc.isSprinting = false;
-                        Npc.playerBodyAnimator.SetBool("Walking", false);
-                        Npc.playerBodyAnimator.SetBool("Sprinting", false);
-                        Npc.playerBodyAnimator.SetBool("Sideways", false);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
                     }
                     else if (floatSprint > 0.3f && movementHinderedPrev <= 0 && !Npc.criticallyInjured && Npc.sprintMeter > 0.1f)
                     {
@@ -217,7 +200,7 @@ namespace LethalInternship.AI
                                 Npc.Crouch(false);
                             }
                             Npc.isSprinting = true;
-                            Npc.playerBodyAnimator.SetBool("Sprinting", true);
+                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, true);
                         }
                     }
                     else
@@ -227,7 +210,7 @@ namespace LethalInternship.AI
                         {
                             Npc.isExhausted = true;
                         }
-                        Npc.playerBodyAnimator.SetBool("Sprinting", false);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
                     }
                     if (Npc.isSprinting)
                     {
@@ -239,39 +222,39 @@ namespace LethalInternship.AI
                     }
                     if (Npc.moveInputVector.y < 0.2f && Npc.moveInputVector.y > -0.2f && !Npc.inSpecialInteractAnimation)
                     {
-                        Npc.playerBodyAnimator.SetBool("Sideways", true);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, true);
                     }
                     else
                     {
-                        Npc.playerBodyAnimator.SetBool("Sideways", false);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
                     }
                     if (Npc.enteringSpecialAnimation)
                     {
-                        Npc.playerBodyAnimator.SetFloat("animationSpeed", 1f);
+                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
                     }
                     else if (Npc.moveInputVector.y < 0.3f && Npc.moveInputVector.x < 0.3f)
                     {
-                        Npc.playerBodyAnimator.SetFloat("animationSpeed", -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
                     }
                     else
                     {
-                        Npc.playerBodyAnimator.SetFloat("animationSpeed", 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
                     }
                 }
                 else
                 {
                     if (Npc.enteringSpecialAnimation)
                     {
-                        Npc.playerBodyAnimator.SetFloat("animationSpeed", 1f);
+                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
                     }
                     else if (Npc.isClimbingLadder)
                     {
-                        Npc.playerBodyAnimator.SetFloat("animationSpeed", 0f);
+                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 0f);
                     }
                     if (!Npc.isFreeCamera && Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
                     {
                         IsWalking = true;
-                        Npc.playerBodyAnimator.SetBool("Walking", true);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
                     }
                 }
                 if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
@@ -281,7 +264,7 @@ namespace LethalInternship.AI
                     Npc.timeSinceStartingEmote = 0f;
                 }
                 Npc.timeSinceStartingEmote += Time.deltaTime;
-                Npc.playerBodyAnimator.SetBool("hinderedMovement", Npc.isMovementHindered > 0);
+                Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_HINDEREDMOVEMENT, Npc.isMovementHindered > 0);
                 if (Npc.sourcesCausingSinking == 0)
                 {
                     if (Npc.isSinking)
@@ -545,8 +528,8 @@ namespace LethalInternship.AI
                                 else if (Npc.fallValue < -20f)
                                 {
                                     Npc.isCrouching = false;
-                                    Npc.playerBodyAnimator.SetBool("crouching", false);
-                                    Npc.playerBodyAnimator.SetBool("FallNoJump", true);
+                                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CROUCHING, false);
+                                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, true);
                                 }
                             }
                             if (Npc.fallValueUncapped < -35f)
@@ -564,7 +547,7 @@ namespace LethalInternship.AI
                                     isFallingNoJump = false;
                                     if (!Npc.isCrouching && Npc.fallValue < -9f)
                                     {
-                                        Npc.playerBodyAnimator.SetTrigger("ShortFallLanding");
+                                        Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
                                     }
                                     PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
                                 }
@@ -574,7 +557,7 @@ namespace LethalInternship.AI
                                     Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
                                 }
                             }
-                            Npc.playerBodyAnimator.SetBool("FallNoJump", false);
+                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, false);
                         }
                     }
                     Npc.externalForces = Vector3.zero;
@@ -698,20 +681,7 @@ namespace LethalInternship.AI
             }
             else
             {
-                if (!this.IsCameraDisabled)
-                {
-                    this.IsCameraDisabled = true;
-                    Npc.gameplayCamera.enabled = false;
-                    Npc.visorCamera.enabled = false;
-                    Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-                    Npc.thisPlayerModelArms.enabled = false;
-                    Npc.mapRadarDirectionIndicator.enabled = false;
-                    Npc.gameObject.GetComponent<CharacterController>().enabled = false;
-                    if (Npc.gameObject.GetComponent<Rigidbody>())
-                    {
-                        Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
-                    }
-                }
+                UpdateOwnerChanged(false);
 
                 // Sync position and rotations
                 UpdateSyncPositionAndRotationForNotOwner();
@@ -733,7 +703,85 @@ namespace LethalInternship.AI
             UpdateLineOfSightCubeForAll();
         }
 
-            
+        private void UpdateOwnerChanged(bool isOwner)
+        {
+            if (isOwner)
+            {
+                if (IsCameraDisabled)
+                {
+                    IsCameraDisabled = false;
+                    Npc.gameplayCamera.enabled = false;
+                    Npc.visorCamera.enabled = false;
+                    Npc.thisPlayerModelArms.enabled = false;
+                    Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+                    Npc.mapRadarDirectionIndicator.enabled = false;
+                    UpdateRuntimeAnimatorController(isOwner);
+                }
+            }
+            else
+            {
+                if (!this.IsCameraDisabled)
+                {
+                    this.IsCameraDisabled = true;
+                    Npc.gameplayCamera.enabled = false;
+                    Npc.visorCamera.enabled = false;
+                    Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+                    Npc.thisPlayerModelArms.enabled = false;
+                    Npc.mapRadarDirectionIndicator.enabled = false;
+                    UpdateRuntimeAnimatorController(isOwner);
+                    Npc.gameObject.GetComponent<CharacterController>().enabled = false;
+                    if (Npc.gameObject.GetComponent<Rigidbody>())
+                    {
+                        Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
+                    }
+                }
+            }
+        }
+
+        private void UpdateRuntimeAnimatorController(bool isOwner)
+        {
+            // Save animations states
+            AnimatorStateInfo[] layerInfo = new AnimatorStateInfo[Npc.playerBodyAnimator.layerCount];
+            for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+            {
+                layerInfo[i] = Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i);
+            }
+
+            // Change runtimeAnimatorController
+            if (isOwner)
+            {
+                if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.localClientAnimatorController)
+                {
+                    Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.localClientAnimatorController;
+                }
+            }
+            else
+            {
+                if (Npc.playerBodyAnimator.runtimeAnimatorController != Npc.playersManager.otherClientsAnimatorController)
+                {
+                    Npc.playerBodyAnimator.runtimeAnimatorController = Npc.playersManager.otherClientsAnimatorController;
+                }
+            }
+
+            // Push back animations states
+            for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+            {
+                if (Npc.playerBodyAnimator.HasState(i, layerInfo[i].fullPathHash))
+                {
+                    Npc.playerBodyAnimator.CrossFadeInFixedTime(layerInfo[i].fullPathHash, 0.1f);
+                    return;
+                }
+            }
+
+            if (dictAnimationBoolPerItem != null)
+            {
+                foreach (var animationBool in dictAnimationBoolPerItem)
+                {
+                    Npc.playerBodyAnimator.SetBool(animationBool.Key, animationBool.Value);
+                }
+            }
+        }
+
         private void UpdateSyncPositionAndRotationForNotOwner()
         {
             if (!Npc.isPlayerDead && Npc.isPlayerControlled)
@@ -859,7 +907,7 @@ namespace LethalInternship.AI
                 if (!this.wasUnderwaterLastFrame)
                 {
                     this.wasUnderwaterLastFrame = true;
-                    if (!InternManager.Instance.IsPlayerInternOwnerLocal(Npc))
+                    if (!InternAIController.IsClientOwnerOfIntern())
                     {
                         Npc.waterBubblesAudio.Play();
                     }
@@ -898,8 +946,8 @@ namespace LethalInternship.AI
         }
         private void UpdateAnimationUpperBodyForAll()
         {
-            int indexLayerHoldingItemsRightHand = Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsRightHand");
-            int indexLayerHoldingItemsBothHands = Npc.playerBodyAnimator.GetLayerIndex("HoldingItemsBothHands");
+            int indexLayerHoldingItemsRightHand = Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND);
+            int indexLayerHoldingItemsBothHands = Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSBOTHHANDS);
 
             if (Npc.isHoldingObject || Npc.isGrabbingObjectAnimation || Npc.inShockingMinigame)
             {
@@ -922,7 +970,7 @@ namespace LethalInternship.AI
                 Npc.playerBodyAnimator.SetLayerWeight(indexLayerHoldingItemsBothHands, this.upperBodyAnimationsWeight);
             }
 
-            Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("SpecialAnimations"), Npc.specialAnimationWeight);
+            Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_SPECIALANIMATIONS), Npc.specialAnimationWeight);
             if (Npc.inSpecialInteractAnimation && !Npc.inShockingMinigame)
             {
                 Npc.cameraLookRig1.weight = Mathf.Lerp(Npc.cameraLookRig1.weight, 0f, Time.deltaTime * 25f);
@@ -941,7 +989,7 @@ namespace LethalInternship.AI
             {
                 this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 0f, 10f * Time.deltaTime);
             }
-            Npc.playerBodyAnimator.SetFloat("tiredAmount", this.exhaustionEffectLerp);
+            Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_TIREDAMOUNT, this.exhaustionEffectLerp);
         }
         private void UpdateLineOfSightCubeForAll()
         {
@@ -978,7 +1026,7 @@ namespace LethalInternship.AI
                 Npc.usernameCanvas.gameObject.SetActive(false);
             }
 
-            if (InternManager.Instance.IsPlayerInternOwnerLocal(Npc))
+            if (InternAIController.IsClientOwnerOfIntern())
             {
                 this.InternLookUpdate();
                 if (Npc.isPlayerControlled && !Npc.isPlayerDead)
@@ -1302,11 +1350,6 @@ namespace LethalInternship.AI
             this.goDownLadder = hasToGoDown;
         }
 
-        private bool DirectionNotZero(float direction)
-        {
-            return direction < -Const.EPSILON || Const.EPSILON < direction;
-        }
-
         public bool CanUseLadder(InteractTrigger ladder)
         {
             if (ladder.usingLadder)
@@ -1355,6 +1398,21 @@ namespace LethalInternship.AI
             }
 
             return true;
+        }
+
+        public void SetAnimationBoolForItem(string animationString, bool value)
+        {
+            if (dictAnimationBoolPerItem == null)
+            {
+                dictAnimationBoolPerItem = new Dictionary<string, bool>();
+            }
+
+            dictAnimationBoolPerItem[animationString] = value;
+        }
+
+        private bool DirectionNotZero(float direction)
+        {
+            return direction < -Const.EPSILON || Const.EPSILON < direction;
         }
 
         private void SetFaceUnderwaterFilters()

@@ -17,18 +17,53 @@
         public static readonly float INTERN_OBJECT_RANGE = 15f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
 
+        public static readonly float AGENT_SPEED = 3.5f;
         public static readonly float BASE_MAX_SPEED = 0.9f;
         public static readonly float BASE_MIN_SPEED = 0.01f;
         public static readonly float BODY_TURNSPEED = 6f;
         public static readonly float CAMERA_TURNSPEED = 8f;
 
         public static readonly float DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 1f;
+        public static readonly float DISTANCE_CHECK_FOR_HOLES = 2.5f;
 
         public static readonly int COMPANY_BUILDING_MOON_ID = 3;
 
         // Debug
         public static readonly bool DRAW_LINES = false;
         public static readonly bool SHOW_LOG_DEBUG = true;
+
+        // NpcController
+        public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
+        public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSBOTHHANDS = "HoldingItemsBothHands";
+        public static readonly string PLAYER_ANIMATION_WEIGHT_SPECIALANIMATIONS = "SpecialAnimations";
+        public static readonly string PLAYER_ANIMATION_WEIGHT_EMOTESNOARMS = "EmotesNoArms";
+                                      
+        public static readonly string PLAYER_ANIMATION_BOOL_GRAB = "Grab";
+        public static readonly string PLAYER_ANIMATION_BOOL_GRABVALIDATED = "GrabValidated";
+        public static readonly string PLAYER_ANIMATION_BOOL_GRABINVALIDATED = "GrabInvalidated";
+        public static readonly string PLAYER_ANIMATION_BOOL_CANCELHOLDING = "cancelHolding";
+        public static readonly string PLAYER_ANIMATION_BOOL_WALKING = "Walking";
+        public static readonly string PLAYER_ANIMATION_BOOL_SPRINTING = "Sprinting";
+        public static readonly string PLAYER_ANIMATION_BOOL_SIDEWAYS = "Sideways";
+        public static readonly string PLAYER_ANIMATION_BOOL_ANIMATIONSPEED = "animationSpeed";
+        public static readonly string PLAYER_ANIMATION_BOOL_HINDEREDMOVEMENT = "hinderedMovement";
+        public static readonly string PLAYER_ANIMATION_BOOL_CROUCHING = "crouching";
+        public static readonly string PLAYER_ANIMATION_BOOL_FALLNOJUMP = "FallNoJump";
+        public static readonly string PLAYER_ANIMATION_BOOL_SHORTFALLLANDING = "ShortFallLanding";
+        public static readonly string PLAYER_ANIMATION_BOOL_LIMP = "Limp";
+
+        public static readonly string PLAYER_ANIMATION_TRIGGER_THROW = "Throw";
+        public static readonly string PLAYER_ANIMATION_TRIGGER_DAMAGE = "Damage";
+        public static readonly string PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING = "ShortFallLanding";
+
+        public static readonly string PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED = "animationSpeed";
+        public static readonly string PLAYER_ANIMATION_FLOAT_TIREDAMOUNT = "tiredAmount";
+        
+        public static readonly string MAPDOT_ANIMATION_BOOL_DEAD = "dead";
+
+        // SearchingForPlayerState 
+        public static readonly float MIN_TIME_SPRINT_SEARCH_WANDER = 1f;
+        public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 5f;
 
         // GetCloseToPlayerState
         public static readonly float DISTANCE_START_RUNNING = 10f;
@@ -39,13 +74,13 @@
         public static readonly float DISTANCE_AWARENESS_VER = 50f;
 
         // JustLostPlayerState
-        public static readonly float TIMER_LOOKING_AROUND = 4f;
+        public static readonly float TIMER_LOOKING_AROUND = 6f;
         public static readonly float DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION = 2f;
         public static readonly float WAIT_TIME_TO_TELEPORT = 1f;
         public static readonly float DISTANCE_TO_ENTRANCE = 4f;
-
-        // ChillWithPlayerState
-
+        public static readonly float MIN_TIME_FREEZE_LOOKING_AROUND = 0.5f;
+        public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
+        
         // StuckState
         public static readonly float TIMER_STUCK_TOO_MUCH = 2f;
         public static readonly float TIMER_STUCK_WAY_TOO_MUCH = 5f;

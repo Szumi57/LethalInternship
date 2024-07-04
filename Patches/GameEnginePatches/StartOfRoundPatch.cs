@@ -45,6 +45,8 @@ namespace LethalInternship.Patches.GameEnginePatches
             InternManager.Instance.SyncEndOfRoundInterns();
         }
 
+        #region Transpilers
+
         [HarmonyPatch("ReviveDeadPlayers")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ReviveDeadPlayers_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -238,6 +240,44 @@ namespace LethalInternship.Patches.GameEnginePatches
 
             return codes.AsEnumerable();
         }
+
+        [HarmonyPatch("ResetShipFurniture")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ResetShipFurniture_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 3; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //176
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ResetShipFurniture_Transpiler could not use irl number of player in list.");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        #endregion
 
         [HarmonyPatch("OnPlayerConnectedClientRpc")]
         [HarmonyPostfix]

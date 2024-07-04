@@ -25,20 +25,15 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance,
                                   ref bool ___isCameraDisabled,
-                                  ref bool ___isJumping,
+                                  bool ___isJumping,
                                   ref float ___crouchMeter,
                                   ref bool ___isWalking,
                                   ref float ___playerSlidingTimer,
                                   ref bool ___disabledJetpackControlsThisFrame,
                                   ref bool ___startedJetpackControls,
-                                  ref float ___updatePlayerAnimationsInterval,
                                   ref float ___timeSinceTakingGravityDamage,
                                   ref bool ___teleportingThisFrame,
                                   ref float ___previousFrameDeltaTime,
-                                  float ___currentAnimationSpeed,
-                                  float ___previousAnimationSpeed,
-                                  ref List<int> ___currentAnimationStateHash,
-                                  ref List<int> ___previousAnimationStateHash,
                                   ref float ___cameraUp,
                                   ref float ___updatePlayerLookInterval)
         {
@@ -62,15 +57,9 @@ namespace LethalInternship.Patches.NpcPatches
 
             internAI.NpcController.DisabledJetpackControlsThisFrame = ___disabledJetpackControlsThisFrame;
             internAI.NpcController.StartedJetpackControls = ___startedJetpackControls;
-            internAI.NpcController.UpdatePlayerAnimationsInterval = ___updatePlayerAnimationsInterval;
             internAI.NpcController.TimeSinceTakingGravityDamage = ___timeSinceTakingGravityDamage;
             internAI.NpcController.TeleportingThisFrame = ___teleportingThisFrame;
             internAI.NpcController.PreviousFrameDeltaTime = ___previousFrameDeltaTime;
-
-            internAI.NpcController.CurrentAnimationSpeed = ___currentAnimationSpeed;
-            internAI.NpcController.PreviousAnimationSpeed = ___previousAnimationSpeed;
-            internAI.NpcController.CurrentAnimationStateHash = ___currentAnimationStateHash;
-            internAI.NpcController.PreviousAnimationStateHash = ___previousAnimationStateHash;
 
             internAI.NpcController.CameraUp = ___cameraUp;
             internAI.NpcController.UpdatePlayerLookInterval = ___updatePlayerLookInterval;
@@ -78,15 +67,11 @@ namespace LethalInternship.Patches.NpcPatches
             internAI.NpcController.Update();
 
             ___isCameraDisabled = internAI.NpcController.IsCameraDisabled;
-            ___isJumping = internAI.NpcController.IsJumping;
             ___crouchMeter = internAI.NpcController.CrouchMeter;
             ___isWalking = internAI.NpcController.IsWalking;
             ___playerSlidingTimer = internAI.NpcController.PlayerSlidingTimer;
 
-            //___disabledJetpackControlsThisFrame = internAI.NpcController.DisabledJetpackControlsThisFrame;
             ___startedJetpackControls = internAI.NpcController.StartedJetpackControls;
-            ___currentAnimationStateHash = internAI.NpcController.CurrentAnimationStateHash;
-            ___previousAnimationStateHash = internAI.NpcController.PreviousAnimationStateHash;
             ___timeSinceTakingGravityDamage = internAI.NpcController.TimeSinceTakingGravityDamage;
             ___teleportingThisFrame = internAI.NpcController.TeleportingThisFrame;
             ___previousFrameDeltaTime = internAI.NpcController.PreviousFrameDeltaTime;
@@ -365,6 +350,22 @@ namespace LethalInternship.Patches.NpcPatches
                 Plugin.Logger.LogDebug($"intern drop item before grab by player");
                 grabbableObject.isHeld = false;
                 internAI.DropItemServerRpc();
+            }
+
+            return true;
+        }
+
+        [HarmonyPatch("SyncBodyPositionClientRpc")]
+        [HarmonyPrefix]
+        static bool SyncBodyPositionClientRpc_PreFix(PlayerControllerB __instance, Vector3 newBodyPosition)
+        {
+            // send to server if intern from controller
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                Plugin.Logger.LogDebug($"NetworkManager {__instance.NetworkManager}, newBodyPosition {newBodyPosition}, this.deadBody {__instance.deadBody}");
+                internAI.SyncDeadBodyPositionServerRpc(newBodyPosition);
+                return false;
             }
 
             return true;
@@ -1133,7 +1134,7 @@ namespace LethalInternship.Patches.NpcPatches
                 if (startIndex > -1)
                 {
                     codes[startIndex + 5].operand = PatchesUtil.SyncLandFromJumpMethod;
-                    codes.Insert(startIndex+1, new CodeInstruction(OpCodes.Ldfld, PatchesUtil.FieldInfoPlayerClientId));
+                    codes.Insert(startIndex + 1, new CodeInstruction(OpCodes.Ldfld, PatchesUtil.FieldInfoPlayerClientId));
                     startIndex = -1;
                 }
                 else
@@ -1622,10 +1623,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerAnimationClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
                 return codes.AsEnumerable();
             }
 
@@ -1666,6 +1663,52 @@ namespace LethalInternship.Patches.NpcPatches
                 else
                 {
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.IsInSpecialAnimationClientRpc_ReversePatch could not bypass rpc stuff");
+                }
+
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+                return codes.AsEnumerable();
+            }
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+            _ = Transpiler(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+        }
+
+        [HarmonyPatch("SyncBodyPositionClientRpc")]
+        [HarmonyReversePatch]
+        public static void SyncBodyPositionClientRpc_ReversePatch(object instance, Vector3 newBodyPosition)
+        {
+            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var startIndex = -1;
+                List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+
+                //for (var i = 0; i < codes.Count; i++)
+                //{
+                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+                //}
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 6; i++)
+                {
+                    if (codes[i].ToString().StartsWith("nop NULL")// 53
+                        && codes[i + 6].ToString().StartsWith("call static float UnityEngine.Vector3::Distance(UnityEngine.Vector3 a, UnityEngine.Vector3 b)"))// 59
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes.Insert(0, new CodeInstruction(OpCodes.Br, codes[startIndex].labels[0]));
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SyncBodyPositionClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
                 //for (var i = 0; i < codes.Count; i++)

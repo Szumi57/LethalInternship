@@ -141,7 +141,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPostfix]
         static void CheckLineOfSightForPlayer_PostFix(EnemyAI __instance, ref PlayerControllerB __result, float width, ref int range, int proximityAwareness)
         {
-            PlayerControllerB internFound = null!;
+            PlayerControllerB internControllerFound = null!;
 
             if (__instance.isOutside && !__instance.enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
             {
@@ -150,48 +150,48 @@ namespace LethalInternship.Patches.NpcPatches
 
             for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
-                PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
-                if (!__instance.PlayerIsTargetable(intern))
+                PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[i];
+                if (!__instance.PlayerIsTargetable(internController))
                 {
                     continue;
                 }
 
-                Vector3 position = intern.gameplayCamera.transform.position;
+                Vector3 position = internController.gameplayCamera.transform.position;
                 if (Vector3.Distance(position, __instance.eye.position) < (float)range && !Physics.Linecast(__instance.eye.position, position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
                 {
                     Vector3 to = position - __instance.eye.position;
                     if (Vector3.Angle(__instance.eye.forward, to) < width || (proximityAwareness != -1 && Vector3.Distance(__instance.eye.position, position) < (float)proximityAwareness))
                     {
-                        internFound = intern;
+                        internControllerFound = internController;
                     }
                 }
             }
 
-            if (__result == null && internFound == null)
+            if (__result == null && internControllerFound == null)
             {
                 return;
             }
-            else if (__result == null && internFound != null)
+            else if (__result == null && internControllerFound != null)
             {
                 Plugin.Logger.LogDebug("intern found, no player found");
-                __result = internFound;
+                __result = internControllerFound;
                 return;
             }
-            else if (__result != null && internFound == null)
+            else if (__result != null && internControllerFound == null)
             {
                 Plugin.Logger.LogDebug("intern not found, player found");
                 return;
             }
             else
             {
-                if (__result == null || internFound == null) return;
+                if (__result == null || internControllerFound == null) return;
                 Vector3 playerPosition = __result.gameplayCamera.transform.position;
-                Vector3 internPosition = internFound.gameplayCamera.transform.position;
-                Vector3 aiPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
-                if ((internPosition - aiPosition).sqrMagnitude < (playerPosition - aiPosition).sqrMagnitude)
+                Vector3 internPosition = internControllerFound.gameplayCamera.transform.position;
+                Vector3 aiEnemyPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
+                if ((internPosition - aiEnemyPosition).sqrMagnitude < (playerPosition - aiEnemyPosition).sqrMagnitude)
                 {
                     Plugin.Logger.LogDebug("intern closer");
-                    __result = internFound;
+                    __result = internControllerFound;
                 }
                 else { Plugin.Logger.LogDebug("player closer"); }
             }
@@ -201,28 +201,28 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPostfix]
         static void GetClosestPlayer_PostFix(EnemyAI __instance, ref PlayerControllerB __result, bool requireLineOfSight, bool cannotBeInShip, bool cannotBeNearShip)
         {
-            PlayerControllerB internFound = null!;
+            PlayerControllerB internControllerFound = null!;
 
             __instance.mostOptimalDistance = 2000f;
             for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
-                PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
+                PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[i];
 
-                if (!__instance.PlayerIsTargetable(intern, cannotBeInShip, false))
+                if (!__instance.PlayerIsTargetable(internController, cannotBeInShip, false))
                 {
                     continue;
                 }
 
                 if (cannotBeNearShip)
                 {
-                    if (intern.isInElevator)
+                    if (internController.isInElevator)
                     {
                         continue;
                     }
                     bool flag = false;
                     for (int j = 0; j < RoundManager.Instance.spawnDenialPoints.Length; j++)
                     {
-                        if (Vector3.Distance(RoundManager.Instance.spawnDenialPoints[j].transform.position, intern.transform.position) < 10f)
+                        if (Vector3.Distance(RoundManager.Instance.spawnDenialPoints[j].transform.position, internController.transform.position) < 10f)
                         {
                             flag = true;
                             break;
@@ -233,39 +233,39 @@ namespace LethalInternship.Patches.NpcPatches
                         continue;
                     }
                 }
-                if (!requireLineOfSight || !Physics.Linecast(__instance.transform.position, intern.transform.position, 256))
+                if (!requireLineOfSight || !Physics.Linecast(__instance.transform.position, internController.transform.position, 256))
                 {
-                    __instance.tempDist = Vector3.Distance(__instance.transform.position, intern.transform.position);
+                    __instance.tempDist = Vector3.Distance(__instance.transform.position, internController.transform.position);
                     if (__instance.tempDist < __instance.mostOptimalDistance)
                     {
                         __instance.mostOptimalDistance = __instance.tempDist;
-                        internFound = intern;
+                        internControllerFound = internController;
                     }
                 }
             }
 
-            if (__result == null && internFound == null)
+            if (__result == null && internControllerFound == null)
             {
                 return;
             }
-            else if (__result == null && internFound != null)
+            else if (__result == null && internControllerFound != null)
             {
-                __result = internFound;
+                __result = internControllerFound;
                 return;
             }
-            else if (__result != null && internFound == null)
+            else if (__result != null && internControllerFound == null)
             {
                 return;
             }
             else
             {
-                if (__result == null || internFound == null) return;
+                if (__result == null || internControllerFound == null) return;
                 Vector3 playerPosition = __result.gameplayCamera.transform.position;
-                Vector3 internPosition = internFound.gameplayCamera.transform.position;
-                Vector3 aiPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
-                if ((internPosition - aiPosition).sqrMagnitude < (playerPosition - aiPosition).sqrMagnitude)
+                Vector3 internPosition = internControllerFound.gameplayCamera.transform.position;
+                Vector3 aiEnemyPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
+                if ((internPosition - aiEnemyPosition).sqrMagnitude < (playerPosition - aiEnemyPosition).sqrMagnitude)
                 {
-                    __result = internFound;
+                    __result = internControllerFound;
                 }
             }
         }

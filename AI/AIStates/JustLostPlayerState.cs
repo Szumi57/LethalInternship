@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using System.Collections;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -10,6 +11,8 @@ namespace LethalInternship.AI.AIStates
         public override EnumAIStates GetAIState() { return STATE; }
 
         private float lookingAroundTimer;
+        private Coroutine lookingAroundCoroutine = null!;
+
         private float SqrDistanceToTargetLastKnownPosition
         {
             get
@@ -45,14 +48,20 @@ namespace LethalInternship.AI.AIStates
             {
                 lookingAroundTimer = 0f;
                 targetLastKnownPosition = null;
+
+                StopLookingAroundCoroutine();
             }
 
             if (lookingAroundTimer > 0f)
             {
-                // todo Look around randomly ?
                 lookingAroundTimer += ai.AIIntervalTime;
                 Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} Looking around to find player {lookingAroundTimer}");
                 ai.StopMoving();
+
+                StartLookingAroundCoroutine();
+
+                CheckLOSForTarget();
+
                 return;
             }
 
@@ -91,20 +100,17 @@ namespace LethalInternship.AI.AIStates
                     else
                     {
                         // Start looking around
-                        lookingAroundTimer += ai.AIIntervalTime;
+                        if (lookingAroundTimer == 0f)
+                        {
+                            lookingAroundTimer += ai.AIIntervalTime;
+                        }
+
                         return;
                     }
                 }
             }
 
-            PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (target != null)
-            {
-                // Target found
-                targetLastKnownPosition = target.transform.position;
-                ai.State = new GetCloseToPlayerState(this);
-                return;
-            }
+            CheckLOSForTarget();
 
             ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
 
@@ -118,6 +124,47 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+        }
+
+        private void CheckLOSForTarget()
+        {
+            PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (target != null)
+            {
+                // Target found
+                StopLookingAroundCoroutine();
+                targetLastKnownPosition = target.transform.position;
+                ai.State = new GetCloseToPlayerState(this);
+                return;
+            }
+        }
+
+        private IEnumerator LookingAround()
+        {
+            yield return null;
+            while (lookingAroundTimer < Const.TIMER_LOOKING_AROUND)
+            {
+                float freezeTimeRandom = Random.Range(Const.MIN_TIME_FREEZE_LOOKING_AROUND, Const.MAX_TIME_FREEZE_LOOKING_AROUND);
+                float angleRandom = Random.Range(-180, 180);
+                npcController.SetTurnBodyTowardsDirection(Quaternion.Euler(0, angleRandom, 0) * npcController.Npc.thisController.transform.forward);
+                yield return new WaitForSeconds(freezeTimeRandom);
+            }
+        }
+
+        private void StartLookingAroundCoroutine()
+        {
+            if (this.lookingAroundCoroutine == null)
+            {
+                this.lookingAroundCoroutine = ai.StartCoroutine(this.LookingAround());
+            }
+        }
+
+        private void StopLookingAroundCoroutine()
+        {
+            if (this.lookingAroundCoroutine != null)
+            {
+                ai.StopCoroutine(this.lookingAroundCoroutine);
+            }
         }
     }
 }

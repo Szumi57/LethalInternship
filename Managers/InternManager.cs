@@ -444,10 +444,10 @@ namespace LethalInternship.Managers
             internController.isClimbingLadder = false;
             internController.disableLookInput = true;
             internController.setPositionOfDeadPlayer = false;
-            internController.mapRadarDotAnimator.SetBool("dead", false);
+            internController.mapRadarDotAnimator.SetBool(Const.MAPDOT_ANIMATION_BOOL_DEAD, false);
             internController.externalForceAutoFade = Vector3.zero;
             internController.voiceMuffledByEnemy = false;
-            internController.playerBodyAnimator.SetBool("Limp", false);
+            internController.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_LIMP, false);
             AccessTools.Field(typeof(PlayerControllerB), "updatePositionForNewlyJoinedClient").SetValue(internController, true);
 
             internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();

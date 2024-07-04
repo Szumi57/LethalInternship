@@ -56,6 +56,7 @@ namespace LethalInternship.AI
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
+
         private Coroutine grabObjectCoroutine = null!;
 
         //private Vector3 agentLastPosition;
@@ -131,7 +132,7 @@ namespace LethalInternship.AI
                 agent = gameObject.GetComponentInChildren<NavMeshAgent>();
                 agent.Warp(NpcController.Npc.transform.position);
                 agent.enabled = true;
-                agent.speed = 3.5f;
+                agent.speed = Const.AGENT_SPEED;
                 if (!IsOwner)
                 {
                     SetClientCalculatingAI(false);
@@ -187,7 +188,7 @@ namespace LethalInternship.AI
             {
                 agent.Warp(NpcController.Npc.transform.position);
                 agent.enabled = true;
-                agent.speed = 3.5f;
+                agent.speed = Const.AGENT_SPEED;
             }
             this.serverPosition = transform.position;
             this.isEnemyDead = false;
@@ -300,6 +301,10 @@ namespace LethalInternship.AI
         {
             if (agent.isActiveAndEnabled && !isEnemyDead && !NpcController.Npc.isPlayerDead)
             {
+                if (!this.SetDestinationToPosition(destination, checkForPath: true))
+                {
+                    destination = this.ChooseClosestNodeToPosition(NpcController.Npc.transform.position, avoidLineOfSight: false).position;
+                }
                 agent.SetDestination(destination);
             }
             NpcController.OrderToMove();
@@ -309,6 +314,11 @@ namespace LethalInternship.AI
         {
             NpcController.OrderToStopMoving();
             TeleportAgentAndBody(NpcController.Npc.thisController.transform.position);
+        }
+
+        public bool IsClientOwnerOfIntern()
+        {
+            return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
         public PlayerControllerB? CheckLOSForTarget(float width = 45f, int range = 60, int proximityAwareness = -1)
@@ -627,8 +637,7 @@ namespace LethalInternship.AI
             }
 
             if (NpcController.Npc.jetpackControls
-                || NpcController.Npc.isClimbingLadder
-                || NpcController.IsJumping)
+                || NpcController.Npc.isClimbingLadder)
             {
                 return;
             }
@@ -699,7 +708,8 @@ namespace LethalInternship.AI
             }
 
             // Check for hole
-            if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > 2.5f * 2.5f)
+            if (!NpcController.IsJumping
+                && (this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
             {
                 // Ladders
                 bool isUsingLadder = UseLadderIfNeeded();
@@ -721,12 +731,13 @@ namespace LethalInternship.AI
             //Log($"ai progression {(this.transform.position - agentLastPosition).sqrMagnitude}");
             //if ((this.transform.position - agentLastPosition).sqrMagnitude < 0.1f * 0.1f
             //    && (NpcController.Npc.transform.position - npcControllerLastPosition).sqrMagnitude < 0.45f * 0.45f)
-            if (NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
+            Vector3 forward = NpcController.Npc.thisController.transform.forward;
+            if ((forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
             {
                 Log($"TimeSinceStuck {timeSinceStuck}");
                 timeSinceStuck += AIIntervalTime;
             }
-            else
+            else if (!NpcController.IsJumping)
             {
                 // Not stuck
                 timeSinceStuck = 0f;
@@ -1044,95 +1055,6 @@ namespace LethalInternship.AI
             }
         }
 
-        private void CalculateAnimationDirection(float maxSpeed = 1f)
-        {
-            creatureAnimator.SetBool("IsMoving", Vector3.Distance(transform.position, previousPosition) > 0f);
-            agentLocalVelocity = transform.InverseTransformDirection(Vector3.ClampMagnitude(transform.position - previousPosition, 1f) / (Time.deltaTime * 2f));
-            velX = Mathf.Lerp(velX, agentLocalVelocity.x, 10f * Time.deltaTime);
-            creatureAnimator.SetFloat("VelocityX", Mathf.Clamp(velX, -maxSpeed, maxSpeed));
-            velZ = Mathf.Lerp(velZ, agentLocalVelocity.z, 10f * Time.deltaTime);
-            creatureAnimator.SetFloat("VelocityZ", Mathf.Clamp(velZ, -maxSpeed, maxSpeed));
-            previousPosition = transform.position;
-        }
-
-        private void LookAndRunRandomly(bool canStartRunning = false, bool onlySetRunning = false)
-        {
-            randomLookTimer -= AIIntervalTime;
-            if (!runningRandomly && !running)
-            {
-                staminaTimer = Mathf.Min(6f, staminaTimer + AIIntervalTime);
-            }
-            else
-            {
-                staminaTimer = Mathf.Max(0f, staminaTimer - AIIntervalTime);
-            }
-            if (randomLookTimer <= 0f)
-            {
-                randomLookTimer = Random.Range(0.7f, 5f);
-                if (!runningRandomly)
-                {
-                    int num;
-                    if (isOutside)
-                    {
-                        num = 35;
-                    }
-                    else
-                    {
-                        num = 20;
-                    }
-                    if (onlySetRunning)
-                    {
-                        num /= 3;
-                    }
-                    if (staminaTimer >= 5f && Random.Range(0, 100) < num)
-                    {
-                        running = true;
-                        runningRandomly = true;
-                        creatureAnimator.SetBool("Sprinting", true);
-                        //SetRunningServerRpc(true);
-                        return;
-                    }
-                    if (onlySetRunning)
-                    {
-                        return;
-                    }
-                    Vector3 onUnitSphere = Random.onUnitSphere;
-                    float y = 0f;
-                    if (Physics.Raycast(eye.position, onUnitSphere, 5f, StartOfRound.Instance.collidersRoomMaskDefaultAndPlayers))
-                    {
-                        y = RoundManager.Instance.YRotationThatFacesTheFarthestFromPosition(eye.position, 12f, 5);
-                    }
-                    onUnitSphere.y = y;
-                    //this.LookAtDirectionServerRpc(onUnitSphere, Random.Range(0.25f, 2f), Random.Range(-60f, 60f));
-                    return;
-                }
-                else
-                {
-                    int num2;
-                    if (isOutside)
-                    {
-                        num2 = 80;
-                    }
-                    else
-                    {
-                        num2 = 30;
-                    }
-                    if (onlySetRunning)
-                    {
-                        num2 /= 5;
-                    }
-                    if (Random.Range(0, 100) > num2 || staminaTimer <= 0f)
-                    {
-                        running = false;
-                        runningRandomly = false;
-                        staminaTimer = -6f;
-                        creatureAnimator.SetBool("Running", false);
-                        //SetRunningServerRpc(false);
-                    }
-                }
-            }
-        }
-
         private void TeleportAgentAndBody(Vector3 pos)
         {
             if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
@@ -1157,11 +1079,6 @@ namespace LethalInternship.AI
                 this.transform.position = navMeshPosition;
             }
 
-        }
-
-        private bool IsClientOwnerOfIntern()
-        {
-            return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
         #region TeleportIntern RPC
@@ -1255,7 +1172,8 @@ namespace LethalInternship.AI
         private void AssignTargetAndSetMovingTo(ulong playerid)
         {
             SetMovingTowardsTargetPlayer(StartOfRound.Instance.allPlayerScripts[playerid]);
-            this.destination = RoundManager.Instance.GetNavMeshPosition(this.targetPlayer.transform.position, RoundManager.Instance.navHit, 2.7f);
+
+            SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
             if (this.State == null || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
             {
                 this.State = new GetCloseToPlayerState(this);
@@ -1433,6 +1351,22 @@ namespace LethalInternship.AI
 
         #endregion
 
+        #region SyncBodyPosition RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncDeadBodyPositionServerRpc(Vector3 newBodyPosition)
+        {
+            SyncDeadBodyPositionClientRpc(newBodyPosition);
+        }
+
+        [ClientRpc]
+        private void SyncDeadBodyPositionClientRpc(Vector3 newBodyPosition)
+        {
+            PlayerControllerBPatch.SyncBodyPositionClientRpc_ReversePatch(NpcController.Npc, newBodyPosition);
+        }
+
+        #endregion
+
         #region Grab item RPC
 
         [ServerRpc(RequireOwnership = false)]
@@ -1474,7 +1408,7 @@ namespace LethalInternship.AI
 
         private void GrabItem(GrabbableObject grabbableObject)
         {
-            Plugin.Logger.LogInfo($"Try to grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+            Plugin.Logger.LogInfo($"Grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
             this.HeldItem = grabbableObject;
 
             grabbableObject.GrabItemFromEnemy(this);
@@ -1494,10 +1428,10 @@ namespace LethalInternship.AI
             }
 
             // animations
-            NpcController.Npc.playerBodyAnimator.SetBool("GrabInvalidated", false);
-            NpcController.Npc.playerBodyAnimator.SetBool("GrabValidated", false);
-            NpcController.Npc.playerBodyAnimator.SetBool("cancelHolding", false);
-            NpcController.Npc.playerBodyAnimator.ResetTrigger("Throw");
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABINVALIDATED, false);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABVALIDATED, false);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, false);
+            NpcController.Npc.playerBodyAnimator.ResetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
             this.SetSpecialGrabAnimationBool(true, grabbableObject);
 
             if (this.grabObjectCoroutine != null)
@@ -1513,7 +1447,7 @@ namespace LethalInternship.AI
             {
                 float grabAnimationTime = this.HeldItem.itemProperties.grabAnimationTime > 0f ? this.HeldItem.itemProperties.grabAnimationTime : 0.4f;
                 yield return new WaitForSeconds(grabAnimationTime - 0.2f);
-                NpcController.Npc.playerBodyAnimator.SetBool("GrabValidated", true);
+                NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABVALIDATED, true);
                 NpcController.Npc.isGrabbingObjectAnimation = false;
             }
             yield break;
@@ -1521,12 +1455,13 @@ namespace LethalInternship.AI
 
         private void SetSpecialGrabAnimationBool(bool setBool, GrabbableObject? item)
         {
-            NpcController.Npc.playerBodyAnimator.SetBool("Grab", setBool);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, setBool);
             if (item != null
                 && !string.IsNullOrEmpty(item.itemProperties.grabAnim))
             {
                 try
                 {
+                    NpcController.SetAnimationBoolForItem(item.itemProperties.grabAnim, setBool);
                     NpcController.Npc.playerBodyAnimator.SetBool(item.itemProperties.grabAnim, setBool);
                 }
                 catch (Exception)
@@ -1575,8 +1510,8 @@ namespace LethalInternship.AI
             grabbableObject.isHeld = false;
             grabbableObject.isPocketed = false;
             this.SetSpecialGrabAnimationBool(false, grabbableObject);
-            NpcController.Npc.playerBodyAnimator.SetBool("cancelHolding", true);
-            NpcController.Npc.playerBodyAnimator.SetTrigger("Throw");
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
+            NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
             Plugin.Logger.LogDebug($"intern dropped {grabbableObject}");
             DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
@@ -1748,7 +1683,7 @@ namespace LethalInternship.AI
             NpcController.Npc.takingFallDamage = false;
             if (!NpcController.Npc.inSpecialInteractAnimation)
             {
-                NpcController.Npc.playerBodyAnimator.SetTrigger("Damage");
+                NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_DAMAGE);
             }
             NpcController.Npc.specialAnimationWeight = 1f;
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
