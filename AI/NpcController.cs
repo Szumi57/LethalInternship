@@ -887,7 +887,7 @@ namespace LethalInternship.AI
             {
                 Npc.emoteLayerWeight = Mathf.Lerp(Npc.emoteLayerWeight, 0f, 10f * Time.deltaTime);
             }
-            Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex("EmotesNoArms"), Npc.emoteLayerWeight);
+            Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_EMOTESNOARMS), Npc.emoteLayerWeight);
         }
         private void UpdateSinkingEffectsForAll()
         {
@@ -1155,15 +1155,10 @@ namespace LethalInternship.AI
             if (this.UpdatePlayerLookInterval > 0.25f && Physics.OverlapSphere(Npc.transform.position, 35f, this.PlayerMask).Length != 0)
             {
                 this.UpdatePlayerLookInterval = 0f;
-                if (Npc.isClimbingLadder)
-                {
-                    Plugin.Logger.LogDebug($"(Client = {Npc.NetworkManager.LocalClientId}) send turn body new direction {newDirectionToUpdateTurnBodyTowardsTo}");
-                }
-
                 InternAIController.SyncUpdatePlayerRotationAndLook(newDirectionToUpdateTurnBodyTowardsTo,
-                                                                                                             newIntEnumObjectsLookingAt,
-                                                                                                             newPlayerEyeToLookAt,
-                                                                                                             newPositionPlayerToLookAt);
+                                                                   newIntEnumObjectsLookingAt,
+                                                                   newPlayerEyeToLookAt,
+                                                                   newPositionPlayerToLookAt);
 
                 this.oldSentIntEnumObjectsLookingAt = newIntEnumObjectsLookingAt;
                 this.oldSentPositionPlayerEyeToLookAt = newPlayerEyeToLookAt;

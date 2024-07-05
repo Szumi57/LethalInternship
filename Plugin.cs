@@ -25,6 +25,8 @@ namespace LethalInternship
         public static AssetBundle ModAssets = null!;
 
         internal static EnemyType InternNPCPrefab = null!;
+        internal static int IrlPlayersCount = 0;
+
         internal static new ManualLogSource Logger = null!;
         internal static Config BoundConfig { get; private set; } = null!;
 
@@ -72,6 +74,7 @@ namespace LethalInternship
             InitPluginManager();
 
             // Game engine
+            _harmony.PatchAll(typeof(DebugPatch));
             _harmony.PatchAll(typeof(GameNetworkManagerPatch));
             _harmony.PatchAll(typeof(HUDManagerPatch));
             _harmony.PatchAll(typeof(NetworkSceneManagerPatch));

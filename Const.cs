@@ -9,10 +9,10 @@
         public static readonly int INTERN_AVAILABLE_MAX = 16;
         public static readonly int INTERN_MAX_HEALTH = 50;
         public static readonly float SIZE_SCALE_INTERN = 0.85f;
+        public static readonly string INTERN_NAME = "Intern #";
 
         public static readonly float INTERN_FOV = 90f;
         public static readonly int INTERN_ENTITIES_RANGE = 40;
-
         public static readonly float INTERN_OBJECT_AWARNESS = 3f;
         public static readonly float INTERN_OBJECT_RANGE = 15f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;

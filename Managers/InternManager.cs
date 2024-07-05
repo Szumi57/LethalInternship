@@ -71,11 +71,7 @@ namespace LethalInternship.Managers
         {
             get
             {
-                if (AllInternAIs == null)
-                {
-                    ResizeAndPopulateInterns();
-                }
-                return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length;
+                return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs?.Length ?? 0;
             }
         }
         public int NbInternsPurchasable { get { return Const.INTERN_AVAILABLE_MAX - NbInternsOwned; } }
@@ -87,59 +83,105 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
+            Plugin.Logger.LogDebug($"InternManager Awake !!!!");
+
+            if (Plugin.IrlPlayersCount > 0)
+            {
+                // only resize if irl players not 0, which means we already tried to populate pool of interns
+                // But the manager somehow reset
+                ManagePoolOfInterns();
+            }
         }
 
-        public void ResizeAndPopulateInterns()//Dictionary<uint, Dictionary<int, NetworkObject>> scenePlacedObjects)
+        public void ManagePoolOfInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
-            if (AllPlayerObjectsBackUp != null && AllPlayerObjectsBackUp.Length > 0)
-            {
-                if (instance.allPlayerObjects.Length == AllEntitiesCount)
-                {
-                    // the arrays have not been resize between round
-                    Plugin.Logger.LogDebug($"The arrays have not been resize between round {instance.allPlayerObjects.Length}, AllEntitiesCount {AllEntitiesCount}, AllInternAIs {AllInternAIs} {AllInternAIs?.Length}");
 
-                    //NetworkObject networkObject = internObject.GetComponent<NetworkObject>();
-                    //byte[] hashBytevalue = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObject.name + indexPlusIrlPlayersCount));
-                    //uint hash = BitConverter.ToUInt32(hashBytevalue, 0);
-                    //fieldGlobalObjectIdHash.SetValue(networkObject, hash);
-
-                    //Scene scene = networkObject.gameObject.scene;
-                    //int handle = scene.handle;
-                    //uint keyHash = hash;
-                    //if (!scenePlacedObjects.ContainsKey(keyHash))
-                    //{
-                    //    scenePlacedObjects.Add(keyHash, new Dictionary<int, NetworkObject>());
-                    //}
-                    //if (scenePlacedObjects[keyHash].ContainsKey(handle))
-                    //{
-                    //    string arg = scenePlacedObjects[keyHash][handle] != null ? scenePlacedObjects[keyHash][handle].name : "Null Entry";
-                    //    throw new Exception(networkObject.name + " tried to registered with ScenePlacedObjects which already contains " + string.Format("the same {0} value {1} for {2}!", "GlobalObjectIdHash", keyHash, arg));
-                    //}
-                    //scenePlacedObjects[keyHash].Add(handle, networkObject);
-
-
-                    return;
-                }
-            }
-            else
+            // Initialize back ups
+            if (AllPlayerObjectsBackUp == null || AllPlayerObjectsBackUp.Length != Const.INTERN_AVAILABLE_MAX)
             {
                 AllInternAIs = new InternAI[Const.INTERN_AVAILABLE_MAX];
                 AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE_MAX];
                 AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE_MAX];
             }
 
-            int irlPlayersCount = instance.allPlayerObjects.Length;
+            if (instance.allPlayerScripts.Length == AllEntitiesCount)
+            {
+                // the arrays have not been resize between round
+                return;
+            }
+
+            //PlayerControllerB player;
+            //int indexFirstInternStored = instance.allPlayerScripts.Length;
+            //for (int i = 0; i < instance.allPlayerScripts.Length; i++)
+            //{
+            //    player = instance.allPlayerScripts[i];
+            //    if (!string.IsNullOrWhiteSpace(player.playerUsername)
+            //        && player.playerUsername.StartsWith(Const.INTERN_NAME))
+            //    {
+            //        indexFirstInternStored = i;
+            //        break;
+            //    }
+            //}
+            int irlPlayersCount;
+            if (Plugin.IrlPlayersCount == 0)
+            {
+                irlPlayersCount = instance.allPlayerScripts.Length;
+            }
+            else
+            {
+                irlPlayersCount = Plugin.IrlPlayersCount - Const.INTERN_AVAILABLE_MAX < 0 ? 0 : Plugin.IrlPlayersCount - Const.INTERN_AVAILABLE_MAX;
+            }
+
+            ResizePoolOfInterns(irlPlayersCount);
+            PopulatePoolOfInterns(irlPlayersCount);
+        }
+
+        private void ResizePoolOfInterns(int irlPlayersCount)
+        {
+            StartOfRound instance = StartOfRound.Instance;
+            Plugin.Logger.LogDebug($"instance.allPlayerObjects.Length {instance.allPlayerObjects.Length} AllEntitiesCount {AllEntitiesCount}");
+            if (instance.allPlayerObjects.Length == AllEntitiesCount)
+            {
+                // the arrays have not been resize between round
+                Plugin.Logger.LogDebug($"The arrays have not been resize between round {instance.allPlayerObjects.Length}, AllEntitiesCount {AllEntitiesCount}, AllInternAIs {AllInternAIs} {AllInternAIs?.Length}");
+
+                //NetworkObject networkObject = internObject.GetComponent<NetworkObject>();
+                //byte[] hashBytevalue = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + networkObject.name + indexPlusIrlPlayersCount));
+                //uint hash = BitConverter.ToUInt32(hashBytevalue, 0);
+                //fieldGlobalObjectIdHash.SetValue(networkObject, hash);
+
+                //Scene scene = networkObject.gameObject.scene;
+                //int handle = scene.handle;
+                //uint keyHash = hash;
+                //if (!scenePlacedObjects.ContainsKey(keyHash))
+                //{
+                //    scenePlacedObjects.Add(keyHash, new Dictionary<int, NetworkObject>());
+                //}
+                //if (scenePlacedObjects[keyHash].ContainsKey(handle))
+                //{
+                //    string arg = scenePlacedObjects[keyHash][handle] != null ? scenePlacedObjects[keyHash][handle].name : "Null Entry";
+                //    throw new Exception(networkObject.name + " tried to registered with ScenePlacedObjects which already contains " + string.Format("the same {0} value {1} for {2}!", "GlobalObjectIdHash", keyHash, arg));
+                //}
+                //scenePlacedObjects[keyHash].Add(handle, networkObject);
+
+                return;
+            }
+
             int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE_MAX;
             Array.Resize(ref instance.allPlayerObjects, irlPlayersAndInternsCount);
             Array.Resize(ref instance.allPlayerScripts, irlPlayersAndInternsCount);
             Array.Resize(ref instance.gameStats.allPlayerStats, irlPlayersAndInternsCount);
             Array.Resize(ref instance.playerSpawnPositions, irlPlayersAndInternsCount);
             Plugin.Logger.LogDebug($"Resize for interns from irl players count of {irlPlayersCount} to {irlPlayersAndInternsCount}");
+
             AllEntitiesCount = irlPlayersAndInternsCount;
+            Plugin.IrlPlayersCount = irlPlayersAndInternsCount;
+        }
 
-            FieldInfo fieldGlobalObjectIdHash = typeof(NetworkObject).GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
-
+        private void PopulatePoolOfInterns(int irlPlayersCount)
+        {
+            StartOfRound instance = StartOfRound.Instance;
             GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
             for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
             {
@@ -189,8 +231,7 @@ namespace LethalInternship.Managers
                 internController.isPlayerControlled = false;
                 internController.transform.localScale = new Vector3(Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN);
                 internController.actualClientId = internController.playerClientId;
-                internController.playerUsername = string.Format("Intern #{0}", internController.playerClientId - (ulong)irlPlayersCount);
-                internController.DropAllHeldItems(false, false);
+                internController.playerUsername = $"{Const.INTERN_NAME}{internController.playerClientId - (ulong)irlPlayersCount}";
 
                 instance.allPlayerObjects[indexPlusIrlPlayersCount] = internObject;
                 instance.allPlayerScripts[indexPlusIrlPlayersCount] = internController;
@@ -267,7 +308,8 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            int indexNextIntern = indexNextPlayerObject - (StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs.Length);
+            int indexNextIntern = indexNextPlayerObject - IndexBeginOfInterns;
+
             NetworkObjectReference networkObjectReferenceInternAI = SpawnOrUseInternAI(indexNextIntern);
             NetworkObjectReference networkObjectReferenceObjectParent = default; //SpawnObjectIntern(indexNextPlayerObject);
             SpawnInternClientRpc(networkObjectReferenceInternAI, networkObjectReferenceObjectParent,
@@ -592,7 +634,7 @@ namespace LethalInternship.Managers
         private int CountAliveAndDisableInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
-            if(instance.currentLevel.levelID == 3)
+            if (instance.currentLevel.levelID == 3)
             {
                 return NbInternsOwned;
             }
@@ -613,8 +655,7 @@ namespace LethalInternship.Managers
         private int GetNextAvailablePlayerObject()
         {
             StartOfRound instance = StartOfRound.Instance;
-            //Plugin.Logger.LogDebug($"2 instance.allPlayerScripts.Length : {instance.allPlayerScripts.Length}");
-            //Plugin.Logger.LogDebug($"2 instance.allPlayerObjects.Length : {instance.allPlayerScripts.Length}");
+            Plugin.Logger.LogDebug($"IndexBeginOfInterns {IndexBeginOfInterns} instance.allPlayerScripts.Length {instance.allPlayerScripts.Length}");
             for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
             {
                 if (!instance.allPlayerScripts[i].isPlayerControlled)
@@ -629,6 +670,7 @@ namespace LethalInternship.Managers
         {
             if (AllInternAIs == null)
             {
+                // Ai not yet initialized
                 return null;
             }
 
@@ -682,21 +724,11 @@ namespace LethalInternship.Managers
 
         public bool IsIdPlayerIntern(int id)
         {
-            if (AllInternAIs == null)
-            {
-                return false;
-            }
-
             return id >= IndexBeginOfInterns;
         }
 
         public bool IsAIInternAi(EnemyAI ai)
         {
-            if (AllInternAIs == null)
-            {
-                return false;
-            }
-
             for (int i = 0; i < AllInternAIs.Length; i++)
             {
                 if (AllInternAIs[i] == ai)

@@ -299,7 +299,7 @@ namespace LethalInternship.AI
 
         public void OrderMoveToDestination()
         {
-            if (agent.isActiveAndEnabled && !isEnemyDead && !NpcController.Npc.isPlayerDead)
+            if (agent.isActiveAndEnabled && agent.isOnNavMesh && !isEnemyDead && !NpcController.Npc.isPlayerDead)
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
@@ -1236,7 +1236,7 @@ namespace LethalInternship.AI
             }
         }
 
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void UpdatePlayerRotationAndLookServerRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
             UpdatePlayerRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);

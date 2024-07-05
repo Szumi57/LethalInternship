@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using LethalInternship.Managers;
-using System.Collections.Generic;
 using Unity.Netcode;
 
 namespace LethalInternship.Patches.GameEnginePatches
@@ -11,9 +10,9 @@ namespace LethalInternship.Patches.GameEnginePatches
     {
         [HarmonyPatch("PopulateScenePlacedObjects")]
         [HarmonyPostfix]
-        public static void PopulateScenePlacedObjects_Postfix(Dictionary<uint, Dictionary<int, NetworkObject>> ___ScenePlacedObjects)
+        public static void PopulateScenePlacedObjects_Postfix()
         {
-            //InternManager.Instance.ResizeAndPopulateInterns(___ScenePlacedObjects);
+            InternManager.Instance.ManagePoolOfInterns();
         }
     }
 }
