@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace LethalInternship.Utils
 {
+    /// <summary>
+    /// Utilitary class for displaying debug log of infos of objects
+    /// </summary>
     internal static class ComponentUtil
     {
         public static void ListAllComponents(GameObject gameObject)
@@ -70,7 +73,6 @@ namespace LethalInternship.Utils
             return go.AddComponent<T>().GetCopyOf(toAdd) as T;
         }
 
-
         public static T CopyComponent<T>(T original, GameObject destination) where T : Component
         {
             System.Type type = original.GetType();
@@ -96,7 +98,5 @@ namespace LethalInternship.Utils
             return dst as T;
 #pragma warning restore CS8603 // Possible null reference return.
         }
-
-        
     }
 }

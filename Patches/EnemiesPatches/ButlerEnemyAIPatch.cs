@@ -8,9 +8,18 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patches for <c>ButlerEnemyAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(ButlerEnemyAI))]
     internal class ButlerEnemyAIPatch
     {
+        /// <summary>
+        /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnCollideWithPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -46,6 +55,12 @@ namespace LethalInternship.Patches.EnemiesPatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Initiate correctly to account for the number of players and interns
+        /// </summary>
+        /// <param name="___lastSeenPlayerPositions"></param>
+        /// <param name="___seenPlayers"></param>
+        /// <param name="___timeOfLastSeenPlayers"></param>
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         static void Start_Postfix(ref Vector3[] ___lastSeenPlayerPositions,

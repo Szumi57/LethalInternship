@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace LethalInternship.Utils
 {
+    /// <summary>
+    /// Class that use an list of linerenderers to return to the user of the class, for drawing things
+    /// </summary>
     internal class LineRendererUtil
     {
         private LineRenderer[] _listLineRenderers;

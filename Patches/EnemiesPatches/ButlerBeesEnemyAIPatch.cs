@@ -6,9 +6,18 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patches for the <c>ButlerBeesEnemyAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(ButlerBeesEnemyAI))]
     internal class ButlerBeesEnemyAIPatch
     {
+        /// <summary>
+        /// Patch onCollide to check for player and intern
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnCollideWithPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)

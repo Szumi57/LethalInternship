@@ -5,14 +5,23 @@ using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
 {
+    /// <summary>
+    /// State where the intern cannot see the target player and try to reach his last known (seen) position
+    /// </summary>
     internal class JustLostPlayerState : AIState
     {
         private static readonly EnumAIStates STATE = EnumAIStates.JustLostPlayer;
+        /// <summary>
+        /// <inheritdoc cref="AIState.GetAIState"/>
+        /// </summary>
         public override EnumAIStates GetAIState() { return STATE; }
 
         private float lookingAroundTimer;
         private Coroutine lookingAroundCoroutine = null!;
 
+        /// <summary>
+        /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the last known position of the target player (owner of intern), 
+        /// </summary>
         private float SqrDistanceToTargetLastKnownPosition
         {
             get
@@ -26,6 +35,9 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        /// <summary>
+        /// <inheritdoc cref="AIState(AIState)"/>
+        /// </summary>
         public JustLostPlayerState(AIState state) : base(state)
         {
             if (searchForPlayers.inProgress)
@@ -34,6 +46,9 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        /// <summary>
+        /// <inheritdoc cref="AIState.DoAI"/>
+        /// </summary>
         public override void DoAI()
         {
             // Check for enemies
@@ -44,6 +59,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
+            // Looking around for too long, stop the coroutine, the target player is officially lost
             if (lookingAroundTimer > Const.TIMER_LOOKING_AROUND)
             {
                 lookingAroundTimer = 0f;
@@ -52,6 +68,8 @@ namespace LethalInternship.AI.AIStates
                 StopLookingAroundCoroutine();
             }
 
+            // If the looking around timer is started
+            // Start of the coroutine for making the intern looking around him
             if (lookingAroundTimer > 0f)
             {
                 lookingAroundTimer += ai.AIIntervalTime;
@@ -84,6 +102,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             Plugin.Logger.LogDebug($"{npcController.Npc.playerUsername} distance to last position {Vector3.Distance(targetLastKnownPosition.Value, npcController.Npc.transform.position)}");
+            // If the intern is close enough to the last known position
             if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
                 // Check for teleport entrance
@@ -110,10 +129,13 @@ namespace LethalInternship.AI.AIStates
                 }
             }
 
+            // Check if we see the target player
             CheckLOSForTarget();
 
+            // Go to the last known position
             ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
 
+            // Sprint if too far, unsprint if close enough
             if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
             {
                 npcController.OrderToStopSprint();
@@ -126,6 +148,9 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
         }
 
+        /// <summary>
+        /// Check if the target player is in line of sight
+        /// </summary>
         private void CheckLOSForTarget()
         {
             PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
@@ -139,6 +164,10 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        /// <summary>
+        /// Coroutine for making intern turn his body to look around him
+        /// </summary>
+        /// <returns></returns>
         private IEnumerator LookingAround()
         {
             yield return null;

@@ -7,9 +7,16 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ObjectsPatches
 {
+    /// <summary>
+    /// Patches for <c>DeadBodyInfo</c>
+    /// </summary>
     [HarmonyPatch(typeof(DeadBodyInfo))]
     internal class DeadBodyInfoPatch
     {
+        /// <summary>
+        /// Patch for assigning right tag to a dead body for not getting debug logs of errors
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("Start")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Start_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)

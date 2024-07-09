@@ -6,9 +6,20 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.MapPatches
 {
+    /// <summary>
+    /// Patch for <c>InteractTrigger</c>
+    /// </summary>
     [HarmonyPatch(typeof(InteractTrigger))]
     internal class InteractTriggerPatch
     {
+        /// <summary>
+        /// Patch for not making the intern able to cancel the ladder animation of a player already on the ladder 
+        /// </summary>
+        /// <remarks>
+        /// Behaviour still can't fully understand, not more than one player on the ladder ? can/should a player cancel another player on ladder ? not clear
+        /// </remarks>
+        /// <param name="instance"></param>
+        /// <param name="playerTransform"></param>
         [HarmonyPatch("Interact")]
         [HarmonyReversePatch]
         public static void Interact_ReversePatch(object instance, Transform playerTransform)
@@ -17,12 +28,6 @@ namespace LethalInternship.Patches.MapPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //Plugin.Logger.LogDebug($"Interact ======================");
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 1; i++)
@@ -47,12 +52,6 @@ namespace LethalInternship.Patches.MapPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.MapPatches.InteractTriggerPatch.Interact_ReversePatch could not remove CancelLadderAnimation");
                 }
 
-                //Plugin.Logger.LogDebug($"Interact ======================");
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-                //Plugin.Logger.LogDebug($"Interact ======================");
                 return codes.AsEnumerable();
             }
 

@@ -5,9 +5,17 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patch for <c>SandSpiderAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(SandSpiderAI))]
     internal class SandSpiderAIPatch
     {
+        /// <summary>
+        /// Patch to make the spider use the right player id for hurting the player(intern) instead of only localPlayerController id.
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnCollideWithPlayer_Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -40,13 +48,6 @@ namespace LethalInternship.Patches.EnemiesPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.SandSpiderAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for HitPlayerServerRpc.");
             }
 
-            //// ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"OnCollideWithPlayer ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"OnCollideWithPlayer ======================");
             return codes.AsEnumerable();
         }
     }

@@ -4,6 +4,9 @@ using System.Reflection;
 
 namespace LethalInternship
 {
+    /// <summary>
+    /// Config class, manage parameters editable by the player (irl)
+    /// </summary>
     public class Config
     {
         // For more info on custom configs, see https://lethal.wiki/dev/intermediate/custom-configs

@@ -1,5 +1,4 @@
-﻿using Discord;
-using GameNetcodeStuff;
+﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
@@ -12,9 +11,17 @@ using NetworkManager = Unity.Netcode.NetworkManager;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
+    /// <summary>
+    /// Patch for <c>SoundManager</c>
+    /// </summary>
     [HarmonyPatch(typeof(SoundManager))]
     internal class SoundManagerPatch
     {
+        /// <summary>
+        /// Patch for only set player pitch for not intern
+        /// </summary>
+        /// <param name="playerObjNum"></param>
+        /// <returns></returns>
         [HarmonyPatch("SetPlayerPitch")]
         [HarmonyPrefix]
         static bool SetPlayerPitch_PreFix(int playerObjNum)
@@ -27,6 +34,11 @@ namespace LethalInternship.Patches.GameEnginePatches
             return true;
         }
 
+        /// <summary>
+        /// Bypass the debug log if local player null, for less annoying debug logs
+        /// </summary>
+        /// <param name="___localPlayer"></param>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyPrefix]
         static bool Update_PreFix(ref PlayerControllerB ___localPlayer)
@@ -39,6 +51,12 @@ namespace LethalInternship.Patches.GameEnginePatches
             return true;
         }
 
+        /// <summary>
+        /// Set the player voice filter only for irl players not interns
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("SetPlayerVoiceFilters")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> SetPlayerVoiceFilters_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -76,6 +94,10 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Initialize arrays with for the right amount of entities (player + interns)
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         static void Start_PostFix(SoundManager __instance)

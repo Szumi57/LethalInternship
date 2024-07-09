@@ -4,15 +4,26 @@ using System;
 
 namespace LethalInternship.TerminalAdapter
 {
+    /// <summary>
+    /// Class used for holding the current state of the intern shop terminal pages<br/>
+    /// and calling state method for parsing command and displaying current page.
+    /// </summary>
     internal class TerminalParser
     {
         public TerminalState TerminalState = null!;
 
+        /// <summary>
+        /// Constructor, set the state/page to the default <c>WaitForMainCommandPage</c>
+        /// </summary>
         public TerminalParser()
         {
             TerminalState = new WaitForMainCommandPage(this);
         }
 
+        /// <summary>
+        /// Main method, using the current state/page for parsing and displaying on the terminal
+        /// </summary>
+        /// <returns></returns>
         public TerminalNode? ParseCommand(string command, ref Terminal terminal)
         {
             if (string.IsNullOrWhiteSpace(command))

@@ -4,11 +4,25 @@ using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
 {
+    /// <summary>
+    /// The state when the AI is calm and close to the owner player
+    /// </summary>
+    /// <remarks>
+    /// When close to the player, the chill state makes the intern stop moving and looking at him,
+    /// check for items to grab or enemies to flee, waiting for the player to move. 
+    /// </remarks>
     internal class ChillWithPlayerState : AIState
     {
         private static readonly EnumAIStates STATE = EnumAIStates.ChillWithPlayer;
+        /// <summary>
+        /// <inheritdoc cref="AIState.GetAIState"/>
+        /// </summary>
         public override EnumAIStates GetAIState() { return STATE; }
 
+        /// <summary>
+        /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the target player (owner of intern), 
+        /// only on axis x and z, y at 0, and squared
+        /// </summary>
         private float SqrHorizontalDistanceWithTarget
         {
             get
@@ -17,6 +31,10 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        /// <summary>
+        /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the target player (owner of intern), 
+        /// only on axis y, x and z at 0, and squared
+        /// </summary>
         private float SqrVerticalDistanceWithTarget
         {
             get
@@ -25,6 +43,9 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        /// <summary>
+        /// <inheritdoc cref="AIState(AIState)"/>
+        /// </summary>
         public ChillWithPlayerState(AIState state) : base(state)
         {
             if (searchForPlayers.inProgress)
@@ -33,6 +54,9 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        /// <summary>
+        /// <inheritdoc cref="AIState.DoAI"/>
+        /// </summary>
         public override void DoAI()
         {
             // Check for enemies
@@ -68,7 +92,8 @@ namespace LethalInternship.AI.AIStates
                 targetLastKnownPosition = ai.targetPlayer.transform.position;
             }
 
-            // Target too far
+            // Target too far, get close to him
+            // note: not the same distance to compare in horizontal or vertical distance
             if (SqrHorizontalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
                 || SqrVerticalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {
@@ -78,7 +103,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            // Looking
+            // Looking at player or forward
             PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (playerToLook != null)
             {

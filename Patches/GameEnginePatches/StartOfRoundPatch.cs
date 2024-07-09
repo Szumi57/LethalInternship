@@ -3,16 +3,22 @@ using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
+    /// <summary>
+    /// Patches for <c>StartOfRound</c>
+    /// </summary>
     [HarmonyPatch(typeof(StartOfRound))]
     internal class StartOfRoundPatch
     {
+        /// <summary>
+        /// Load the managers if the client is host/server
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
         static void Awake_Prefix(StartOfRound __instance)
@@ -38,6 +44,9 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
         }
 
+        /// <summary>
+        /// Patch to intercept the end of round for managing interns
+        /// </summary>
         [HarmonyPatch("ShipHasLeft")]
         [HarmonyPrefix]
         static void ShipHasLeft_PreFix()
@@ -47,6 +56,12 @@ namespace LethalInternship.Patches.GameEnginePatches
 
         #region Transpilers
 
+        /// <summary>
+        /// Patch for only try to revive irl players not interns
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("ReviveDeadPlayers")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ReviveDeadPlayers_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -83,6 +98,12 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch for sync the ship unlockable only for irl players not interns
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("SyncShipUnlockablesClientRpc")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> SyncShipUnlockablesClientRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -119,6 +140,15 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch for bypassing the annoying debug logs.
+        /// </summary>
+        /// <remarks>
+        /// Todo: check for real problems in the sound sector for interns
+        /// </remarks>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("RefreshPlayerVoicePlaybackObjects")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> RefreshPlayerVoicePlaybackObjects_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -200,17 +230,18 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Check only real players not interns
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("UpdatePlayerVoiceEffects")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> UpdatePlayerVoiceEffects_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 2; i++)
@@ -241,6 +272,12 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Check only real players not interns
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("ResetShipFurniture")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ResetShipFurniture_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -279,6 +316,10 @@ namespace LethalInternship.Patches.GameEnginePatches
 
         #endregion
 
+        /// <summary>
+        /// Patch for sync the info from the save from the server to the client (who does not load the save file)
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPatch("OnPlayerConnectedClientRpc")]
         [HarmonyPostfix]
         static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance)

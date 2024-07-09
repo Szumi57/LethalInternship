@@ -5,13 +5,22 @@ using LethalInternship.Managers;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Analytics;
 
 namespace LethalInternship.Patches.MapHazardsPatches
 {
+    /// <summary>
+    /// Patch for the <c>Landmine</c>
+    /// </summary>
     [HarmonyPatch(typeof(Landmine))]
     internal class LandminePatch
     {
+        /// <summary>
+        /// Patch for making the intern able to trigger the mine by stepping on it
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="other"></param>
+        /// <param name="___localPlayerOnMine"></param>
+        /// <param name="___pressMineDebounceTimer"></param>
         [HarmonyPatch("OnTriggerEnter")]
         [HarmonyPostfix]
         static void OnTriggerEnter_PostFix(ref Landmine __instance,
@@ -44,6 +53,13 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
         }
 
+        /// <summary>
+        /// Patch for making the intern able to trigger the mine by stepping on it
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="other"></param>
+        /// <param name="___localPlayerOnMine"></param>
+        /// <param name="___mineActivated"></param>
         [HarmonyPatch("OnTriggerExit")]
         [HarmonyPostfix]
         static void OnTriggerExit_PostFix(ref Landmine __instance,
@@ -73,10 +89,27 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
         }
 
+        /// <summary>
+        /// Reverse patch for calling <c>TriggerMineOnLocalClientByExiting</c>z.
+        /// Set the mine to explode.
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <exception cref="NotImplementedException">Ignore (see harmony)</exception>
         [HarmonyPatch("TriggerMineOnLocalClientByExiting")]
         [HarmonyReversePatch]
         public static void TriggerMineOnLocalClientByExiting_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.EnemiesPatches.TriggerMineOnLocalClientByExiting");
 
+        /// <summary>
+        /// Patch for making an explosion check for interns, calls for an explosion by landmine or lightning.
+        /// </summary>
+        /// <remarks>
+        /// Strange behaviour where an entity is detect multiple times by <c>Physics.OverlapSphere</c>,<br/>
+        /// so we need to check an entity only one time by using a list.
+        /// </remarks>
+        /// <param name="explosionPosition"></param>
+        /// <param name="killRange"></param>
+        /// <param name="damageRange"></param>
+        /// <param name="nonLethalDamage"></param>
         [HarmonyPatch("SpawnExplosion")]
         [HarmonyPostfix]
         static void SpawnExplosion_PostFix(Vector3 explosionPosition, 
@@ -85,7 +118,6 @@ namespace LethalInternship.Patches.MapHazardsPatches
                                            int nonLethalDamage)
         {
             Collider[] array = Physics.OverlapSphere(explosionPosition, damageRange, 8, QueryTriggerInteraction.Collide);
-            RaycastHit raycastHit;
             PlayerControllerB internController;
             InternAI? internAI;
             List<ulong> internsAlreadyExploded = new List<ulong>();
@@ -94,7 +126,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 Plugin.Logger.LogDebug($"array {i} {array[i].name}");
                 float distanceFromExplosion = Vector3.Distance(explosionPosition, array[i].transform.position);
                 if (distanceFromExplosion > 4f
-                    && Physics.Linecast(explosionPosition, array[i].transform.position + Vector3.up * 0.3f, out raycastHit, 256, QueryTriggerInteraction.Ignore))
+                    && Physics.Linecast(explosionPosition, array[i].transform.position + Vector3.up * 0.3f, out _, 256, QueryTriggerInteraction.Ignore))
                 {
                     continue;
                 }

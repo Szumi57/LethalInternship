@@ -7,9 +7,18 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patches for <c>FlowerSnakeEnemy</c>
+    /// </summary>
     [HarmonyPatch(typeof(FlowerSnakeEnemy))]
     internal class FlowerSnakeEnemyPatch
     {
+        /// <summary>
+        /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnCollideWithPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -44,6 +53,12 @@ namespace LethalInternship.Patches.EnemiesPatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch to make the snake to be able to make intern fly
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("MainSnakeActAsConductor")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> MainSnakeActAsConductor_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -80,6 +95,11 @@ namespace LethalInternship.Patches.EnemiesPatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch for manipulating field to make snake able to make intern fly
+        /// </summary>
+        /// <param name="___waitingForHitPlayerRPC"></param>
+        /// <param name="playerId"></param>
         [HarmonyPatch("FSHitPlayerServerRpc")]
         [HarmonyPostfix]
         static void FSHitPlayerServerRpc_PostFix(ref bool ___waitingForHitPlayerRPC, int playerId)
@@ -91,6 +111,11 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
         }
 
+        /// <summary>
+        /// Patch for manipulating field to make snake able to make intern fly
+        /// </summary>
+        /// <param name="___waitingForHitPlayerRPC"></param>
+        /// <param name="playerId"></param>
         [HarmonyPatch("ClingToPlayerClientRpc")]
         [HarmonyPostfix]
         static void ClingToPlayerClientRpc_PostFix(ref bool ___waitingForHitPlayerRPC, int playerId)

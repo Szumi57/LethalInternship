@@ -6,26 +6,33 @@ using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEngine.ParticleSystem.PlaybackState;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
 namespace LethalInternship.Patches.NpcPatches
 {
+    /// <summary>
+    /// Patch for <c>PlayerControllerB</c>
+    /// </summary>
     [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PlayerControllerBPatch
     {
         #region Prefixes
 
+        /// <summary>
+        /// Patch for intercepting the update and using only the intern update for intern.<br/>
+        /// Need to pass back and forth the private fields before and after modifying them.
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance,
                                   ref bool ___isCameraDisabled,
                                   bool ___isJumping,
+                                  bool ___isFallingFromJump,
                                   ref float ___crouchMeter,
                                   ref bool ___isWalking,
                                   ref float ___playerSlidingTimer,
@@ -51,6 +58,7 @@ namespace LethalInternship.Patches.NpcPatches
             // Use Intern update and pass all needed paramaters back and forth
             internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
             internAI.NpcController.IsJumping = ___isJumping;
+            internAI.NpcController.IsFallingFromJump = ___isFallingFromJump;
             internAI.NpcController.CrouchMeter = ___crouchMeter;
             internAI.NpcController.IsWalking = ___isWalking;
             internAI.NpcController.PlayerSlidingTimer = ___playerSlidingTimer;
@@ -82,6 +90,11 @@ namespace LethalInternship.Patches.NpcPatches
             return false;
         }
 
+        /// <summary>
+        /// Patch for intercepting the LateUpdate and using only the intern LateUpdate for intern.<br/>
+        /// Need to pass back and forth the private fields before and after modifying them.
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("LateUpdate")]
         [HarmonyPrefix]
         static bool LateUpdate_PreFix(PlayerControllerB __instance,
@@ -109,30 +122,27 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch to disabling the base game awake method for the intern
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <returns></returns>
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
-        static bool Awake_PreFix(PlayerControllerB __instance,
-                                 ref bool ___isCameraDisabled,
-                                 ref Vector3 ___rightArmProceduralTargetBasePosition,
-                                 ref int ___previousAnimationState)
+        static bool Awake_PreFix(PlayerControllerB __instance)
         {
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
-                //internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
-                //internAI.NpcController.RightArmProceduralTargetBasePosition = ___rightArmProceduralTargetBasePosition;
-                //internAI.NpcController.PreviousAnimationState = ___previousAnimationState;
-
-                //internAI.NpcController.Awake();
-
-                //___isCameraDisabled = internAI.NpcController.IsCameraDisabled;
-                //___rightArmProceduralTargetBasePosition = internAI.NpcController.RightArmProceduralTargetBasePosition;
-                //___previousAnimationState = internAI.NpcController.PreviousAnimationState;
                 return false;
             }
             return true;
         }
 
+        /// <summary>
+        /// Patch for calling the right method to damage intern
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("DamagePlayer")]
         [HarmonyPrefix]
         static bool DamagePlayer_PreFix(PlayerControllerB __instance,
@@ -156,6 +166,10 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch to call the right method to damage intern from other player
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("DamagePlayerFromOtherClientServerRpc")]
         [HarmonyPrefix]
         static bool DamagePlayerFromOtherClientServerRpc_PreFix(PlayerControllerB __instance,
@@ -172,6 +186,10 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Damage to call the right method to kill intern
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("KillPlayer")]
         [HarmonyPrefix]
         static bool KillPlayer_PreFix(PlayerControllerB __instance,
@@ -194,6 +212,11 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch for intercepting the discard action from the player,
+        /// if he is looking at an intern, orders him to drop his item
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("Discard_performed")]
         [HarmonyPrefix]
         static bool Discard_performed_PreFix(PlayerControllerB __instance,
@@ -262,6 +285,11 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch for intercepting the interact action from the player,
+        /// if he is looking at an intern, orders to follow him and change his ownership
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("Interact_performed")]
         [HarmonyPrefix]
         static bool Interact_performed_PreFix(PlayerControllerB __instance,
@@ -299,21 +327,30 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch to call the right method for update special animation value for the intern
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("UpdateSpecialAnimationValue")]
         [HarmonyPrefix]
         static bool UpdateSpecialAnimationValue_PreFix(PlayerControllerB __instance,
-                                                       bool specialAnimation, short yVal, float timed, bool climbingLadder)
+                                                       bool specialAnimation, float timed, bool climbingLadder)
         {
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
-                internAI.UpdateSpecialAnimationValue(specialAnimation, yVal, timed, climbingLadder);
+                internAI.UpdateInternSpecialAnimationValue(specialAnimation, timed, climbingLadder);
                 return false;
             }
 
             return true;
         }
 
+        /// <summary>
+        /// Patch for player to be able to take item from intern if pointing at item held in hands,<br/>
+        /// makes the intern drop and immediately grab by the player
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("BeginGrabObject")]
         [HarmonyPrefix]
         static bool BeginGrabObject_PreFix(PlayerControllerB __instance,
@@ -355,6 +392,10 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch to call the right the right method for sync dead body if the intern is calling it
+        /// </summary>
+        /// <returns></returns>
         [HarmonyPatch("SyncBodyPositionClientRpc")]
         [HarmonyPrefix]
         static bool SyncBodyPositionClientRpc_PreFix(PlayerControllerB __instance, Vector3 newBodyPosition)
@@ -373,543 +414,12 @@ namespace LethalInternship.Patches.NpcPatches
 
         #endregion
 
-        #region Transpilers
-
-        //[HarmonyPatch("DamagePlayer")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> DamagePlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            // remove all HUDelement udpates and all that stuff if player is intern
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 4; i++)
-            {
-                if (codes[i].ToString().StartsWith("call static HUDManager HUDManager::get_Instance()")
-                    && codes[i + 4].ToString() == "callvirt void HUDManager::UpdateHealthUI(int health, bool hurtPlayer)")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 5/*IL_0063: ldarg.0*/);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatchDamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::ShakeCamera.");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 2; i++)
-            {
-                if (codes[i].ToString() == "call static HUDManager HUDManager::get_Instance()"
-                    && codes[i + 2].ToString() == "callvirt void HUDManager::ShakeCamera(ScreenShakeType shakeType)")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 3/*IL_009B: ldarg.0*/);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatchDamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::UpdateHealthUI.");
-            }
-
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
-            {
-                if (codes[i].ToString() == "call static HUDManager HUDManager::get_Instance()"
-                    && codes[i + 1].ToString() == "ldfld UnityEngine.AudioSource HUDManager::UIAudio"
-                    && codes[i + 3].ToString() == "ldfld UnityEngine.AudioClip StartOfRound::fallDamageSFX")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 12/*IL_0130: ldarg.0*/);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatchDamagePlayer_Transpiler could not insert instruction if is intern for HUDManager::UIAudio and WalkieTalkie.TransmitOneShotAudio.");
-            }
-
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
-            {
-                if (codes[i].ToString() == "call static HUDManager HUDManager::get_Instance()"
-                    && codes[i + 1].ToString() == "ldfld UnityEngine.AudioSource HUDManager::UIAudio"
-                    && codes[i + 3].ToString() == "ldfld UnityEngine.AudioClip StartOfRound::damageSFX")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 9/*IL_0168: ldarg.0*/);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatch.DamagePlayer_Transpiler could not insert instruction if is intern for AudioSource::PlayOneShot and StartOfRound::LocalPlayerDamagedEvent.");
-            }
-
-
-            // ----------------------------------------------------------------------
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"DamagePlayer ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DamagePlayer ======================");
-            return codes.AsEnumerable();
-        }
-
-        //[HarmonyPatch("KillPlayer")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> KillPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            // remove all HUDelement udpates and all that stuff if player is intern
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
-            {
-                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()" //65
-                    && codes[i + 3].ToString() == "call static HUDManager HUDManager::get_Instance()")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 6);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayer_Transpiler could not insert instruction if is intern for StartOfRound::get_Instance() and HUDManager::get_Instance().");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 35; i++)
-            {
-                if (codes[i].ToString() == "call static Terminal UnityEngine.Object::FindObjectOfType()" //89
-                    && codes[i + 8].ToString() == "call void GameNetcodeStuff.PlayerControllerB::ChangeAudioListenerToObject(UnityEngine.GameObject addToObject)"
-                    && codes[i + 12].ToString() == "callvirt void SoundManager::SetDiageticMixerSnapshot(int snapshotID, float transitionTime)"
-                    && codes[i + 15].ToString() == "callvirt void HUDManager::SetNearDepthOfFieldEnabled(bool enabled)"
-                    && codes[i + 18].ToString() == "ldstr \"biohazardDamage\""
-                    && codes[i + 21].ToString() == "ldstr \"Running kill player function for LOCAL client, player object: \""
-                    && codes[i + 29].ToString() == "ldstr \"gameOver\""
-                    && codes[i + 33].ToString() == "callvirt void HUDManager::HideHUD(bool hide)"
-                    && codes[i + 35].ToString() == "call void GameNetcodeStuff.PlayerControllerB::StopHoldInteractionOnTrigger()")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 36);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayer_Transpiler could not insert instruction if is intern for FindObjectOfType and others.");
-            }
-
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 12; i++)
-            {
-                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance() [Label4]"//146
-                    && codes[i + 3].ToString() == "callvirt void StartOfRound::SwitchCamera(UnityEngine.Camera newCamera)"
-                    && codes[i + 6].ToString() == "stfld float GameNetcodeStuff.PlayerControllerB::isInGameOverAnimation"
-                    && codes[i + 9].ToString() == "ldstr \"\""
-                    && codes[i + 12].ToString() == "ldfld UnityEngine.UI.Image GameNetcodeStuff.PlayerControllerB::cursorIcon")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 15);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayer_Transpiler could not insert instruction if is intern for SwitchCamera and others.");
-            }
-
-            // ----------------------------------------------------------------------
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"KillPlayer ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"KillPlayer ======================");
-            return codes.AsEnumerable();
-        }
-
-        //[HarmonyPatch("KillPlayerServerRpc")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> KillPlayerServerRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            // do not count living players down if is intern
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 6; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL" //89
-                    && codes[i + 1].ToString() == "ldfld StartOfRound GameNetcodeStuff.PlayerControllerB::playersManager"
-                    && codes[i + 2].ToString() == "dup NULL"
-                    && codes[i + 3].ToString() == "ldfld int StartOfRound::livingPlayers"
-                    && codes[i + 4].ToString() == "ldc.i4.1 NULL"
-                    && codes[i + 5].ToString() == "sub NULL"
-                    && codes[i + 6].ToString() == "stfld int StartOfRound::livingPlayers")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 7);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerServerRpc_Transpiler could not insert instruction if is intern for livingPlayers--.");
-            }
-
-
-            // ----------------------------------------------------------------------
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"KillPlayerServerRpc ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"KillPlayerServerRpc ======================");
-            return codes.AsEnumerable();
-        }
-
-        //[HarmonyPatch("KillPlayerClientRpc")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> KillPlayerClientRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            // do not count living players down if is intern
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 11; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL" //82
-                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsServer()"
-                    && codes[i + 2].ToString() == "brtrue Label9"
-                    && codes[i + 6].ToString() == "ldfld StartOfRound GameNetcodeStuff.PlayerControllerB::playersManager"
-                    && codes[i + 7].ToString() == "dup NULL"
-                    && codes[i + 8].ToString() == "ldfld int StartOfRound::livingPlayers"
-                    && codes[i + 9].ToString() == "ldc.i4.1 NULL"
-                    && codes[i + 10].ToString() == "sub NULL"
-                    && codes[i + 11].ToString() == "stfld int StartOfRound::livingPlayers")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 29);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not insert instruction if is intern for livingPlayers-- after isServer.");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 6; i++)
-            {
-                if (codes[i].ToString() == "call static SoundManager SoundManager::get_Instance()" //178
-                    && codes[i + 1].ToString() == "ldfld float[] SoundManager::playerVoicePitchTargets"
-                    && codes[i + 5].ToString() == "call static SoundManager SoundManager::get_Instance()"
-                    && codes[i + 6].ToString() == "ldfld float[] SoundManager::playerVoicePitchLerpSpeed")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 10);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not insert instruction if is intern for playerVoicePitchTargets, playerVoicePitchLerpSpeed.");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 6; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL" //191
-                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()"
-                    && codes[i + 2].ToString() == "brtrue Label12"
-                    && codes[i + 5].ToString() == "ldfld bool GameNetcodeStuff.PlayerControllerB::isPlayerDead"
-                    && codes[i + 8].ToString() == "callvirt void HUDManager::UpdateBoxesSpectateUI()"
-                    && codes[i + 10].ToString() == "callvirt void StartOfRound::UpdatePlayerVoiceEffects()")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 11);
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchKillPlayerClientRpc_Transpiler could not insert instruction if is intern for UpdateBoxesSpectateUI(),  UpdatePlayerVoiceEffects().");
-            }
-
-
-            // ----------------------------------------------------------------------
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"KillPlayerClientRpc ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"KillPlayerClientRpc ======================");
-            return codes.AsEnumerable();
-        }
-
-        //[HarmonyPatch("SwitchToItemSlot")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> SwitchToItemSlot_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            var startIndex = -1;
-            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"SwitchToItemSlot ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"SwitchToItemSlot ======================");
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 7; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL" //3
-                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()"
-                    && codes[i + 7].ToString() == "ldfld UnityEngine.UI.Image[] HUDManager::itemSlotIconFrames") //10
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 32); //35
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager itemsloticonframes");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 10; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL" //44
-                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()"
-                    && codes[i + 10].ToString() == "callvirt void UnityEngine.UI.Image::set_sprite(UnityEngine.Sprite value)") //54
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 18); //62
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager set_sprite");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 4; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL [Label16, Label17]" //215
-                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()"
-                    && codes[i + 4].ToString() == "callvirt void HUDManager::ClearControlTips()") //219
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 5); //220
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager clearcontroltips");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 14; i++)
-            {
-                if (codes[i].ToString() == "ldarg.0 NULL [Label15]" //237
-                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()"
-                    && codes[i + 14].ToString() == "ldfld TMPro.TextMeshProUGUI HUDManager::holdingTwoHandedItem") //251
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 29); //266
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchSwitchToItemSlot_Transpiler could not remove hudmanager holdingTwoHandedItem");
-            }
-
-            //Plugin.Logger.LogDebug($"SwitchToItemSlot ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"SwitchToItemSlot ======================");
-
-            return codes.AsEnumerable();
-        }
-
-        //[HarmonyPatch("DiscardHeldObject")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> DiscardHeldObject_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            var startIndex = -1;
-            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"DiscardHeldObject ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DiscardHeldObject ======================");
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 8; i++)
-            {
-                if (codes[i].ToString() == "call static HUDManager HUDManager::get_Instance()" //14
-                    && codes[i + 1].ToString() == "ldfld UnityEngine.UI.Image[] HUDManager::itemSlotIcons"
-                    && codes[i + 8].ToString() == "ldfld TMPro.TextMeshProUGUI HUDManager::holdingTwoHandedItem") //22
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 11); //25
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscardHeldObject_Transpiler could not remove HUDManager::itemSlotIcons");
-            }
-
-            //Plugin.Logger.LogDebug($"DiscardHeldObject ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DiscardHeldObject ======================");
-
-            return codes.AsEnumerable();
-        }
-
-        //[HarmonyPatch("DropAllHeldItems")]
-        //[HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> DropAllHeldItems_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            var startIndex = -1;
-            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"DropAllHeldItems ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DropAllHeldItems ======================");
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 11; i++)
-            {
-                if (codes[i].ToString() == "call static HUDManager HUDManager::get_Instance()" //97
-                    && codes[i + 1].ToString() == "ldfld TMPro.TextMeshProUGUI HUDManager::holdingTwoHandedItem"
-                    && codes[i + 5].ToString() == "ldfld UnityEngine.UI.Image[] HUDManager::itemSlotIcons" //102
-                    && codes[i + 11].ToString() == "callvirt void HUDManager::ClearControlTips()") //108
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                PatchesUtil.InsertIsPlayerInternInstructions(codes, generator, startIndex, 12); //109
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDropAllHeldItems_Transpiler could not remove HUDManager::holdingTwoHandedItem, itemSlotIcons, ClearControlTips");
-            }
-
-            //Plugin.Logger.LogDebug($"DropAllHeldItems ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DropAllHeldItems ======================");
-
-            return codes.AsEnumerable();
-        }
-
-        #endregion
-
         #region reverse patches
 
+        /// <summary>
+        /// Reverse patch modified, makes the code ignore some condition if is intern, <br/>
+        /// and call the right method for jumping with an intern
+        /// </summary>
         [HarmonyPatch("Jump_performed")]
         [HarmonyReversePatch]
         public static void JumpPerformed_ReversePatch(object instance, InputAction.CallbackContext context)
@@ -997,11 +507,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not use jump method for intern");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-
                 return codes.AsEnumerable();
             }
 
@@ -1010,103 +515,25 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        /// <summary>
+        /// Reverse patch to call <c>PlayJumpAudio</c>
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
         [HarmonyPatch("PlayJumpAudio")]
         [HarmonyReversePatch]
         public static void PlayJumpAudio_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayJumpAudio_ReversePatch");
 
-        [HarmonyPatch("Discard_performed")]
-        [HarmonyReversePatch]
-        public static void Discard_performed_ReversePatch(object instance, InputAction.CallbackContext context)
-        {
-            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                var startIndex = -1;
-                List<CodeInstruction> codes = Transpilers.Manipulator(instructions,
-                                                                      item => item.opcode == OpCodes.Ldarg_1,
-                                                                      item => item.opcode = OpCodes.Ldarg_0
-                                                                      ).ToList();
-
-                //Plugin.Logger.LogDebug($"Discard_performed ======================");
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-                //Plugin.Logger.LogDebug($"Discard_performed ======================");
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 4; i++)
-                {
-                    if (codes[i].ToString() == "ldarg.0 NULL" //6
-                        && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsServer()"
-                        && codes[i + 2].ToString() == "brfalse Label3"
-                        && codes[i + 3].ToString() == "ldarg.0 NULL"
-                        && codes[i + 4].ToString() == "ldfld bool GameNetcodeStuff.PlayerControllerB::isHostPlayerObject")
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    for (var i = startIndex; i < startIndex + 6; i++)
-                    {
-                        codes[i].opcode = OpCodes.Nop;
-                        codes[i].operand = null;
-                    }
-                    codes[startIndex].opcode = OpCodes.Br;
-                    codes[startIndex].operand = codes[startIndex + 11].labels[0];
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscard_performed_ReversePatch could not remove isHostPlayerObject condition");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 1; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarga.s 1") //13
-                        && codes[i + 1].ToString() == "call bool UnityEngine.InputSystem.InputAction+CallbackContext::get_performed()")
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    codes[startIndex].opcode = OpCodes.Nop;
-                    codes[startIndex].operand = null;
-
-                    codes[startIndex + 1].opcode = OpCodes.Nop;
-                    codes[startIndex + 1].operand = null;
-
-                    codes[startIndex + 2].opcode = OpCodes.Nop;
-                    codes[startIndex + 2].operand = null;
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchDiscard_performed_ReversePatch could not remove action performed condition");
-                }
-
-                //Plugin.Logger.LogDebug($"Discard_performed ======================");
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-                //Plugin.Logger.LogDebug($"Discard_performed ======================");
-                return codes.AsEnumerable();
-            }
-
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            _ = Transpiler(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-        }
-
+        /// <summary>
+        /// Reverse patch to call <c>CalculateGroundNormal</c>
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
         [HarmonyPatch("CalculateGroundNormal")]
         [HarmonyReversePatch]
         public static void CalculateGroundNormal_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatchCalculateGroundNormal_ReversePatch");
 
+        /// <summary>
+        /// Reverse patch modified to use the right method to sync land from jump for the intern
+        /// </summary>
         [HarmonyPatch("PlayerHitGroundEffects")]
         [HarmonyReversePatch]
         public static void PlayerHitGroundEffects_ReversePatch(object instance)
@@ -1115,11 +542,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 5; i++)
@@ -1142,11 +564,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch could not use jump from land method for intern");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-
                 return codes.AsEnumerable();
             }
 
@@ -1155,257 +572,38 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        /// <summary>
+        /// Reverse patch to call <c>CheckConditionsForEmote</c>
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
         [HarmonyPatch("CheckConditionsForEmote")]
         [HarmonyReversePatch]
         public static bool CheckConditionsForEmote_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerControllerBPatchCheckConditionsForEmote_ReversePatch");
 
-        [HarmonyPatch("LateUpdate")]
-        [HarmonyReversePatch]
-        public static void LateUpdate_ReversePatch(object instance)
-        {
-            IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                var startIndex = -1;
-                List<CodeInstruction> codes = Transpilers.Manipulator(instructions,
-                                                                      item => item.opcode == OpCodes.Ldarg_1,
-                                                                      item => item.opcode = OpCodes.Ldarg_0
-                                                                      ).ToList();
-
-                //Plugin.Logger.LogDebug($"LateUpdate ======================");
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-                //Plugin.Logger.LogDebug($"LateUpdate ======================");
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 5; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //53
-                        && codes[i + 1].ToString() == "ldarg.0 NULL"
-                        && codes[i + 5].ToString() == "stfld UnityEngine.Vector3 GameNetcodeStuff.PlayerControllerB::previousElevatorPosition")//58
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    codes.RemoveRange(0, startIndex);
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove all beginning with in elevator stuff");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 1; i++)
-                {
-                    if (codes[i].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()" //68
-                        && codes[i + 1].ToString().StartsWith("brtrue"))
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    codes[startIndex + 1].opcode = OpCodes.Brfalse;
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not use is owner for displaying names above interns");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 10; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //104
-                        && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()" //105
-                        && codes[i + 10].ToString() == "call void GameNetcodeStuff.PlayerControllerB::PlayerLookInput()")// 114
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    codes[startIndex + 1].opcode = OpCodes.Call;
-                    codes[startIndex + 1].operand = PatchesUtil.IsPlayerInternOwnerLocalMethod;
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.LateUpdate_ReversePatch could not change check if owner");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 1; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL")// 113
-                        && codes[i + 1].ToString() == "call void GameNetcodeStuff.PlayerControllerB::PlayerLookInput()")// 114
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    codes[startIndex].opcode = OpCodes.Nop;
-                    codes[startIndex].operand = null;
-                    codes[startIndex + 1].opcode = OpCodes.Nop;
-                    codes[startIndex + 1].operand = null;
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.LateUpdate_ReversePatch could not remove lookinput");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 21; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //210
-                        && codes[i + 1].ToString() == "ldfld UnityEngine.Transform GameNetcodeStuff.PlayerControllerB::localVisor"
-                        && codes[i + 21].ToString() == "callvirt void UnityEngine.Transform::set_rotation(UnityEngine.Quaternion value)") // 231
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    for (var i = startIndex; i < startIndex + 22; i++) //232
-                    {
-                        codes[i].opcode = OpCodes.Nop;
-                        codes[i].operand = null;
-                    }
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove local visor updates");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 81; i++)
-                {
-                    if (codes[i].ToString() == "ldarg.0 NULL" //345
-                        && codes[i + 13].ToString() == "call static HUDManager HUDManager::get_Instance()" //358
-                        && codes[i + 81].ToString() == "ldfld UnityEngine.Animator HUDManager::batteryBlinkUI")//426
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    for (var i = startIndex; i < startIndex + 92; i++)//437
-                    {
-                        codes[i].opcode = OpCodes.Nop;
-                        codes[i].operand = null;
-                    }
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove all HUDManager udpate stuff");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 4; i++)
-                {
-                    if (codes[i].ToString() == "call static HUDManager HUDManager::get_Instance() [Label55]" //479
-                        && codes[i + 4].ToString() == "callvirt void HUDManager::UpdateHealthUI(int health, bool hurtPlayer)")
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    for (var i = startIndex; i < startIndex + 5; i++)
-                    {
-                        codes[i].opcode = OpCodes.Nop;
-                        codes[i].operand = null;
-                    }
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove HUDManager UpdateHealthUI");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 1; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //491
-                        && codes[i + 1].ToString() == "call void GameNetcodeStuff.PlayerControllerB::SetHoverTipAndCurrentInteractTrigger()")
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    for (var i = startIndex; i < startIndex + 2; i++)
-                    {
-                        codes[i].opcode = OpCodes.Nop;
-                        codes[i].operand = null;
-                    }
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove SetHoverTipAndCurrentInteractTrigger");
-                }
-
-                // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 4; i++)
-                {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") //519
-                        && codes[i + 2].ToString() == "ldfld bool StartOfRound::overrideSpectateCamera")
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                if (startIndex > -1)
-                {
-                    codes[startIndex].opcode = OpCodes.Nop;
-                    codes[startIndex].operand = null;
-                    codes.RemoveRange(startIndex + 1, codes.Count - (startIndex + 1));
-                    startIndex = -1;
-                }
-                else
-                {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatchLateUpdate_ReversePatch could not remove end of method with spectate stuff");
-                }
-
-                //Plugin.Logger.LogDebug($"LateUpdate ======================");
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
-                //Plugin.Logger.LogDebug($"LateUpdate ======================");
-
-                return codes.AsEnumerable();
-            }
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            _ = Transpiler(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-        }
-
+        /// <summary>
+        /// Reverse patch to call <c>OnDisable</c>
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
         [HarmonyPatch("OnDisable")]
         [HarmonyReversePatch]
         public static void OnDisable_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.OnDisable_ReversePatch");
 
+        /// <summary>
+        /// Reverse patch to call <c>NearOtherPlayers</c>
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         [HarmonyPatch("NearOtherPlayers")]
         [HarmonyReversePatch]
         public static bool NearOtherPlayers_ReversePatch(object instance, PlayerControllerB playerScript, float checkRadius) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.NearOtherPlayers_ReversePatch");
 
+        /// <summary>
+        /// Reverse patch modified to update player position client side for the intern
+        /// </summary>
+        /// <remarks>
+        /// Bypassing all rpc condition, because the intern is not owner of his body, no one is, the body <c>PlayerControllerB</c> of intern is not spawned.<br/>
+        /// Changind isOwner with a call to know if the controller is an intern owned by a the client player executing the code
+        /// </remarks>
         [HarmonyPatch("UpdatePlayerPositionClientRpc")]
         [HarmonyReversePatch]
         public static void UpdatePlayerPositionClientRpc_ReversePatch(object instance, Vector3 newPos, bool inElevator, bool isInShip, bool exhausted, bool isPlayerGrounded)
@@ -1414,11 +612,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count; i++)
@@ -1509,10 +702,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not remove all end stuff with inElevator (intern controller is never server because not spawned)");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
                 return codes.AsEnumerable();
             }
 
@@ -1521,6 +710,9 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        /// <summary>
+        /// Reverse patch modified to call the right client rpc method for an intern
+        /// </summary>
         [HarmonyPatch("UpdatePlayerAnimationsToOtherClients")]
         [HarmonyReversePatch]
         public static void UpdatePlayerAnimationsToOtherClients_ReversePatch(object instance, Vector2 moveInputVector)
@@ -1529,11 +721,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 7; i++)
@@ -1577,10 +764,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 2");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
                 return codes.AsEnumerable();
             }
 
@@ -1589,6 +772,12 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        /// <summary>
+        /// Reverse patch to be able to call <c>UpdatePlayerAnimationClientRpc</c>
+        /// </summary>
+        /// <remarks>
+        /// Bypassing all rpc condition, because the intern is not owner of his body, no one is, the body <c>PlayerControllerB</c> of intern is not spawned.<br/>
+        /// </remarks>
         [HarmonyPatch("UpdatePlayerAnimationClientRpc")]
         [HarmonyReversePatch]
         public static void UpdatePlayerAnimationClientRpc_ReversePatch(object instance, int animationState, float animationSpeed)
@@ -1597,11 +786,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 3; i++)
@@ -1631,6 +815,12 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        /// <summary>
+        /// Reverse patch to be able to call <c>IsInSpecialAnimationClientRpc</c>
+        /// </summary>
+        /// <remarks>
+        /// Bypassing all rpc condition, because the intern is not owner of his body, no one is, the body <c>PlayerControllerB</c> of intern is not spawned.<br/>
+        /// </remarks>
         [HarmonyPatch("IsInSpecialAnimationClientRpc")]
         [HarmonyReversePatch]
         public static void IsInSpecialAnimationClientRpc_ReversePatch(object instance, bool specialAnimation, float timed, bool climbingLadder)
@@ -1639,11 +829,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 3; i++)
@@ -1665,10 +850,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.IsInSpecialAnimationClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
                 return codes.AsEnumerable();
             }
 
@@ -1677,6 +858,12 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        /// <summary>
+        /// Reverse patch to be able to call <c>SyncBodyPositionClientRpc</c>
+        /// </summary>
+        /// <remarks>
+        /// Bypassing all rpc condition, because the intern is not owner of his body, no one is, the body <c>PlayerControllerB</c> of intern is not spawned.<br/>
+        /// </remarks>
         [HarmonyPatch("SyncBodyPositionClientRpc")]
         [HarmonyReversePatch]
         public static void SyncBodyPositionClientRpc_ReversePatch(object instance, Vector3 newBodyPosition)
@@ -1685,11 +872,6 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 var startIndex = -1;
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
 
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 6; i++)
@@ -1711,10 +893,6 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SyncBodyPositionClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
-                //for (var i = 0; i < codes.Count; i++)
-                //{
-                //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-                //}
                 return codes.AsEnumerable();
             }
 
@@ -1727,6 +905,9 @@ namespace LethalInternship.Patches.NpcPatches
 
         #region Postfixes
 
+        /// <summary>
+        /// Debug patch to spawn an intern at will
+        /// </summary>
         [HarmonyPatch("PerformEmote")]
         [HarmonyPostfix]
         static void PerformEmote_PostFix(PlayerControllerB __instance)
@@ -1739,6 +920,10 @@ namespace LethalInternship.Patches.NpcPatches
             InternManager.Instance.SpawnInternServerRpc(__instance.transform.position, __instance.transform.eulerAngles.y, !__instance.isInsideFactory);
         }
 
+        /// <summary>
+        /// Patch to add text when pointing at an intern at grab range,<br/>
+        /// shows the different possible actions for interacting with intern
+        /// </summary>
         [HarmonyPatch("SetHoverTipAndCurrentInteractTrigger")]
         [HarmonyPostfix]
         static void SetHoverTipAndCurrentInteractTrigger_PostFix(ref PlayerControllerB __instance,

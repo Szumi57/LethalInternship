@@ -5,9 +5,23 @@ using LethalInternship.Managers;
 
 namespace LethalInternship.Patches.MapPatches
 {
+    /// <summary>
+    /// Patch for <c>DoorLock</c>
+    /// </summary>
     [HarmonyPatch(typeof(DoorLock))]
     internal class DoorLockPatch
     {
+        /// <summary>
+        /// Patch for making the intern only open door if not locked or already opened
+        /// </summary>
+        /// <remarks>
+        /// Needed a prefix patch for accessing the private field <c>isLocked</c> and <c>isDoorOpened</c>
+        /// </remarks>
+        /// <param name="__instance"></param>
+        /// <param name="___isLocked"></param>
+        /// <param name="___isDoorOpened"></param>
+        /// <param name="playerWhoTriggered"></param>
+        /// <returns></returns>
         [HarmonyPatch("OpenOrCloseDoor")]
         [HarmonyPrefix]
         static bool OpenOrCloseDoor_PreFix(DoorLock __instance,

@@ -1,15 +1,13 @@
-﻿using BepInEx;
-using GameNetcodeStuff;
-using HarmonyLib;
+﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 
@@ -24,6 +22,7 @@ namespace LethalInternship.AI
         // Public variables to pass to patch
         public bool IsCameraDisabled;
         public bool IsJumping;
+        public bool IsFallingFromJump;
         public float CrouchMeter;
         public bool IsWalking;
         public float PlayerSlidingTimer;
@@ -62,10 +61,8 @@ namespace LethalInternship.AI
         private float slopeModifier;
         private float limpMultiplier = 0.2f;
         private Vector3 walkForce;
-        private bool isFallingFromJump;
         private bool isFallingNoJump;
         private float slideFriction;
-        private int oldConnectedPlayersAmount;
 
         private Collider[] nearByPlayers = new Collider[4];
         private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
@@ -101,6 +98,9 @@ namespace LethalInternship.AI
             this.Npc = npc;
         }
 
+        /// <summary>
+        /// Initialize the <c>PlayerControllerB</c>
+        /// </summary>
         public void Awake()
         {
             Plugin.Logger.LogDebug("Awake intern controller.");
@@ -126,14 +126,30 @@ namespace LethalInternship.AI
             Npc.gameObject.GetComponent<CharacterController>().enabled = false;
         }
 
+        /// <summary>
+        /// Update called from <see cref="PlayerControllerBPatch.Update_PreFix"><c>PlayerControllerBPatch.Update_PreFix</c></see> 
+        /// instead of the real update from <c>PlayerControllerB</c>.
+        /// </summary>
+        /// <remarks>
+        /// Update the move vector in regard of the field set with the order methods,<br/>
+        /// update the movement of the <c>PlayerControllerB</c> against various hazards,<br/>
+        /// while sinking, drowning, jumping, falling, in jetpack, in special interaction with enemies.<br/>
+        /// Sync the rotation with other clients.
+        /// </remarks>
         public void Update()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
 
+            // The owner of the intern (and the controller)
+            // updates and moves the controller
             if (InternAIController.IsClientOwnerOfIntern() && Npc.isPlayerControlled)
             {
+                // Updates the state of the CharacterController and the animator controller
                 UpdateOwnerChanged(true);
 
+                // Disabling controller if in special interaction animation
+                // (fix for a bug: animation of the forest giant eating intern causing weird effect
+                // if controller enabled on the intern)
                 if (Npc.thisController.enabled != !Npc.inSpecialInteractAnimation)
                 {
                     Npc.thisController.enabled = !Npc.inSpecialInteractAnimation;
@@ -141,524 +157,55 @@ namespace LethalInternship.AI
 
                 Npc.rightArmProceduralRig.weight = Mathf.Lerp(Npc.rightArmProceduralRig.weight, 0f, 25f * Time.deltaTime);
 
-                if (this.HasToMove)
-                {
-                    if (IsJumping || Npc.isCrouching)
-                    {
-                        this.lastMoveVector.y = Const.BASE_MAX_SPEED;
-                    }
-                    else
-                    {
-                        // Move and slow down when tight turn
-                        Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
-                        var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
+                // Set the move input vector for moving the controller
+                UpdateMoveInputVectorForOwner();
 
-                        this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
-                        if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
-                        {
-                            floatSprint = 0f;
-                        }
-                        //Plugin.Logger.LogDebug($"this.lastMoveVector.y {this.lastMoveVector.y}, turnSpeed {turnSpeed}");
-                    }
-                }
-                Npc.moveInputVector.y = this.lastMoveVector.y;
-                //if (floatSprint > 0f)
-                //{
-                //    Plugin.Logger.LogDebug($"-----------           Move {Npc.moveInputVector.y}");
-                //}
+                // Turn the body towards the direction set beforehand
                 UpdateTurnBodyTowardsDirection();
 
+                // If inShockingMinigame, turn towards the target of the shocking
                 Npc.ForceTurnTowardsTarget();
 
+                // Manage the drowning state of the intern
                 SetFaceUnderwaterFilters();
 
-                if (IsWalking)
-                {
-                    if (Npc.moveInputVector.sqrMagnitude <= 0.001
-                        || Npc.inSpecialInteractAnimation
-                        && !Npc.isClimbingLadder && !Npc.inShockingMinigame)
-                    {
-                        IsWalking = false;
-                        Npc.isSprinting = false;
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
-                    }
-                    else if (floatSprint > 0.3f && movementHinderedPrev <= 0 && !Npc.criticallyInjured && Npc.sprintMeter > 0.1f)
-                    {
-                        if (!Npc.isSprinting && Npc.sprintMeter < 0.3f)
-                        {
-                            if (!Npc.isExhausted)
-                            {
-                                Npc.isExhausted = true;
-                            }
-                        }
-                        else
-                        {
-                            if (Npc.isCrouching)
-                            {
-                                Npc.Crouch(false);
-                            }
-                            Npc.isSprinting = true;
-                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, true);
-                        }
-                    }
-                    else
-                    {
-                        Npc.isSprinting = false;
-                        if (Npc.sprintMeter < 0.1f)
-                        {
-                            Npc.isExhausted = true;
-                        }
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
-                    }
-                    if (Npc.isSprinting)
-                    {
-                        sprintMultiplier = Mathf.Lerp(sprintMultiplier, 2.25f, Time.deltaTime * 1f);
-                    }
-                    else
-                    {
-                        sprintMultiplier = Mathf.Lerp(sprintMultiplier, 1f, 10f * Time.deltaTime);
-                    }
-                    if (Npc.moveInputVector.y < 0.2f && Npc.moveInputVector.y > -0.2f && !Npc.inSpecialInteractAnimation)
-                    {
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, true);
-                    }
-                    else
-                    {
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
-                    }
-                    if (Npc.enteringSpecialAnimation)
-                    {
-                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
-                    }
-                    else if (Npc.moveInputVector.y < 0.3f && Npc.moveInputVector.x < 0.3f)
-                    {
-                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
-                    }
-                    else
-                    {
-                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
-                    }
-                }
-                else
-                {
-                    if (Npc.enteringSpecialAnimation)
-                    {
-                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
-                    }
-                    else if (Npc.isClimbingLadder)
-                    {
-                        Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 0f);
-                    }
-                    if (!Npc.isFreeCamera && Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
-                    {
-                        IsWalking = true;
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
-                    }
-                }
-                if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
-                {
-                    Npc.performingEmote = false;
-                    this.InternAIController.SyncStopPerformingEmote();
-                    Npc.timeSinceStartingEmote = 0f;
-                }
-                Npc.timeSinceStartingEmote += Time.deltaTime;
-                Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_HINDEREDMOVEMENT, Npc.isMovementHindered > 0);
-                if (Npc.sourcesCausingSinking == 0)
-                {
-                    if (Npc.isSinking)
-                    {
-                        Npc.isSinking = false;
-                        this.InternAIController.SyncChangeSinkingState(false);
-                    }
-                }
-                else
-                {
-                    if (Npc.isSinking)
-                    {
-                        Npc.GetCurrentMaterialStandingOn();
-                        if (!Npc.CheckConditionsForSinkingInQuicksand())
-                        {
-                            Npc.isSinking = false;
-                            this.InternAIController.SyncChangeSinkingState(false);
-                        }
-                    }
-                    else if (!Npc.isSinking && Npc.CheckConditionsForSinkingInQuicksand())
-                    {
-                        Npc.isSinking = true;
-                        this.InternAIController.SyncChangeSinkingState(true, Npc.sinkingSpeedMultiplier, Npc.statusEffectAudioIndex);
-                    }
-                    if (Npc.sinkingValue >= 1f)
-                    {
-                        Plugin.Logger.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
-                        this.InternAIController.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0);
-                    }
-                    else if (Npc.sinkingValue > 0.5f)
-                    {
-                        Npc.Crouch(false);
-                    }
-                }
-                if (Npc.isCrouching)
-                {
-                    Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 0.72f, Npc.thisController.center.z), 8f * Time.deltaTime);
-                    Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 1.5f, 8f * Time.deltaTime);
-                }
-                else
-                {
-                    CrouchMeter = Mathf.Max(CrouchMeter - Time.deltaTime * 2f, 0f);
-                    Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 1.28f, Npc.thisController.center.z), 8f * Time.deltaTime);
-                    Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 2.5f, 8f * Time.deltaTime);
-                }
+                // Update the animation of walking under numerous conditions
+                UpdateWalkingStateForOwner();
 
-                if (this.disabledJetpackControlsThisFrame)
-                {
-                    this.disabledJetpackControlsThisFrame = false;
-                }
-                if (Npc.jetpackControls)
-                {
-                    if (Npc.disablingJetpackControls && Npc.thisController.isGrounded)
-                    {
-                        this.disabledJetpackControlsThisFrame = true;
-                        this.InternAIController.SyncDisableJetpackMode();
-                    }
-                    else if (!Npc.thisController.isGrounded)
-                    {
-                        if (!this.StartedJetpackControls)
-                        {
-                            this.StartedJetpackControls = true;
-                            Npc.jetpackTurnCompass.rotation = Npc.transform.rotation;
-                        }
-                        Npc.thisController.radius = Mathf.Lerp(Npc.thisController.radius, 1.25f, 10f * Time.deltaTime);
-                        Quaternion rotation = Npc.jetpackTurnCompass.rotation;
-                        Npc.jetpackTurnCompass.Rotate(new Vector3(0f, 0f, -Npc.moveInputVector.x) * (180f * Time.deltaTime), Space.Self);
-                        if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
-                        {
-                            Npc.jetpackTurnCompass.rotation = rotation;
-                        }
-                        rotation = Npc.jetpackTurnCompass.rotation;
-                        Npc.jetpackTurnCompass.Rotate(new Vector3(Npc.moveInputVector.y, 0f, 0f) * (180f * Time.deltaTime), Space.Self);
-                        if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
-                        {
-                            Npc.jetpackTurnCompass.rotation = rotation;
-                        }
-                        if (Npc.jetpackRandomIntensity != -1f)
-                        {
-                            rotation = Npc.jetpackTurnCompass.rotation;
-                            Vector3 a2 = new Vector3(
-                                Mathf.Clamp(
-                                    Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity),
-                                -Npc.maxJetpackAngle, Npc.maxJetpackAngle),
-                                Mathf.Clamp(
-                                    Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle),
-                                Mathf.Clamp(Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle));
-                            Npc.jetpackTurnCompass.Rotate(a2 * Time.deltaTime, Space.Self);
-                            if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
-                            {
-                                Npc.jetpackTurnCompass.rotation = rotation;
-                            }
-                        }
-                        Npc.transform.rotation = Quaternion.Slerp(Npc.transform.rotation, Npc.jetpackTurnCompass.rotation, 8f * Time.deltaTime);
-                    }
-                }
-                else if (!Npc.isClimbingLadder)
-                {
-                    //Vector3 localEulerAngles = Npc.transform.localEulerAngles;
-                    //localEulerAngles.x = Mathf.LerpAngle(localEulerAngles.x, 0f, 15f * Time.deltaTime);
-                    //localEulerAngles.z = Mathf.LerpAngle(localEulerAngles.z, 0f, 15f * Time.deltaTime);
-                    //Npc.transform.localEulerAngles = localEulerAngles;
-                }
+                // Sync with clients if the intern is performing emote
+                UpdateEmoteStateForOnwer();
+
+                // Update and sync with clients, if the intern is sinking or not and should die or not
+                UpdateSinkingStateForOwner();
+
+                // Update the center and the height of the <c>CharacterController</c>
+                UpdateCenterAndHeightForOwner();
+
+                // Update the rotation of the controller when using jetpack controls
+                UpdateJetPackControlsForOwner();
+
                 if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame || instanceSOR.suckingPlayersOutOfShip)
                 {
-                    if (Npc.isFreeCamera)
-                    {
-                        Npc.moveInputVector = Vector2.zero;
-                    }
-                    PlayerControllerBPatch.CalculateGroundNormal_ReversePatch(this.Npc);
-                    float num3 = Npc.movementSpeed / Npc.carryWeight;
-                    if (Npc.sinkingValue > 0.73f)
-                    {
-                        num3 = 0f;
-                    }
-                    else
-                    {
-                        if (Npc.isCrouching)
-                        {
-                            num3 /= 1.5f;
-                        }
-                        else if (Npc.criticallyInjured && !Npc.isCrouching)
-                        {
-                            num3 *= limpMultiplier;
-                        }
-                        if (Npc.isSpeedCheating)
-                        {
-                            Plugin.Logger.LogDebug("===================================================== speed cheat ?");
-                            num3 *= 15f;
-                        }
-                        if (movementHinderedPrev > 0)
-                        {
-                            num3 /= 2f * Npc.hinderedMultiplier;
-                        }
-                        if (Npc.drunkness > 0f)
-                        {
-                            num3 *= instanceSOR.drunknessSpeedEffect.Evaluate(Npc.drunkness) / 5f + 1f;
-                        }
-                        if (!Npc.isCrouching && CrouchMeter > 1.2f)
-                        {
-                            num3 *= 0.5f;
-                        }
-                        if (!Npc.isCrouching)
-                        {
-                            float num4 = Vector3.Dot(Npc.playerGroundNormal, walkForce);
-                            if (num4 > 0.05f)
-                            {
-                                slopeModifier = Mathf.MoveTowards(slopeModifier, num4, (Npc.slopeModifierSpeed + 0.45f) * Time.deltaTime);
-                            }
-                            else
-                            {
-                                slopeModifier = Mathf.MoveTowards(slopeModifier, num4, Npc.slopeModifierSpeed / 2f * Time.deltaTime);
-                            }
-                            num3 = Mathf.Max(num3 * 0.8f, num3 + Npc.slopeIntensity * slopeModifier);
-                        }
-                    }
-                    if (Npc.isTypingChat || Npc.jetpackControls && !Npc.thisController.isGrounded || instanceSOR.suckingPlayersOutOfShip)
-                    {
-                        Npc.moveInputVector = Vector2.zero;
-                    }
-                    Vector3 vector = new Vector3(0f, 0f, 0f);
-                    int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.65f, nearByPlayers, instanceSOR.playersMask);
-                    for (int i = 0; i < num5; i++)
-                    {
-                        vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[i].transform.position) * 100f) * 1.2f;
-                    }
-                    int num6 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 1.25f, nearByPlayers, 524288);
-                    for (int j = 0; j < num6; j++)
-                    {
-                        EnemyAICollisionDetect component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
-                        if (component != null && component.mainScript != null && !component.mainScript.isEnemyDead && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
-                        {
-                            vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
-                        }
-                    }
-                    float num7;
-                    if (isFallingFromJump || isFallingNoJump)
-                    {
-                        num7 = 1.33f;
-                    }
-                    else if (Npc.drunkness > 0.3f)
-                    {
-                        num7 = Mathf.Clamp(Mathf.Abs(Npc.drunkness - 2.25f), 0.3f, 2.5f);
-                    }
-                    else if (!Npc.isCrouching && CrouchMeter > 1f)
-                    {
-                        num7 = 15f;
-                    }
-                    else if (Npc.isSprinting)
-                    {
-                        num7 = 5f / (Npc.carryWeight * 1.5f);
-                    }
-                    else
-                    {
-                        num7 = 10f / Npc.carryWeight;
-                    }
-                    walkForce = Vector3.MoveTowards(walkForce, Npc.transform.right * Npc.moveInputVector.x + Npc.transform.forward * Npc.moveInputVector.y, num7 * Time.deltaTime);
-                    Vector3 vector2 = walkForce * num3 * sprintMultiplier + new Vector3(0f, Npc.fallValue, 0f) + vector;
-                    vector2 += Npc.externalForces;
-                    if (Npc.externalForceAutoFade.magnitude > 0.05f)
-                    {
-                        vector2 += Npc.externalForceAutoFade;
-                        Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 2f * Time.deltaTime);
-                    }
-                    if (Npc.isPlayerSliding && Npc.thisController.isGrounded)
-                    {
-                        PlayerSlidingTimer += Time.deltaTime;
-                        if (slideFriction > Npc.maxSlideFriction)
-                        {
-                            slideFriction -= 35f * Time.deltaTime;
-                        }
-                        vector2 = new Vector3(vector2.x + (1f - Npc.playerGroundNormal.y) * Npc.playerGroundNormal.x * (1f - slideFriction), vector2.y, vector2.z + (1f - Npc.playerGroundNormal.y) * Npc.playerGroundNormal.z * (1f - slideFriction));
-                    }
-                    else
-                    {
-                        PlayerSlidingTimer = 0f;
-                        slideFriction = 0f;
-                    }
+                    // Move the body of intern
+                    UpdateMoveControllerForOwner();
 
-                    //----------------------
-                    // Move
-                    //----------------------
-                    Npc.thisController.Move(vector2 * Time.deltaTime);
-                    //if(floatSprint >  0f)
-                    //{
-                    //Plugin.Logger.LogDebug($"-----------           Move {vector2 * Time.deltaTime}, mag {(vector2 * Time.deltaTime).magnitude}");
+                    // Check if the intern is falling and update values accordingly
+                    UpdateFallValuesForOwner();
 
-                    //}
-                    if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame)
-                    {
-                        if (!Npc.thisController.isGrounded)
-                        {
-                            if (Npc.jetpackControls && !Npc.disablingJetpackControls)
-                            {
-                                Npc.fallValue = Mathf.MoveTowards(Npc.fallValue, Npc.jetpackCounteractiveForce, 9f * Time.deltaTime);
-                                Npc.fallValueUncapped = -8f;
-                            }
-                            else
-                            {
-                                Npc.fallValue = Mathf.Clamp(Npc.fallValue - 38f * Time.deltaTime, -150f, Npc.jumpForce);
-                                if (Mathf.Abs(Npc.externalForceAutoFade.y) - Mathf.Abs(Npc.fallValue) < 5f)
-                                {
-                                    if (Npc.disablingJetpackControls)
-                                    {
-                                        Npc.fallValueUncapped -= 26f * Time.deltaTime;
-                                    }
-                                    else
-                                    {
-                                        Npc.fallValueUncapped -= 38f * Time.deltaTime;
-                                    }
-                                }
-                            }
-                            if (!IsJumping && !isFallingFromJump)
-                            {
-                                if (!isFallingNoJump)
-                                {
-                                    isFallingNoJump = true;
-                                    Npc.fallValue = -7f;
-                                    Npc.fallValueUncapped = -7f;
-                                }
-                                else if (Npc.fallValue < -20f)
-                                {
-                                    Npc.isCrouching = false;
-                                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CROUCHING, false);
-                                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, true);
-                                }
-                            }
-                            if (Npc.fallValueUncapped < -35f)
-                            {
-                                Npc.takingFallDamage = true;
-                            }
-                        }
-                        else
-                        {
-                            movementHinderedPrev = Npc.isMovementHindered;
-                            if (!IsJumping)
-                            {
-                                if (isFallingNoJump)
-                                {
-                                    isFallingNoJump = false;
-                                    if (!Npc.isCrouching && Npc.fallValue < -9f)
-                                    {
-                                        Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
-                                    }
-                                    PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
-                                }
-                                if (!isFallingFromJump)
-                                {
-                                    Npc.fallValue = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
-                                    Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
-                                }
-                            }
-                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, false);
-                        }
-                    }
                     Npc.externalForces = Vector3.zero;
                     if (!TeleportingThisFrame && Npc.teleportedLastFrame)
                     {
                         Npc.teleportedLastFrame = false;
                     }
 
-                    if (Npc.jetpackControls || Npc.disablingJetpackControls)
-                    {
-                        if (!this.TeleportingThisFrame && !Npc.inSpecialInteractAnimation && !Npc.enteringSpecialAnimation && !Npc.isClimbingLadder && (instanceSOR.timeSinceRoundStarted > 1f || instanceSOR.testRoom != null))
-                        {
-                            float magnitude2 = Npc.thisController.velocity.magnitude;
-                            if (Npc.getAverageVelocityInterval <= 0f)
-                            {
-                                Npc.getAverageVelocityInterval = 0.04f;
-                                Npc.velocityAverageCount++;
-                                if (Npc.velocityAverageCount > Npc.velocityMovingAverageLength)
-                                {
-                                    Npc.averageVelocity += (magnitude2 - Npc.averageVelocity) / (float)(Npc.velocityMovingAverageLength + 1);
-                                }
-                                else
-                                {
-                                    Npc.averageVelocity += magnitude2;
-                                    if (Npc.velocityAverageCount == Npc.velocityMovingAverageLength)
-                                    {
-                                        Npc.averageVelocity /= (float)Npc.velocityAverageCount;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                Npc.getAverageVelocityInterval -= Time.deltaTime;
-                            }
-                            Debug.Log(string.Format("Average velocity: {0}", Npc.averageVelocity));
-                            if (TimeSinceTakingGravityDamage > 0.6f && Npc.velocityAverageCount > 4)
-                            {
-                                float num8 = Vector3.Angle(Npc.transform.up, Vector3.up);
-                                if (Physics.CheckSphere(Npc.gameplayCamera.transform.position, 0.5f, instanceSOR.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)
-                                    || (num8 > 65f && Physics.CheckSphere(Npc.lowerSpine.position, 0.5f, instanceSOR.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)))
-                                {
-                                    if (Npc.averageVelocity > 17f)
-                                    {
-                                        Debug.Log("Take damage a");
-                                        TimeSinceTakingGravityDamage = 0f;
-                                        this.InternAIController.SyncDamageIntern(Mathf.Clamp(85, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
-                                    }
-                                    else if (Npc.averageVelocity > 9f)
-                                    {
-                                        Debug.Log("Take damage b");
-                                        this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
-                                        TimeSinceTakingGravityDamage = 0.35f;
-                                    }
-                                    else if (num8 > 60f && Npc.averageVelocity > 6f)
-                                    {
-                                        Debug.Log("Take damage c");
-                                        this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
-                                        TimeSinceTakingGravityDamage = 0f;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                TimeSinceTakingGravityDamage += Time.deltaTime;
-                            }
-                            Npc.velocityLastFrame = Npc.thisController.velocity;
-                            PreviousFrameDeltaTime = Time.deltaTime;
-                        }
-                        else
-                        {
-                            TeleportingThisFrame = false;
-                        }
-                    }
-                    else
-                    {
-                        Npc.averageVelocity = 0f;
-                        Npc.velocityAverageCount = 0;
-                        TimeSinceTakingGravityDamage = 0f;
-                    }
+                    // Update movement when using jetpack controls
+                    UpdateJetPackMoveValuesForOwner();
                     Npc.isPlayerSliding = Vector3.Angle(Vector3.up, Npc.playerGroundNormal) >= Npc.thisController.slopeLimit;
                 }
                 else if (Npc.isClimbingLadder)
                 {
-                    Vector3 direction = Npc.thisPlayerBody.up;
-                    Vector3 origin = Npc.gameplayCamera.transform.position + Npc.thisPlayerBody.up * 0.07f;
-                    if ((Npc.externalForces + Npc.externalForceAutoFade).magnitude > 8f)
-                    {
-                        Npc.CancelSpecialTriggerAnimations();
-                    }
-                    Npc.externalForces = Vector3.zero;
-                    Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 5f * Time.deltaTime);
-
-                    if (goDownLadder)
-                    {
-                        direction = -Npc.thisPlayerBody.up;
-                        origin = Npc.gameplayCamera.transform.position;
-                    }
-                    if (!Physics.Raycast(origin, direction, 0.15f, instanceSOR.allPlayersCollideWithMask, QueryTriggerInteraction.Ignore))
-                    {
-                        Npc.thisPlayerBody.transform.position += direction * (Const.BASE_MAX_SPEED * Npc.climbSpeed * Time.deltaTime);
-                    }
+                    // Update movement when using ladder
+                    UpdateMoveWhenClimbingLadder();
                 }
                 TeleportingThisFrame = false;
 
@@ -668,19 +215,16 @@ namespace LethalInternship.AI
                 Npc.playerEye.position = Npc.gameplayCamera.transform.position;
                 Npc.playerEye.rotation = Npc.gameplayCamera.transform.rotation;
 
-                //if (Npc.isHoldingObject && Npc.currentlyHeldObjectServer == null)
-                //{
-                //    Npc.DropAllHeldItems(true, false);
-                //}
-
+                // Update intern animations and UpdatePlayerLookInterval
                 if (NetworkManager.Singleton != null && Npc.playersManager.connectedPlayersAmount > 0)
                 {
                     this.UpdatePlayerLookInterval += Time.deltaTime;
                     PlayerControllerBPatch.UpdatePlayerAnimationsToOtherClients_ReversePatch(this.Npc, Npc.moveInputVector);
                 }
             }
-            else
+            else // If not owner, the client just update the position and rotation of the controller
             {
+                // Updates the state of the CharacterController and the animator controller
                 UpdateOwnerChanged(false);
 
                 // Sync position and rotations
@@ -690,19 +234,30 @@ namespace LethalInternship.AI
             Npc.timeSincePlayerMoving += Time.deltaTime;
             Npc.timeSinceMakingLoudNoise += Time.deltaTime;
 
-            UpdateInSpecialInteractAnimationEffectForAll();
+            // Update the localarms and rotation when in special interact animation
+            UpdateInSpecialInteractAnimationEffect();
 
-            UpdateEmoteEffectsForAll();
+            // Update animation layer when using emotes
+            UpdateEmoteEffects();
 
-            UpdateSinkingEffectsForAll();
+            // Update the sinking values and effect
+            UpdateSinkingEffects();
 
-            UpdateActiveAudioReverbFilterForAll();
+            // Update the active audio reverb filter
+            UpdateActiveAudioReverbFilter();
 
-            UpdateAnimationUpperBodyForAll();
+            // Update animations when holding items and exhausion
+            UpdateAnimationUpperBody();
 
-            UpdateLineOfSightCubeForAll();
+            // Update line of sight cube
+            UpdateLineOfSightCube();
         }
 
+        /// <summary>
+        /// Updates the state of the <c>CharacterController</c>
+        /// and update the animator controller with its animation
+        /// </summary>
+        /// <param name="isOwner"></param>
         private void UpdateOwnerChanged(bool isOwner)
         {
             if (isOwner)
@@ -738,6 +293,10 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Updates the animator controller if the owner of intern has changed
+        /// </summary>
+        /// <param name="isOwner"></param>
         private void UpdateRuntimeAnimatorController(bool isOwner)
         {
             // Save animations states
@@ -782,6 +341,573 @@ namespace LethalInternship.AI
             }
         }
 
+        #region Updates npc body for owner
+
+        /// <summary>
+        /// Set the move input vector for moving the controller
+        /// </summary>
+        /// <remarks>
+        /// Basically the controller move forward and the rotation is changed in another method if needed (following the AI).
+        /// </remarks>
+        private void UpdateMoveInputVectorForOwner()
+        {
+            if (this.HasToMove)
+            {
+                if (IsJumping || Npc.isCrouching)
+                {
+                    this.lastMoveVector.y = Const.BASE_MAX_SPEED;
+                }
+                else
+                {
+                    // Move and slow down when tight turn
+                    Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
+                    var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
+
+                    this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
+                    // Stop sprinting if the turn angle is too much
+                    if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
+                    {
+                        floatSprint = 0f;
+                    }
+                }
+            }
+            Npc.moveInputVector.y = this.lastMoveVector.y;
+        }
+
+        /// <summary>
+        /// Update the animation of walking under numerous conditions
+        /// </summary>
+        private void UpdateWalkingStateForOwner()
+        {
+            if (IsWalking)
+            {
+                if (Npc.moveInputVector.sqrMagnitude <= 0.001
+                    || Npc.inSpecialInteractAnimation
+                    && !Npc.isClimbingLadder && !Npc.inShockingMinigame)
+                {
+                    IsWalking = false;
+                    Npc.isSprinting = false;
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+                }
+                else if (floatSprint > 0.3f && movementHinderedPrev <= 0 && !Npc.criticallyInjured && Npc.sprintMeter > 0.1f)
+                {
+                    if (!Npc.isSprinting && Npc.sprintMeter < 0.3f)
+                    {
+                        if (!Npc.isExhausted)
+                        {
+                            Npc.isExhausted = true;
+                        }
+                    }
+                    else
+                    {
+                        if (Npc.isCrouching)
+                        {
+                            Npc.Crouch(false);
+                        }
+                        Npc.isSprinting = true;
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, true);
+                    }
+                }
+                else
+                {
+                    Npc.isSprinting = false;
+                    if (Npc.sprintMeter < 0.1f)
+                    {
+                        Npc.isExhausted = true;
+                    }
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+                }
+                if (Npc.isSprinting)
+                {
+                    sprintMultiplier = Mathf.Lerp(sprintMultiplier, 2.25f, Time.deltaTime * 1f);
+                }
+                else
+                {
+                    sprintMultiplier = Mathf.Lerp(sprintMultiplier, 1f, 10f * Time.deltaTime);
+                }
+                if (Npc.moveInputVector.y < 0.2f && Npc.moveInputVector.y > -0.2f && !Npc.inSpecialInteractAnimation)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, true);
+                }
+                else
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+                }
+                if (Npc.enteringSpecialAnimation)
+                {
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
+                }
+                else if (Npc.moveInputVector.y < 0.3f && Npc.moveInputVector.x < 0.3f)
+                {
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                }
+                else
+                {
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                }
+            }
+            else
+            {
+                if (Npc.enteringSpecialAnimation)
+                {
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
+                }
+                else if (Npc.isClimbingLadder)
+                {
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 0f);
+                }
+                if (!Npc.isFreeCamera && Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
+                {
+                    IsWalking = true;
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sync with clients if the intern is performing emote
+        /// </summary>
+        private void UpdateEmoteStateForOnwer()
+        {
+            if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
+            {
+                Npc.performingEmote = false;
+                this.InternAIController.SyncStopPerformingEmote();
+                Npc.timeSinceStartingEmote = 0f;
+            }
+            Npc.timeSinceStartingEmote += Time.deltaTime;
+        }
+
+        /// <summary>
+        /// Update and sync with clients, if the intern is sinking or not and should die or not
+        /// </summary>
+        private void UpdateSinkingStateForOwner()
+        {
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_HINDEREDMOVEMENT, Npc.isMovementHindered > 0);
+            if (Npc.sourcesCausingSinking == 0)
+            {
+                if (Npc.isSinking)
+                {
+                    Npc.isSinking = false;
+                    this.InternAIController.SyncChangeSinkingState(false);
+                }
+            }
+            else
+            {
+                if (Npc.isSinking)
+                {
+                    Npc.GetCurrentMaterialStandingOn();
+                    if (!Npc.CheckConditionsForSinkingInQuicksand())
+                    {
+                        Npc.isSinking = false;
+                        this.InternAIController.SyncChangeSinkingState(false);
+                    }
+                }
+                else if (!Npc.isSinking && Npc.CheckConditionsForSinkingInQuicksand())
+                {
+                    Npc.isSinking = true;
+                    this.InternAIController.SyncChangeSinkingState(true, Npc.sinkingSpeedMultiplier, Npc.statusEffectAudioIndex);
+                }
+                if (Npc.sinkingValue >= 1f)
+                {
+                    Plugin.Logger.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
+                    this.InternAIController.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0);
+                }
+                else if (Npc.sinkingValue > 0.5f)
+                {
+                    Npc.Crouch(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update the center and the height of the <c>CharacterController</c>
+        /// </summary>
+        private void UpdateCenterAndHeightForOwner()
+        {
+            if (Npc.isCrouching)
+            {
+                Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 0.72f, Npc.thisController.center.z), 8f * Time.deltaTime);
+                Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 1.5f, 8f * Time.deltaTime);
+            }
+            else
+            {
+                CrouchMeter = Mathf.Max(CrouchMeter - Time.deltaTime * 2f, 0f);
+                Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 1.28f, Npc.thisController.center.z), 8f * Time.deltaTime);
+                Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 2.5f, 8f * Time.deltaTime);
+            }
+        }
+
+        /// <summary>
+        /// Update the rotation of the controller when using jetpack controls
+        /// </summary>
+        private void UpdateJetPackControlsForOwner()
+        {
+            if (this.disabledJetpackControlsThisFrame)
+            {
+                this.disabledJetpackControlsThisFrame = false;
+            }
+            if (Npc.jetpackControls)
+            {
+                if (Npc.disablingJetpackControls && Npc.thisController.isGrounded)
+                {
+                    this.disabledJetpackControlsThisFrame = true;
+                    this.InternAIController.SyncDisableJetpackMode();
+                }
+                else if (!Npc.thisController.isGrounded)
+                {
+                    if (!this.StartedJetpackControls)
+                    {
+                        this.StartedJetpackControls = true;
+                        Npc.jetpackTurnCompass.rotation = Npc.transform.rotation;
+                    }
+                    Npc.thisController.radius = Mathf.Lerp(Npc.thisController.radius, 1.25f, 10f * Time.deltaTime);
+                    Quaternion rotation = Npc.jetpackTurnCompass.rotation;
+                    Npc.jetpackTurnCompass.Rotate(new Vector3(0f, 0f, -Npc.moveInputVector.x) * (180f * Time.deltaTime), Space.Self);
+                    if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
+                    {
+                        Npc.jetpackTurnCompass.rotation = rotation;
+                    }
+                    rotation = Npc.jetpackTurnCompass.rotation;
+                    Npc.jetpackTurnCompass.Rotate(new Vector3(Npc.moveInputVector.y, 0f, 0f) * (180f * Time.deltaTime), Space.Self);
+                    if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
+                    {
+                        Npc.jetpackTurnCompass.rotation = rotation;
+                    }
+                    if (Npc.jetpackRandomIntensity != -1f)
+                    {
+                        rotation = Npc.jetpackTurnCompass.rotation;
+                        Vector3 a2 = new Vector3(
+                            Mathf.Clamp(
+                                Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity),
+                            -Npc.maxJetpackAngle, Npc.maxJetpackAngle),
+                            Mathf.Clamp(
+                                Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle),
+                            Mathf.Clamp(Random.Range(-Npc.jetpackRandomIntensity, Npc.jetpackRandomIntensity), -Npc.maxJetpackAngle, Npc.maxJetpackAngle));
+                        Npc.jetpackTurnCompass.Rotate(a2 * Time.deltaTime, Space.Self);
+                        if (Npc.maxJetpackAngle != -1f && Vector3.Angle(Npc.jetpackTurnCompass.up, Vector3.up) > Npc.maxJetpackAngle)
+                        {
+                            Npc.jetpackTurnCompass.rotation = rotation;
+                        }
+                    }
+                    Npc.transform.rotation = Quaternion.Slerp(Npc.transform.rotation, Npc.jetpackTurnCompass.rotation, 8f * Time.deltaTime);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Move the body of intern
+        /// </summary>
+        private void UpdateMoveControllerForOwner()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+
+            if (Npc.isFreeCamera)
+            {
+                Npc.moveInputVector = Vector2.zero;
+            }
+            PlayerControllerBPatch.CalculateGroundNormal_ReversePatch(this.Npc);
+            float num3 = Npc.movementSpeed / Npc.carryWeight;
+            if (Npc.sinkingValue > 0.73f)
+            {
+                num3 = 0f;
+            }
+            else
+            {
+                if (Npc.isCrouching)
+                {
+                    num3 /= 1.5f;
+                }
+                else if (Npc.criticallyInjured && !Npc.isCrouching)
+                {
+                    num3 *= limpMultiplier;
+                }
+                if (Npc.isSpeedCheating)
+                {
+                    Plugin.Logger.LogDebug("===================================================== speed cheat ?");
+                    num3 *= 15f;
+                }
+                if (movementHinderedPrev > 0)
+                {
+                    num3 /= 2f * Npc.hinderedMultiplier;
+                }
+                if (Npc.drunkness > 0f)
+                {
+                    num3 *= instanceSOR.drunknessSpeedEffect.Evaluate(Npc.drunkness) / 5f + 1f;
+                }
+                if (!Npc.isCrouching && CrouchMeter > 1.2f)
+                {
+                    num3 *= 0.5f;
+                }
+                if (!Npc.isCrouching)
+                {
+                    float num4 = Vector3.Dot(Npc.playerGroundNormal, walkForce);
+                    if (num4 > 0.05f)
+                    {
+                        slopeModifier = Mathf.MoveTowards(slopeModifier, num4, (Npc.slopeModifierSpeed + 0.45f) * Time.deltaTime);
+                    }
+                    else
+                    {
+                        slopeModifier = Mathf.MoveTowards(slopeModifier, num4, Npc.slopeModifierSpeed / 2f * Time.deltaTime);
+                    }
+                    num3 = Mathf.Max(num3 * 0.8f, num3 + Npc.slopeIntensity * slopeModifier);
+                }
+            }
+            if (Npc.isTypingChat || Npc.jetpackControls && !Npc.thisController.isGrounded || instanceSOR.suckingPlayersOutOfShip)
+            {
+                Npc.moveInputVector = Vector2.zero;
+            }
+            Vector3 vector = new Vector3(0f, 0f, 0f);
+            int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.65f, nearByPlayers, instanceSOR.playersMask);
+            for (int i = 0; i < num5; i++)
+            {
+                vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[i].transform.position) * 100f) * 1.2f;
+            }
+            int num6 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 1.25f, nearByPlayers, 524288);
+            for (int j = 0; j < num6; j++)
+            {
+                EnemyAICollisionDetect component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
+                if (component != null && component.mainScript != null && !component.mainScript.isEnemyDead && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
+                {
+                    vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
+                }
+            }
+            float num7;
+            if (IsFallingFromJump || isFallingNoJump)
+            {
+                num7 = 1.33f;
+            }
+            else if (Npc.drunkness > 0.3f)
+            {
+                num7 = Mathf.Clamp(Mathf.Abs(Npc.drunkness - 2.25f), 0.3f, 2.5f);
+            }
+            else if (!Npc.isCrouching && CrouchMeter > 1f)
+            {
+                num7 = 15f;
+            }
+            else if (Npc.isSprinting)
+            {
+                num7 = 5f / (Npc.carryWeight * 1.5f);
+            }
+            else
+            {
+                num7 = 10f / Npc.carryWeight;
+            }
+            walkForce = Vector3.MoveTowards(walkForce, Npc.transform.right * Npc.moveInputVector.x + Npc.transform.forward * Npc.moveInputVector.y, num7 * Time.deltaTime);
+            Vector3 vector2 = walkForce * num3 * sprintMultiplier + new Vector3(0f, Npc.fallValue, 0f) + vector;
+            vector2 += Npc.externalForces;
+            if (Npc.externalForceAutoFade.magnitude > 0.05f)
+            {
+                vector2 += Npc.externalForceAutoFade;
+                Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 2f * Time.deltaTime);
+            }
+            if (Npc.isPlayerSliding && Npc.thisController.isGrounded)
+            {
+                PlayerSlidingTimer += Time.deltaTime;
+                if (slideFriction > Npc.maxSlideFriction)
+                {
+                    slideFriction -= 35f * Time.deltaTime;
+                }
+                vector2 = new Vector3(vector2.x + (1f - Npc.playerGroundNormal.y) * Npc.playerGroundNormal.x * (1f - slideFriction), vector2.y, vector2.z + (1f - Npc.playerGroundNormal.y) * Npc.playerGroundNormal.z * (1f - slideFriction));
+            }
+            else
+            {
+                PlayerSlidingTimer = 0f;
+                slideFriction = 0f;
+            }
+
+            // Move
+            Npc.thisController.Move(vector2 * Time.deltaTime);
+        }
+
+        /// <summary>
+        /// Check if the intern is falling and update values accordingly
+        /// </summary>
+        private void UpdateFallValuesForOwner()
+        {
+            if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame)
+            {
+                if (!Npc.thisController.isGrounded)
+                {
+                    if (Npc.jetpackControls && !Npc.disablingJetpackControls)
+                    {
+                        Npc.fallValue = Mathf.MoveTowards(Npc.fallValue, Npc.jetpackCounteractiveForce, 9f * Time.deltaTime);
+                        Npc.fallValueUncapped = -8f;
+                    }
+                    else
+                    {
+                        Npc.fallValue = Mathf.Clamp(Npc.fallValue - 38f * Time.deltaTime, -150f, Npc.jumpForce);
+                        if (Mathf.Abs(Npc.externalForceAutoFade.y) - Mathf.Abs(Npc.fallValue) < 5f)
+                        {
+                            if (Npc.disablingJetpackControls)
+                            {
+                                Npc.fallValueUncapped -= 26f * Time.deltaTime;
+                            }
+                            else
+                            {
+                                Npc.fallValueUncapped -= 38f * Time.deltaTime;
+                            }
+                        }
+                    }
+                    if (!IsJumping && !IsFallingFromJump)
+                    {
+                        if (!isFallingNoJump)
+                        {
+                            isFallingNoJump = true;
+                            Npc.fallValue = -7f;
+                            Npc.fallValueUncapped = -7f;
+                        }
+                        else if (Npc.fallValue < -20f)
+                        {
+                            Npc.isCrouching = false;
+                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CROUCHING, false);
+                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, true);
+                        }
+                    }
+                    if (Npc.fallValueUncapped < -35f)
+                    {
+                        Npc.takingFallDamage = true;
+                    }
+                }
+                else
+                {
+                    movementHinderedPrev = Npc.isMovementHindered;
+                    if (!IsJumping)
+                    {
+                        if (isFallingNoJump)
+                        {
+                            isFallingNoJump = false;
+                            if (!Npc.isCrouching && Npc.fallValue < -9f)
+                            {
+                                Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
+                            }
+                            PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
+                        }
+                        if (!IsFallingFromJump)
+                        {
+                            Npc.fallValue = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                            Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                        }
+                    }
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update movement when using jetpack controls
+        /// </summary>
+        private void UpdateJetPackMoveValuesForOwner()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+
+            if (Npc.jetpackControls || Npc.disablingJetpackControls)
+            {
+                if (!this.TeleportingThisFrame && !Npc.inSpecialInteractAnimation && !Npc.enteringSpecialAnimation && !Npc.isClimbingLadder && (instanceSOR.timeSinceRoundStarted > 1f || instanceSOR.testRoom != null))
+                {
+                    float magnitude2 = Npc.thisController.velocity.magnitude;
+                    if (Npc.getAverageVelocityInterval <= 0f)
+                    {
+                        Npc.getAverageVelocityInterval = 0.04f;
+                        Npc.velocityAverageCount++;
+                        if (Npc.velocityAverageCount > Npc.velocityMovingAverageLength)
+                        {
+                            Npc.averageVelocity += (magnitude2 - Npc.averageVelocity) / (float)(Npc.velocityMovingAverageLength + 1);
+                        }
+                        else
+                        {
+                            Npc.averageVelocity += magnitude2;
+                            if (Npc.velocityAverageCount == Npc.velocityMovingAverageLength)
+                            {
+                                Npc.averageVelocity /= (float)Npc.velocityAverageCount;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Npc.getAverageVelocityInterval -= Time.deltaTime;
+                    }
+                    Debug.Log(string.Format("Average velocity: {0}", Npc.averageVelocity));
+                    if (TimeSinceTakingGravityDamage > 0.6f && Npc.velocityAverageCount > 4)
+                    {
+                        float num8 = Vector3.Angle(Npc.transform.up, Vector3.up);
+                        if (Physics.CheckSphere(Npc.gameplayCamera.transform.position, 0.5f, instanceSOR.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)
+                            || (num8 > 65f && Physics.CheckSphere(Npc.lowerSpine.position, 0.5f, instanceSOR.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)))
+                        {
+                            if (Npc.averageVelocity > 17f)
+                            {
+                                Debug.Log("Take damage a");
+                                TimeSinceTakingGravityDamage = 0f;
+                                this.InternAIController.SyncDamageIntern(Mathf.Clamp(85, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                            }
+                            else if (Npc.averageVelocity > 9f)
+                            {
+                                Debug.Log("Take damage b");
+                                this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                TimeSinceTakingGravityDamage = 0.35f;
+                            }
+                            else if (num8 > 60f && Npc.averageVelocity > 6f)
+                            {
+                                Debug.Log("Take damage c");
+                                this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                TimeSinceTakingGravityDamage = 0f;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        TimeSinceTakingGravityDamage += Time.deltaTime;
+                    }
+                    Npc.velocityLastFrame = Npc.thisController.velocity;
+                    PreviousFrameDeltaTime = Time.deltaTime;
+                }
+                else
+                {
+                    TeleportingThisFrame = false;
+                }
+            }
+            else
+            {
+                Npc.averageVelocity = 0f;
+                Npc.velocityAverageCount = 0;
+                TimeSinceTakingGravityDamage = 0f;
+            }
+        }
+
+        /// <summary>
+        /// Update movement when using ladder
+        /// </summary>
+        private void UpdateMoveWhenClimbingLadder()
+        {
+            Vector3 direction = Npc.thisPlayerBody.up;
+            Vector3 origin = Npc.gameplayCamera.transform.position + Npc.thisPlayerBody.up * 0.07f;
+            if ((Npc.externalForces + Npc.externalForceAutoFade).magnitude > 8f)
+            {
+                Npc.CancelSpecialTriggerAnimations();
+            }
+            Npc.externalForces = Vector3.zero;
+            Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 5f * Time.deltaTime);
+
+            if (goDownLadder)
+            {
+                direction = -Npc.thisPlayerBody.up;
+                origin = Npc.gameplayCamera.transform.position;
+            }
+            if (!Physics.Raycast(origin, direction, 0.15f, StartOfRound.Instance.allPlayersCollideWithMask, QueryTriggerInteraction.Ignore))
+            {
+                Npc.thisPlayerBody.transform.position += direction * (Const.BASE_MAX_SPEED * Npc.climbSpeed * Time.deltaTime);
+            }
+        }
+
+        #endregion
+
+        #region Updates npc body for not owner
+
+        /// <summary>
+        /// Sync the position with the server position and the rotations
+        /// </summary>
         private void UpdateSyncPositionAndRotationForNotOwner()
         {
             if (!Npc.isPlayerDead && Npc.isPlayerControlled)
@@ -803,37 +929,12 @@ namespace LethalInternship.AI
                         Npc.transform.localPosition = Vector3.MoveTowards(Npc.transform.localPosition, Npc.serverPlayerPosition, num11 * Time.deltaTime);
                     }
                 }
-                //if (Npc.jetpackControls || Npc.disablingJetpackControls || Npc.isClimbingLadder)
-                //{
-                //    if (!Npc.disableSyncInAnimation)
-                //    {
-                //        RoundManager.Instance.tempTransform.rotation = Quaternion.Euler(Npc.syncFullRotation);
-                //        Npc.transform.rotation = Quaternion.Lerp(Quaternion.Euler(Npc.transform.eulerAngles), Quaternion.Euler(Npc.syncFullRotation), 8f * Time.deltaTime);
-                //    }
-                //}
-                //else
-                //{
-                //    Npc.syncFullRotation = Npc.transform.eulerAngles;
-                //    if (!Npc.disableSyncInAnimation)
-                //    {
-                //        Npc.transform.eulerAngles = new Vector3(Npc.transform.eulerAngles.x, Mathf.LerpAngle(Npc.transform.eulerAngles.y, this.targetYRot, 14f * Time.deltaTime), Npc.transform.eulerAngles.z);
-                //    }
-                //    if (!Npc.inSpecialInteractAnimation && !Npc.disableSyncInAnimation)
-                //    {
-                //        Vector3 localEulerAngles2 = Npc.transform.localEulerAngles;
-                //        localEulerAngles2.x = Mathf.LerpAngle(localEulerAngles2.x, 0f, 25f * Time.deltaTime);
-                //        localEulerAngles2.z = Mathf.LerpAngle(localEulerAngles2.z, 0f, 25f * Time.deltaTime);
-                //        Npc.transform.localEulerAngles = localEulerAngles2;
-                //    }
-                //}
 
                 // Rotations
                 this.UpdateTurnBodyTowardsDirection();
                 this.UpdateLookAt();
                 Npc.playerEye.position = Npc.gameplayCamera.transform.position;
                 Npc.playerEye.rotation = Npc.gameplayCamera.transform.rotation;
-                //Npc.playerEye.localEulerAngles = new Vector3(this.targetLookRot, 0f, 0f);
-                //Npc.playerEye.eulerAngles = new Vector3(Npc.playerEye.eulerAngles.x, this.targetYRot, Npc.playerEye.eulerAngles.z);
             }
             else if ((Npc.isPlayerDead || !Npc.isPlayerControlled) && Npc.setPositionOfDeadPlayer)
             {
@@ -841,9 +942,14 @@ namespace LethalInternship.AI
             }
         }
 
-        #region Updates for all (owner and not owner)
+        #endregion
 
-        private void UpdateInSpecialInteractAnimationEffectForAll()
+        #region Updates npc body for all (owner and not owner)
+
+        /// <summary>
+        /// Update the localarms and rotation when in special interact animation
+        /// </summary>
+        private void UpdateInSpecialInteractAnimationEffect()
         {
             if (!Npc.inSpecialInteractAnimation)
             {
@@ -872,7 +978,10 @@ namespace LethalInternship.AI
                 Npc.playerModelArmsMetarig.localEulerAngles = new Vector3(-90f, 0f, 0f);
             }
         }
-        private void UpdateEmoteEffectsForAll()
+        /// <summary>
+        /// Update animation layer when using emotes
+        /// </summary>
+        private void UpdateEmoteEffects()
         {
             if (Npc.doingUpperBodyEmote > 0f)
             {
@@ -889,7 +998,10 @@ namespace LethalInternship.AI
             }
             Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_EMOTESNOARMS), Npc.emoteLayerWeight);
         }
-        private void UpdateSinkingEffectsForAll()
+        /// <summary>
+        /// Update the sinking values and effect
+        /// </summary>
+        private void UpdateSinkingEffects()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
 
@@ -923,7 +1035,10 @@ namespace LethalInternship.AI
                 Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
             }
         }
-        private void UpdateActiveAudioReverbFilterForAll()
+        /// <summary>
+        /// Update the active audio reverb filter
+        /// </summary>
+        private void UpdateActiveAudioReverbFilter()
         {
             GameNetworkManager instanceGNM = GameNetworkManager.Instance;
             StartOfRound instanceSOR = StartOfRound.Instance;
@@ -944,7 +1059,10 @@ namespace LethalInternship.AI
                 Npc.activeAudioReverbFilter.room = Mathf.Lerp(Npc.activeAudioReverbFilter.room, Npc.reverbPreset.room, 15f * Time.deltaTime);
             }
         }
-        private void UpdateAnimationUpperBodyForAll()
+        /// <summary>
+        /// Update animations when holding items and exhausion
+        /// </summary>
+        private void UpdateAnimationUpperBody()
         {
             int indexLayerHoldingItemsRightHand = Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND);
             int indexLayerHoldingItemsBothHands = Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSBOTHHANDS);
@@ -991,7 +1109,10 @@ namespace LethalInternship.AI
             }
             Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_TIREDAMOUNT, this.exhaustionEffectLerp);
         }
-        private void UpdateLineOfSightCubeForAll()
+        /// <summary>
+        /// Update line of sight cube
+        /// </summary>
+        private void UpdateLineOfSightCube()
         {
             if (Physics.Raycast(Npc.lineOfSightCube.position, Npc.lineOfSightCube.forward, out hit, 10f, Npc.playersManager.collidersAndRoomMask, QueryTriggerInteraction.Ignore))
             {
@@ -1005,6 +1126,13 @@ namespace LethalInternship.AI
 
         #endregion
 
+        /// <summary>
+        /// LateUpdate called from <see cref="PlayerControllerBPatch.LateUpdate_PreFix"><c>PlayerControllerBPatch.LateUpdate_PreFix</c></see> 
+        /// instead of the real LateUpdate from <c>PlayerControllerB</c>.
+        /// </summary>
+        /// <remarks>
+        /// Update username billboard, intern looking target, intern position to clients and other stuff
+        /// </remarks>
         public void LateUpdate()
         {
             GameNetworkManager instanceGNM = GameNetworkManager.Instance;
@@ -1052,7 +1180,7 @@ namespace LethalInternship.AI
                             UpdatePositionForNewlyJoinedClient = false;
                             if (!Npc.playersManager.newGameIsLoading)
                             {
-                                InternAIController.SyncUpdatePlayerPosition(Npc.thisPlayerBody.localPosition, Npc.isInElevator, Npc.isInHangarShipRoom, Npc.isExhausted, Npc.thisController.isGrounded);
+                                InternAIController.SyncUpdateInternPosition(Npc.thisPlayerBody.localPosition, Npc.isInElevator, Npc.isInHangarShipRoom, Npc.isExhausted, Npc.thisController.isGrounded);
                                 Npc.oldPlayerPosition = Npc.transform.localPosition;
                             }
                         }
@@ -1126,6 +1254,9 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Sync the rotation and the look at target to all clients
+        /// </summary>
         private void InternLookUpdate()
         {
             if (!Npc.isPlayerControlled)
@@ -1152,10 +1283,12 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // Update after some interval of time
+            // Only if there's at least one player near
             if (this.UpdatePlayerLookInterval > 0.25f && Physics.OverlapSphere(Npc.transform.position, 35f, this.PlayerMask).Length != 0)
             {
                 this.UpdatePlayerLookInterval = 0f;
-                InternAIController.SyncUpdatePlayerRotationAndLook(newDirectionToUpdateTurnBodyTowardsTo,
+                InternAIController.SyncUpdateInternRotationAndLook(newDirectionToUpdateTurnBodyTowardsTo,
                                                                    newIntEnumObjectsLookingAt,
                                                                    newPlayerEyeToLookAt,
                                                                    newPositionPlayerToLookAt);
@@ -1167,6 +1300,9 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Set the move vector to go forward
+        /// </summary>
         public void OrderToMove()
         {
             if (this.lastMoveVector.y < Const.BASE_MIN_SPEED)
@@ -1175,16 +1311,18 @@ namespace LethalInternship.AI
             }
         }
 
-        public void OrderForceToMove()
-        {
-            this.lastMoveVector = new Vector2(0f, Const.BASE_MAX_SPEED);
-        }
+        /// <summary>
+        /// Set the move vector to 0
+        /// </summary>
         public void OrderToStopMoving()
         {
             this.lastMoveVector = Vector2.zero;
             floatSprint = 0f;
         }
 
+        /// <summary>
+        /// Set the controller to sprint
+        /// </summary>
         public void OrderToSprint()
         {
             if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
@@ -1202,6 +1340,9 @@ namespace LethalInternship.AI
 
             floatSprint = 1f;
         }
+        /// <summary>
+        /// Set the controller to stop sprinting
+        /// </summary>
         public void OrderToStopSprint()
         {
             if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
@@ -1219,6 +1360,9 @@ namespace LethalInternship.AI
 
             floatSprint = 0f;
         }
+        /// <summary>
+        /// Set the controller to crouch on/off
+        /// </summary>
         public void OrderToToggleCrouch()
         {
             if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
@@ -1236,17 +1380,28 @@ namespace LethalInternship.AI
             this.CrouchMeter = Mathf.Min(this.CrouchMeter + 0.3f, 1.3f);
             Npc.Crouch(!Npc.isCrouching);
         }
-
+        /// <summary>
+        /// Set the direction the controller should turn towards, using a vector position
+        /// </summary>
+        /// <param name="positionDirection">Position to turn to</param>
         public void SetTurnBodyTowardsDirectionWithPosition(Vector3 positionDirection)
         {
             directionToUpdateTurnBodyTowardsTo = positionDirection - Npc.thisController.transform.position;
             directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
         }
+        /// <summary>
+        /// Set the direction the controller should turn towards, using a vector direction
+        /// </summary>
+        /// <param name="direction">Direction to turn to</param>
         public void SetTurnBodyTowardsDirection(Vector3 direction)
         {
             directionToUpdateTurnBodyTowardsTo = direction;
             directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
         }
+
+        /// <summary>
+        /// Turn the body towards the direction set beforehand
+        /// </summary>
         private void UpdateTurnBodyTowardsDirection()
         {
             Vector3 direction = directionToUpdateTurnBodyTowardsTo;
@@ -1257,15 +1412,26 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Make the controller look at the eyes of a player
+        /// </summary>
+        /// <param name="positionPlayerEyeToLookAt"></param>
         public void OrderToLookAtPlayer(Vector3 positionPlayerEyeToLookAt)
         {
             this.enumObjectsLookingAt = EnumObjectsLookingAt.Player;
             this.positionPlayerEyeToLookAt = positionPlayerEyeToLookAt;
         }
+        /// <summary>
+        /// Make the controller look straight forward
+        /// </summary>
         public void OrderToLookForward()
         {
             this.enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
         }
+        /// <summary>
+        /// Make the controller look at an specific vector position
+        /// </summary>
+        /// <param name="positionToLookAt"></param>
         public void OrderToLookAtPosition(Vector3 positionToLookAt)
         {
             if (!Physics.Linecast(Npc.gameplayCamera.transform.position, positionToLookAt, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
@@ -1278,6 +1444,9 @@ namespace LethalInternship.AI
                 OrderToLookForward();
             }
         }
+        /// <summary>
+        /// Update the head of the intern to look at what he is set to
+        /// </summary>
         private void UpdateLookAt()
         {
             if (Npc.inSpecialInteractAnimation)
@@ -1329,22 +1498,22 @@ namespace LethalInternship.AI
                     }
                     break;
             }
-
-            //    Npc.transform.localScale *= 1/0.85f;
-            //Npc.localItemHolder.position = Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R").position;
-            //Npc.localItemHolder.rotation = Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R").rotation;
-            //    Npc.transform.localScale *= 0.85f;
-            //Npc.localItemHolder.rotation = Npc.thisPlayerBody.rotation;
-            //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.rotation}");
-            //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.position}");
-            //Plugin.Logger.LogDebug($"update {Npc.localItemHolder.gameObject.name}, {Npc.localItemHolder.parent?.gameObject.name}, {Npc.localItemHolder.parent?.parent?.gameObject.name}");
         }
 
+        /// <summary>
+        /// Set the controller to go down or up on the ladder
+        /// </summary>
+        /// <param name="hasToGoDown"></param>
         public void OrderToGoUpDownLadder(bool hasToGoDown)
         {
             this.goDownLadder = hasToGoDown;
         }
 
+        /// <summary>
+        /// Checks if the intern can use the ladder
+        /// </summary>
+        /// <param name="ladder"></param>
+        /// <returns></returns>
         public bool CanUseLadder(InteractTrigger ladder)
         {
             if (ladder.usingLadder)
@@ -1395,6 +1564,11 @@ namespace LethalInternship.AI
             return true;
         }
 
+        /// <summary>
+        /// Save the different animation for an item and the state
+        /// </summary>
+        /// <param name="animationString">Name of the animation</param>
+        /// <param name="value">active or not</param>
         public void SetAnimationBoolForItem(string animationString, bool value)
         {
             if (dictAnimationBoolPerItem == null)
@@ -1405,11 +1579,19 @@ namespace LethalInternship.AI
             dictAnimationBoolPerItem[animationString] = value;
         }
 
+        /// <summary>
+        /// Check if the direction is not close to <see cref="Const.EPSILON">Const.EPSILON</see>
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <returns></returns>
         private bool DirectionNotZero(float direction)
         {
             return direction < -Const.EPSILON || Const.EPSILON < direction;
         }
 
+        /// <summary>
+        /// Manage the drowning state of the intern
+        /// </summary>
         private void SetFaceUnderwaterFilters()
         {
             if (Npc.isPlayerDead)

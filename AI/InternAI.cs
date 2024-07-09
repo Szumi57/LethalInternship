@@ -5,52 +5,64 @@ using LethalInternship.Managers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
-using LethalLib.Modules;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
-using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
 {
-
-    // You may be wondering, how does the Example Enemy know it is from class ExampleEnemyAI?
-    // Well, we give it a reference to to this class in the Unity project where we make the asset bundle.
-    // Asset bundles cannot contain scripts, so our script lives here. It is important to get the
-    // reference right, or else it will not find this file. See the guide for more information.
-
+    /// <summary>
+    /// AI for the intern.
+    /// </summary>
+    /// <remarks>
+    /// The AI is a component attached to the <c>GameObject</c> parent of the <c>PlayerControllerB</c> for the intern.<br/>
+    /// For moving the AI has a agent that pathfind to the next node each game loop,
+    /// the component moves by itself, detached from the body and the body (<c>PlayerControllerB</c>) moves toward it.<br/>
+    /// For piloting the body, we use <see cref="NpcController"><c>NpcController</c></see> that has a reference to the body (<c>PlayerControllerB</c>).<br/>
+    /// Then the AI class use its methods to pilot the body using <c>NpcController</c>.
+    /// The <c>NpcController</c> is set outside in <see cref="InternManager.InitInternSpawning"><c>InternManager.InitInternSpawning</c></see>.
+    /// </remarks>
     internal class InternAI : EnemyAI
     {
-        // We set these in our Asset Bundle, so we can disable warning CS0649:
-        // Field 'field' is never assigned to, and will always have its default value 'value'
-#pragma warning disable 0649
-        public Transform turnCompass = null!;
-        public Transform attackArea = null!;
-#pragma warning restore 0649
-        float timeSinceHittingLocalPlayer;
-        float timeSinceNewRandPos;
-        Vector3 positionRandomness;
-        Vector3 StalkPos;
-        System.Random enemyRandom = null!;
-        bool isDeadAnimationDone;
-
-
+        /// <summary>
+        /// Dictionnary of the recently dropped object on the ground.
+        /// The intern will not try to grab them for a certain time (<see cref="Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS"><c>Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS</c></see>).
+        /// </summary>
         public static Dictionary<GrabbableObject, float> DictJustDroppedItems = new Dictionary<GrabbableObject, float>();
 
+        /// <summary>
+        /// Current state of the AI.
+        /// </summary>
+        /// <remarks>
+        /// For the behaviour of the AI, we use a State pattern,
+        /// with the class <see cref="AIState"><c>AIState</c></see> 
+        /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
+        /// </remarks>
         public AIState State { get; set; } = null!;
         public string InternId = "Not initialized";
+        /// <summary>
+        /// Pilot class of the body <c>PlayerControllerB</c> of the intern.
+        /// </summary>
         public NpcController NpcController = null!;
 
+        /// <summary>
+        /// List of item that could not be held by intern, put in a list to not check them anymore
+        /// </summary>
         public List<GrabbableObject> ListInvalidObjects = null!;
+        /// <summary>
+        /// Currently held item by intern
+        /// </summary>
         public GrabbableObject? HeldItem = null!;
+        /// <summary>
+        /// Used for not teleporting too much
+        /// </summary>
         public float TimeSinceUsingEntrance { get; set; }
 
         private InteractTrigger[] laddersInteractTrigger = null!;
@@ -59,46 +71,12 @@ namespace LethalInternship.AI
 
         private Coroutine grabObjectCoroutine = null!;
 
-        //private Vector3 agentLastPosition;
-        //private Vector3 npcControllerLastPosition;
         private float timeSinceStuck;
-        private bool hasTriedToJump = false;
         private bool StuckTeleportTry1;
-
-        [Space(3f)]
-        private RaycastHit enemyRayHit;
-        private float velX;
-        private float velZ;
-
-        public float walkCheckInterval;
-        private Vector3 positionLastCheck;
-        private float randomLookTimer;
-        private bool lostPlayerInChase;
-        private float lostLOSTimer;
-        private bool running;
-        private bool runningRandomly;
-        private bool crouching;
-
-        private float staminaTimer;
-        private Vector3 focusOnPosition;
-        private float verticalLookAngle;
-        private float lookAtPositionTimer;
-
-        private Vector3 previousPosition;
-        private Vector3 agentLocalVelocity;
-
         private float updateDestinationIntervalInternAI;
-        private float setDestinationToPlayerIntervalInternAI;
-
         private float timerCheckDoor;
 
         private LineRendererUtil LineRendererUtil = null!;
-
-        [Conditional("DEBUG")]
-        void LogIfDebugBuild(string text)
-        {
-            Plugin.Logger.LogInfo(text);
-        }
 
         void Log(string text)
         {
@@ -117,6 +95,12 @@ namespace LethalInternship.AI
             currentBehaviourStateIndex = -1;
         }
 
+        /// <summary>
+        /// Start unity method.
+        /// </summary>
+        /// <remarks>
+        /// The agent is initialized here
+        /// </remarks>
         public override void Start()
         {
             this.NpcController.Awake();
@@ -147,8 +131,6 @@ namespace LethalInternship.AI
                 thisNetworkObject = gameObject.GetComponentInChildren<NetworkObject>();
                 path1 = new NavMeshPath();
                 openDoorSpeedMultiplier = enemyType.doorSpeedMultiplier;
-
-
             }
             catch (Exception arg)
             {
@@ -157,15 +139,14 @@ namespace LethalInternship.AI
             //this.lerpTarget.SetParent(RoundManager.Instance.mapPropsContainer.transform);
 
             Log("Intern Spawned");
-
-            // --- old code
-            timeSinceHittingLocalPlayer = 0;
-            timeSinceNewRandPos = 0;
-            positionRandomness = new Vector3(0, 0, 0);
-            enemyRandom = new System.Random(StartOfRound.Instance.randomMapSeed + thisEnemyIndex);
-            isDeadAnimationDone = false;
         }
 
+        /// <summary>
+        /// Initialization of the field.
+        /// </summary>
+        /// <remarks>
+        /// This method is used as an initialization and re-initialization too.
+        /// </remarks>
         public void Init()
         {
             // Ladders
@@ -194,7 +175,6 @@ namespace LethalInternship.AI
             this.isEnemyDead = false;
             this.enabled = true;
 
-            enemyRayHit = default;
             addPlayerVelocityToDestination = 3f;
 
             // Position
@@ -207,11 +187,20 @@ namespace LethalInternship.AI
                 SetClientCalculatingAI(false);
             }
 
+            // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
         }
 
+        /// <summary>
+        /// Update unity method.
+        /// </summary>
+        /// <remarks>
+        /// The AI does not calculate each frame but use a timer <c>updateDestinationIntervalInternAI</c>
+        /// to update every some number of ms.
+        /// </remarks>
         public override void Update()
         {
+            // Not owner we stop calculating AI
             if (!IsOwner)
             {
                 if (currentSearch.inProgress)
@@ -224,6 +213,8 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // AI dead or body dead, we kill the AI or the body,
+            // whichever one is not dead yet
             if (isEnemyDead)
             {
                 SetClientCalculatingAI(enable: false);
@@ -236,28 +227,29 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // Set that this client calculate the AI
             if (!inSpecialAnimation)
             {
                 SetClientCalculatingAI(enable: true);
             }
 
+            // No AI calculation if in special animation
             if (inSpecialAnimation)
             {
                 return;
             }
 
+            // No AI calculation if in special animation if climbing ladder or inSpecialInteractAnimation
             if (!NpcController.Npc.isClimbingLadder
                 && (NpcController.Npc.inSpecialInteractAnimation || NpcController.Npc.enteringSpecialAnimation))
             {
                 return;
             }
 
-            //Transform t = NpcController.Npc.GetComponentsInChildren<Transform>().First(x => x.name == "hand.R");
-            //Ray scanHoleRay = new Ray(t.position, t.forward);
-            //Ray scanHoleRay = new Ray(NpcController.Npc.localItemHolder.position, NpcController.Npc.localItemHolder.forward);
-            //float lengthScanHoleRay = 1f;
-            //DrawUtil.DrawLine(LineRenderer, scanHoleRay, lengthScanHoleRay, UnityEngine.Color.red);
-
+            // Update the position of the AI to be the one from the body
+            // The AI always tries to move and the body follows
+            // But the AI still need to go back to the body current position each game loop
+            // Otherwise the AI just do not stop and goes too far
             if (NpcController.HasToMove)
             {
                 if (!NpcController.Npc.isClimbingLadder && !NpcController.Npc.inSpecialInteractAnimation && !NpcController.Npc.enteringSpecialAnimation)
@@ -269,17 +261,27 @@ namespace LethalInternship.AI
                 agent.nextPosition = NpcController.Npc.thisController.transform.position;
             }
 
+            // Update interval timer for AI calculation
             if (updateDestinationIntervalInternAI >= 0f)
             {
                 updateDestinationIntervalInternAI -= Time.deltaTime;
             }
             else
             {
+                // Do the actual AI calculation
                 DoAIInterval();
                 updateDestinationIntervalInternAI = AIIntervalTime;
             }
         }
 
+        /// <summary>
+        /// Where the AI begin its calculations.
+        /// </summary>
+        /// <remarks>
+        /// For the behaviour of the AI, we use a State pattern,
+        /// with the class <see cref="AIState"><c>AIState</c></see> 
+        /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
+        /// </remarks>
         public override void DoAIInterval()
         {
             if (isEnemyDead || NpcController.Npc.isPlayerDead || StartOfRound.Instance.allPlayersDead)
@@ -287,16 +289,172 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // If no state, default state to searching a player to follow
             if (State == null)
             {
                 State = new SearchingForPlayerState(this);
             }
 
+            // Do the AI calculation behaviour for the current state
             State.DoAI();
 
+            // Check if the body is stuck somehow, and try to unstuck it in various ways
             CheckIfStuck();
         }
 
+        /// <summary>
+        /// Check if the intern is blocked in his path, by doors, ladders,
+        /// something is front of him, a hole
+        /// </summary>
+        /// <remarks>
+        /// Method that still need polishing and testing.<br/>
+        /// - Using raycast to check if something is in front of legs, torso, head<br/>
+        /// - For checking holes, we check if the AI, the brain is not going too far from the body<br/>
+        /// - If the body does not move too much for some time, we try to teleport the intern to its destination
+        /// </remarks>
+        private void CheckIfStuck()
+        {
+            if (!NpcController.HasToMove)
+            {
+                return;
+            }
+
+            if (NpcController.Npc.jetpackControls
+                || NpcController.Npc.isClimbingLadder)
+            {
+                return;
+            }
+
+            // Doors
+            if (OpenDoorIfNeeded())
+            {
+                return;
+            }
+
+            // Check for stuck
+            bool legsFreeCheck1 = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                 NpcController.Npc.thisController.transform.position + new Vector3(0, 0.4f, 0),
+                                                                 NpcController.Npc.thisController.transform.forward,
+                                                                 0.5f);
+            bool legsFreeCheck2 = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                 NpcController.Npc.thisController.transform.position + new Vector3(0, 0.6f, 0),
+                                                                 NpcController.Npc.thisController.transform.forward,
+                                                                 0.5f);
+            bool legsFreeCheck = legsFreeCheck1 && legsFreeCheck2;
+
+            bool headFreeCheck = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                NpcController.Npc.thisController.transform.position + new Vector3(0, 2.2f, 0),
+                                                                NpcController.Npc.thisController.transform.forward,
+                                                                0.5f);
+            bool headFreeWhenJumpingCheck = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                           NpcController.Npc.thisController.transform.position + new Vector3(0, 3f, 0),
+                                                                           NpcController.Npc.thisController.transform.forward,
+                                                                           0.5f);
+            if (!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck)
+            {
+                if (!NpcController.IsJumping && !NpcController.IsFallingFromJump)
+                {
+                    bool canMoveCheckWhileJump = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                                NpcController.Npc.thisController.transform.position + new Vector3(0, 1.8f, 0),
+                                                                                NpcController.Npc.thisController.transform.forward,
+                                                                                0.5f);
+                    if (canMoveCheckWhileJump)
+                    {
+                        Log($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
+                        PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
+                    }
+                }
+            }
+            else if (legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck))
+            {
+                if (!NpcController.Npc.isCrouching)
+                {
+                    bool canMoveCheckWhileCrouch = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                                  NpcController.Npc.thisController.transform.position + new Vector3(0, 1f, 0),
+                                                                                  NpcController.Npc.thisController.transform.forward,
+                                                                                  0.5f);
+                    if (canMoveCheckWhileCrouch)
+                    {
+                        Log($"legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
+                        NpcController.OrderToStopSprint();
+                        NpcController.OrderToToggleCrouch();
+                    }
+                }
+            }
+            else if (legsFreeCheck && headFreeCheck)
+            {
+                if (NpcController.Npc.isCrouching)
+                {
+                    Log($"uncrouch");
+                    NpcController.OrderToToggleCrouch();
+                }
+            }
+
+            // Check for hole
+            if ((!NpcController.IsJumping)
+                && (this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
+            {
+                // Ladders ?
+                bool isUsingLadder = UseLadderIfNeeded();
+
+                if (isUsingLadder)
+                {
+                    timeSinceStuck = 0f;
+                    return;
+                }
+
+                if (Time.timeSinceLevelLoad - TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
+                {
+                    NpcController.Npc.transform.position = this.transform.position;
+                    Log($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
+                }
+            }
+
+            // Controller stuck in world ?
+            Vector3 forward = NpcController.Npc.thisController.transform.forward;
+            if ((forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
+            {
+                Log($"TimeSinceStuck {timeSinceStuck}");
+                timeSinceStuck += AIIntervalTime;
+            }
+            else if (!NpcController.IsJumping)
+            {
+                // Not stuck
+                timeSinceStuck = 0f;
+            }
+
+            if (timeSinceStuck > Const.TIMER_STUCK_WAY_TOO_MUCH)
+            {
+                timeSinceStuck = 0f;
+                Plugin.Logger.LogDebug($"- !!! Stuck since way too much - ({Const.TIMER_STUCK_WAY_TOO_MUCH}sec) -> teleport if target known");
+                // Teleport player
+                if (this.targetPlayer != null)
+                {
+                    Plugin.Logger.LogDebug($"Teleport to {this.targetPlayer.transform.position}");
+                    TeleportAgentAndBody(this.targetPlayer.transform.position);
+                }
+            }
+
+            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
+            {
+                Plugin.Logger.LogDebug($"- Stuck since too much - ({Const.TIMER_STUCK_TOO_MUCH}sec) -> teleport");
+                // Teleport player
+                if (StuckTeleportTry1)
+                {
+                    NpcController.Npc.thisPlayerBody.transform.position = this.transform.position;
+                }
+                else
+                {
+                    Plugin.Logger.LogDebug($"Teleport to {NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f}");
+                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f);
+                }
+                StuckTeleportTry1 = !StuckTeleportTry1;
+            }
+        }
+
+        /// <summary>
+        /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
+        /// </summary>
         public void OrderMoveToDestination()
         {
             if (agent.isActiveAndEnabled && agent.isOnNavMesh && !isEnemyDead && !NpcController.Npc.isPlayerDead)
@@ -316,11 +474,22 @@ namespace LethalInternship.AI
             TeleportAgentAndBody(NpcController.Npc.thisController.transform.position);
         }
 
+        /// <summary>
+        /// Is the current client running the code is the owner of the <c>InternAI</c> ?
+        /// </summary>
+        /// <returns></returns>
         public bool IsClientOwnerOfIntern()
         {
             return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
+        /// <summary>
+        /// Check the line of sight if the intern can see the target player
+        /// </summary>
+        /// <param name="width">FOV of the intern</param>
+        /// <param name="range">Distance max for seeing something</param>
+        /// <param name="proximityAwareness">Distance where the interns "sense" the player, in line of sight or not. -1 for no proximity awareness</param>
+        /// <returns>Target player <c>PlayerControllerB</c> or null</returns>
         public PlayerControllerB? CheckLOSForTarget(float width = 45f, int range = 60, int proximityAwareness = -1)
         {
             if (targetPlayer == null)
@@ -333,6 +502,7 @@ namespace LethalInternship.AI
                 return null;
             }
 
+            // Fog reduce the visibility
             if (isOutside && !enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
             {
                 range = Mathf.Clamp(range, 0, 30);
@@ -344,10 +514,12 @@ namespace LethalInternship.AI
             if (Vector3.Distance(posTargetCamera, thisInternCamera.position) < (float)range
                 && !Physics.Linecast(thisInternCamera.position, posTargetCamera, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
             {
+                // Target close enough and nothing in between to break line of sight 
                 Vector3 to = posTargetCamera - thisInternCamera.position;
                 if (Vector3.Angle(thisInternCamera.forward, to) < width
                     || (proximityAwareness != -1 && Vector3.Distance(thisInternCamera.position, posTargetCamera) < (float)proximityAwareness))
                 {
+                    // Target in FOV or proximity awareness range
                     return targetPlayer;
                 }
             }
@@ -355,6 +527,13 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Check the line of sight if the intern see another intern who see the same target player.
+        /// </summary>
+        /// <param name="width">FOV of the intern</param>
+        /// <param name="range">Distance max for seeing something</param>
+        /// <param name="proximityAwareness">Distance where the interns "sense" the player, in line of sight or not. -1 for no proximity awareness</param>
+        /// <returns>Target player <c>PlayerControllerB</c> or null</returns>
         public PlayerControllerB? CheckLOSForInternHavingTargetInLOS(float width = 45f, int range = 60, int proximityAwareness = -1)
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
@@ -379,14 +558,17 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Check for target player
                 Vector3 posInternCamera = intern.gameplayCamera.transform.position;
                 if (Vector3.Distance(posInternCamera, thisInternCamera.position) < (float)range
                     && !Physics.Linecast(thisInternCamera.position, posInternCamera, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
+                    // Target close enough and nothing in between to break line of sight 
                     Vector3 to = posInternCamera - thisInternCamera.position;
                     if (Vector3.Angle(thisInternCamera.forward, to) < width
                         || (proximityAwareness != -1 && Vector3.Distance(thisInternCamera.position, posInternCamera) < (float)proximityAwareness))
                     {
+                        // Target in FOV or proximity awareness range
                         if (internAI.targetPlayer == targetPlayer)
                         {
                             Plugin.Logger.LogDebug($"{this.NpcController.Npc.playerClientId} Found intern {intern.playerUsername} who knows target {targetPlayer.playerUsername}");
@@ -398,8 +580,17 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Check the line of sight if the intern can see any player and take the closest.
+        /// </summary>
+        /// <param name="width">FOV of the intern</param>
+        /// <param name="range">Distance max for seeing something</param>
+        /// <param name="proximityAwareness">Distance where the interns "sense" the player, in line of sight or not. -1 for no proximity awareness</param>
+        /// <param name="bufferDistance"></param>
+        /// <returns>Target player <c>PlayerControllerB</c> or null</returns>
         public PlayerControllerB? CheckLOSForClosestPlayer(float width = 45f, int range = 60, int proximityAwareness = -1, float bufferDistance = 0f)
         {
+            // Fog reduce the visibility
             if (isOutside && !enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
             {
                 range = Mathf.Clamp(range, 0, 30);
@@ -407,8 +598,8 @@ namespace LethalInternship.AI
 
             StartOfRound instanceSOR = StartOfRound.Instance;
             Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
-            float num2 = 1000f;
-            int num3 = -1;
+            float currentClosestDistance = 1000f;
+            int indexPlayer = -1;
             for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
             {
                 PlayerControllerB player = instanceSOR.allPlayerScripts[i];
@@ -417,46 +608,58 @@ namespace LethalInternship.AI
                     continue;
                 }
 
-                Vector3 position = player.gameplayCamera.transform.position;
-                if ((position - this.transform.position).sqrMagnitude > range * range)
+                // Target close enough ?
+                Vector3 cameraPlayerPosition = player.gameplayCamera.transform.position;
+                if ((cameraPlayerPosition - this.transform.position).sqrMagnitude > range * range)
                 {
                     continue;
                 }
 
-                if (Physics.Linecast(NpcController.Npc.gameplayCamera.transform.position, position, instanceSOR.collidersAndRoomMaskAndDefault))
+                // Nothing in between to break line of sight ?
+                if (Physics.Linecast(NpcController.Npc.gameplayCamera.transform.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
                     continue;
                 }
 
-                Vector3 to = position - thisInternCamera.position;
-                float num = Vector3.Distance(thisInternCamera.position, position);
-                if ((Vector3.Angle(thisInternCamera.forward, to) < width || (proximityAwareness != -1 && num < (float)proximityAwareness)) && num < num2)
+                Vector3 vectorInternToPlayer = cameraPlayerPosition - thisInternCamera.position;
+                float distanceInternToPlayer = Vector3.Distance(thisInternCamera.position, cameraPlayerPosition);
+                if ((Vector3.Angle(thisInternCamera.forward, vectorInternToPlayer) < width || (proximityAwareness != -1 && distanceInternToPlayer < (float)proximityAwareness))
+                    && distanceInternToPlayer < currentClosestDistance)
                 {
-                    num2 = num;
-                    num3 = i;
+                    // Target in FOV or proximity awareness range
+                    currentClosestDistance = distanceInternToPlayer;
+                    indexPlayer = i;
                 }
             }
 
             if (targetPlayer != null
-                && num3 != -1
-                && targetPlayer != instanceSOR.allPlayerScripts[num3]
+                && indexPlayer != -1
+                && targetPlayer != instanceSOR.allPlayerScripts[indexPlayer]
                 && bufferDistance > 0f
-                && Mathf.Abs(num2 - Vector3.Distance(base.transform.position, targetPlayer.transform.position)) < bufferDistance)
+                && Mathf.Abs(currentClosestDistance - Vector3.Distance(base.transform.position, targetPlayer.transform.position)) < bufferDistance)
             {
                 return null;
             }
 
-            if (num3 < 0)
+            if (indexPlayer < 0)
             {
                 return null;
             }
 
-            mostOptimalDistance = num2;
-            return instanceSOR.allPlayerScripts[num3];
+            mostOptimalDistance = currentClosestDistance;
+            return instanceSOR.allPlayerScripts[indexPlayer];
         }
 
+        /// <summary>
+        /// Check if enemy in line of sight.
+        /// </summary>
+        /// <param name="width">FOV of the intern</param>
+        /// <param name="range">Distance max for seeing something</param>
+        /// <param name="proximityAwareness">Distance where the interns "sense" the player, in line of sight or not. -1 for no proximity awareness</param>
+        /// <returns>Enemy <c>EnemyAI</c> or null</returns>
         public EnemyAI? CheckLOSForEnemy(float width = 45f, int range = 20, int proximityAwareness = -1)
         {
+            // Fog reduce the visibility
             if (isOutside && !enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
             {
                 range = Mathf.Clamp(range, 0, 30);
@@ -475,6 +678,7 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Enemy close enough ?
                 Vector3 positionEnemy = spawnedEnemy.transform.position;
                 Vector3 directionEnemyFromCamera = positionEnemy - thisInternCamera.position;
                 float sqrDistanceToEnemy = directionEnemyFromCamera.sqrMagnitude;
@@ -496,9 +700,10 @@ namespace LethalInternship.AI
                 {
                     continue;
                 }
+                // Enemy in distance of fear range
                 Plugin.Logger.LogDebug($"fear range {fearRange}");
 
-                // Proximity awareness
+                // Proximity awareness, danger
                 if (proximityAwareness > -1
                     && sqrDistanceToEnemy < (float)proximityAwareness * (float)proximityAwareness)
                 {
@@ -506,7 +711,7 @@ namespace LethalInternship.AI
                     return instanceRM.SpawnedEnemies[index];
                 }
 
-                // Line of Sight
+                // Line of Sight, danger
                 if (Vector3.Angle(thisInternCamera.forward, directionEnemyFromCamera) < width)
                 {
                     Plugin.Logger.LogDebug($"{NpcController.Npc.playerUsername} DANGER LOS \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
@@ -517,6 +722,11 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Check for, an enemy, the minimal distance from enemy to intern before panicking.
+        /// </summary>
+        /// <param name="enemy">Enemy to check</param>
+        /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
         private int? GetFearRangeForEnemies(EnemyAI enemy)
         {
             Plugin.Logger.LogDebug($"\"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
@@ -602,6 +812,8 @@ namespace LethalInternship.AI
                     }
 
                 default:
+                    // Not dangerous enemies (at first sight)
+
                     // "Docile Locust Bees"
                     // "Manticoil"
                     // "Masked"
@@ -610,6 +822,10 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Is the target player in the ship or outside but close to the ship ?
+        /// </summary>
+        /// <returns></returns>
         public bool IsTargetInShipBoundsExpanded()
         {
             if (targetPlayer == null)
@@ -620,158 +836,21 @@ namespace LethalInternship.AI
             return targetPlayer.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(targetPlayer.transform.position);
         }
 
-        public bool SetDestinationToPositionInternAI(Vector3 position)
+        /// <summary>
+        /// Set the destination in <c>EnemyAI</c>, not on the agent
+        /// </summary>
+        /// <param name="position">the destination</param>
+        public void SetDestinationToPositionInternAI(Vector3 position)
         {
             moveTowardsDestination = true;
             movingTowardsTargetPlayer = false;
             destination = RoundManager.Instance.GetNavMeshPosition(position, RoundManager.Instance.navHit, 2.7f);
-
-            return true;
         }
 
-        private void CheckIfStuck()
-        {
-            if (!NpcController.HasToMove)
-            {
-                return;
-            }
-
-            if (NpcController.Npc.jetpackControls
-                || NpcController.Npc.isClimbingLadder)
-            {
-                return;
-            }
-
-            // Doors
-            if (OpenDoorIfNeeded())
-            {
-                return;
-            }
-
-            // Check for stuck
-            bool legsFreeCheck1 = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                 NpcController.Npc.thisController.transform.position + new Vector3(0, 0.4f, 0),
-                                                                 NpcController.Npc.thisController.transform.forward,
-                                                                 0.5f);
-            bool legsFreeCheck2 = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                 NpcController.Npc.thisController.transform.position + new Vector3(0, 0.6f, 0),
-                                                                 NpcController.Npc.thisController.transform.forward,
-                                                                 0.5f);
-            bool legsFreeCheck = legsFreeCheck1 && legsFreeCheck2;
-
-            bool headFreeCheck = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                NpcController.Npc.thisController.transform.position + new Vector3(0, 2.2f, 0),
-                                                                NpcController.Npc.thisController.transform.forward,
-                                                                0.5f);
-            bool headFreeWhenJumpingCheck = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                           NpcController.Npc.thisController.transform.position + new Vector3(0, 3f, 0),
-                                                                           NpcController.Npc.thisController.transform.forward,
-                                                                           0.5f);
-            if (!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck)
-            {
-                if (!NpcController.IsJumping)
-                {
-                    bool canMoveCheckWhileJump = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                                NpcController.Npc.thisController.transform.position + new Vector3(0, 1.8f, 0),
-                                                                                NpcController.Npc.thisController.transform.forward,
-                                                                                0.5f);
-                    if (canMoveCheckWhileJump)
-                    {
-                        Log($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
-                        PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
-                    }
-                }
-            }
-            else if (legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck))
-            {
-                if (!NpcController.Npc.isCrouching)
-                {
-                    bool canMoveCheckWhileCrouch = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                                  NpcController.Npc.thisController.transform.position + new Vector3(0, 1f, 0),
-                                                                                  NpcController.Npc.thisController.transform.forward,
-                                                                                  0.5f);
-                    if (canMoveCheckWhileCrouch)
-                    {
-                        Log($"legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
-                        NpcController.OrderToStopSprint();
-                        NpcController.OrderToToggleCrouch();
-                    }
-                }
-            }
-            else if (legsFreeCheck && headFreeCheck)
-            {
-                if (NpcController.Npc.isCrouching)
-                {
-                    Log($"uncrouch");
-                    NpcController.OrderToToggleCrouch();
-                }
-            }
-
-            // Check for hole
-            if (!NpcController.IsJumping
-                && (this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
-            {
-                // Ladders
-                bool isUsingLadder = UseLadderIfNeeded();
-
-                if (isUsingLadder)
-                {
-                    timeSinceStuck = 0f;
-                    return;
-                }
-
-                if (Time.timeSinceLevelLoad - TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
-                {
-                    NpcController.Npc.transform.position = this.transform.position;
-                    Log($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
-                }
-            }
-
-            // Controller stuck in world ?
-            //Log($"ai progression {(this.transform.position - agentLastPosition).sqrMagnitude}");
-            //if ((this.transform.position - agentLastPosition).sqrMagnitude < 0.1f * 0.1f
-            //    && (NpcController.Npc.transform.position - npcControllerLastPosition).sqrMagnitude < 0.45f * 0.45f)
-            Vector3 forward = NpcController.Npc.thisController.transform.forward;
-            if ((forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
-            {
-                Log($"TimeSinceStuck {timeSinceStuck}");
-                timeSinceStuck += AIIntervalTime;
-            }
-            else if (!NpcController.IsJumping)
-            {
-                // Not stuck
-                timeSinceStuck = 0f;
-            }
-
-            if (timeSinceStuck > Const.TIMER_STUCK_WAY_TOO_MUCH)
-            {
-                timeSinceStuck = 0f;
-                Plugin.Logger.LogDebug($"- !!! Stuck since way too much - ({Const.TIMER_STUCK_WAY_TOO_MUCH}sec) -> teleport if target known");
-                // Teleport player
-                if (this.targetPlayer != null)
-                {
-                    Plugin.Logger.LogDebug($"Teleport to {this.targetPlayer.transform.position}");
-                    TeleportAgentAndBody(this.targetPlayer.transform.position);
-                }
-            }
-
-            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
-            {
-                Plugin.Logger.LogDebug($"- Stuck since too much - ({Const.TIMER_STUCK_TOO_MUCH}sec) -> teleport");
-                // Teleport player
-                if (StuckTeleportTry1)
-                {
-                    NpcController.Npc.thisPlayerBody.transform.position = this.transform.position;
-                }
-                else
-                {
-                    Plugin.Logger.LogDebug($"Teleport to {NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f}");
-                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f);
-                }
-                StuckTeleportTry1 = !StuckTeleportTry1;
-            }
-        }
-
+        /// <summary>
+        /// Search for all the loaded ladders on the map.
+        /// </summary>
+        /// <returns>Array of <c>InteractTrigger</c> (ladders)</returns>
         private InteractTrigger[] RefreshLaddersList()
         {
             List<InteractTrigger> ladders = new List<InteractTrigger>();
@@ -791,6 +870,11 @@ namespace LethalInternship.AI
             return ladders.ToArray();
         }
 
+        /// <summary>
+        /// Check every ladder to see if the body of intern is close to either the bottom of the ladder (wants to go up) or the top of the ladder (wants to go down).
+        /// Orders the controller to set field <c>hasToGoDown</c>.
+        /// </summary>
+        /// <returns>The ladder to use, null if nothing close</returns>
         public InteractTrigger? GetLadderIfWantsToUseLadder()
         {
             InteractTrigger ladder;
@@ -819,18 +903,17 @@ namespace LethalInternship.AI
             return null;
         }
 
-        public EntranceTeleport? IsEntranceClose(Vector3 entityPos)
-        {
-            for (int i = 0; i < entrancesTeleportArray.Length; i++)
-            {
-                if ((entityPos - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < 3f * 3f)
-                {
-                    return entrancesTeleportArray[i];
-                }
-            }
-            return null;
-        }
-
+        /// <summary>
+        /// Is the entrance (main or fire exit) is close for the two entity position in parameters ?
+        /// </summary>
+        /// <remarks>
+        /// Use to know if the player just used the entrance and teleported away,
+        /// the intern gets close to last seen position in front of the door, we check if intern is close
+        /// to the door and the last seen position too.
+        /// </remarks>
+        /// <param name="entityPos1">Position of entity 1</param>
+        /// <param name="entityPos2">Position of entity 1</param>
+        /// <returns>The entrance close for both, else null</returns>
         public EntranceTeleport? IsEntranceCloseForBoth(Vector3 entityPos1, Vector3 entityPos2)
         {
             for (int i = 0; i < entrancesTeleportArray.Length; i++)
@@ -844,6 +927,11 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Get the position of teleport of entrance, to teleport intern to it, if he needs to go in/out of the facility to follow player.
+        /// </summary>
+        /// <param name="entranceToUse"></param>
+        /// <returns></returns>
         public Vector3? GetTeleportPosOfEntrance(EntranceTeleport? entranceToUse)
         {
             if (entranceToUse == null)
@@ -863,6 +951,10 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Check all doors to know if the intern is close enough to it to open it if necessary.
+        /// </summary>
+        /// <returns></returns>
         public DoorLock? GetDoorIfWantsToOpen()
         {
             Vector3 npcBodyPos = NpcController.Npc.thisController.transform.position;
@@ -876,6 +968,10 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Check the doors after some interval of ms to see if intern can open one to unstuck himself.
+        /// </summary>
+        /// <returns>true: a door has been opened by intern. Else false</returns>
         private bool OpenDoorIfNeeded()
         {
             if (timerCheckDoor > Const.TIMER_CHECK_DOOR)
@@ -898,6 +994,10 @@ namespace LethalInternship.AI
             return false;
         }
 
+        /// <summary>
+        /// Check ladders if intern needs to use one to follow player.
+        /// </summary>
+        /// <returns>true: the intern is using or is waiting to use the ladder, else false</returns>
         private bool UseLadderIfNeeded()
         {
             if (NpcController.Npc.isClimbingLadder)
@@ -928,11 +1028,20 @@ namespace LethalInternship.AI
             return true;
         }
 
+        /// <summary>
+        /// Is the intern holding an item ?
+        /// </summary>
+        /// <returns>I mean come on</returns>
         public bool AreHandsFree()
         {
             return HeldItem == null;
         }
 
+        /// <summary>
+        /// Check all object array <c>HoarderBugAI.grabbableObjectsInMap</c>, 
+        /// if intern is close and can see an item to grab.
+        /// </summary>
+        /// <returns><c>GrabbableObject</c> if intern sees an item he can grab, else null.</returns>
         public GrabbableObject? LookingForObjectToGrab()
         {
             for (int i = 0; i < HoarderBugAI.grabbableObjectsInMap.Count; i++)
@@ -961,6 +1070,7 @@ namespace LethalInternship.AI
                     return null;
                 }
 
+                // Object close to awareness distance ?
                 float sqrDistanceEyeGameObject = (gameObjectPosition - this.eye.position).sqrMagnitude;
                 if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
                 {
@@ -975,12 +1085,14 @@ namespace LethalInternship.AI
                     }
                 }
 
+                // Object visible ?
                 if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_RANGE * Const.INTERN_OBJECT_RANGE
                     && !Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
                 {
                     Vector3 to = gameObjectPosition - eye.position;
                     if (Vector3.Angle(eye.forward, to) < Const.INTERN_FOV)
                     {
+                        // Object in FOV
                         if (!IsGrabbableObjectGrabbable(grabbableObject))
                         {
                             continue;
@@ -997,6 +1109,11 @@ namespace LethalInternship.AI
             return null;
         }
 
+        /// <summary>
+        /// Check all conditions for deciding if an item is grabbable or not.
+        /// </summary>
+        /// <param name="grabbableObject">Item to check</param>
+        /// <returns></returns>
         public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject)
         {
             if (grabbableObject == null)
@@ -1018,12 +1135,14 @@ namespace LethalInternship.AI
                 return false;
             }
 
+            // Item dropped to close the the ship
             if ((grabbableObject.transform.position - InternManager.Instance.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
                     < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
             {
                 return false;
             }
 
+            // Item just dropped, should wait a bit before grab it again
             if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
             {
                 if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
@@ -1031,8 +1150,11 @@ namespace LethalInternship.AI
                     return false;
                 }
             }
+
+            // Trim dictionnary if too large
             TrimDictJustDroppedItems();
 
+            // Is the item reachable with the agent pathfind ?
             if (this.PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
             {
                 Plugin.Logger.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
@@ -1042,6 +1164,9 @@ namespace LethalInternship.AI
             return true;
         }
 
+        /// <summary>
+        /// Trim dictionnary if too large, trim only the dropped item since a long time
+        /// </summary>
         private static void TrimDictJustDroppedItems()
         {
             if (DictJustDroppedItems != null && DictJustDroppedItems.Count > 20)
@@ -1055,34 +1180,14 @@ namespace LethalInternship.AI
             }
         }
 
-        private void TeleportAgentAndBody(Vector3 pos)
-        {
-            if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
-            {
-                return;
-            }
-            Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 5f, -1);
-            serverPosition = navMeshPosition;
-            NpcController.Npc.transform.position = navMeshPosition;
-
-            if (IsOwner)
-            {
-                if (!agent.isActiveAndEnabled || !agent.Warp(NpcController.Npc.transform.position))
-                {
-                    agent.enabled = false;
-                    this.transform.position = NpcController.Npc.transform.position;
-                    agent.enabled = true;
-                }
-            }
-            else
-            {
-                this.transform.position = navMeshPosition;
-            }
-
-        }
-
         #region TeleportIntern RPC
 
+        /// <summary>
+        /// Teleport intern and send to server to call client to sync
+        /// </summary>
+        /// <param name="pos">Position destination</param>
+        /// <param name="setOutside">Is the teleport destination outside of the facility</param>
+        /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         public void TeleportInternAndSync(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             if (!IsOwner)
@@ -1092,11 +1197,23 @@ namespace LethalInternship.AI
             TeleportIntern(pos, setOutside, isUsingEntrance);
             TeleportInternServerRpc(pos, setOutside, isUsingEntrance);
         }
+        /// <summary>
+        /// Server side, call clients to sync teleport intern
+        /// </summary>
+        /// <param name="pos">Position destination</param>
+        /// <param name="setOutside">Is the teleport destination outside of the facility</param>
+        /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         [ServerRpc]
         private void TeleportInternServerRpc(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             TeleportInternClientRpc(pos, setOutside, isUsingEntrance);
         }
+        /// <summary>
+        /// Client side, teleport intern on client, only for not the owner
+        /// </summary>
+        /// <param name="pos">Position destination</param>
+        /// <param name="setOutside">Is the teleport destination outside of the facility</param>
+        /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         [ClientRpc]
         private void TeleportInternClientRpc(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
@@ -1107,6 +1224,12 @@ namespace LethalInternship.AI
             TeleportIntern(pos, setOutside, isUsingEntrance);
         }
 
+        /// <summary>
+        /// Teleport the intern.
+        /// </summary>
+        /// <param name="pos">Position destination</param>
+        /// <param name="setOutside">Is the teleport destination outside of the facility</param>
+        /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         private void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             NpcController.Npc.isInsideFactory = !setOutside;
@@ -1127,14 +1250,54 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Teleport the brain and body of intern
+        /// </summary>
+        /// <param name="pos"></param>
+        private void TeleportAgentAndBody(Vector3 pos)
+        {
+            // Only teleport when necessary
+            if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
+            {
+                return;
+            }
+
+            Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 5f, -1);
+            serverPosition = navMeshPosition;
+            // Teleport body
+            NpcController.Npc.transform.position = navMeshPosition;
+
+            if (IsOwner)
+            {
+                // Teleport agent and AI
+                if (!agent.isActiveAndEnabled || !agent.Warp(NpcController.Npc.transform.position))
+                {
+                    agent.enabled = false;
+                    this.transform.position = NpcController.Npc.transform.position;
+                    agent.enabled = true;
+                }
+            }
+            else
+            {
+                this.transform.position = navMeshPosition;
+            }
+
+        }
+
         #endregion
 
         #region AssignTargetAndSetMovingTo RPC
 
+        /// <summary>
+        /// Change the ownership of the intern to the new player target,
+        /// and set the destination to him.
+        /// </summary>
+        /// <param name="newTarget">New <c>PlayerControllerB to set the owner of intern to.</c></param>
         public void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget)
         {
             if (this.OwnerClientId != newTarget.actualClientId)
             {
+                // Changes the ownership of the intern, on server and client directly
                 ChangeOwnershipOfEnemy(newTarget.actualClientId);
 
                 if (this.IsServer)
@@ -1152,12 +1315,23 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to sync the set destination to new target player.
+        /// </summary>
+        /// <param name="playerid">Id of the new target player</param>
         [ServerRpc(RequireOwnership = false)]
         private void SyncAssignTargetAndSetMovingToServerRpc(ulong playerid)
         {
             SyncFromAssignTargetAndSetMovingToClientRpc(playerid);
         }
 
+        /// <summary>
+        /// Client side, set destination to the new target player
+        /// </summary>
+        /// <remarks>
+        /// Change the state to <c>GetCloseToPlayerState</c>
+        /// </remarks>
+        /// <param name="playerid">Id of the new target player</param>
         [ClientRpc]
         private void SyncFromAssignTargetAndSetMovingToClientRpc(ulong playerid)
         {
@@ -1184,26 +1358,50 @@ namespace LethalInternship.AI
 
         #region UpdatePlayerPosition RPC
 
-        public void SyncUpdatePlayerPosition(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
+        /// <summary>
+        /// Sync the intern position between server and clients.
+        /// </summary>
+        /// <param name="newPos">New position of the intern controller</param>
+        /// <param name="inElevator">Is the intern on the ship ?</param>
+        /// <param name="inShipRoom">Is the intern in the ship room ?</param>
+        /// <param name="exhausted">Is the intern exhausted ?</param>
+        /// <param name="isPlayerGrounded">Is the intern player body touching the ground ?</param>
+        public void SyncUpdateInternPosition(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
         {
             if (IsServer)
             {
-                UpdatePlayerPositionClientRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
+                UpdateInternPositionClientRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
             }
             else
             {
-                UpdatePlayerPositionServerRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
+                UpdateInternPositionServerRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to sync the new position of the intern
+        /// </summary>
+        /// <param name="newPos">New position of the intern controller</param>
+        /// <param name="inElevator">Is the intern on the ship ?</param>
+        /// <param name="inShipRoom">Is the intern in the ship room ?</param>
+        /// <param name="exhausted">Is the intern exhausted ?</param>
+        /// <param name="isPlayerGrounded">Is the intern player body touching the ground ?</param>
         [ServerRpc]
-        private void UpdatePlayerPositionServerRpc(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
+        private void UpdateInternPositionServerRpc(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
         {
-            UpdatePlayerPositionClientRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
+            UpdateInternPositionClientRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
         }
 
+        /// <summary>
+        /// Update the intern position if not owner of intern, the owner move on his side the intern.
+        /// </summary>
+        /// <param name="newPos">New position of the intern controller</param>
+        /// <param name="inElevator">Is the intern on the ship ?</param>
+        /// <param name="isInShip">Is the intern in the ship room ?</param>
+        /// <param name="exhausted">Is the intern exhausted ?</param>
+        /// <param name="isPlayerGrounded">Is the intern player body touching the ground ?</param>
         [ClientRpc]
-        private void UpdatePlayerPositionClientRpc(Vector3 newPos, bool inElevator, bool isInShip, bool exhausted, bool isPlayerGrounded)
+        private void UpdateInternPositionClientRpc(Vector3 newPos, bool inElevator, bool isInShip, bool exhausted, bool isPlayerGrounded)
         {
             if (NpcController == null)
             {
@@ -1224,26 +1422,47 @@ namespace LethalInternship.AI
 
         #region UpdatePlayerRotation and look RPC
 
-        public void SyncUpdatePlayerRotationAndLook(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
+        /// <summary>
+        /// Sync the intern body rotation and rotation of head (where he looks) between server and clients.
+        /// </summary>
+        /// <param name="direction">Direction to turn body towards to</param>
+        /// <param name="intEnumObjectsLookingAt">State to know where the intern should look</param>
+        /// <param name="playerEyeToLookAt">Position of the player eyes to look at</param>
+        /// <param name="positionToLookAt">Position to look at</param>
+        public void SyncUpdateInternRotationAndLook(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
             if (IsServer)
             {
-                UpdatePlayerRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
+                UpdateInternRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
             }
             else
             {
-                UpdatePlayerRotationAndLookServerRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
+                UpdateInternRotationAndLookServerRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update intern body rotation and rotation of head (where he looks)
+        /// </summary>
+        /// <param name="direction">Direction to turn body towards to</param>
+        /// <param name="intEnumObjectsLookingAt">State to know where the intern should look</param>
+        /// <param name="playerEyeToLookAt">Position of the player eyes to look at</param>
+        /// <param name="positionToLookAt">Position to look at</param>
         [ServerRpc(RequireOwnership = false)]
-        private void UpdatePlayerRotationAndLookServerRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
+        private void UpdateInternRotationAndLookServerRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
-            UpdatePlayerRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
+            UpdateInternRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
         }
 
+        /// <summary>
+        /// Client side, update the intern body rotation and rotation of head (where he looks).
+        /// </summary>
+        /// <param name="direction">Direction to turn body towards to</param>
+        /// <param name="intEnumObjectsLookingAt">State to know where the intern should look</param>
+        /// <param name="playerEyeToLookAt">Position of the player eyes to look at</param>
+        /// <param name="positionToLookAt">Position to look at</param>
         [ClientRpc]
-        private void UpdatePlayerRotationAndLookClientRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
+        private void UpdateInternRotationAndLookClientRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
             if (NpcController == null)
             {
@@ -1275,14 +1494,24 @@ namespace LethalInternship.AI
 
         #region UpdatePlayer animations RPC
 
+        /// <summary>
+        /// Server side, call client to sync changes in animation of the intern
+        /// </summary>
+        /// <param name="animationState">Current animation state</param>
+        /// <param name="animationSpeed">Current animation speed</param>
         [ServerRpc]
-        public void UpdatePlayerAnimationServerRpc(int animationState, float animationSpeed)
+        public void UpdateInternAnimationServerRpc(int animationState, float animationSpeed)
         {
-            UpdatePlayerAnimationClientRpc(animationState, animationSpeed);
+            UpdateInternAnimationClientRpc(animationState, animationSpeed);
         }
 
+        /// <summary>
+        /// Client, update changes in animation of the intern
+        /// </summary>
+        /// <param name="animationState">Current animation state</param>
+        /// <param name="animationSpeed">Current animation speed</param>
         [ClientRpc]
-        private void UpdatePlayerAnimationClientRpc(int animationState, float animationSpeed)
+        private void UpdateInternAnimationClientRpc(int animationState, float animationSpeed)
         {
             if (NpcController == null)
             {
@@ -1303,42 +1532,66 @@ namespace LethalInternship.AI
 
         #region UpdateSpecialAnimation RPC
 
-        public void UpdateSpecialAnimationValue(bool specialAnimation, short yVal, float timed, bool climbingLadder)
+        /// <summary>
+        /// Sync the changes in special animation of the intern body, between server and clients
+        /// </summary>
+        /// <param name="specialAnimation">Is in special animation ?</param>
+        /// <param name="timed">Wait time of the special animation to end</param>
+        /// <param name="climbingLadder">Is climbing ladder ?</param>
+        public void UpdateInternSpecialAnimationValue(bool specialAnimation, float timed, bool climbingLadder)
         {
             if (!IsClientOwnerOfIntern())
             {
                 return;
             }
-            IsInSpecialAnimation(specialAnimation, yVal, timed, climbingLadder);
+            UpdateInternSpecialAnimation(specialAnimation, timed, climbingLadder);
 
             if (IsServer)
             {
-                IsInSpecialAnimationClientRpc(specialAnimation, yVal, timed, climbingLadder);
+                UpdateInternSpecialAnimationClientRpc(specialAnimation, timed, climbingLadder);
             }
             else
             {
-                IsInSpecialAnimationServerRpc(specialAnimation, yVal, timed, climbingLadder);
+                UpdateInternSpecialAnimationServerRpc(specialAnimation, timed, climbingLadder);
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the intern special animation
+        /// </summary>
+        /// <param name="specialAnimation">Is in special animation ?</param>
+        /// <param name="timed">Wait time of the special animation to end</param>
+        /// <param name="climbingLadder">Is climbing ladder ?</param>
         [ServerRpc]
-        private void IsInSpecialAnimationServerRpc(bool specialAnimation, short yVal, float timed, bool climbingLadderd)
+        private void UpdateInternSpecialAnimationServerRpc(bool specialAnimation, float timed, bool climbingLadder)
         {
-            IsInSpecialAnimationClientRpc(specialAnimation, yVal, timed, climbingLadderd);
+            UpdateInternSpecialAnimationClientRpc(specialAnimation, timed, climbingLadder);
         }
 
+        /// <summary>
+        /// Client side, update the intern special animation
+        /// </summary>
+        /// <param name="specialAnimation">Is in special animation ?</param>
+        /// <param name="timed">Wait time of the special animation to end</param>
+        /// <param name="climbingLadder">Is climbing ladder ?</param>
         [ClientRpc]
-        private void IsInSpecialAnimationClientRpc(bool specialAnimation, short yVal, float timed, bool climbingLadder)
+        private void UpdateInternSpecialAnimationClientRpc(bool specialAnimation, float timed, bool climbingLadder)
         {
             if (IsClientOwnerOfIntern())
             {
                 return;
             }
 
-            IsInSpecialAnimation(specialAnimation, yVal, timed, climbingLadder);
+            UpdateInternSpecialAnimation(specialAnimation, timed, climbingLadder);
         }
 
-        private void IsInSpecialAnimation(bool specialAnimation, short yVal, float timed, bool climbingLadder)
+        /// <summary>
+        /// Update the intern special animation
+        /// </summary>
+        /// <param name="specialAnimation">Is in special animation ?</param>
+        /// <param name="timed">Wait time of the special animation to end</param>
+        /// <param name="climbingLadder">Is climbing ladder ?</param>
+        private void UpdateInternSpecialAnimation(bool specialAnimation, float timed, bool climbingLadder)
         {
             if (NpcController == null)
             {
@@ -1353,12 +1606,20 @@ namespace LethalInternship.AI
 
         #region SyncBodyPosition RPC
 
+        /// <summary>
+        /// Server side, call the clients to update the dead body of the intern
+        /// </summary>
+        /// <param name="newBodyPosition">New dead body position</param>
         [ServerRpc(RequireOwnership = false)]
         public void SyncDeadBodyPositionServerRpc(Vector3 newBodyPosition)
         {
             SyncDeadBodyPositionClientRpc(newBodyPosition);
         }
 
+        /// <summary>
+        /// Client side, update the dead body of the intern
+        /// </summary>
+        /// <param name="newBodyPosition">New dead body position</param>
         [ClientRpc]
         private void SyncDeadBodyPositionClientRpc(Vector3 newBodyPosition)
         {
@@ -1369,12 +1630,20 @@ namespace LethalInternship.AI
 
         #region Grab item RPC
 
+        /// <summary>
+        /// Server side, call clients to make the intern grab item on their side to sync everyone
+        /// </summary>
+        /// <param name="networkObjectReference">Item reference over the network</param>
         [ServerRpc(RequireOwnership = false)]
         public void GrabItemServerRpc(NetworkObjectReference networkObjectReference)
         {
             GrabItemClientRpc(networkObjectReference);
         }
 
+        /// <summary>
+        /// Client side, make the intern grab item
+        /// </summary>
+        /// <param name="networkObjectReference">Item reference over the network</param>
         [ClientRpc]
         private void GrabItemClientRpc(NetworkObjectReference networkObjectReference)
         {
@@ -1406,6 +1675,10 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Make the intern grab an item like an enemy would, but update the body (<c>PlayerControllerB</c>) too.
+        /// </summary>
+        /// <param name="grabbableObject">Item to grab</param>
         private void GrabItem(GrabbableObject grabbableObject)
         {
             Plugin.Logger.LogInfo($"Grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
@@ -1441,6 +1714,10 @@ namespace LethalInternship.AI
             this.grabObjectCoroutine = base.StartCoroutine(this.GrabAnimationCoroutine());
         }
 
+        /// <summary>
+        /// Coroutine for the grab animation
+        /// </summary>
+        /// <returns></returns>
         private IEnumerator GrabAnimationCoroutine()
         {
             if (this.HeldItem != null)
@@ -1453,6 +1730,11 @@ namespace LethalInternship.AI
             yield break;
         }
 
+        /// <summary>
+        /// Set the animation of body to something special if the item has a special grab animation.
+        /// </summary>
+        /// <param name="setBool">Activate or deactivate special animation</param>
+        /// <param name="item">Item that has the special grab animation</param>
         private void SetSpecialGrabAnimationBool(bool setBool, GrabbableObject? item)
         {
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, setBool);
@@ -1475,18 +1757,27 @@ namespace LethalInternship.AI
 
         #region Drop item RPC
 
+        /// <summary>
+        /// Server side, call clients to make the intern drop the held item on their side, to sync everyone
+        /// </summary>
         [ServerRpc(RequireOwnership = false)]
         public void DropItemServerRpc()
         {
             DropItemClientRpc();
         }
 
+        /// <summary>
+        /// Client side, make the intern drop the held item
+        /// </summary>
         [ClientRpc]
         private void DropItemClientRpc()
         {
             DropItem();
         }
 
+        /// <summary>
+        /// Make the intern drop his item like an enemy, but update the body (<c>PlayerControllerB</c>) too.
+        /// </summary>
         private void DropItem()
         {
             Plugin.Logger.LogInfo($"Try to drop item on client #{NetworkManager.LocalClientId}");
@@ -1527,18 +1818,36 @@ namespace LethalInternship.AI
 
         #region Damage intern from client players RPC
 
+        /// <summary>
+        /// Server side, call client to sync the damage to the intern coming from a player
+        /// </summary>
+        /// <param name="damageAmount"></param>
+        /// <param name="hitDirection"></param>
+        /// <param name="playerWhoHit"></param>
         [ServerRpc(RequireOwnership = false)]
         public void DamageInternFromOtherClientServerRpc(int damageAmount, Vector3 hitDirection, int playerWhoHit)
         {
             DamageInternFromOtherClientClientRpc(damageAmount, hitDirection, playerWhoHit);
         }
 
+        /// <summary>
+        /// Client side, update and apply the damage to the intern coming from a player
+        /// </summary>
+        /// <param name="damageAmount"></param>
+        /// <param name="hitDirection"></param>
+        /// <param name="playerWhoHit"></param>
         [ClientRpc]
         private void DamageInternFromOtherClientClientRpc(int damageAmount, Vector3 hitDirection, int playerWhoHit)
         {
             DamageInternFromOtherClient(damageAmount, hitDirection, playerWhoHit);
         }
 
+        /// <summary>
+        /// Update and apply the damage to the intern coming from a player
+        /// </summary>
+        /// <param name="damageAmount"></param>
+        /// <param name="hitDirection"></param>
+        /// <param name="playerWhoHit"></param>
         private void DamageInternFromOtherClient(int damageAmount, Vector3 hitDirection, int playerWhoHit)
         {
             if (NpcController == null)
@@ -1578,6 +1887,14 @@ namespace LethalInternship.AI
 
         #region Damage intern RPC
 
+        /// <summary>
+        /// Sync the damage taken by the intern between server and clients
+        /// </summary>
+        /// <param name="damageNumber"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
+        /// <param name="fallDamage">Coming from a long fall ?</param>
+        /// <param name="force">Force applied to the intern when taking the hit</param>
         public void SyncDamageIntern(int damageNumber,
                                      CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
                                      int deathAnimation = 0,
@@ -1604,6 +1921,14 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update and apply the damage taken by the intern
+        /// </summary>
+        /// <param name="damageNumber"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
+        /// <param name="fallDamage">Coming from a long fall ?</param>
+        /// <param name="force">Force applied to the intern when taking the hit</param>
         [ServerRpc]
         private void DamageInternServerRpc(int damageNumber,
                                            CauseOfDeath causeOfDeath,
@@ -1614,6 +1939,14 @@ namespace LethalInternship.AI
             DamageInternClientRpc(damageNumber, causeOfDeath, deathAnimation, fallDamage, force);
         }
 
+        /// <summary>
+        /// Client side, update and apply the damage taken by the intern
+        /// </summary>
+        /// <param name="damageNumber"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
+        /// <param name="fallDamage">Coming from a long fall ?</param>
+        /// <param name="force">Force applied to the intern when taking the hit</param>
         [ClientRpc]
         private void DamageInternClientRpc(int damageNumber,
                                            CauseOfDeath causeOfDeath,
@@ -1624,6 +1957,14 @@ namespace LethalInternship.AI
             DamageIntern(damageNumber, causeOfDeath, deathAnimation, fallDamage, force);
         }
 
+        /// <summary>
+        /// Apply the damage to the intern, kill him if needed, or make critically injured
+        /// </summary>
+        /// <param name="damageNumber"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
+        /// <param name="fallDamage">Coming from a long fall ?</param>
+        /// <param name="force">Force applied to the intern when taking the hit</param>
         private void DamageIntern(int damageNumber,
                                   CauseOfDeath causeOfDeath,
                                   int deathAnimation,
@@ -1640,6 +1981,7 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // Apply damage, if not killed, set the minimum health to 5
             if (NpcController.Npc.health - damageNumber <= 0
                 && !NpcController.Npc.criticallyInjured && damageNumber < 50)
             {
@@ -1652,23 +1994,29 @@ namespace LethalInternship.AI
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
             Plugin.Logger.LogDebug($"intern health {NpcController.Npc.health}, damage : {damageNumber}");
 
+            // Kill intern if necessary
             if (NpcController.Npc.health <= 0)
             {
                 if (IsClientOwnerOfIntern())
                 {
+                    // Call the server to spawn dead bodies
                     KillInternSpawnBodyServerRpc(true);
                 }
+                // Kill on this client side only, since we are already in an rpc send to all clients
                 this.KillIntern(force, true, causeOfDeath, deathAnimation);
             }
             else
             {
+                // Critically injured
                 if (NpcController.Npc.health < 10
                     && !NpcController.Npc.criticallyInjured)
                 {
+                    // Client side only, since we are already in an rpc send to all clients
                     MakeCriticallyInjured();
                 }
                 else
                 {
+                    // Limit sprinting when close to death
                     if (damageNumber >= 10)
                     {
                         NpcController.Npc.sprintMeter = Mathf.Clamp(NpcController.Npc.sprintMeter + (float)damageNumber / 125f, 0f, 1f);
@@ -1689,6 +2037,10 @@ namespace LethalInternship.AI
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
         }
 
+        /// <summary>
+        /// Sync the state of critically injured of beginning to heal, between server and clients
+        /// </summary>
+        /// <param name="enable">true: make the intern critically injured, false: make him heal</param>
         public void SyncMakeCriticallyInjured(bool enable)
         {
             if (enable)
@@ -1715,18 +2067,27 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the state of critically injured
+        /// </summary>
         [ServerRpc]
         private void MakeCriticallyInjuredServerRpc()
         {
             MakeCriticallyInjuredClientRpc();
         }
 
+        /// <summary>
+        /// Client side update the state of critically injured
+        /// </summary>
         [ClientRpc]
         private void MakeCriticallyInjuredClientRpc()
         {
             MakeCriticallyInjured();
         }
 
+        /// <summary>
+        /// Update the state of critically injured
+        /// </summary>
         private void MakeCriticallyInjured()
         {
             NpcController.Npc.bleedingHeavily = true;
@@ -1734,18 +2095,27 @@ namespace LethalInternship.AI
             NpcController.Npc.hasBeenCriticallyInjured = true;
         }
 
+        /// <summary>
+        /// Server side, call clients to heal the intern
+        /// </summary>
         [ServerRpc]
         private void HealServerRpc()
         {
             HealClientRpc();
         }
 
+        /// <summary>
+        /// Client side, heal the intern
+        /// </summary>
         [ClientRpc]
         private void HealClientRpc()
         {
             Heal();
         }
 
+        /// <summary>
+        /// Heal the intern
+        /// </summary>
         private void Heal()
         {
             NpcController.Npc.bleedingHeavily = false;
@@ -1756,6 +2126,13 @@ namespace LethalInternship.AI
 
         #region Kill player RPC
 
+        /// <summary>
+        /// Sync the action to kill intern between server and clients
+        /// </summary>
+        /// <param name="bodyVelocity"></param>
+        /// <param name="spawnBody">Should a body be spawned ?</param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
         public void SyncKillIntern(Vector3 bodyVelocity,
                                    bool spawnBody = true,
                                    CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
@@ -1782,6 +2159,13 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to do the action to kill intern
+        /// </summary>
+        /// <param name="bodyVelocity"></param>
+        /// <param name="spawnBody"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
         [ServerRpc]
         private void KillInternServerRpc(Vector3 bodyVelocity,
                                          bool spawnBody,
@@ -1792,12 +2176,22 @@ namespace LethalInternship.AI
             KillInternClientRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
         }
 
+        /// <summary>
+        /// Server side, spawn the ragdoll of the dead body, despawn held object if no dead body to spawn
+        /// (intern eaten or disappeared in some way)
+        /// </summary>
+        /// <param name="spawnBody">Is there a dead body to spawn following the death of the intern ?</param>
         [ServerRpc]
         private void KillInternSpawnBodyServerRpc(bool spawnBody)
         {
             KillInternSpawnBody(spawnBody);
         }
 
+        /// <summary>
+        /// Szzzzzpawn the ragdoll of the dead body, despawn held object if no dead body to spawn
+        /// (intern eaten or disappeared in some way)
+        /// </summary>
+        /// <param name="spawnBody">Is there a dead body to spawn following the death of the intern ?</param>
         private void KillInternSpawnBody(bool spawnBody)
         {
             if (!spawnBody)
@@ -1819,6 +2213,13 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Client side, do the action to kill intern
+        /// </summary>
+        /// <param name="bodyVelocity"></param>
+        /// <param name="spawnBody"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
         [ClientRpc]
         private void KillInternClientRpc(Vector3 bodyVelocity,
                                                  bool spawnBody,
@@ -1828,6 +2229,13 @@ namespace LethalInternship.AI
             KillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
         }
 
+        /// <summary>
+        /// Do the action of killing the intern
+        /// </summary>
+        /// <param name="bodyVelocity"></param>
+        /// <param name="spawnBody"></param>
+        /// <param name="causeOfDeath"></param>
+        /// <param name="deathAnimation"></param>
         private void KillIntern(Vector3 bodyVelocity,
                                 bool spawnBody,
                                 CauseOfDeath causeOfDeath,
@@ -1843,6 +2251,7 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // Reset body
             NpcController.Npc.isPlayerDead = true;
             NpcController.Npc.isPlayerControlled = false;
             NpcController.Npc.thisPlayerModelArms.enabled = false;
@@ -1886,6 +2295,9 @@ namespace LethalInternship.AI
 
         #region Jump RPC
 
+        /// <summary>
+        /// Sync the intern doing a jump between server and clients
+        /// </summary>
         public void SyncJump()
         {
             if (IsServer)
@@ -1898,12 +2310,19 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the intern doing a jump
+        /// </summary>
         [ServerRpc]
         private void JumpServerRpc()
         {
             JumpClientRpc();
         }
 
+        /// <summary>
+        /// Client side, update the action of intern doing a jump
+        /// only for not the owner
+        /// </summary>
         [ClientRpc]
         private void JumpClientRpc()
         {
@@ -1917,6 +2336,10 @@ namespace LethalInternship.AI
 
         #region Land from Jump RPC
 
+        /// <summary>
+        /// Sync the landing of the jump of the intern, between server and clients
+        /// </summary>
+        /// <param name="fallHard"></param>
         public void SyncLandFromJump(bool fallHard)
         {
             if (IsServer)
@@ -1929,12 +2352,20 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the action of intern land from jump
+        /// </summary>
+        /// <param name="fallHard"></param>
         [ServerRpc]
         private void JumpLandFromServerRpc(bool fallHard)
         {
             JumpLandFromClientRpc(fallHard);
         }
 
+        /// <summary>
+        /// Client side, update the action of intern land from jump
+        /// </summary>
+        /// <param name="fallHard"></param>
         [ClientRpc]
         private void JumpLandFromClientRpc(bool fallHard)
         {
@@ -1950,6 +2381,12 @@ namespace LethalInternship.AI
 
         #region Sinking RPC
 
+        /// <summary>
+        /// Sync the state of sink of the intern between server and clients
+        /// </summary>
+        /// <param name="startSinking"></param>
+        /// <param name="sinkingSpeed"></param>
+        /// <param name="audioClipIndex"></param>
         public void SyncChangeSinkingState(bool startSinking, float sinkingSpeed = 0f, int audioClipIndex = 0)
         {
             if (IsServer)
@@ -1962,12 +2399,24 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the state of sink of the intern
+        /// </summary>
+        /// <param name="startSinking"></param>
+        /// <param name="sinkingSpeed"></param>
+        /// <param name="audioClipIndex"></param>
         [ServerRpc]
         private void ChangeSinkingStateServerRpc(bool startSinking, float sinkingSpeed, int audioClipIndex)
         {
             ChangeSinkingStateClientRpc(startSinking, sinkingSpeed, audioClipIndex);
         }
 
+        /// <summary>
+        /// Client side, update the state of sink of the intern
+        /// </summary>
+        /// <param name="startSinking"></param>
+        /// <param name="sinkingSpeed"></param>
+        /// <param name="audioClipIndex"></param>
         [ClientRpc]
         private void ChangeSinkingStateClientRpc(bool startSinking, float sinkingSpeed, int audioClipIndex)
         {
@@ -1983,10 +2432,6 @@ namespace LethalInternship.AI
                 NpcController.Npc.statusEffectAudio.Stop();
                 NpcController.Npc.isSinking = false;
                 NpcController.Npc.voiceMuffledByEnemy = false;
-                //if (this.currentVoiceChatIngameSettings != null)
-                //{
-                //    this.currentVoiceChatIngameSettings.voiceAudio.GetComponent<OccludeAudio>().overridingLowPass = false;
-                //}
             }
         }
 
@@ -1994,6 +2439,9 @@ namespace LethalInternship.AI
 
         #region Disable Jetpack RPC
 
+        /// <summary>
+        /// Sync the disabling of jetpack mode between server and clients
+        /// </summary>
         public void SyncDisableJetpackMode()
         {
             if (IsServer)
@@ -2006,12 +2454,18 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the disabling of jetpack mode between server and clients
+        /// </summary>
         [ServerRpc]
         private void DisableJetpackModeServerRpc()
         {
             DisableJetpackModeClientRpc();
         }
 
+        /// <summary>
+        /// Client side, update the disabling of jetpack mode between server and clients
+        /// </summary>
         [ClientRpc]
         private void DisableJetpackModeClientRpc()
         {
@@ -2022,6 +2476,9 @@ namespace LethalInternship.AI
 
         #region Stop performing emote RPC
 
+        /// <summary>
+        /// Sync the stopping the perfoming of emote between server and clients
+        /// </summary>
         public void SyncStopPerformingEmote()
         {
             if (IsServer)
@@ -2034,12 +2491,18 @@ namespace LethalInternship.AI
             }
         }
 
+        /// <summary>
+        /// Server side, call clients to update the stopping the perfoming of emote
+        /// </summary>
         [ServerRpc]
         private void StopPerformingEmoteServerRpc()
         {
             StopPerformingEmoteClientRpc();
         }
 
+        /// <summary>
+        /// Update the stopping the perfoming of emote
+        /// </summary>
         [ClientRpc]
         private void StopPerformingEmoteClientRpc()
         {

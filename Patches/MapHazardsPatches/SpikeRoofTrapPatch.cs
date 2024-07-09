@@ -6,22 +6,24 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.MapHazardsPatches
 {
+    /// <summary>
+    /// Patch for <c>SpikeRoofTrap</c>
+    /// </summary>
     [HarmonyPatch(typeof(SpikeRoofTrap))]
     internal class SpikeRoofTrapPatch
     {
+        /// <summary>
+        /// Patch for making the spike roof works when an intern enter its collision
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnTriggerStay")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnTriggerStay_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"OnTriggerStay ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"OnTriggerStay ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 2; i++)
@@ -76,29 +78,21 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change use of component for method kill player.");
             }
 
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"OnTriggerStay ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"OnTriggerStay ======================");
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch for making the spike roof able to detect an intern passing under it
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 2; i++)
@@ -129,13 +123,6 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.Update_Transpiler could not change check for local player or intern.");
             }
 
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
             return codes.AsEnumerable();
         }
     }

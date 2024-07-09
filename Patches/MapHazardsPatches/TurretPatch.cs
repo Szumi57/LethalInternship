@@ -6,28 +6,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches
 {
+    /// <summary>
+    /// Patch for the <c>Turret</c>
+    /// </summary>
     [HarmonyPatch(typeof(Turret))]
     internal class TurretPatch
     {
         static MethodInfo DamagePlayersInLOSMethod = SymbolExtensions.GetMethodInfo(() => TurretPatch.DamagePlayersInLOS(new Turret()));
 
+        /// <summary>
+        /// Patch for making the turret able to detect intern and kill them by using another methode
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 36; i++)
@@ -89,16 +90,13 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern berzerk mode.");
             }
 
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Method injected in code, for checking intern and damage/kill them
+        /// </summary>
+        /// <param name="turret"></param>
         private static void DamagePlayersInLOS(Turret turret)
         {
             PlayerControllerB player = turret.CheckForPlayersInLineOfSight(3f, false);
@@ -115,7 +113,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
 
             if (player.health > 50)
             {
-                internAI.SyncDamageIntern(50, CauseOfDeath.Gunshots, 0, false, default(Vector3));
+                internAI.SyncDamageIntern(50, CauseOfDeath.Gunshots, 0, false, default);
             }
             else
             {

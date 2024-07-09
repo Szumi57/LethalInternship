@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace LethalInternship.Utils
 {
+    /// <summary>
+    /// Utilitary class for debug infos of objects
+    /// </summary>
     internal static class PropertiesAndFieldsUtils
     {
         public static void ListNamesOfObjectsArray<T>(T[] array)

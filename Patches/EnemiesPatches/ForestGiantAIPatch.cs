@@ -5,21 +5,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
-using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patches for <c>ForestGiantAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(ForestGiantAI))]
     internal class ForestGiantAIPatch
     {
+        /// <summary>
+        /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnCollideWithPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
             
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 18; i++)
@@ -64,6 +70,10 @@ namespace LethalInternship.Patches.EnemiesPatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch for initialize playerStealthMeters for the right amount of player + interns
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPatch("LookForPlayers")]
         [HarmonyPrefix]
         [HarmonyAfter(Const.MORECOMPANY_GUID)]

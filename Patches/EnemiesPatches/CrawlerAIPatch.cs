@@ -8,10 +8,17 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patches for <c>CrawlerAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(CrawlerAI))]
     [HarmonyAfter(Const.MORECOMPANY_GUID)]
     internal class CrawlerAIPatch
     {
+        /// <summary>
+        /// Patch fields to take into account for the numbers of players + interns
+        /// </summary>
+        /// <param name="___nearPlayerColliders"></param>
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         static void Start_PostFix(ref Collider[] ___nearPlayerColliders)
@@ -19,6 +26,12 @@ namespace LethalInternship.Patches.EnemiesPatches
             ___nearPlayerColliders = new Collider[InternManager.Instance.AllEntitiesCount];
         }
 
+        /// <summary>
+        /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OnCollideWithPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -85,19 +98,18 @@ namespace LethalInternship.Patches.EnemiesPatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Patch udpate to make the enemy target intern too if possible
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 3; i++)
@@ -147,14 +159,6 @@ namespace LethalInternship.Patches.EnemiesPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.Update_Transpiler could not change target of begin chasing player.");
             }
 
-
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
             return codes.AsEnumerable();
         }
     }

@@ -6,9 +6,18 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
+    /// <summary>
+    /// Patch for the <c>HUDManager</c>
+    /// </summary>
     [HarmonyPatch(typeof(HUDManager))]
     internal class HUDManagerPatch
     {
+        /// <summary>
+        /// Patch for making the hud only show end games stats for irl players, not interns
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("FillEndGameStats")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> FillEndGameStats_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)

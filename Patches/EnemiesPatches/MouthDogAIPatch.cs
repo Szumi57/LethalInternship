@@ -6,9 +6,18 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patches for the <c>MouthDogAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(MouthDogAI))]
     internal class MouthDogAIPatch
     {
+        /// <summary>
+        /// Patch to make mouthdog ignoring InternAI (does not ignore Intern body <c>PlayerController</c>)
+        /// </summary>
+        /// <param name="other"></param>
+        /// <param name="collidedEnemy"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithEnemy")]
         [HarmonyPrefix]
         static bool OnCollideWithEnemy_PreFix(Collider other, EnemyAI collidedEnemy)
@@ -25,6 +34,11 @@ namespace LethalInternship.Patches.EnemiesPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch to make the mouthDog kill the intern before running base game code
+        /// </summary>
+        /// <param name="playerId">Id player (maybe intern) that the mouth dog tries to kill</param>
+        /// <returns></returns>
         [HarmonyPatch("KillPlayer")]
         [HarmonyPrefix]
         static bool KillPlayer_PreFix(int playerId)
@@ -41,6 +55,13 @@ namespace LethalInternship.Patches.EnemiesPatches
             return true;
         }
 
+        /// <summary>
+        /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="other"></param>
+        /// <param name="___inKillAnimation"></param>
+        /// <returns></returns>
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyPrefix]
         static bool OnCollideWithPlayer_PreFix(ref MouthDogAI __instance,
@@ -75,6 +96,13 @@ namespace LethalInternship.Patches.EnemiesPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch update to manipulate field for not breaking lunge system after targeting or kill an intern
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="___inKillAnimation"></param>
+        /// <param name="___inLunge"></param>
+        /// <param name="___lungeCooldown"></param>
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         static void Update_PostFix(ref MouthDogAI __instance,

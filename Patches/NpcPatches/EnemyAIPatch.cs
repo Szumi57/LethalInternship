@@ -10,9 +10,18 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.NpcPatches
 {
+    /// <summary>
+    /// Patch for the internAI
+    /// </summary>
     [HarmonyPatch(typeof(EnemyAI))]
     internal class EnemyAIPatch
     {
+        /// <summary>
+        /// Patch for intercepting when ownership of an enemy changes.<br/>
+        /// Only change ownership to a irl player, if new owner is intern then new owner is the owner (real player) of the intern
+        /// </summary>
+        /// <param name="newOwnerClientId"></param>
+        /// <returns></returns>
         [HarmonyPatch("ChangeOwnershipOfEnemy")]
         [HarmonyPrefix]
         static bool ChangeOwnershipOfEnemy_PreFix(ref ulong newOwnerClientId)
@@ -29,6 +38,11 @@ namespace LethalInternship.Patches.NpcPatches
 
         #region Transpilers
 
+        /// <summary>
+        /// Patch for making the enemy able to detect an intern when colliding
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <returns></returns>
         [HarmonyPatch("MeetsStandardPlayerCollisionConditions")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> MeetsStandardPlayerCollisionConditions_Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -69,20 +83,17 @@ namespace LethalInternship.Patches.NpcPatches
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Removes annoying log when enemy target something
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            // bypass "component != GameNetworkManager.Instance.localPlayerController" if player is an intern
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 3; i++)
@@ -137,6 +148,14 @@ namespace LethalInternship.Patches.NpcPatches
 
         #region Post Fixes
 
+        /// <summary>
+        /// Patch for making the enemy check intern too when calling <c>CheckLineOfSightForPlayer</c>
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="__result"></param>
+        /// <param name="width"></param>
+        /// <param name="range"></param>
+        /// <param name="proximityAwareness"></param>
         [HarmonyPatch("CheckLineOfSightForPlayer")]
         [HarmonyPostfix]
         static void CheckLineOfSightForPlayer_PostFix(EnemyAI __instance, ref PlayerControllerB __result, float width, ref int range, int proximityAwareness)
@@ -197,6 +216,14 @@ namespace LethalInternship.Patches.NpcPatches
             }
         }
 
+        /// <summary>
+        /// Patch for making the enemy check intern too when calling <c>GetClosestPlayer</c>
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="__result"></param>
+        /// <param name="requireLineOfSight"></param>
+        /// <param name="cannotBeInShip"></param>
+        /// <param name="cannotBeNearShip"></param>
         [HarmonyPatch("GetClosestPlayer")]
         [HarmonyPostfix]
         static void GetClosestPlayer_PostFix(EnemyAI __instance, ref PlayerControllerB __result, bool requireLineOfSight, bool cannotBeInShip, bool cannotBeNearShip)
@@ -270,6 +297,14 @@ namespace LethalInternship.Patches.NpcPatches
             }
         }
 
+        /// <summary>
+        /// Patch for making the enemy check intern too when calling <c>TargetClosestPlayer</c>
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="__result"></param>
+        /// <param name="bufferDistance"></param>
+        /// <param name="requireLineOfSight"></param>
+        /// <param name="viewWidth"></param>
         [HarmonyPatch("TargetClosestPlayer")]
         [HarmonyPostfix]
         static void TargetClosestPlayer_PostFix(EnemyAI __instance, ref bool __result, float bufferDistance, bool requireLineOfSight, float viewWidth)

@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace LethalInternship.Utils
 {
+    /// <summary>
+    /// Utilitary class to help visualize component hierarchy with transform on an object, VERY NOT WORKING
+    /// </summary>
     internal static class TreesUtils
     {
         public static void PrintTransformTree(Transform[] tree, string? parent = null)

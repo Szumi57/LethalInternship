@@ -5,13 +5,25 @@ using UnityEngine;
 
 namespace LethalInternship.TerminalAdapter.TerminalStates
 {
+    /// <summary>
+    /// Page/state for displaying various infos about the interns owned and to be send by dropship on moon
+    /// </summary>
     internal class InfoPage : TerminalState
     {
         private static readonly EnumTerminalStates STATE = EnumTerminalStates.Info;
+        /// <summary>
+        /// <inheritdoc cref="TerminalState.GetTerminalState"/>
+        /// </summary>
         public override EnumTerminalStates GetTerminalState() { return STATE; }
 
+        /// <summary>
+        /// <inheritdoc cref="TerminalState(TerminalState)"/>
+        /// </summary>
         public InfoPage(TerminalState newState) : base(newState) { }
 
+        /// <summary>
+        /// <inheritdoc cref="TerminalState.ParseCommandValid"/>
+        /// </summary>
         public override bool ParseCommandValid(string[] words)
         {
             string firstWord = words[0];
@@ -71,6 +83,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             return true;
         }
 
+        /// <summary>
+        /// <inheritdoc cref="TerminalState.DisplayNode"/>
+        /// </summary>
         public override TerminalNode? DisplayNode()
         {
             StartOfRound instanceSOR = StartOfRound.Instance; 

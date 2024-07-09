@@ -16,6 +16,9 @@ using UnityEngine;
 
 namespace LethalInternship
 {
+    /// <summary>
+    /// Main mod plugin class, start everything
+    /// </summary>
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID)]
     public class Plugin : BaseUnityPlugin
@@ -113,9 +116,7 @@ namespace LethalInternship
 
             // Objects
             _harmony.PatchAll(typeof(DeadBodyInfoPatch));
-            _harmony.PatchAll(typeof(GrabbableObjectPatch));
             _harmony.PatchAll(typeof(ShotgunItemPatch));
-            _harmony.PatchAll(typeof(StunGrenadeItemPatch));
 
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));

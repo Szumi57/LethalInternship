@@ -5,9 +5,17 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches
 {
+    /// <summary>
+    /// Patch for the <c>QuicksandTrigger</c>
+    /// </summary>
     [HarmonyPatch(typeof(QuicksandTrigger))]
     internal class QuicksandTriggerPatch
     {
+        /// <summary>
+        /// Patch for making quicksand works with intern, when entering
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="other"></param>
         [HarmonyPatch("OnTriggerStay")]
         [HarmonyPostfix]
         public static void OnTriggerStay_Postfix(ref QuicksandTrigger __instance, Collider other)
@@ -52,6 +60,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
         }
 
+        /// <summary>
+        /// Patch for making quicksand works with intern, when exiting
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="other"></param>
         [HarmonyPatch("OnExit")]
         [HarmonyPostfix]
         public static void OnExit_Postfix(ref QuicksandTrigger __instance, Collider other)
@@ -69,6 +82,12 @@ namespace LethalInternship.Patches.MapHazardsPatches
             __instance.StopSinkingLocalPlayer(intern);
         }
 
+        /// <summary>
+        /// Patch for updating the right fields when an intern goes out of the quicksand
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="playerScript"></param>
+        /// <returns></returns>
         [HarmonyPatch("StopSinkingLocalPlayer")]
         [HarmonyPrefix]
         public static bool StopSinkingLocalPlayer_Prefix(QuicksandTrigger __instance, PlayerControllerB playerScript)

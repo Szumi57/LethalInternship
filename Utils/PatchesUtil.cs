@@ -15,11 +15,11 @@ namespace LethalInternship.Utils
         public static readonly FieldInfo FieldInfoPlayerClientId = AccessTools.Field(typeof(PlayerControllerB), "playerClientId");
         public static readonly FieldInfo FieldInfoPreviousAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "previousAnimationStateHash");
         public static readonly FieldInfo FieldInfoCurrentAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "currentAnimationStateHash");
+        public static readonly FieldInfo FieldInfoAllEntitiesCount = AccessTools.Field(typeof(InternManager), "AllEntitiesCount");
 
         public static readonly MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => AreInternsScheduledToLand());
         public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsColliderFromLocalOrInternOwnerLocal(new Collider()));
-        public static readonly MethodInfo IsObjectHeldByInternMethodInfo = SymbolExtensions.GetMethodInfo(() => IsObjectHeldByIntern((GrabbableObject)new object()));
         public static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => IndexBeginOfInterns());
         public static readonly MethodInfo IsIdPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsIdPlayerIntern(new int()));
         public static readonly MethodInfo IsPlayerInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternOwnerLocal(new PlayerControllerB()));
@@ -135,10 +135,6 @@ namespace LethalInternship.Utils
         {
             return InternManager.Instance.IsPlayerLocalOrInternOwnerLocal(player);
         }
-        private static bool IsObjectHeldByIntern(GrabbableObject grabbableObject)
-        {
-            return InternManager.Instance.IsObjectHeldByIntern(grabbableObject);
-        }
         private static int IndexBeginOfInterns()
         {
             return InternManager.Instance.IndexBeginOfInterns;
@@ -162,7 +158,7 @@ namespace LethalInternship.Utils
 
         private static void UpdatePlayerAnimationServerRpc(ulong playerClientId, int animationState, float animationSpeed)
         {
-            InternManager.Instance.GetInternAI((int)playerClientId)?.UpdatePlayerAnimationServerRpc(animationState,
+            InternManager.Instance.GetInternAI((int)playerClientId)?.UpdateInternAnimationServerRpc(animationState,
                                                                                                     animationSpeed);
         }
 

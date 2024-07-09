@@ -5,19 +5,31 @@ using UnityEngine;
 
 namespace LethalInternship.TerminalAdapter.TerminalStates
 {
+    /// <summary>
+    /// Page/State to confirm or cancel after the purchase of an intern
+    /// </summary>
     internal class ConfirmCancelPurchasePage : TerminalState
     {
         private static readonly EnumTerminalStates STATE = EnumTerminalStates.ConfirmCancelPurchase;
+        /// <summary>
+        /// <inheritdoc cref="TerminalState.GetTerminalState"/>
+        /// </summary>
         public override EnumTerminalStates GetTerminalState() { return STATE; }
 
         private int NbOrdered;
 
-        public ConfirmCancelPurchasePage(TerminalState newState, int nbOrdered) : base(newState)
+        /// <summary>
+        /// <inheritdoc cref="TerminalState(TerminalState)"/>
+        /// </summary>
+        public ConfirmCancelPurchasePage(TerminalState oldState, int nbOrdered) : base(oldState)
         {
             int maxOrder = (int)Math.Floor((float)TerminalManager.Instance.GetTerminal().groupCredits / (float)Const.PRICE_INTERN);
             this.NbOrdered = nbOrdered < maxOrder ? nbOrdered : maxOrder;
         }
 
+        /// <summary>
+        /// <inheritdoc cref="TerminalState.ParseCommandValid"/>
+        /// </summary>
         public override bool ParseCommandValid(string[] words)
         {
             string firstWord = words[0];
@@ -45,7 +57,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 instanceIM.AddNewCommandOfInterns(this.NbOrdered);
                 instanceTM.GetTerminal().groupCredits = newCredits;
 
-                instanceTM.PurchaseAndCreditsServerRpc(instanceIM.NbInternsOwned, instanceIM.NbInternsToDropShip, newCredits);
+                instanceTM.UpdatePurchaseAndCreditsServerRpc(instanceIM.NbInternsOwned, instanceIM.NbInternsToDropShip, newCredits);
 
                 terminalParser.TerminalState = new InfoPage(this);
                 return true;
@@ -54,6 +66,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             return false;
         }
 
+        /// <summary>
+        /// <inheritdoc cref="TerminalState.DisplayNode"/>
+        /// </summary>
         public override TerminalNode? DisplayNode()
         {
             if (!dictTerminalNodeByState.TryGetValue(this.GetTerminalState(), out TerminalNode terminalNode))

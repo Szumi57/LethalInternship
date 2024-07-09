@@ -7,9 +7,15 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.Patches.ObjectsPatches
 {
+    /// <summary>
+    /// Patches for <c>ShotgunItem</c>
+    /// </summary>
     [HarmonyPatch(typeof(ShotgunItem))]
     internal class ShotgunItemPatch
     {
+        /// <summary>
+        /// Patch to make the shotgun able to damage/kill intern, held by players or enemies
+        /// </summary>
         [HarmonyPatch("ShootGun")]
         [HarmonyPostfix]
         static void ShootGun_PostFix(ShotgunItem __instance,

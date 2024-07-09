@@ -2,6 +2,9 @@
 
 namespace LethalInternship.Utils
 {
+    /// <summary>
+    /// Utilitary class to help with using rays
+    /// </summary>
     internal class RayUtil
     {
         public static bool RayCastAndDraw(LineRenderer? lr, Vector3 origin, Vector3 directionOrigin, float angle, float length)

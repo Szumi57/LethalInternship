@@ -1,5 +1,8 @@
 ﻿namespace LethalInternship
 {
+    /// <summary>
+    /// Class of constants, used in various places in the plugin code
+    /// </summary>
     internal class Const
     {
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
@@ -27,6 +30,7 @@
         public static readonly float DISTANCE_CHECK_FOR_HOLES = 2.5f;
 
         public static readonly int COMPANY_BUILDING_MOON_ID = 3;
+        public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 6f;
 
         // Debug
         public static readonly bool DRAW_LINES = false;

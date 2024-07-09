@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.Managers;
+using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,24 +8,24 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
+    /// <summary>
+    /// Patch for <c>SpringManAI</c>
+    /// </summary>
     [HarmonyPatch(typeof(SpringManAI))]
     internal class SpringManAIPatch
     {
-        private static FieldInfo fieldInfoAllEntitiesCount = AccessTools.Field(typeof(InternManager), "AllEntitiesCount");
-
+        /// <summary>
+        /// Make the sping man use all array of player + interns to target
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("Update")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 3; i++)
@@ -38,7 +39,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             if (startIndex > -1)
             {
                 codes[startIndex].opcode = OpCodes.Ldsfld;
-                codes[startIndex].operand = fieldInfoAllEntitiesCount;
+                codes[startIndex].operand = PatchesUtil.FieldInfoAllEntitiesCount;
                 startIndex = -1;
             }
             else
@@ -46,29 +47,21 @@ namespace LethalInternship.Patches.EnemiesPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.SpringManAIPatch.Update_Transpiler could not change size of player array to look up.");
             }
 
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"Update ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"Update ======================");
             return codes.AsEnumerable();
         }
 
+        /// <summary>
+        /// Make the sping man use all array of player + interns to target
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <param name="generator"></param>
+        /// <returns></returns>
         [HarmonyPatch("DoAIInterval")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> DoAIInterval_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
-            //Plugin.Logger.LogDebug($"DoAIInterval ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DoAIInterval ======================");
 
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 3; i++)
@@ -82,7 +75,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             if (startIndex > -1)
             {
                 codes[startIndex].opcode = OpCodes.Ldsfld;
-                codes[startIndex].operand = fieldInfoAllEntitiesCount;
+                codes[startIndex].operand = PatchesUtil.FieldInfoAllEntitiesCount;
                 startIndex = -1;
             }
             else
@@ -90,13 +83,6 @@ namespace LethalInternship.Patches.EnemiesPatches
                 Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.SpringManAIPatch.Update_Transpiler could not change size of player array to look up.");
             }
 
-            // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"DoAIInterval ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.Logger.LogDebug($"DoAIInterval ======================");
             return codes.AsEnumerable();
         }
     }
