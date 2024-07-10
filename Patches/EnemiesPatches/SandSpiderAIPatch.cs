@@ -45,7 +45,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.SandSpiderAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for HitPlayerServerRpc.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.SandSpiderAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for HitPlayerServerRpc.");
             }
 
             return codes.AsEnumerable();

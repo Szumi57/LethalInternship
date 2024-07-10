@@ -30,9 +30,9 @@ namespace LethalInternship
         internal static EnemyType InternNPCPrefab = null!;
         internal static int IrlPlayersCount = 0;
 
-        internal static new ManualLogSource Logger = null!;
         internal static Config BoundConfig { get; private set; } = null!;
 
+        private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
 
         private void Awake()
@@ -147,6 +147,25 @@ namespace LethalInternship
             GameObject gameObject = new GameObject("PluginManager");
             gameObject.AddComponent<PluginManager>();
             PluginManager.Instance.InitManagers();
+        }
+
+        internal static void LogDebug(string debugLog)
+        {
+            if (!BoundConfig.EnableDebugLog.Value)
+            {
+                return;
+            }
+            Logger.LogDebug(debugLog);
+        }
+
+        internal static void LogInfo(string infoLog)
+        {
+            Logger.LogInfo(infoLog);
+        }
+
+        internal static void LogError(string errorLog)
+        {
+            Logger.LogError(errorLog);
         }
     }
 }

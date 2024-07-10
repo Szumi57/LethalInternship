@@ -44,7 +44,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call BeeKillPlayerOnLocalClient on player id.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call BeeKillPlayerOnLocalClient on player id.");
             }
 
             // ----------------------------------------------------------------------
@@ -67,7 +67,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call BeeKillPlayerServerRpc on player id.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call BeeKillPlayerServerRpc on player id.");
             }
 
             // ----------------------------------------------------------------------
@@ -90,16 +90,16 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call EnterAttackZapModeServerRpc player on player id.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call EnterAttackZapModeServerRpc player on player id.");
             }
 
             // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"OnCollideWithPlayer ======================");
+            //Plugin.LogDebug($"OnCollideWithPlayer ======================");
             //for (var i = 0; i < codes.Count; i++)
             //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+            //    Plugin.LogDebug($"{i} {codes[i].ToString()}");
             //}
-            //Plugin.Logger.LogDebug($"OnCollideWithPlayer ======================");
+            //Plugin.LogDebug($"OnCollideWithPlayer ======================");
 
             return codes.AsEnumerable();
         }

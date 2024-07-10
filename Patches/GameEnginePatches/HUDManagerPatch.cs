@@ -51,7 +51,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.FillEndGameStats_Transpiler could not use irl number of player in list.");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.FillEndGameStats_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();

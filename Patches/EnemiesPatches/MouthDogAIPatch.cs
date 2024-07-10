@@ -49,7 +49,7 @@ namespace LethalInternship.Patches.EnemiesPatches
                 return true;
             }
 
-            Plugin.Logger.LogDebug($"SyncKillIntern from mouthdogAI for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+            Plugin.LogDebug($"SyncKillIntern from mouthdogAI for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
             internAI.SyncKillIntern(Vector3.zero, true, CauseOfDeath.Mauling, 0);
 
             return true;

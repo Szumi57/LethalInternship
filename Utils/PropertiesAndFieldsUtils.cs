@@ -15,21 +15,21 @@ namespace LethalInternship.Utils
         {
             Type typeObj = typeof(T);
 
-            Plugin.Logger.LogDebug(" ");
+            Plugin.LogDebug(" ");
             if (array == null)
             {
-                Plugin.Logger.LogDebug($"Array of type {typeObj} is null");
+                Plugin.LogDebug($"Array of type {typeObj} is null");
                 return;
             }
             if (array.Length == 0)
             {
-                Plugin.Logger.LogDebug($"Array of type {typeObj} is empty");
+                Plugin.LogDebug($"Array of type {typeObj} is empty");
                 return;
             }
 
             PropertyInfo[] arrObjProperties = GetReadablePropertiesOf(typeObj);
 
-            Plugin.Logger.LogDebug($"- List of type : {typeObj}");
+            Plugin.LogDebug($"- List of type : {typeObj}");
             for (int i = 0; i < array.Length; i++)
             {
                 T obj = array[i];
@@ -38,7 +38,7 @@ namespace LethalInternship.Utils
                     continue;
                 }
 
-                Plugin.Logger.LogDebug($" Object {i}: \"{NameOfObject(obj, arrObjProperties)}\"");
+                Plugin.LogDebug($" Object {i}: \"{NameOfObject(obj, arrObjProperties)}\"");
             }
         }
 
@@ -48,12 +48,12 @@ namespace LethalInternship.Utils
 
             if (array == null)
             {
-                Plugin.Logger.LogDebug($"Array of type {typeObj} is null");
+                Plugin.LogDebug($"Array of type {typeObj} is null");
                 return;
             }
             if (array.Length == 0)
             {
-                Plugin.Logger.LogDebug($"Array of type {typeObj} is empty");
+                Plugin.LogDebug($"Array of type {typeObj} is empty");
                 return;
             }
 
@@ -65,8 +65,8 @@ namespace LethalInternship.Utils
                 {
                     LogProperties(array[i], typeObj, arrObjProperties);
                 }
-                Plugin.Logger.LogDebug(" ");
-                Plugin.Logger.LogDebug($"- Fields of \"{NameOfObject(array[i], arrObjProperties)}\" of type \"{typeObj}\" :");
+                Plugin.LogDebug(" ");
+                Plugin.LogDebug($"- Fields of \"{NameOfObject(array[i], arrObjProperties)}\" of type \"{typeObj}\" :");
                 if (hasToListFields)
                 {
                     LogFields(array[i], typeObj, arrObjFields);
@@ -82,8 +82,8 @@ namespace LethalInternship.Utils
             {
                 LogProperties(obj, typeObj, arrObjProperties);
             }
-            Plugin.Logger.LogDebug(" ");
-            Plugin.Logger.LogDebug($"- Fields of \"{NameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
+            Plugin.LogDebug(" ");
+            Plugin.LogDebug($"- Fields of \"{NameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
             FieldInfo[] arrObjFields = GetAllFields(typeObj);
             if (hasToListFields)
             {
@@ -96,7 +96,7 @@ namespace LethalInternship.Utils
             FieldInfo info = typeof(NetworkObject).GetField("GlobalObjectIdHash", BindingFlags.Instance | BindingFlags.NonPublic);
             if (info == null)
             {
-                Plugin.Logger.LogError("GlobalObjectIdHash field is null.");
+                Plugin.LogError("GlobalObjectIdHash field is null.");
                 return null;
             }
             foreach (NetworkObject obj in Resources.FindObjectsOfTypeAll<NetworkObject>())
@@ -115,15 +115,15 @@ namespace LethalInternship.Utils
         {
             if (obj == null)
             {
-                Plugin.Logger.LogDebug($"Object of type {typeObj} is null");
+                Plugin.LogDebug($"Object of type {typeObj} is null");
                 return;
             }
 
-            Plugin.Logger.LogDebug(" ");
-            Plugin.Logger.LogDebug($"- Properties of \"{NameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
+            Plugin.LogDebug(" ");
+            Plugin.LogDebug($"- Properties of \"{NameOfObject(obj, arrObjProperties)}\" of type \"{typeObj}\" :");
             foreach (PropertyInfo prop in arrObjProperties)
             {
-                Plugin.Logger.LogDebug($" {prop.Name} = {GetValueOfProperty(obj, prop)}");
+                Plugin.LogDebug($" {prop.Name} = {GetValueOfProperty(obj, prop)}");
             }
         }
 
@@ -137,14 +137,14 @@ namespace LethalInternship.Utils
         {
             if (obj == null)
             {
-                Plugin.Logger.LogDebug($"Object of type {typeObj} is null");
+                Plugin.LogDebug($"Object of type {typeObj} is null");
                 return;
             }
 
-            Plugin.Logger.LogDebug(" ");
+            Plugin.LogDebug(" ");
             foreach (FieldInfo field in arrObjFields)
             {
-                Plugin.Logger.LogDebug($" {field.Name} = {GetValueOfField(obj, field)}");
+                Plugin.LogDebug($" {field.Name} = {GetValueOfField(obj, field)}");
             }
         }
 

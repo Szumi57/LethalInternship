@@ -73,7 +73,7 @@ namespace LethalInternship.AI.AIStates
             if (lookingAroundTimer > 0f)
             {
                 lookingAroundTimer += ai.AIIntervalTime;
-                Plugin.Logger.LogDebug($"{ai.NpcController.Npc.playerUsername} Looking around to find player {lookingAroundTimer}");
+                Plugin.LogDebug($"{ai.NpcController.Npc.playerUsername} Looking around to find player {lookingAroundTimer}");
                 ai.StopMoving();
 
                 StartLookingAroundCoroutine();
@@ -101,7 +101,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            Plugin.Logger.LogDebug($"{npcController.Npc.playerUsername} distance to last position {Vector3.Distance(targetLastKnownPosition.Value, npcController.Npc.transform.position)}");
+            Plugin.LogDebug($"{npcController.Npc.playerUsername} distance to last position {Vector3.Distance(targetLastKnownPosition.Value, npcController.Npc.transform.position)}");
             // If the intern is close enough to the last known position
             if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
@@ -112,7 +112,7 @@ namespace LethalInternship.AI.AIStates
                     Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
                     if (entranceTeleportPos.HasValue)
                     {
-                        Plugin.Logger.LogDebug($"======== TeleportInternAndSync {ai.NpcController.Npc.playerUsername} !!!!!!!!!!!!!!! ");
+                        Plugin.LogDebug($"======== TeleportInternAndSync {ai.NpcController.Npc.playerUsername} !!!!!!!!!!!!!!! ");
                         ai.TeleportInternAndSync(entranceTeleportPos.Value, !ai.isOutside, true);
                         targetLastKnownPosition = ai.targetPlayer.transform.position;
                     }

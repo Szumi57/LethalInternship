@@ -103,7 +103,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void Awake()
         {
-            Plugin.Logger.LogDebug("Awake intern controller.");
+            Plugin.LogDebug("Awake intern controller.");
             Npc.isHostPlayerObject = false;
             Npc.serverPlayerPosition = Npc.transform.position;
             Npc.gameplayCamera.enabled = false;
@@ -512,7 +512,7 @@ namespace LethalInternship.AI
                 }
                 if (Npc.sinkingValue >= 1f)
                 {
-                    Plugin.Logger.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
+                    Plugin.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
                     this.InternAIController.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0);
                 }
                 else if (Npc.sinkingValue > 0.5f)
@@ -626,7 +626,6 @@ namespace LethalInternship.AI
                 }
                 if (Npc.isSpeedCheating)
                 {
-                    Plugin.Logger.LogDebug("===================================================== speed cheat ?");
                     num3 *= 15f;
                 }
                 if (movementHinderedPrev > 0)
@@ -1525,7 +1524,7 @@ namespace LethalInternship.AI
                 || (this.Npc.twoHanded &&
                                    (!ladder.twoHandedItemAllowed || ladder.specialCharacterAnimation)))
             {
-                Plugin.Logger.LogDebug("no ladder cuz holding things");
+                Plugin.LogDebug("no ladder cuz holding things");
                 return false;
             }
 
@@ -1607,7 +1606,7 @@ namespace LethalInternship.AI
                 if (this.drowningTimer < 0f)
                 {
                     this.drowningTimer = 1f;
-                    Plugin.Logger.LogDebug($"SyncKillIntern from drowning for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
+                    Plugin.LogDebug($"SyncKillIntern from drowning for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
                     InternAIController.SyncKillIntern(Vector3.zero, true, CauseOfDeath.Drowning, 0);
                 }
             }

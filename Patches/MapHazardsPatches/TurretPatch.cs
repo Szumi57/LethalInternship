@@ -57,7 +57,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern normal mode.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern normal mode.");
             }
 
             // ----------------------------------------------------------------------
@@ -87,7 +87,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern berzerk mode.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern berzerk mode.");
             }
 
             return codes.AsEnumerable();
@@ -117,7 +117,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.Logger.LogDebug($"SyncKillIntern from turret for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                Plugin.LogDebug($"SyncKillIntern from turret for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.SyncKillIntern(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0);
             }
         }

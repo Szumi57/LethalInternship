@@ -49,7 +49,7 @@ namespace LethalInternship.Patches.MapPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.MapPatches.InteractTriggerPatch.Interact_ReversePatch could not remove CancelLadderAnimation");
+                    Plugin.LogError($"LethalInternship.Patches.MapPatches.InteractTriggerPatch.Interact_ReversePatch could not remove CancelLadderAnimation");
                 }
 
                 return codes.AsEnumerable();

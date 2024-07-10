@@ -125,14 +125,14 @@ namespace LethalInternship.Managers
         private void ResizePoolOfInterns(int irlPlayersCount)
         {
             StartOfRound instance = StartOfRound.Instance;
-            Plugin.Logger.LogDebug($"instance.allPlayerObjects.Length {instance.allPlayerObjects.Length} AllEntitiesCount {AllEntitiesCount}");
+            Plugin.LogDebug($"instance.allPlayerObjects.Length {instance.allPlayerObjects.Length} AllEntitiesCount {AllEntitiesCount}");
 
             int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE_MAX;
             Array.Resize(ref instance.allPlayerObjects, irlPlayersAndInternsCount);
             Array.Resize(ref instance.allPlayerScripts, irlPlayersAndInternsCount);
             Array.Resize(ref instance.gameStats.allPlayerStats, irlPlayersAndInternsCount);
             Array.Resize(ref instance.playerSpawnPositions, irlPlayersAndInternsCount);
-            Plugin.Logger.LogDebug($"Resize for interns from irl players count of {irlPlayersCount} to {irlPlayersAndInternsCount}");
+            Plugin.LogDebug($"Resize for interns from irl players count of {irlPlayersCount} to {irlPlayersAndInternsCount}");
 
             AllEntitiesCount = irlPlayersAndInternsCount;
             Plugin.IrlPlayersCount = irlPlayersAndInternsCount;
@@ -154,7 +154,7 @@ namespace LethalInternship.Managers
                 int indexPlusIrlPlayersCount = i + irlPlayersCount;
                 if (AllPlayerObjectsBackUp[i] != null)
                 {
-                    Plugin.Logger.LogDebug($"use of backup : {AllPlayerScriptsBackUp[i].playerUsername}");
+                    Plugin.LogDebug($"use of backup : {AllPlayerScriptsBackUp[i].playerUsername}");
                     instance.allPlayerObjects[indexPlusIrlPlayersCount] = AllPlayerObjectsBackUp[i];
                     instance.allPlayerScripts[indexPlusIrlPlayersCount] = AllPlayerScriptsBackUp[i];
                     instance.gameStats.allPlayerStats[indexPlusIrlPlayersCount] = new PlayerStats();
@@ -199,7 +199,7 @@ namespace LethalInternship.Managers
             int indexNextPlayerObject = GetNextAvailablePlayerObject();
             if (indexNextPlayerObject < 0)
             {
-                Plugin.Logger.LogInfo($"No more intern available");
+                Plugin.LogInfo($"No more intern available");
                 return;
             }
 
@@ -265,7 +265,7 @@ namespace LethalInternship.Managers
                                           int indexNextIntern, int indexNextPlayerObject,
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
-            Plugin.Logger.LogInfo($"Client receive NOR after spawned on server...");
+            Plugin.LogInfo($"Client receive NOR after spawned on server...");
 
             networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
             InternAI internAI = networkObjectInternAI.gameObject.GetComponent<InternAI>();
@@ -287,7 +287,7 @@ namespace LethalInternship.Managers
         private void InitInternSpawning(InternAI internAI, int indexNextPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
         {
             StartOfRound instance = StartOfRound.Instance;
-            Plugin.Logger.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
+            Plugin.LogDebug($"position : {spawnPosition}, yRot: {yRot}");
             GameObject objectParent = instance.allPlayerObjects[indexNextPlayerObject];
             objectParent.transform.position = spawnPosition;
             objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
@@ -324,7 +324,7 @@ namespace LethalInternship.Managers
             AccessTools.Field(typeof(PlayerControllerB), "updatePositionForNewlyJoinedClient").SetValue(internController, true);
 
             internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();
-            Plugin.Logger.LogDebug($"Adding AI \"{internAI.InternId}\" for body {internController.playerUsername}");
+            Plugin.LogDebug($"Adding AI \"{internAI.InternId}\" for body {internController.playerUsername}");
             internAI.creatureAnimator = internController.playerBodyAnimator;
             internAI.NpcController = new NpcController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
@@ -414,14 +414,14 @@ namespace LethalInternship.Managers
                 // in space
                 NbInternsOwned += nbOrdered;
                 NbInternsToDropShip = NbInternsOwned;
-                Plugin.Logger.LogDebug($"In space NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
+                Plugin.LogDebug($"In space NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
             }
             else
             {
                 // on moon
                 NbInternsToDropShip += nbOrdered;
                 NbInternsOwned += nbOrdered;
-                Plugin.Logger.LogDebug($"On moon NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
+                Plugin.LogDebug($"On moon NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
             }
         }
 

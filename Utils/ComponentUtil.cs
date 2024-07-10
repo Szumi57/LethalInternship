@@ -16,13 +16,13 @@ namespace LethalInternship.Utils
                 return;
             }
 
-            Plugin.Logger.LogDebug(" ");
-            Plugin.Logger.LogDebug(" List of components :");
+            Plugin.LogDebug(" ");
+            Plugin.LogDebug(" List of components :");
             Component[] components = gameObject.GetComponentsInChildren(typeof(Component));
             foreach (Component component in components)
             {
                 if(component == null) continue;
-                Plugin.Logger.LogDebug(component.ToString());
+                Plugin.LogDebug(component.ToString());
             }
         }
 

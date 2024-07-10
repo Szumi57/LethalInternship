@@ -25,7 +25,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
-                Plugin.Logger.LogDebug("Initialize managers...");
+                Plugin.LogDebug("Initialize managers...");
 
                 GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
                 objectManager.GetComponent<NetworkObject>().Spawn();
@@ -36,11 +36,11 @@ namespace LethalInternship.Patches.GameEnginePatches
                 objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
                 objectManager.GetComponent<NetworkObject>().Spawn();
 
-                Plugin.Logger.LogDebug("... Managers started");
+                Plugin.LogDebug("... Managers started");
             }
             else
             {
-                Plugin.Logger.LogDebug("Client does not initialize managers.");
+                Plugin.LogDebug("Client does not initialize managers.");
             }
         }
 
@@ -92,7 +92,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.ReviveDeadPlayers_Transpiler could not use irl number of player in list.");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.ReviveDeadPlayers_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();
@@ -134,7 +134,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.SyncShipUnlockablesClientRpc_Transpiler could not use irl number of player in list.");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.SyncShipUnlockablesClientRpc_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();
@@ -173,7 +173,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 1");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 1");
             }
 
             // ----------------------------------------------------------------------
@@ -193,7 +193,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 2");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 2");
             }
 
             // ----------------------------------------------------------------------
@@ -219,12 +219,12 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not change limit of for loop to only real players");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not change limit of for loop to only real players");
             }
 
             //for (var i = 0; i < codes.Count; i++)
             //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+            //    Plugin.LogDebug($"{i} {codes[i].ToString()}");
             //}
 
             return codes.AsEnumerable();
@@ -266,7 +266,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.UpdatePlayerVoiceEffects_Transpiler could not change limit of for loop to only real players");
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.UpdatePlayerVoiceEffects_Transpiler could not change limit of for loop to only real players");
             }
 
             return codes.AsEnumerable();
@@ -308,7 +308,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ResetShipFurniture_Transpiler could not use irl number of player in list.");
+                Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ResetShipFurniture_Transpiler could not use irl number of player in list.");
             }
 
             return codes.AsEnumerable();

@@ -61,7 +61,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for HitPlayerServerRpc.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for HitPlayerServerRpc.");
             }
 
             // ----------------------------------------------------------------------
@@ -85,16 +85,16 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for JumpToFearLevel.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.OnCollideWithPlayer_Transpiler could not change use of correct player id for JumpToFearLevel.");
             }
 
             // ----------------------------------------------------------------------
-            //Plugin.Logger.LogDebug($"OnCollideWithPlayer ======================");
+            //Plugin.LogDebug($"OnCollideWithPlayer ======================");
             //for (var i = 0; i < codes.Count; i++)
             //{
-            //    Plugin.Logger.LogDebug($"{i} {codes[i].ToString()}");
+            //    Plugin.LogDebug($"{i} {codes[i].ToString()}");
             //}
-            //Plugin.Logger.LogDebug($"OnCollideWithPlayer ======================");
+            //Plugin.LogDebug($"OnCollideWithPlayer ======================");
             return codes.AsEnumerable();
         }
 
@@ -133,7 +133,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.Update_Transpiler could not change condition for is only local player.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.Update_Transpiler could not change condition for is only local player.");
             }
 
             // ----------------------------------------------------------------------
@@ -156,7 +156,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.Update_Transpiler could not change target of begin chasing player.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.CrawlerAIPatch.Update_Transpiler could not change target of begin chasing player.");
             }
 
             return codes.AsEnumerable();

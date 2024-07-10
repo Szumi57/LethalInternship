@@ -14,12 +14,12 @@ namespace LethalInternship.Utils
         {
             if (tree == null)
             {
-                Plugin.Logger.LogDebug($"Tree of transform is null");
+                Plugin.LogDebug($"Tree of transform is null");
                 return;
             }
             if (tree.Length == 0)
             {
-                Plugin.Logger.LogDebug($"Tree of transform is empty");
+                Plugin.LogDebug($"Tree of transform is empty");
                 return;
             }
 
@@ -47,7 +47,7 @@ namespace LethalInternship.Utils
                     if (depth > 0)
                         sb.Append("├──");
 
-                    Plugin.Logger.LogDebug($"{sb.ToString()}{actual.name}");
+                    Plugin.LogDebug($"{sb.ToString()}{actual.name}");
                     sb.Clear();
                     TransformTreeTraversal(tree, actual.name, depth + 1);
                 }
@@ -59,14 +59,14 @@ namespace LethalInternship.Utils
         {
             if (gameObject == null)
             {
-                Plugin.Logger.LogDebug($"GameObject is null");
+                Plugin.LogDebug($"GameObject is null");
                 return;
             }
 
             Component[] components = gameObject.GetComponentsInChildren(typeof(Component)).Where(x => x != null).ToArray();
             if (components.Length == 0)
             {
-                Plugin.Logger.LogDebug($"GameObject has no components");
+                Plugin.LogDebug($"GameObject has no components");
                 return;
             }
 
@@ -89,7 +89,7 @@ namespace LethalInternship.Utils
 
                 if (string.IsNullOrWhiteSpace(parent) && string.IsNullOrWhiteSpace(transform.parent?.name))
                 {
-                    Plugin.Logger.LogDebug($"{(isTransform ? transform.name : actual.ToString())}");
+                    Plugin.LogDebug($"{(isTransform ? transform.name : actual.ToString())}");
                 }
 
                 if (string.IsNullOrWhiteSpace(parent) && !string.IsNullOrWhiteSpace(transform.parent?.name))
@@ -107,7 +107,7 @@ namespace LethalInternship.Utils
                     if (depth > 0)
                         sb.Append("├──");
 
-                    Plugin.Logger.LogDebug($"{sb}{(isTransform ? transform.name : actual.ToString())}");
+                    Plugin.LogDebug($"{sb}{(isTransform ? transform.name : actual.ToString())}");
                     sb.Clear();
                     continue;
                 }
@@ -128,7 +128,7 @@ namespace LethalInternship.Utils
                     }
 
                     lastTransformName = transform.name;
-                    Plugin.Logger.LogDebug($"{sb}{transform.name}");
+                    Plugin.LogDebug($"{sb}{transform.name}");
                     sb.Clear();
                     i = ComponentTreeTraversal(tree, transform.name, i + 1, depth + 1, lastTransformName);
                     index = i;

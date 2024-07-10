@@ -50,7 +50,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.ForestGiantAIPatch.OnCollideWithPlayer_Transpiler could not check if player local or intern");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.ForestGiantAIPatch.OnCollideWithPlayer_Transpiler could not check if player local or intern");
             }
 
             // ----------------------------------------------------------------------

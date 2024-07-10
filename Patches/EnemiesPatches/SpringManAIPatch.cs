@@ -44,7 +44,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.SpringManAIPatch.Update_Transpiler could not change size of player array to look up.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.SpringManAIPatch.Update_Transpiler could not change size of player array to look up.");
             }
 
             return codes.AsEnumerable();
@@ -80,7 +80,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.SpringManAIPatch.Update_Transpiler could not change size of player array to look up.");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.SpringManAIPatch.Update_Transpiler could not change size of player array to look up.");
             }
 
             return codes.AsEnumerable();

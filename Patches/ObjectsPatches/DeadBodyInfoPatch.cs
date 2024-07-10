@@ -55,7 +55,7 @@ namespace LethalInternship.Patches.ObjectsPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.ObjectsPatches.DeadBodyInfoPatch.Start_Transpiler remplace with correct tag if intern.");
+                Plugin.LogError($"LethalInternship.Patches.ObjectsPatches.DeadBodyInfoPatch.Start_Transpiler remplace with correct tag if intern.");
             }
 
             // ----------------------------------------------------------------------

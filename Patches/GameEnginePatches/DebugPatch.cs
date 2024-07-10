@@ -18,7 +18,11 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPrefix]
         public static bool LogError_Prefix()
         {
-            Plugin.Logger.LogDebug(Environment.StackTrace);
+            if(Plugin.BoundConfig.EnableStackTraceInDebugLog.Value)
+            {
+                Plugin.LogDebug(Environment.StackTrace);
+            }
+
             return true;
         }
     }

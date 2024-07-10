@@ -50,7 +50,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change check for local player or intern.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change check for local player or intern.");
             }
 
             // ----------------------------------------------------------------------
@@ -75,7 +75,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change use of component for method kill player.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change use of component for method kill player.");
             }
 
             return codes.AsEnumerable();
@@ -120,7 +120,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.Update_Transpiler could not change check for local player or intern.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.Update_Transpiler could not change check for local player or intern.");
             }
 
             return codes.AsEnumerable();

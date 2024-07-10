@@ -48,14 +48,14 @@ namespace LethalInternship.Managers
             TerminalNode helpTerminalNode = terminalNodesList.specialNodes[Const.INDEX_HELP_TERMINALNODE];
             if (helpTerminalNode == null)
             {
-                Plugin.Logger.LogError("LethalInternship.Managers.TerminalManager could not find the help terminal node in AddTextToHelpTerminalNode");
+                Plugin.LogError("LethalInternship.Managers.TerminalManager could not find the help terminal node in AddTextToHelpTerminalNode");
                 return;
             }
 
             int indexOther = helpTerminalNode.displayText.IndexOf(Const.STRING_OTHER_HELP);
             if (indexOther < 0)
             {
-                Plugin.Logger.LogError($"LethalInternship.Managers.TerminalManager could not find the text {Const.STRING_OTHER_HELP} in AddTextToHelpTerminalNode");
+                Plugin.LogError($"LethalInternship.Managers.TerminalManager could not find the text {Const.STRING_OTHER_HELP} in AddTextToHelpTerminalNode");
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace LethalInternship.Managers
         [ServerRpc(RequireOwnership = false)]
         public void UpdatePurchaseAndCreditsServerRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
         {
-            Plugin.Logger.LogInfo($"Client send to server to sync credits to ${newCredits}, calling ClientRpc...");
+            Plugin.LogInfo($"Client send to server to sync credits to ${newCredits}, calling ClientRpc...");
             UpdatePurchaseAndCreditsClientRpc(nbInternsOwned, nbInternToDropShip, newCredits);
         }
 
@@ -100,7 +100,7 @@ namespace LethalInternship.Managers
         [ClientRpc]
         private void UpdatePurchaseAndCreditsClientRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
         {
-            Plugin.Logger.LogInfo($"Server send to clients to sync credits to ${newCredits}, client execute...");
+            Plugin.LogInfo($"Server send to clients to sync credits to ${newCredits}, client execute...");
             UpdatePurchaseAndCredits(nbInternsOwned, nbInternToDropShip, newCredits);
         }
 

@@ -47,7 +47,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.FlowerSnakeEnemyPatch.OnCollideWithPlayer_Transpiler could not use id player local or intern");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.FlowerSnakeEnemyPatch.OnCollideWithPlayer_Transpiler could not use id player local or intern");
             }
 
             return codes.AsEnumerable();
@@ -89,7 +89,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.FlowerSnakeEnemyPatch.MainSnakeActAsConductor_Transpiler could not use id player local or intern");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.FlowerSnakeEnemyPatch.MainSnakeActAsConductor_Transpiler could not use id player local or intern");
             }
 
             return codes.AsEnumerable();

@@ -24,11 +24,11 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPrefix]
         static bool ChangeOwnership_PreFix(ref ulong newOwnerClientId)
         {
-            Plugin.Logger.LogDebug($"Try network object ChangeOwnership newOwnerClientId : {(int)newOwnerClientId}");
+            Plugin.LogDebug($"Try network object ChangeOwnership newOwnerClientId : {(int)newOwnerClientId}");
             InternAI? internAI = InternManager.Instance.GetInternAI((int)newOwnerClientId);
             if (internAI != null)
             {
-                Plugin.Logger.LogDebug($"network ChangeOwnership not on intern but on intern owner : {internAI.OwnerClientId}");
+                Plugin.LogDebug($"network ChangeOwnership not on intern but on intern owner : {internAI.OwnerClientId}");
                 newOwnerClientId = internAI.OwnerClientId;
             }
             return true;

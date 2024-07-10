@@ -123,7 +123,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             List<ulong> internsAlreadyExploded = new List<ulong>();
             for (int i = 0; i < array.Length; i++)
             {
-                Plugin.Logger.LogDebug($"array {i} {array[i].name}");
+                Plugin.LogDebug($"array {i} {array[i].name}");
                 float distanceFromExplosion = Vector3.Distance(explosionPosition, array[i].transform.position);
                 if (distanceFromExplosion > 4f
                     && Physics.Linecast(explosionPosition, array[i].transform.position + Vector3.up * 0.3f, out _, 256, QueryTriggerInteraction.Ignore))
@@ -156,7 +156,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 if (distanceFromExplosion < killRange)
                 {
                     Vector3 vector = Vector3.Normalize(internController.gameplayCamera.transform.position - explosionPosition) * 80f / Vector3.Distance(internController.gameplayCamera.transform.position, explosionPosition);
-                    Plugin.Logger.LogDebug($"SyncKillIntern from explosion for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                    Plugin.LogDebug($"SyncKillIntern from explosion for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                     internAI.SyncKillIntern(vector, true, CauseOfDeath.Blast, 0);
                 }
                 else if (distanceFromExplosion < damageRange)

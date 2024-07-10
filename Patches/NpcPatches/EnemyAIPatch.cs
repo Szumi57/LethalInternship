@@ -26,11 +26,11 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool ChangeOwnershipOfEnemy_PreFix(ref ulong newOwnerClientId)
         {
-            Plugin.Logger.LogDebug($"Try ChangeOwnershipOfEnemy newOwnerClientId : {(int)newOwnerClientId}");
+            Plugin.LogDebug($"Try ChangeOwnershipOfEnemy newOwnerClientId : {(int)newOwnerClientId}");
             InternAI? internAI = InternManager.Instance.GetInternAI((int)newOwnerClientId);
             if (internAI != null)
             {
-                Plugin.Logger.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
+                Plugin.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
                 newOwnerClientId = internAI.OwnerClientId;
             }
             return true;
@@ -77,7 +77,7 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.MeetsStandardPlayerCollisionConditions_Transpiler could not insert instruction if is intern for \"component != GameNetworkManager.Instance.localPlayerController\".");
+                Plugin.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.MeetsStandardPlayerCollisionConditions_Transpiler could not insert instruction if is intern for \"component != GameNetworkManager.Instance.localPlayerController\".");
             }
 
             return codes.AsEnumerable();
@@ -115,7 +115,7 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.Update_Transpiler could not remove annoying log \"Set destination to target player A\"");
+                Plugin.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.Update_Transpiler could not remove annoying log \"Set destination to target player A\"");
             }
 
             // ----------------------------------------------------------------------
@@ -138,7 +138,7 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.Update_Transpiler could not remove annoying log \"Set destination to target player B\"");
+                Plugin.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.Update_Transpiler could not remove annoying log \"Set destination to target player B\"");
             }
 
             return codes.AsEnumerable();
@@ -192,13 +192,13 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else if (__result == null && internControllerFound != null)
             {
-                Plugin.Logger.LogDebug("intern found, no player found");
+                Plugin.LogDebug("intern found, no player found");
                 __result = internControllerFound;
                 return;
             }
             else if (__result != null && internControllerFound == null)
             {
-                Plugin.Logger.LogDebug("intern not found, player found");
+                Plugin.LogDebug("intern not found, player found");
                 return;
             }
             else
@@ -209,10 +209,10 @@ namespace LethalInternship.Patches.NpcPatches
                 Vector3 aiEnemyPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
                 if ((internPosition - aiEnemyPosition).sqrMagnitude < (playerPosition - aiEnemyPosition).sqrMagnitude)
                 {
-                    Plugin.Logger.LogDebug("intern closer");
+                    Plugin.LogDebug("intern closer");
                     __result = internControllerFound;
                 }
-                else { Plugin.Logger.LogDebug("player closer"); }
+                else { Plugin.LogDebug("player closer"); }
             }
         }
 

@@ -69,7 +69,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                         damage = 20;
                     }
 
-                    Plugin.Logger.LogDebug($"Dealing {damage} damage to intern {internController.name} {internController.playerClientId}, owner {internController.OwnerClientId}");
+                    Plugin.LogDebug($"Dealing {damage} damage to intern {internController.name} {internController.playerClientId}, owner {internController.OwnerClientId}");
                     internAI.SyncDamageIntern(damage, CauseOfDeath.Gunshots, 0, false, __instance.shotgunRayPoint.forward * 30f);
                 }
             }

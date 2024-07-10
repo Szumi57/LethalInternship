@@ -35,6 +35,9 @@
         // Debug
         public static readonly bool DRAW_LINES = false;
         public static readonly bool SHOW_LOG_DEBUG = true;
+        public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
+        public static readonly bool INVULNERABILITY = false;
+        public static readonly bool INVINCIBILITY = true;
 
         // NpcController
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";

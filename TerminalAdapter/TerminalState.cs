@@ -33,7 +33,7 @@ namespace LethalInternship.TerminalAdapter
             }
 
             this.terminalParser = terminalParser;
-            Plugin.Logger.LogDebug($"TerminalState new state :                 {this.GetTerminalState()}");
+            Plugin.LogDebug($"TerminalState new state :                 {this.GetTerminalState()}");
 
             if (this.dictTerminalNodeByState == null)
             {

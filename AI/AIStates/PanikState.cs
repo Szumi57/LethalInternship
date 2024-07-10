@@ -41,7 +41,7 @@ namespace LethalInternship.AI.AIStates
                 ai.StopSearch(searchForPlayers, true);
             }
 
-            Plugin.Logger.LogDebug($"{npcController.Npc.playerUsername} enemy seen {enemyAI.enemyType.enemyName}");
+            Plugin.LogDebug($"{npcController.Npc.playerUsername} enemy seen {enemyAI.enemyType.enemyName}");
             this.enemyTransform = enemyAI.transform;
             StartPanikCoroutine(this.enemyTransform);
         }

@@ -57,7 +57,7 @@ namespace LethalInternship.Patches.MapPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.MapPatches.ItemDropShipPatch.Update_Transpiler could not bypass condition if interns have to land");
+                Plugin.LogError($"LethalInternship.Patches.MapPatches.ItemDropShipPatch.Update_Transpiler could not bypass condition if interns have to land");
             }
 
             // ----------------------------------------------------------------------

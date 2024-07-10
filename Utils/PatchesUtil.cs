@@ -73,8 +73,8 @@ namespace LethalInternship.Utils
                     new CodeInstruction(OpCodes.Ldarg_0),
                     new CodeInstruction(OpCodes.Ldfld, fieldInfo),
                     new CodeInstruction(OpCodes.Box, fieldType),
-                    new CodeInstruction(OpCodes.Call, SymbolExtensions.GetMethodInfo(() => String.Format(new String(new char[]{ }), new object()))),
-                    new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => Plugin.Logger.LogDebug(new object()))),
+                    new CodeInstruction(OpCodes.Call, SymbolExtensions.GetMethodInfo(() => String.Format(new string(new char[]{ }), new object()))),
+                    new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => Plugin.LogDebug(new string(new char[]{ })))),
                 };
 
             //codes.InsertRange(0, PatchesUtil.InsertLogOfFieldOfThis("isPlayerControlled {0}", AccessTools.Field(typeof(PlayerControllerB), "isPlayerControlled"), typeof(bool)));
@@ -86,7 +86,7 @@ namespace LethalInternship.Utils
                 {
                     new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(Plugin), "Logger")),
                     new CodeInstruction(OpCodes.Ldstr, log),
-                    new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => Plugin.Logger.LogDebug(new object()))),
+                    new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => Plugin.LogDebug(new string(new char[]{ })))),
                 };
         }
 

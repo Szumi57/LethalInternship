@@ -155,14 +155,17 @@ namespace LethalInternship.Patches.NpcPatches
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
-                Plugin.Logger.LogDebug($"SyncDamageIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                Plugin.LogDebug($"SyncDamageIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.SyncDamageIntern(damageNumber, causeOfDeath, deathAnimation, fallDamage, force);
                 return false;
             }
 
-            // todo: Bootleg invulnerability
-            //Plugin.Logger.LogDebug($"Bootleg invulnerability (return false)");
-            //return false;
+            if (Const.INVULNERABILITY)
+            {
+                // Bootleg invulnerability
+                Plugin.LogDebug($"Bootleg invulnerability (return false)");
+                return false;
+            }
             return true;
         }
 
@@ -178,7 +181,7 @@ namespace LethalInternship.Patches.NpcPatches
             InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
             if (internAI != null)
             {
-                Plugin.Logger.LogDebug($"SyncDamageInternFromOtherClient called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                Plugin.LogDebug($"SyncDamageInternFromOtherClient called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.DamageInternFromOtherClientServerRpc(damageAmount, hitDirection, playerWhoHit);
                 return false;
             }
@@ -201,14 +204,17 @@ namespace LethalInternship.Patches.NpcPatches
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
-                Plugin.Logger.LogDebug($"SyncKillIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                Plugin.LogDebug($"SyncKillIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
                 return false;
             }
 
-            // todo: Bootleg invincibility
-            Plugin.Logger.LogDebug($"Bootleg invincibility (return false)");
-            return false;
+            if (Const.INVINCIBILITY)
+            {
+                // Bootleg invincibility
+                Plugin.LogDebug($"Bootleg invincibility");
+                return false;
+            }
             return true;
         }
 
@@ -280,7 +286,7 @@ namespace LethalInternship.Patches.NpcPatches
                 return true;
             }
 
-            Plugin.Logger.LogDebug($"player dropped {__instance.currentlyHeldObjectServer}");
+            Plugin.LogDebug($"player dropped {__instance.currentlyHeldObjectServer}");
             InternAI.DictJustDroppedItems[__instance.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
             return true;
         }
@@ -380,11 +386,11 @@ namespace LethalInternship.Patches.NpcPatches
                 if (internAI == null)
                 {
                     // Quit and continue original method
-                    Plugin.Logger.LogDebug($"no intern found who hold item {grabbableObject}");
+                    Plugin.LogDebug($"no intern found who hold item {grabbableObject}");
                     return true;
                 }
 
-                Plugin.Logger.LogDebug($"intern drop item before grab by player");
+                Plugin.LogDebug($"intern drop item before grab by player");
                 grabbableObject.isHeld = false;
                 internAI.DropItemServerRpc();
             }
@@ -404,7 +410,7 @@ namespace LethalInternship.Patches.NpcPatches
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
-                Plugin.Logger.LogDebug($"NetworkManager {__instance.NetworkManager}, newBodyPosition {newBodyPosition}, this.deadBody {__instance.deadBody}");
+                Plugin.LogDebug($"NetworkManager {__instance.NetworkManager}, newBodyPosition {newBodyPosition}, this.deadBody {__instance.deadBody}");
                 internAI.SyncDeadBodyPositionServerRpc(newBodyPosition);
                 return false;
             }
@@ -457,7 +463,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove all condition until inSpecialInteractAnimation condition");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove all condition until inSpecialInteractAnimation condition");
                 }
 
                 // ----------------------------------------------------------------------
@@ -483,7 +489,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove isTypingChat condition");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not remove isTypingChat condition");
                 }
 
                 // ----------------------------------------------------------------------
@@ -504,7 +510,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not use jump method for intern");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.JumpPerformed_ReversePatch could not use jump method for intern");
                 }
 
                 return codes.AsEnumerable();
@@ -561,7 +567,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch could not use jump from land method for intern");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch could not use jump from land method for intern");
                 }
 
                 return codes.AsEnumerable();
@@ -632,7 +638,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not bypass all beginning with rpc stuff");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not bypass all beginning with rpc stuff");
                 }
 
                 // ----------------------------------------------------------------------
@@ -653,7 +659,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not change is owner with is intern and owner is local");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not change is owner with is intern and owner is local");
                 }
 
                 // ----------------------------------------------------------------------
@@ -674,7 +680,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not change is owner with is intern and owner is local 2");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not change is owner with is intern and owner is local 2");
                 }
 
                 // ----------------------------------------------------------------------
@@ -699,7 +705,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not remove all end stuff with inElevator (intern controller is never server because not spawned)");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not remove all end stuff with inElevator (intern controller is never server because not spawned)");
                 }
 
                 return codes.AsEnumerable();
@@ -740,7 +746,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 1");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 1");
                 }
 
                 // ----------------------------------------------------------------------
@@ -761,7 +767,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 2");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 2");
                 }
 
                 return codes.AsEnumerable();
@@ -804,7 +810,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerAnimationClientRpc_ReversePatch could not bypass rpc stuff");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerAnimationClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
                 return codes.AsEnumerable();
@@ -847,7 +853,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.IsInSpecialAnimationClientRpc_ReversePatch could not bypass rpc stuff");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.IsInSpecialAnimationClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
                 return codes.AsEnumerable();
@@ -890,7 +896,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 else
                 {
-                    Plugin.Logger.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SyncBodyPositionClientRpc_ReversePatch could not bypass rpc stuff");
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SyncBodyPositionClientRpc_ReversePatch could not bypass rpc stuff");
                 }
 
                 return codes.AsEnumerable();
@@ -912,6 +918,11 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPostfix]
         static void PerformEmote_PostFix(PlayerControllerB __instance)
         {
+            if (!Const.SPAWN_INTERN_WITH_EMOTE)
+            {
+                return;
+            }
+
             if (__instance.playerUsername != "Player #0")
             {
                 return;

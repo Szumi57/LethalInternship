@@ -49,7 +49,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             else
             {
-                Plugin.Logger.LogError($"LethalInternship.Patches.EnemiesPatches.ButlerEnemyAIPatch.OnCollideWithPlayer_Transpiler could not check if local player or intern owner local player");
+                Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.ButlerEnemyAIPatch.OnCollideWithPlayer_Transpiler could not check if local player or intern owner local player");
             }
 
             return codes.AsEnumerable();
