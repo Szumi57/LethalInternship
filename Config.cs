@@ -14,6 +14,7 @@ namespace LethalInternship
         public ConfigEntry<bool> EnableStackTraceInDebugLog;
         public Config(ConfigFile cfg)
         {
+            cfg.SaveOnConfigSet = false;
             EnableDebugLog = cfg.Bind("Debug",
                                    "EnableDebugLog",
                                    defaultValue: false,
@@ -24,6 +25,7 @@ namespace LethalInternship
                                    "Enable printing the stack trace in the error logs when using this mod.");
 
             ClearUnusedEntries(cfg);
+            cfg.SaveOnConfigSet = true;
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)

@@ -74,7 +74,6 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
-
             if (Plugin.IrlPlayersCount > 0)
             {
                 // only resize if irl players not 0, which means we already tried to populate pool of interns

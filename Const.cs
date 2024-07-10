@@ -21,6 +21,7 @@
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
 
         public static readonly float AGENT_SPEED = 3.5f;
+        public static readonly float AGENT_SPEED_CROUCH = 1f;
         public static readonly float BASE_MAX_SPEED = 0.9f;
         public static readonly float BASE_MIN_SPEED = 0.01f;
         public static readonly float BODY_TURNSPEED = 6f;

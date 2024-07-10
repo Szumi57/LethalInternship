@@ -66,7 +66,7 @@ namespace LethalInternship
                                                                                             //&& x.name != "Collision"
                                                                                             && x.name != "TurnCompass"
                                                                                             && x.name != "CreatureSFX"
-                                                                                            //&& x.name != "CreatureVoice"
+                                                                                            && x.name != "CreatureVoice"
                                                                                             )
                                                                .ToList())
             {
@@ -90,6 +90,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(PlayerControllerBPatch));
 
             // Enemies
+            _harmony.PatchAll(typeof(BaboonBirdAIPatch));
             _harmony.PatchAll(typeof(BlobAIPatch));
             _harmony.PatchAll(typeof(ButlerBeesEnemyAIPatch));
             _harmony.PatchAll(typeof(ButlerEnemyAIPatch));

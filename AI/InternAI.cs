@@ -247,7 +247,18 @@ namespace LethalInternship.AI
             // Otherwise the AI just do not stop and goes too far
             if (NpcController.HasToMove)
             {
-                if (!NpcController.Npc.isClimbingLadder && !NpcController.Npc.inSpecialInteractAnimation && !NpcController.Npc.enteringSpecialAnimation)
+                if (NpcController.Npc.isCrouching)
+                {
+                    agent.speed = Const.AGENT_SPEED_CROUCH;
+                }
+                else
+                {
+                    agent.speed = Const.AGENT_SPEED;
+                }
+
+                if (!NpcController.Npc.isClimbingLadder 
+                    && !NpcController.Npc.inSpecialInteractAnimation 
+                    && !NpcController.Npc.enteringSpecialAnimation)
                 {
                     NpcController.SetTurnBodyTowardsDirectionWithPosition(this.transform.position);
                 }
@@ -320,6 +331,11 @@ namespace LethalInternship.AI
                 return;
             }
 
+            if (NpcController.IsJumping || NpcController.IsFallingFromJump)
+            {
+                return;
+            }
+
             // Doors
             if (OpenDoorIfNeeded())
             {
@@ -347,17 +363,14 @@ namespace LethalInternship.AI
                                                                            0.5f);
             if (!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck)
             {
-                if (!NpcController.IsJumping && !NpcController.IsFallingFromJump)
+                bool canMoveCheckWhileJump = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
+                                                                            NpcController.Npc.thisController.transform.position + new Vector3(0, 1.8f, 0),
+                                                                            NpcController.Npc.thisController.transform.forward,
+                                                                            0.5f);
+                if (canMoveCheckWhileJump)
                 {
-                    bool canMoveCheckWhileJump = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                                NpcController.Npc.thisController.transform.position + new Vector3(0, 1.8f, 0),
-                                                                                NpcController.Npc.thisController.transform.forward,
-                                                                                0.5f);
-                    if (canMoveCheckWhileJump)
-                    {
-                        Plugin.LogDebug($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
-                        PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
-                    }
+                    Plugin.LogDebug($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
+                    PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
                 }
             }
             else if (legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck))
@@ -1017,7 +1030,7 @@ namespace LethalInternship.AI
             else
             {
                 // Wait to use ladder
-                NpcController.OrderToStopMoving();
+                this.StopMoving();
             }
 
             return true;
@@ -1257,7 +1270,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 5f, -1);
+            Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);
             serverPosition = navMeshPosition;
             // Teleport body
             NpcController.Npc.transform.position = navMeshPosition;
