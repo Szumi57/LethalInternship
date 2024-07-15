@@ -2,7 +2,9 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
+using LethalLib.Modules;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -628,6 +630,23 @@ namespace LethalInternship.Managers
             }
 
             return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public InternAI[] GetInternsAIOwnedByLocal()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            List<InternAI> results = new List<InternAI>();
+            InternAI? internAI;
+            for (int i = IndexBeginOfInterns; i < instanceSOR.allPlayerScripts.Length; i++)
+            {
+                internAI = GetInternAI((int)instanceSOR.allPlayerScripts[i].playerClientId);
+                if (internAI != null
+                    && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                {
+                    results.Add(internAI);
+                }
+            }
+            return results.ToArray();
         }
 
         /// <summary>

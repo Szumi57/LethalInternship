@@ -83,67 +83,6 @@ namespace LethalInternship.Patches.NpcPatches
             return codes.AsEnumerable();
         }
 
-        /// <summary>
-        /// Removes annoying log when enemy target something
-        /// </summary>
-        /// <param name="instructions"></param>
-        /// <returns></returns>
-        [HarmonyPatch("Update")]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
-            {
-                if (codes[i].ToString() == "ldstr \"Set destination to target player A\""//227
-                    && codes[i + 1].ToString() == "call static void UnityEngine.Debug::Log(object message)")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes[startIndex].operand = null;
-                codes[startIndex + 1].opcode = OpCodes.Nop;
-                codes[startIndex + 1].operand = null;
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.Update_Transpiler could not remove annoying log \"Set destination to target player A\"");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
-            {
-                if (codes[i].ToString() == "ldstr \"Set destination to target player B\""//246
-                    && codes[i + 1].ToString() == "call static void UnityEngine.Debug::Log(object message)")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes[startIndex].operand = null;
-                codes[startIndex + 1].opcode = OpCodes.Nop;
-                codes[startIndex + 1].operand = null;
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.LogError($"LethalInternship.Patches.NpcPatches.EnemyAIPatch.Update_Transpiler could not remove annoying log \"Set destination to target player B\"");
-            }
-
-            return codes.AsEnumerable();
-        }
-
         #endregion
 
         #region Post Fixes

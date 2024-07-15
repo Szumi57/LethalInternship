@@ -173,7 +173,7 @@ namespace LethalInternship.AI
                 UpdateWalkingStateForOwner();
 
                 // Sync with clients if the intern is performing emote
-                UpdateEmoteStateForOnwer();
+                UpdateEmoteStateForOwner();
 
                 // Update and sync with clients, if the intern is sinking or not and should die or not
                 UpdateSinkingStateForOwner();
@@ -469,7 +469,7 @@ namespace LethalInternship.AI
         /// <summary>
         /// Sync with clients if the intern is performing emote
         /// </summary>
-        private void UpdateEmoteStateForOnwer()
+        private void UpdateEmoteStateForOwner()
         {
             if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
             {
@@ -513,7 +513,7 @@ namespace LethalInternship.AI
                 if (Npc.sinkingValue >= 1f)
                 {
                     Plugin.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
-                    this.InternAIController.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0);
+                    this.InternAIController.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0, default);
                 }
                 else if (Npc.sinkingValue > 0.5f)
                 {
@@ -1607,7 +1607,7 @@ namespace LethalInternship.AI
                 {
                     this.drowningTimer = 1f;
                     Plugin.LogDebug($"SyncKillIntern from drowning for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
-                    InternAIController.SyncKillIntern(Vector3.zero, true, CauseOfDeath.Drowning, 0);
+                    InternAIController.SyncKillIntern(Vector3.zero, true, CauseOfDeath.Drowning, 0, default);
                 }
             }
             else

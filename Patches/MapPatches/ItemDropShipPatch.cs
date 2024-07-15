@@ -27,13 +27,13 @@ namespace LethalInternship.Patches.MapPatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 8; i++)
+            for (var i = 0; i < codes.Count - 13; i++)
             {
-                if (codes[i].ToString() == "ldarg.0 NULL"//6
-                    && codes[i + 1].ToString() == "ldfld Terminal ItemDropship::terminalScript"
-                    && codes[i + 2].ToString() == "ldfld System.Collections.Generic.List<int> Terminal::orderedItemsFromTerminal"
-                    && codes[i + 6].ToString() == "ldarg.0 NULL" //12
-                    && codes[i + 8].ToString() == "ldfld bool StartOfRound::shipHasLanded")//14
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL")// 45
+                    && codes[i + 1].ToString().StartsWith("ldfld Terminal ItemDropship::terminalScript")
+                    && codes[i + 2].ToString().StartsWith("ldfld System.Collections.Generic.List<int> Terminal::orderedItemsFromTerminal")
+                    && codes[i + 11].ToString().StartsWith("ldarg.0 NULL") // 56
+                    && codes[i + 13].ToString().StartsWith("ldfld bool StartOfRound::shipHasLanded"))// 58
                 {
                     startIndex = i;
                     break;
@@ -41,7 +41,7 @@ namespace LethalInternship.Patches.MapPatches
             }
             if (startIndex > -1)
             {
-                List<Label> labelsOfCodeToJumpTo = codes[startIndex + 6].labels;
+                List<Label> labelsOfCodeToJumpTo = codes[startIndex + 11].labels;
 
                 // Define label for the jump
                 Label labelToJumpTo = generator.DefineLabel();

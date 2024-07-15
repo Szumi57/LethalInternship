@@ -92,6 +92,7 @@ namespace LethalInternship
             // Enemies
             _harmony.PatchAll(typeof(BaboonBirdAIPatch));
             _harmony.PatchAll(typeof(BlobAIPatch));
+            _harmony.PatchAll(typeof(BushWolfEnemyPatch));
             _harmony.PatchAll(typeof(ButlerBeesEnemyAIPatch));
             _harmony.PatchAll(typeof(ButlerEnemyAIPatch));
             _harmony.PatchAll(typeof(CentipedeAIPatch));
@@ -104,16 +105,17 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(SandWormAIPatch));
             _harmony.PatchAll(typeof(SpringManAIPatch));
 
-            // Map
-            _harmony.PatchAll(typeof(DoorLockPatch));
-            _harmony.PatchAll(typeof(InteractTriggerPatch));
-            _harmony.PatchAll(typeof(ItemDropShipPatch));
-
             // Map hazards
             _harmony.PatchAll(typeof(LandminePatch));
             _harmony.PatchAll(typeof(QuicksandTriggerPatch));
             _harmony.PatchAll(typeof(SpikeRoofTrapPatch));
             _harmony.PatchAll(typeof(TurretPatch));
+
+            // Map
+            _harmony.PatchAll(typeof(DoorLockPatch));
+            _harmony.PatchAll(typeof(InteractTriggerPatch));
+            _harmony.PatchAll(typeof(ItemDropShipPatch));
+            _harmony.PatchAll(typeof(VehicleControllerPatch));
 
             // Objects
             _harmony.PatchAll(typeof(DeadBodyInfoPatch));

@@ -54,10 +54,10 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 8; i++)
+            for (var i = 0; i < codes.Count - 11; i++)
             {
-                if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()" //31
-                    && codes[i + 8].ToString() == "callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer(UnityEngine.Vector3 bodyVelocity, bool spawnBody, CauseOfDeath causeOfDeath, int deathAnimation)")//39
+                if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()" // 31
+                    && codes[i + 11].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))// 42
                 {
                     startIndex = i;
                     break;

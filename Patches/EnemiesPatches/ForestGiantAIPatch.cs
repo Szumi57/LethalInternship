@@ -28,11 +28,11 @@ namespace LethalInternship.Patches.EnemiesPatches
             var codes = new List<CodeInstruction>(instructions);
             
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 18; i++)
+            for (var i = 0; i < codes.Count - 2; i++)
             {
                 if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()" //31
                     && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB GameNetworkManager::localPlayerController"
-                    && codes[i + 18].ToString() == "call static UnityEngine.Vector3 UnityEngine.Vector3::Normalize(UnityEngine.Vector3 value)") //49
+                    && codes[i + 2].ToString() == "call static bool UnityEngine.Object::op_Equality(UnityEngine.Object x, UnityEngine.Object y)") //49
                 {
                     startIndex = i;
                     break;

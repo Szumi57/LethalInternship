@@ -105,6 +105,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 playerScript.isUnderwater = false;
             }
 
+            Plugin.LogDebug($"playerScript {playerScript.playerClientId} playerScript.isMovementHindered {playerScript.isMovementHindered}");
             return false;
         }
     }

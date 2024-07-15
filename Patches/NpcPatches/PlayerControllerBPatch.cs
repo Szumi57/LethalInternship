@@ -199,13 +199,14 @@ namespace LethalInternship.Patches.NpcPatches
                                       Vector3 bodyVelocity,
                                       bool spawnBody,
                                       CauseOfDeath causeOfDeath,
-                                      int deathAnimation)
+                                      int deathAnimation,
+                                      Vector3 positionOffset)
         {
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
                 Plugin.LogDebug($"SyncKillIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
-                internAI.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
+                internAI.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
                 return false;
             }
 

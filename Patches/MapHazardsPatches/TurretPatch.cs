@@ -31,11 +31,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 36; i++)
+            for (var i = 0; i < codes.Count - 39; i++)
             {
-                if (codes[i].ToString() == "ldarg.0 NULL" //306
-                    && codes[i + 3].ToString() == "call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(float radius, bool angleRangeCheck)"//309
-                    && codes[i + 36].ToString() == "callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer(UnityEngine.Vector3 bodyVelocity, bool spawnBody, CauseOfDeath causeOfDeath, int deathAnimation)")//342
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //306
+                    && codes[i + 3].ToString().StartsWith("call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(")//309
+                    && codes[i + 39].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))//345
                 {
                     startIndex = i;
                     break;
@@ -43,7 +43,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             if (startIndex > -1)
             {
-                for (var i = startIndex; i < startIndex + 37; i++)
+                for (var i = startIndex; i < startIndex + 40; i++)
                 {
                     codes[i].opcode = OpCodes.Nop;
                     codes[i].operand = null;
@@ -61,11 +61,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 36; i++)
+            for (var i = 0; i < codes.Count - 39; i++)
             {
-                if (codes[i].ToString() == "ldarg.0 NULL" //487
-                    && codes[i + 3].ToString() == "call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(float radius, bool angleRangeCheck)"//490
-                    && codes[i + 36].ToString() == "callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer(UnityEngine.Vector3 bodyVelocity, bool spawnBody, CauseOfDeath causeOfDeath, int deathAnimation)")//523
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //490
+                    && codes[i + 3].ToString().StartsWith("call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(")//493
+                    && codes[i + 39].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))//529
                 {
                     startIndex = i;
                     break;
@@ -73,7 +73,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             if (startIndex > -1)
             {
-                for (var i = startIndex; i < startIndex + 37; i++)
+                for (var i = startIndex; i < startIndex + 40; i++)
                 {
                     codes[i].opcode = OpCodes.Nop;
                     codes[i].operand = null;
@@ -118,7 +118,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             else
             {
                 Plugin.LogDebug($"SyncKillIntern from turret for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
-                internAI.SyncKillIntern(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0);
+                internAI.SyncKillIntern(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0, default);
             }
         }
     }

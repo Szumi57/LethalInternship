@@ -12,6 +12,7 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using static UnityEngine.UIElements.UIR.Implementation.UIRStylePainter;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
 using Vector3 = UnityEngine.Vector3;
@@ -247,7 +248,8 @@ namespace LethalInternship.AI
             // Otherwise the AI just do not stop and goes too far
             if (NpcController.HasToMove)
             {
-                if (NpcController.Npc.isCrouching)
+                if (NpcController.Npc.isCrouching
+                    || NpcController.Npc.isMovementHindered > 0)
                 {
                     agent.speed = Const.AGENT_SPEED_CROUCH;
                 }
@@ -737,12 +739,11 @@ namespace LethalInternship.AI
         /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
         private int? GetFearRangeForEnemies(EnemyAI enemy)
         {
-            Plugin.LogDebug($"\"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
+            Plugin.LogDebug($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
             switch (enemy.enemyType.enemyName)
             {
                 case "Flowerman":
                 case "Crawler":
-                case "Centipede":
                 case "Bunker Spider":
                 case "Spring":
                 case "MouthDog":
@@ -756,12 +757,13 @@ namespace LethalInternship.AI
 
                 case "Earth Leviathan":
                 case "Blob":
+                case "Clay Surgeon":
                     return 5;
 
                 case "Puffer":
                     return 2;
 
-                case "Tulip Snake":
+                case "Centipede":
                     return 1;
 
                 case "Butler":
@@ -826,6 +828,7 @@ namespace LethalInternship.AI
                     // "Manticoil"
                     // "Masked"
                     // "Girl"
+                    // "Tulip Snake"
                     return null;
             }
         }
@@ -2011,7 +2014,7 @@ namespace LethalInternship.AI
                     KillInternSpawnBodyServerRpc(true);
                 }
                 // Kill on this client side only, since we are already in an rpc send to all clients
-                this.KillIntern(force, true, causeOfDeath, deathAnimation);
+                this.KillIntern(force, spawnBody: true, causeOfDeath, deathAnimation, positionOffset: default);
             }
             else
             {
@@ -2144,7 +2147,8 @@ namespace LethalInternship.AI
         public void SyncKillIntern(Vector3 bodyVelocity,
                                    bool spawnBody = true,
                                    CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
-                                   int deathAnimation = 0)
+                                   int deathAnimation = 0,
+                                   Vector3 positionOffset = default(Vector3))
         {
             Plugin.LogDebug($"SyncKillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
             if (NpcController.Npc.isPlayerDead)
@@ -2159,11 +2163,11 @@ namespace LethalInternship.AI
             if (base.IsServer)
             {
                 KillInternSpawnBody(spawnBody);
-                KillInternClientRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
+                KillInternClientRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
             }
             else
             {
-                KillInternServerRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
+                KillInternServerRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
             }
         }
 
@@ -2178,10 +2182,11 @@ namespace LethalInternship.AI
         private void KillInternServerRpc(Vector3 bodyVelocity,
                                          bool spawnBody,
                                          CauseOfDeath causeOfDeath,
-                                         int deathAnimation)
+                                         int deathAnimation,
+                                         Vector3 positionOffset)
         {
             KillInternSpawnBody(spawnBody);
-            KillInternClientRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
+            KillInternClientRpc(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
         }
 
         /// <summary>
@@ -2196,7 +2201,7 @@ namespace LethalInternship.AI
         }
 
         /// <summary>
-        /// Szzzzzpawn the ragdoll of the dead body, despawn held object if no dead body to spawn
+        /// Spawn the ragdoll of the dead body, despawn held object if no dead body to spawn
         /// (intern eaten or disappeared in some way)
         /// </summary>
         /// <param name="spawnBody">Is there a dead body to spawn following the death of the intern ?</param>
@@ -2232,9 +2237,10 @@ namespace LethalInternship.AI
         private void KillInternClientRpc(Vector3 bodyVelocity,
                                                  bool spawnBody,
                                                  CauseOfDeath causeOfDeath,
-                                                 int deathAnimation)
+                                                 int deathAnimation,
+                                                 Vector3 positionOffset)
         {
-            KillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation);
+            KillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
         }
 
         /// <summary>
@@ -2247,7 +2253,8 @@ namespace LethalInternship.AI
         private void KillIntern(Vector3 bodyVelocity,
                                 bool spawnBody,
                                 CauseOfDeath causeOfDeath,
-                                int deathAnimation)
+                                int deathAnimation,
+                                Vector3 positionOffset)
         {
             Plugin.LogDebug($"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
             if (NpcController.Npc.isPlayerDead)
@@ -2290,8 +2297,13 @@ namespace LethalInternship.AI
             Plugin.LogDebug($"Running kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
             if (spawnBody)
             {
-                NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null);
+                NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null , positionOffset);
             }
+            NpcController.Npc.physicsParent = null;
+            NpcController.Npc.overridePhysicsParent = null;
+            NpcController.Npc.lastSyncedPhysicsParent = null;
+            StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
+            NpcController.Npc.transform.SetParent(NpcController.Npc.playersManager.playersContainer);
             if (this.HeldItem != null)
             {
                 this.DropItem();
