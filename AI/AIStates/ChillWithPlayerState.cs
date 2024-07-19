@@ -85,6 +85,13 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
+            VehicleController? vehicleController = ai.IsTargetPlayerInCruiserVehicle();
+            if (vehicleController != null)
+            {
+                ai.State = new PlayerInCruiserState(this, vehicleController);
+                return;
+            }
+
             // Update target last known position
             PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (player != null)

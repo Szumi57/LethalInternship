@@ -1,4 +1,6 @@
-﻿namespace LethalInternship
+﻿using UnityEngine;
+
+namespace LethalInternship
 {
     /// <summary>
     /// Class of constants, used in various places in the plugin code
@@ -97,11 +99,17 @@
         public static readonly float DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT = 0.5f;
         public static readonly float DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT = 2f;
 
+        // Player in cruiser vehicle
+        public static readonly Vector3 POS1_ENTRY_INTERN_CRUISER = new Vector3(-0.5f, -1f, -5.5f);
+        public static readonly Vector3 POS2_ENTRY_INTERN_CRUISER = new Vector3(0.9f, -1f, -5.5f);
+
+        public static readonly Vector3 FIRST_CORNER_INTERN_IN_CRUISER = new Vector3(-0.5f, -0.5f, -0.4f);
+        public static readonly Vector3 SECOND_CORNER_INTERN_IN_CRUISER = new Vector3(0.9f, -0.5f, -2.5f);
+
         // PanikState
         public static readonly float DISTANCE_FLEEING = 20f;
         public static readonly float DISTANCE_FLEEING_NO_LOS = 5f;
 
-        public static readonly float DISTANCE_AI_FROM_LADDER = 3.5f;
         public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;

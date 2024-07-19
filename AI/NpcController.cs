@@ -74,6 +74,7 @@ namespace LethalInternship.AI
         private float drowningTimer = 1f;
         private bool disabledJetpackControlsThisFrame;
 
+        private bool internAIInCruiser;
         private EnumObjectsLookingAt enumObjectsLookingAt;
 
         private int oldSentIntEnumObjectsLookingAt;
@@ -150,7 +151,8 @@ namespace LethalInternship.AI
                 // Disabling controller if in special interaction animation
                 // (fix for a bug: animation of the forest giant eating intern causing weird effect
                 // if controller enabled on the intern)
-                if (Npc.thisController.enabled != !Npc.inSpecialInteractAnimation)
+                if (Npc.thisController.enabled != !Npc.inSpecialInteractAnimation
+                    && Npc.transform.parent == Npc.playersManager.playersContainer)
                 {
                     Npc.thisController.enabled = !Npc.inSpecialInteractAnimation;
                 }
@@ -270,6 +272,7 @@ namespace LethalInternship.AI
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                     Npc.mapRadarDirectionIndicator.enabled = false;
+                    Npc.thisController.enabled = true;
                     UpdateRuntimeAnimatorController(isOwner);
                 }
             }
@@ -284,7 +287,7 @@ namespace LethalInternship.AI
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.mapRadarDirectionIndicator.enabled = false;
                     UpdateRuntimeAnimatorController(isOwner);
-                    Npc.gameObject.GetComponent<CharacterController>().enabled = false;
+                    Npc.thisController.enabled = false;
                     if (Npc.gameObject.GetComponent<Rigidbody>())
                     {
                         Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
@@ -1379,6 +1382,12 @@ namespace LethalInternship.AI
             this.CrouchMeter = Mathf.Min(this.CrouchMeter + 0.3f, 1.3f);
             Npc.Crouch(!Npc.isCrouching);
         }
+        
+        public void SetAiInCruiser(bool set)
+        {
+            this.internAIInCruiser = set;
+        }
+
         /// <summary>
         /// Set the direction the controller should turn towards, using a vector position
         /// </summary>
@@ -1403,6 +1412,11 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateTurnBodyTowardsDirection()
         {
+            if (internAIInCruiser)
+            {
+                return;
+            }
+
             Vector3 direction = directionToUpdateTurnBodyTowardsTo;
             if (DirectionNotZero(direction.x) || DirectionNotZero(direction.z))
             {

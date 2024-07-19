@@ -91,6 +91,13 @@ namespace LethalInternship.Managers
         {
             StartOfRound instance = StartOfRound.Instance;
 
+            Plugin.LogInfo("Attempt to populate pool of interns.");
+            if (instance.allPlayerObjects[3].gameObject == null)
+            {
+                Plugin.LogInfo("No player objects initialized in game, aborting interns initializations.");
+                return;
+            }
+
             // Initialize back ups
             if (AllPlayerObjectsBackUp == null || AllPlayerObjectsBackUp.Length != Const.INTERN_AVAILABLE_MAX)
             {
@@ -184,6 +191,8 @@ namespace LethalInternship.Managers
 
                 internObject.SetActive(false);
             }
+
+            Plugin.LogInfo("Pool of interns populated.");
         }
 
         #region Spawn Intern

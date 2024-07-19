@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using LethalInternship.AI;
+using UnityEngine;
 
 namespace LethalInternship.Utils
 {
@@ -7,6 +8,13 @@ namespace LethalInternship.Utils
     /// </summary>
     internal class RayUtil
     {
+        public static void RayCastAndDrawFromPointWithColor(LineRenderer? lr, Vector3 origin, Vector3 endPoint, Color color)
+        {
+            Ray ray = new Ray(origin, (endPoint - origin));
+            float length = Vector3.Distance(endPoint, origin);
+            DrawUtil.DrawLine(lr, ray, length, color);
+        }
+
         public static bool RayCastAndDraw(LineRenderer? lr, Vector3 origin, Vector3 directionOrigin, float angle, float length)
         {
             Vector3 axis = Vector3.Cross(directionOrigin, Vector3.up);

@@ -19,7 +19,7 @@ namespace LethalInternship.Utils
 
         public static void DrawLine(LineRenderer? lr, Vector3 start, Vector3 end, Color color)
         {
-            if(lr == null)
+            if (lr == null)
             {
                 return;
             }

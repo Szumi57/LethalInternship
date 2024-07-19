@@ -2,6 +2,7 @@
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
@@ -31,6 +32,39 @@ namespace LethalInternship.Patches.GameEnginePatches
                 Plugin.LogDebug($"network ChangeOwnership not on intern but on intern owner : {internAI.OwnerClientId}");
                 newOwnerClientId = internAI.OwnerClientId;
             }
+            return true;
+        }
+
+        [HarmonyPatch("OnTransformParentChanged")]
+        [HarmonyPrefix]
+        static bool OnTransformParentChanged_PreFix(NetworkObject __instance)
+        {
+            if (!Const.SHOW_LOG_DEBUG)
+            {
+                return true;
+            }
+
+            if (!__instance.AutoObjectParentSync)
+            {
+                return true;
+            }
+
+            Transform parent = __instance.transform.parent;
+            if (parent != null)
+            {
+                NetworkObject networkObject;
+                if (!__instance.transform.parent.TryGetComponent<NetworkObject>(out networkObject))
+                {
+                    Plugin.LogDebug($"{__instance.transform.parent} Invalid parenting, NetworkObject moved under a non-NetworkObject parent");
+                    return true;
+                }
+                if (!networkObject.IsSpawned)
+                {
+                    Plugin.LogDebug($"{networkObject} {networkObject.name} NetworkObject can only be reparented under another spawned NetworkObject");
+                    return true;
+                }
+            }
+
             return true;
         }
     }

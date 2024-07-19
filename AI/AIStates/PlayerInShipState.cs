@@ -62,14 +62,9 @@ namespace LethalInternship.AI.AIStates
             }
 
             // No target player, search for one
-            if (ai.targetPlayer == null)
-            {
-                ai.State = new SearchingForPlayerState(this);
-                return;
-            }
-
-            // Target is not available anymore
-            if (!ai.PlayerIsTargetable(ai.targetPlayer))
+            // Or Target is not available anymore
+            if (ai.targetPlayer == null
+                || !ai.PlayerIsTargetable(ai.targetPlayer))
             {
                 ai.State = new SearchingForPlayerState(this);
                 return;

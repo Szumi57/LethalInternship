@@ -62,7 +62,7 @@ namespace LethalInternship
             foreach (var transform in InternNPCPrefab.enemyPrefab.GetComponentsInChildren<Transform>()
                                                                .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
                                                                                             //&& x.name != "ScanNode"
-                                                                                            && x.name != "MapDot"
+                                                                                            //&& x.name != "MapDot"
                                                                                             //&& x.name != "Collision"
                                                                                             && x.name != "TurnCompass"
                                                                                             && x.name != "CreatureSFX"

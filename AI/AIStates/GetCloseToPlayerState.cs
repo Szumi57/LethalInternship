@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -53,7 +54,7 @@ namespace LethalInternship.AI.AIStates
         /// <summary>
         /// <inheritdoc cref="AIState(InternAI)"/>
         /// </summary>
-        public GetCloseToPlayerState(InternAI ai) : base(ai) 
+        public GetCloseToPlayerState(InternAI ai) : base(ai)
         {
             if (searchForPlayers.inProgress)
             {
@@ -99,6 +100,13 @@ namespace LethalInternship.AI.AIStates
             if (ai.IsTargetInShipBoundsExpanded())
             {
                 ai.State = new PlayerInShipState(this);
+                return;
+            }
+
+            VehicleController? vehicleController = ai.IsTargetPlayerInCruiserVehicle();
+            if (vehicleController != null)
+            {
+                ai.State = new PlayerInCruiserState(this, vehicleController);
                 return;
             }
 

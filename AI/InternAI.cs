@@ -12,7 +12,6 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
-using static UnityEngine.UIElements.UIR.Implementation.UIRStylePainter;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
 using Vector3 = UnityEngine.Vector3;
@@ -77,7 +76,7 @@ namespace LethalInternship.AI
         private float updateDestinationIntervalInternAI;
         private float timerCheckDoor;
 
-        private LineRendererUtil LineRendererUtil = null!;
+        public LineRendererUtil LineRendererUtil = null!;
 
         private void Awake()
         {
@@ -185,6 +184,9 @@ namespace LethalInternship.AI
 
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
+
+            // Init state
+            State = new SearchingForPlayerState(this);
         }
 
         /// <summary>
@@ -258,14 +260,14 @@ namespace LethalInternship.AI
                     agent.speed = Const.AGENT_SPEED;
                 }
 
-                if (!NpcController.Npc.isClimbingLadder 
-                    && !NpcController.Npc.inSpecialInteractAnimation 
+                if (!NpcController.Npc.isClimbingLadder
+                    && !NpcController.Npc.inSpecialInteractAnimation
                     && !NpcController.Npc.enteringSpecialAnimation)
                 {
+                    // Npc is following ai agent position that follows destination path
                     NpcController.SetTurnBodyTowardsDirectionWithPosition(this.transform.position);
                 }
 
-                // Npc is following ai agent position that follows destination path
                 agent.nextPosition = NpcController.Npc.thisController.transform.position;
             }
 
@@ -295,12 +297,6 @@ namespace LethalInternship.AI
             if (isEnemyDead || NpcController.Npc.isPlayerDead || StartOfRound.Instance.allPlayersDead)
             {
                 return;
-            }
-
-            // If no state, default state to searching a player to follow
-            if (State == null)
-            {
-                State = new SearchingForPlayerState(this);
             }
 
             // Do the AI calculation behaviour for the current state
@@ -704,7 +700,7 @@ namespace LethalInternship.AI
                 }
 
                 // Fear range
-                int? fearRange = GetFearRangeForEnemies(spawnedEnemy);
+                float? fearRange = GetFearRangeForEnemies(spawnedEnemy);
                 if (!fearRange.HasValue
                     || sqrDistanceToEnemy > fearRange * fearRange)
                 {
@@ -737,7 +733,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="enemy">Enemy to check</param>
         /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
-        private int? GetFearRangeForEnemies(EnemyAI enemy)
+        private float? GetFearRangeForEnemies(EnemyAI enemy)
         {
             Plugin.LogDebug($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
             switch (enemy.enemyType.enemyName)
@@ -749,28 +745,28 @@ namespace LethalInternship.AI
                 case "MouthDog":
                 case "ForestGiant":
                 case "Butler Bees":
-                    return 30;
+                    return 30f;
 
                 case "Nutcracker":
                 case "Red Locust Bees":
-                    return 10;
+                    return 10f;
 
                 case "Earth Leviathan":
                 case "Blob":
                 case "Clay Surgeon":
-                    return 5;
+                    return 5f;
 
                 case "Puffer":
-                    return 2;
+                    return 2f;
 
                 case "Centipede":
-                    return 1;
+                    return 0.3f;
 
                 case "Butler":
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30;
+                        return 30f;
                     }
                     else
                     {
@@ -781,7 +777,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30;
+                        return 30f;
                     }
                     else
                     {
@@ -792,7 +788,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30;
+                        return 30f;
                     }
                     else
                     {
@@ -803,7 +799,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 30;
+                        return 30f;
                     }
                     else
                     {
@@ -814,7 +810,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30;
+                        return 30f;
                     }
                     else
                     {
@@ -833,6 +829,23 @@ namespace LethalInternship.AI
             }
         }
 
+        public void ReParentIntern(Transform newParent)
+        {
+            foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
+            {
+                networkObject.AutoObjectParentSync = false;
+            }
+
+            Plugin.LogDebug($" npcController.Npc.transform.parent {NpcController.Npc.transform.parent}");
+            NpcController.Npc.transform.parent = newParent;
+            Plugin.LogDebug($"npcController.Npc.transform.parent {NpcController.Npc.transform.parent}");
+
+            foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
+            {
+                networkObject.AutoObjectParentSync = true;
+            }
+        }
+
         /// <summary>
         /// Is the target player in the ship or outside but close to the ship ?
         /// </summary>
@@ -845,6 +858,32 @@ namespace LethalInternship.AI
             }
 
             return targetPlayer.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(targetPlayer.transform.position);
+        }
+
+        /// <summary>
+        /// Is the target player in the vehicle cruiser
+        /// </summary>
+        /// <returns></returns>
+        public VehicleController? IsTargetPlayerInCruiserVehicle()
+        {
+            if (targetPlayer == null
+                || targetPlayer.isPlayerDead)
+            {
+                return null;
+            }
+
+            VehicleController vehicleController = Object.FindObjectOfType<VehicleController>();
+            if (vehicleController == null)
+            {
+                return null;
+            }
+
+            if (this.targetPlayer.physicsParent != null && this.targetPlayer.physicsParent == vehicleController.transform)
+            {
+                return vehicleController;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -2297,13 +2336,13 @@ namespace LethalInternship.AI
             Plugin.LogDebug($"Running kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
             if (spawnBody)
             {
-                NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null , positionOffset);
+                NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
             NpcController.Npc.lastSyncedPhysicsParent = null;
             StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
-            NpcController.Npc.transform.SetParent(NpcController.Npc.playersManager.playersContainer);
+            this.ReParentIntern(NpcController.Npc.playersManager.playersContainer);
             if (this.HeldItem != null)
             {
                 this.DropItem();
