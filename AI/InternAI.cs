@@ -1238,7 +1238,7 @@ namespace LethalInternship.AI
         /// <param name="pos">Position destination</param>
         /// <param name="setOutside">Is the teleport destination outside of the facility</param>
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
-        public void TeleportInternAndSync(Vector3 pos, bool setOutside, bool isUsingEntrance)
+        public void SyncTeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             if (!IsOwner)
             {
@@ -1287,10 +1287,9 @@ namespace LethalInternship.AI
 
             TeleportAgentAndBody(pos);
 
-            NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
-
             if (isUsingEntrance)
             {
+                NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
                 TimeSinceUsingEntrance = Time.timeSinceLevelLoad;
                 EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside);
                 if (entranceTeleport.doorAudios != null && entranceTeleport.doorAudios.Length != 0)
@@ -1332,6 +1331,53 @@ namespace LethalInternship.AI
                 this.transform.position = navMeshPosition;
             }
 
+        }
+
+        public void SyncTeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+            TeleportInternVehicle(pos, enteringVehicle, networkBehaviourReferenceVehicle);
+            TeleportInternVehicleServerRpc(pos, enteringVehicle, networkBehaviourReferenceVehicle);
+        }
+
+        [ServerRpc]
+        private void TeleportInternVehicleServerRpc(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
+        {
+            TeleportInternVehicleClientRpc(pos, enteringVehicle, networkBehaviourReferenceVehicle);
+        }
+        [ClientRpc]
+        private void TeleportInternVehicleClientRpc(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
+        {
+            if (IsOwner)
+            {
+                return;
+            }
+            TeleportInternVehicle(pos, enteringVehicle, networkBehaviourReferenceVehicle);
+        }
+
+        private void TeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
+        {
+            TeleportAgentAndBody(pos);
+
+            NpcController.InternAIInCruiser = enteringVehicle;
+
+            if (NpcController.InternAIInCruiser)
+            {
+                if (networkBehaviourReferenceVehicle.TryGet(out VehicleController vehicleController))
+                {
+                    // Attach intern to vehicle
+                    Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} enters vehicle");
+                    this.ReParentIntern(vehicleController.transform);
+                }
+            }
+            else
+            {
+                Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} exits vehicle");
+                this.ReParentIntern(NpcController.Npc.playersManager.playersContainer);
+            }
         }
 
         #endregion
@@ -1398,7 +1444,12 @@ namespace LethalInternship.AI
             SetMovingTowardsTargetPlayer(StartOfRound.Instance.allPlayerScripts[playerid]);
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
-            if (this.State == null || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
+
+            if (NpcController.InternAIInCruiser)
+            {
+                this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
+            }
+            else if (this.State == null || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
             {
                 this.State = new GetCloseToPlayerState(this);
             }

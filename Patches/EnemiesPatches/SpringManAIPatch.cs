@@ -28,7 +28,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
+            for (var i = 0; i < codes.Count; i++)
             {
                 if (codes[i].ToString() == "ldc.i4.4 NULL" || codes[i].ToString() == "ldsfld int MoreCompany.MainClass::newPlayerCount")//110
                 {
@@ -38,8 +38,8 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             if (startIndex > -1)
             {
-                codes[startIndex].opcode = OpCodes.Ldsfld;
-                codes[startIndex].operand = PatchesUtil.FieldInfoAllEntitiesCount;
+                codes[startIndex].opcode = OpCodes.Call;
+                codes[startIndex].operand = PatchesUtil.AllEntitiesCountMethod;
                 startIndex = -1;
             }
             else
@@ -64,7 +64,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
+            for (var i = 0; i < codes.Count; i++)
             {
                 if (codes[i].ToString() == "ldc.i4.4 NULL" || codes[i].ToString() == "ldsfld int MoreCompany.MainClass::newPlayerCount")//81
                 {
@@ -74,8 +74,8 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             if (startIndex > -1)
             {
-                codes[startIndex].opcode = OpCodes.Ldsfld;
-                codes[startIndex].operand = PatchesUtil.FieldInfoAllEntitiesCount;
+                codes[startIndex].opcode = OpCodes.Call;
+                codes[startIndex].operand = PatchesUtil.AllEntitiesCountMethod;
                 startIndex = -1;
             }
             else

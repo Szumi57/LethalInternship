@@ -113,7 +113,7 @@ namespace LethalInternship.AI.AIStates
                     if (entranceTeleportPos.HasValue)
                     {
                         Plugin.LogDebug($"======== TeleportInternAndSync {ai.NpcController.Npc.playerUsername} !!!!!!!!!!!!!!! ");
-                        ai.TeleportInternAndSync(entranceTeleportPos.Value, !ai.isOutside, true);
+                        ai.SyncTeleportIntern(entranceTeleportPos.Value, !ai.isOutside, true);
                         targetLastKnownPosition = ai.targetPlayer.transform.position;
                     }
                     else

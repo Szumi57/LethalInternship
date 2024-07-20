@@ -18,6 +18,7 @@ namespace LethalInternship.AI
         public PlayerControllerB Npc { get; set; } = null!;
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
+        public bool InternAIInCruiser;
 
         // Public variables to pass to patch
         public bool IsCameraDisabled;
@@ -74,7 +75,6 @@ namespace LethalInternship.AI
         private float drowningTimer = 1f;
         private bool disabledJetpackControlsThisFrame;
 
-        private bool internAIInCruiser;
         private EnumObjectsLookingAt enumObjectsLookingAt;
 
         private int oldSentIntEnumObjectsLookingAt;
@@ -1383,11 +1383,6 @@ namespace LethalInternship.AI
             Npc.Crouch(!Npc.isCrouching);
         }
         
-        public void SetAiInCruiser(bool set)
-        {
-            this.internAIInCruiser = set;
-        }
-
         /// <summary>
         /// Set the direction the controller should turn towards, using a vector position
         /// </summary>
@@ -1412,12 +1407,16 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateTurnBodyTowardsDirection()
         {
-            if (internAIInCruiser)
+            if (InternAIInCruiser)
             {
                 return;
             }
 
-            Vector3 direction = directionToUpdateTurnBodyTowardsTo;
+            UpdateNowTurnBodyTowardsDirection(directionToUpdateTurnBodyTowardsTo);
+        }
+
+        public void UpdateNowTurnBodyTowardsDirection(Vector3 direction)
+        {
             if (DirectionNotZero(direction.x) || DirectionNotZero(direction.z))
             {
                 Quaternion targetRotation = Quaternion.LookRotation(new Vector3(direction.x, 0f, direction.z));

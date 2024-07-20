@@ -15,8 +15,8 @@ namespace LethalInternship.Utils
         public static readonly FieldInfo FieldInfoPlayerClientId = AccessTools.Field(typeof(PlayerControllerB), "playerClientId");
         public static readonly FieldInfo FieldInfoPreviousAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "previousAnimationStateHash");
         public static readonly FieldInfo FieldInfoCurrentAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "currentAnimationStateHash");
-        public static readonly FieldInfo FieldInfoAllEntitiesCount = AccessTools.Field(typeof(InternManager), "AllEntitiesCount");
 
+        public static readonly MethodInfo AllEntitiesCountMethod = SymbolExtensions.GetMethodInfo(() => AllEntitiesCount());
         public static readonly MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => AreInternsScheduledToLand());
         public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsColliderFromLocalOrInternOwnerLocal(new Collider()));
@@ -138,6 +138,10 @@ namespace LethalInternship.Utils
         private static int IndexBeginOfInterns()
         {
             return InternManager.Instance.IndexBeginOfInterns;
+        }
+        private static int AllEntitiesCount()
+        {
+            return InternManager.Instance.AllEntitiesCount;
         }
         private static bool IsColliderFromLocalOrInternOwnerLocal(Collider collider)
         {

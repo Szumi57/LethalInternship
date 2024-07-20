@@ -76,11 +76,11 @@ namespace LethalInternship
         public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 5f;
 
         // GetCloseToPlayerState
-        public static readonly float DISTANCE_START_RUNNING = 10f;
-        public static readonly float DISTANCE_STOP_RUNNING = 8f;
+        public static readonly float DISTANCE_START_RUNNING = 8f;
+        public static readonly float DISTANCE_STOP_RUNNING = 7f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 6f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
-        public static readonly float DISTANCE_AWARENESS_HOR = 15f;
+        public static readonly float DISTANCE_AWARENESS_HOR = 25f;
         public static readonly float DISTANCE_AWARENESS_VER = 50f;
 
         // JustLostPlayerState
