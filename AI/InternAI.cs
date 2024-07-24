@@ -754,6 +754,7 @@ namespace LethalInternship.AI
                 case "Earth Leviathan":
                 case "Blob":
                 case "Clay Surgeon":
+                case "Bush Wolf":
                     return 5f;
 
                 case "Puffer":

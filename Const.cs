@@ -41,6 +41,7 @@ namespace LethalInternship
         public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = true;
+        public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = true;
 
         // NpcController
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";

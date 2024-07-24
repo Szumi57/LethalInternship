@@ -15,6 +15,8 @@ namespace LethalInternship.Utils
         public static readonly FieldInfo FieldInfoPlayerClientId = AccessTools.Field(typeof(PlayerControllerB), "playerClientId");
         public static readonly FieldInfo FieldInfoPreviousAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "previousAnimationStateHash");
         public static readonly FieldInfo FieldInfoCurrentAnimationStateHash = AccessTools.Field(typeof(PlayerControllerB), "currentAnimationStateHash");
+        public static readonly FieldInfo FieldInfoTargetPlayer = AccessTools.Field(typeof(BushWolfEnemy), "targetPlayer");
+        public static readonly FieldInfo FieldInfoDraggingPlayer = AccessTools.Field(typeof(BushWolfEnemy), "draggingPlayer");
 
         public static readonly MethodInfo AllEntitiesCountMethod = SymbolExtensions.GetMethodInfo(() => AllEntitiesCount());
         public static readonly MethodInfo AreInternsScheduledToLandMethod = SymbolExtensions.GetMethodInfo(() => AreInternsScheduledToLand());
