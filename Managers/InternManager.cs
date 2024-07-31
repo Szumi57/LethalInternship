@@ -2,7 +2,6 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
-using LethalLib.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;

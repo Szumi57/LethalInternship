@@ -1163,6 +1163,8 @@ namespace LethalInternship.AI
                     return null;
                 }
 
+                // todo: grab "RedLocustHive(Clone)", bodies "RagdollGrabbableObject(Clone)" ?
+
                 // Object close to awareness distance ?
                 if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
                 {
