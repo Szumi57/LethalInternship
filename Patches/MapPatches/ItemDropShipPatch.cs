@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
@@ -83,6 +85,13 @@ namespace LethalInternship.Patches.MapPatches
             }
 
             InternManager.Instance.SpawnInternsFromDropShip(__instance.itemSpawnPositions);
+        }
+
+        [HarmonyPatch("DeliverVehicleOnServer")]
+        [HarmonyPostfix]
+        static void DeliverVehicleOnServer_PostFix()
+        {
+            InternManager.Instance.VehicleHasLandedClientRpc();
         }
     }
 }

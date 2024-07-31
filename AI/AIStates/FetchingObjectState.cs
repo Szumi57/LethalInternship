@@ -40,7 +40,8 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Target item invalid to grab
-            if (this.targetItem == null 
+            if (ai.HeldItem != null
+                || this.targetItem == null 
                 || !ai.IsGrabbableObjectGrabbable(this.targetItem))
             {
                 this.targetItem = null;
@@ -49,10 +50,12 @@ namespace LethalInternship.AI.AIStates
             }
 
             Plugin.LogDebug($"{ai.NpcController.Npc.playerUsername} try to grab {this.targetItem.name}");
+            float sqrMagDistanceItem = (this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude;
             // Close enough to item for grabbing, attempt to grab
-            if ((this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Const.SIZE_SCALE_INTERN)
+            if (sqrMagDistanceItem < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Const.SIZE_SCALE_INTERN)
             {
-                if (!npcController.Npc.inAnimationWithEnemy && !npcController.Npc.activatingItem)
+                if (!npcController.Npc.inAnimationWithEnemy 
+                    && !npcController.Npc.activatingItem)
                 {
                     ai.GrabItemServerRpc(this.targetItem.NetworkObject);
                     this.targetItem = null;
@@ -66,7 +69,7 @@ namespace LethalInternship.AI.AIStates
             npcController.OrderToLookAtPosition(this.targetItem.transform.position);
 
             // Sprint if far enough from the item
-            if ((this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
+            if (sqrMagDistanceItem > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
             {
                 npcController.OrderToSprint();
             }

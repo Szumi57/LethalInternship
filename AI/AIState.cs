@@ -49,7 +49,7 @@ namespace LethalInternship.AI
             this.ai = ai;
 
             this.npcController = ai.NpcController;
-            Plugin.LogDebug($"Intern {npcController.Npc.playerClientId} new state :                 {this.GetAIState()}");
+            Plugin.LogDebug($"Intern {npcController.Npc.playerClientId} ({npcController.Npc.playerUsername}) new state :                 {this.GetAIState()}");
 
             this.searchForPlayers = new AISearchRoutine();
             this.searchForPlayers.randomized = true;

@@ -23,7 +23,7 @@ namespace LethalInternship
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
 
         public static readonly float AGENT_SPEED = 3.5f;
-        public static readonly float AGENT_SPEED_CROUCH = 1f;
+        public static readonly float AGENT_SPEED_CROUCH = 1.75f;
         public static readonly float BASE_MAX_SPEED = 0.9f;
         public static readonly float BASE_MIN_SPEED = 0.01f;
         public static readonly float BODY_TURNSPEED = 6f;
@@ -36,12 +36,12 @@ namespace LethalInternship
         public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 6f;
 
         // Debug
-        public static readonly bool DRAW_LINES = false;
+        public static readonly bool DRAW_LINES = true;
         public static readonly bool SHOW_LOG_DEBUG = true;
         public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = true;
-        public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = true;
+        public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
 
         // NpcController
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
@@ -97,7 +97,7 @@ namespace LethalInternship
         public static readonly float TIMER_STUCK_WAY_TOO_MUCH = 5f;
 
         // Player in ShipState
-        public static readonly float DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT = 0.5f;
+        public static readonly float DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT = 1f;
         public static readonly float DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT = 2f;
 
         // Player in cruiser vehicle
@@ -154,6 +154,7 @@ namespace LethalInternship
 
         public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
         public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";
+        public static readonly string TEXT_NO_MORE_INTERNS_PURCHASABLE = @"No more interns available";
         public static readonly string TEXT_ERROR_SHIP_LEAVING = @"You can not buy when the ship is leaving the moon";
     }
 }

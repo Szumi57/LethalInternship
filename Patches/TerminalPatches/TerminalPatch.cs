@@ -38,6 +38,14 @@ namespace LethalInternship.Patches.TerminalPatches
             }
         }
 
+        [HarmonyPatch("ClearBoughtItems")]
+        [HarmonyPostfix]
+        static void ClearBoughtItems_Postfix()
+        {
+            Plugin.LogDebug("ClearBoughtItems reset interns bought");
+            InternManager.Instance.UpdateInternsOrdered(0, 0);
+        }
+
         /// <summary>
         /// Reverse patch to call <c>ParseWord</c>
         /// </summary>

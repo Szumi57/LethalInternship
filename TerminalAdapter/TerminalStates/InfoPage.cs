@@ -48,7 +48,12 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             // Can buy ?
             if (TerminalManager.Instance.GetTerminal().groupCredits < Const.PRICE_INTERN)
             {
-                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.CannotPurchase);
+                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.NotEnoughCredits);
+                return true;
+            }
+            else if (InternManager.Instance.NbInternsPurchasable <= 0)
+            {
+                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.NoMoreInterns);
                 return true;
             }
             else if (StartOfRound.Instance.shipIsLeaving)
@@ -57,7 +62,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return true;
             }
 
-            string secondWord = string.Empty;
+            string secondWord;
             if (words.Length > 1)
             {
                 secondWord = words[1];

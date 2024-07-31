@@ -419,6 +419,25 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        /// <summary>
+        /// Patch for calling intern method if intern
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <returns></returns>
+        [HarmonyPatch("PlayerHitGroundEffects")]
+        [HarmonyPrefix]
+        static bool PlayerHitGroundEffects_PreFix(PlayerControllerB __instance)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                PlayerHitGroundEffects_ReversePatch(__instance);
+                return false;
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region reverse patches
@@ -554,7 +573,7 @@ namespace LethalInternship.Patches.NpcPatches
                 for (var i = 0; i < codes.Count - 5; i++)
                 {
                     if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 33
-                        && codes[i + 5].ToString().StartsWith("call void GameNetcodeStuff.PlayerControllerB::LandFromJumpServerRpc(bool fallHard)")) // 38
+                        && codes[i + 5].ToString().StartsWith("call void GameNetcodeStuff.PlayerControllerB::LandFromJumpServerRpc(")) // 38
                     {
                         startIndex = i;
                         break;

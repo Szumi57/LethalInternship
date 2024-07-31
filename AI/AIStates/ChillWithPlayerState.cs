@@ -5,7 +5,7 @@ using UnityEngine;
 namespace LethalInternship.AI.AIStates
 {
     /// <summary>
-    /// The state when the AI is calm and close to the owner player
+    /// The state when the AI is close to the owner player
     /// </summary>
     /// <remarks>
     /// When close to the player, the chill state makes the intern stop moving and looking at him,

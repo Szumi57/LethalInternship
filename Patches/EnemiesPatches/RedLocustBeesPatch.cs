@@ -93,14 +93,6 @@ namespace LethalInternship.Patches.EnemiesPatches
                 Plugin.LogError($"LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch.OnCollideWithPlayer_Transpiler could not call EnterAttackZapModeServerRpc player on player id.");
             }
 
-            // ----------------------------------------------------------------------
-            //Plugin.LogDebug($"OnCollideWithPlayer ======================");
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.LogDebug($"{i} {codes[i].ToString()}");
-            //}
-            //Plugin.LogDebug($"OnCollideWithPlayer ======================");
-
             return codes.AsEnumerable();
         }
     }

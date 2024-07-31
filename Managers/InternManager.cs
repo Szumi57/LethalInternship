@@ -64,10 +64,13 @@ namespace LethalInternship.Managers
         /// Maximum interns actually purchasable minus the ones already bought
         /// </summary>
         public int NbInternsPurchasable { get { return Const.INTERN_AVAILABLE_MAX - NbInternsOwned; } }
+        public VehicleController? VehicleController;
 
         private InternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
+
+        private Bounds? shipBoundsExpanded;
 
         /// <summary>
         /// Initialize instance,
@@ -178,6 +181,7 @@ namespace LethalInternship.Managers
                 internController.isPlayerDead = false;
                 internController.isPlayerControlled = false;
                 internController.transform.localScale = new Vector3(Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN);
+                internController.thisController.radius *= Const.SIZE_SCALE_INTERN;
                 internController.actualClientId = internController.playerClientId;
                 internController.playerUsername = $"{Const.INTERN_NAME}{internController.playerClientId - (ulong)irlPlayersCount}";
 
@@ -673,9 +677,14 @@ namespace LethalInternship.Managers
         /// <returns></returns>
         public Bounds GetExpandedShipBounds()
         {
-            Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
-            shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
-            return shipBounds;
+            if (shipBoundsExpanded == null)
+            {
+                Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
+                shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
+                shipBoundsExpanded = shipBounds;
+            }
+
+            return shipBoundsExpanded.Value;
         }
 
         #region SyncEndOfRoundInterns
@@ -741,7 +750,23 @@ namespace LethalInternship.Managers
                     alive++;
                 }
             }
-            return alive;
+
+            // Alive and not landed interns
+            return alive + NbInternsToDropShip;
+        }
+
+        #endregion
+
+        #region Vehicle landing on map RPC
+
+        /// <summary>
+        /// Update the stopping the perfoming of emote
+        /// </summary>
+        [ClientRpc]
+        public void VehicleHasLandedClientRpc()
+        {
+            VehicleController = Object.FindObjectOfType<VehicleController>();
+            Plugin.LogDebug($"Vehicle has landed : {VehicleController}");
         }
 
         #endregion

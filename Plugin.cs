@@ -100,6 +100,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(CrawlerAIPatch));
             _harmony.PatchAll(typeof(FlowerSnakeEnemyPatch));
             _harmony.PatchAll(typeof(ForestGiantAIPatch));
+            _harmony.PatchAll(typeof(JesterAIPatch));
             _harmony.PatchAll(typeof(MouthDogAIPatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
@@ -124,6 +125,8 @@ namespace LethalInternship
 
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));
+
+            //_harmony.PatchAll(typeof(MyPatches));
 
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }

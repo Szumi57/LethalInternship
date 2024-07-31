@@ -20,22 +20,6 @@ namespace LethalInternship.AI.AIStates
         private Coroutine lookingAroundCoroutine = null!;
 
         /// <summary>
-        /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the last known position of the target player (owner of intern), 
-        /// </summary>
-        private float SqrDistanceToTargetLastKnownPosition
-        {
-            get
-            {
-                if (!targetLastKnownPosition.HasValue)
-                {
-                    return 0f;
-                }
-
-                return (targetLastKnownPosition.Value - npcController.Npc.transform.position).sqrMagnitude;
-            }
-        }
-
-        /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
         public JustLostPlayerState(AIState state) : base(state)
@@ -103,10 +87,11 @@ namespace LethalInternship.AI.AIStates
 
             Plugin.LogDebug($"{npcController.Npc.playerUsername} distance to last position {Vector3.Distance(targetLastKnownPosition.Value, npcController.Npc.transform.position)}");
             // If the intern is close enough to the last known position
-            if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
+            float sqrDistanceToTargetLastKnownPosition = (targetLastKnownPosition.Value - npcController.Npc.transform.position).sqrMagnitude;
+            if (sqrDistanceToTargetLastKnownPosition < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
                 // Check for teleport entrance
-                if (Time.timeSinceLevelLoad - ai.TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
+                if (Time.timeSinceLevelLoad - ai.TimeSinceTeleporting > Const.WAIT_TIME_TO_TELEPORT)
                 {
                     EntranceTeleport? entrance = ai.IsEntranceCloseForBoth(targetLastKnownPosition.Value, npcController.Npc.transform.position);
                     Vector3? entranceTeleportPos = ai.GetTeleportPosOfEntrance(entrance);
@@ -136,7 +121,7 @@ namespace LethalInternship.AI.AIStates
             ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
 
             // Sprint if too far, unsprint if close enough
-            if (SqrDistanceToTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
+            if (sqrDistanceToTargetLastKnownPosition < Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION * Const.DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION)
             {
                 npcController.OrderToStopSprint();
             }

@@ -49,8 +49,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
 
             switch (enumErrorType)
             {
-                case EnumErrorTypeTerminalPage.CannotPurchase:
+                case EnumErrorTypeTerminalPage.NotEnoughCredits:
                     terminalNode.displayText = Const.TEXT_ERROR_NOT_ENOUGH_CREDITS;
+                    break;
+                case EnumErrorTypeTerminalPage.NoMoreInterns:
+                    terminalNode.displayText = Const.TEXT_NO_MORE_INTERNS_PURCHASABLE;
                     break;
                 case EnumErrorTypeTerminalPage.ShipLeavingMoon:
                     terminalNode.displayText = Const.TEXT_ERROR_SHIP_LEAVING;

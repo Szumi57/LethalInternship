@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using GameNetcodeStuff;
+using LethalInternship.Enums;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -16,18 +17,6 @@ namespace LethalInternship.AI.AIStates
         /// <inheritdoc cref="AIState.GetAIState"/>
         /// </summary>
         public override EnumAIStates GetAIState() { return STATE; }
-
-        /// <summary>
-        /// Represent the distance between the body of intern (<c>PlayerControllerB</c> position) and the destination point, squared
-        /// </summary>
-        private float SqrDistanceToDestination
-        {
-            get
-            {
-                return (ai.destination - npcController.Npc.transform.position).sqrMagnitude;
-            }
-
-        }
 
         /// <summary>
         /// Constructor for PanikState
@@ -53,7 +42,34 @@ namespace LethalInternship.AI.AIStates
         {
             if (enemyTransform == null)
             {
+                ai.State = new GetCloseToPlayerState(this);
+                StopPanikCoroutine();
                 return;
+            }
+
+            // Check if another enemy is closer
+            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (enemyAI == null)
+            {
+                ai.State = new GetCloseToPlayerState(this);
+                StopPanikCoroutine();
+                return;
+            }
+            else
+            {
+                this.enemyTransform = enemyAI.transform;
+            }
+
+            float sqrDistanceToEnemy = (npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude;
+            if (sqrDistanceToEnemy < 2.5f * 2.5f)
+            {
+                EnemyAI enemyAIClose = enemyTransform.gameObject.GetComponentInChildren<EnemyAI>();
+                Collider internCollider = npcController.Npc.GetComponentInChildren<Collider>();
+                if (enemyAI != null
+                    && internCollider != null)
+                {
+                    enemyAIClose.OnCollideWithPlayer(internCollider);
+                }
             }
 
             // Check to see if the intern can see the enemy, or enemy has line of sight to intern
@@ -62,7 +78,7 @@ namespace LethalInternship.AI.AIStates
             {
                 // If line of sight broke
                 // and the intern is far enough when the enemy can not see him
-                if ((npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
+                if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
                 {
                     ai.State = new GetCloseToPlayerState(this);
                     StopPanikCoroutine();
@@ -72,15 +88,16 @@ namespace LethalInternship.AI.AIStates
             // Enemy still has line of sight of intern
 
             // Far enough from enemy
-            if ((npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude > Const.DISTANCE_FLEEING * Const.DISTANCE_FLEEING)
+            if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING * Const.DISTANCE_FLEEING)
             {
                 ai.State = new GetCloseToPlayerState(this);
                 StopPanikCoroutine();
                 return;
             }
+            // Enemy still too close
 
-            // If enemy still too close, restart the panic routine
-            if (SqrDistanceToDestination < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
+            // If enemy still too close, and destination reached, restart the panic routine
+            if ((ai.destination - npcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
                 RestartPanikCoroutine(this.enemyTransform);
             }

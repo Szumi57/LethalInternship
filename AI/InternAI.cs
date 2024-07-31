@@ -53,17 +53,13 @@ namespace LethalInternship.AI
         public NpcController NpcController = null!;
 
         /// <summary>
-        /// List of item that could not be held by intern, put in a list to not check them anymore
-        /// </summary>
-        public List<GrabbableObject> ListInvalidObjects = null!;
-        /// <summary>
         /// Currently held item by intern
         /// </summary>
         public GrabbableObject? HeldItem = null!;
         /// <summary>
         /// Used for not teleporting too much
         /// </summary>
-        public float TimeSinceUsingEntrance { get; set; }
+        public float TimeSinceTeleporting { get; set; }
 
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -71,6 +67,8 @@ namespace LethalInternship.AI
 
         private Coroutine grabObjectCoroutine = null!;
 
+        private Vector3 previousWantedDestination;
+        private bool isDestinationChanged;
         private float timeSinceStuck;
         private bool StuckTeleportTry1;
         private float updateDestinationIntervalInternAI;
@@ -155,7 +153,6 @@ namespace LethalInternship.AI
 
             // Grabbableobject
             HoarderBugAI.RefreshGrabbableObjectsInMapList();
-            ListInvalidObjects = new List<GrabbableObject>();
 
             // AI init
             this.ventAnimationFinished = true;
@@ -270,6 +267,10 @@ namespace LethalInternship.AI
 
                 agent.nextPosition = NpcController.Npc.thisController.transform.position;
             }
+            else
+            {
+                this.transform.position = NpcController.Npc.thisController.transform.position;
+            }
 
             // Update interval timer for AI calculation
             if (updateDestinationIntervalInternAI >= 0f)
@@ -298,9 +299,12 @@ namespace LethalInternship.AI
             {
                 return;
             }
-
+            
             // Do the AI calculation behaviour for the current state
             State.DoAI();
+
+            RayUtil.RayCastAndDrawFromPointWithColor(LineRendererUtil.GetLineRenderer(), NpcController.Npc.transform.position, this.transform.position + new Vector3(0, 0.3f, 0), Color.green);
+            RayUtil.RayCastAndDrawFromPointWithColor(LineRendererUtil.GetLineRenderer(), NpcController.Npc.transform.position, this.agent.destination + new Vector3(0, 0.3f, 0), Color.blue);
 
             // Check if the body is stuck somehow, and try to unstuck it in various ways
             CheckIfStuck();
@@ -367,7 +371,7 @@ namespace LethalInternship.AI
                                                                             0.5f);
                 if (canMoveCheckWhileJump)
                 {
-                    Plugin.LogDebug($"!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} !legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
                     PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
                 }
             }
@@ -381,7 +385,7 @@ namespace LethalInternship.AI
                                                                                   0.5f);
                     if (canMoveCheckWhileCrouch)
                     {
-                        Plugin.LogDebug($"legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
+                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
                         NpcController.OrderToStopSprint();
                         NpcController.OrderToToggleCrouch();
                     }
@@ -391,14 +395,13 @@ namespace LethalInternship.AI
             {
                 if (NpcController.Npc.isCrouching)
                 {
-                    Plugin.LogDebug($"uncrouch");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} uncrouch");
                     NpcController.OrderToToggleCrouch();
                 }
             }
 
             // Check for hole
-            if ((!NpcController.IsJumping)
-                && (this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
+            if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
             {
                 // Ladders ?
                 bool isUsingLadder = UseLadderIfNeeded();
@@ -409,18 +412,27 @@ namespace LethalInternship.AI
                     return;
                 }
 
-                if (Time.timeSinceLevelLoad - TimeSinceUsingEntrance > Const.WAIT_TIME_TO_TELEPORT)
+                if (!isOutside)
                 {
-                    NpcController.Npc.transform.position = this.transform.position;
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
+                    if (Time.timeSinceLevelLoad - TimeSinceTeleporting > Const.WAIT_TIME_TO_TELEPORT)
+                    {
+                        TimeSinceTeleporting = Time.timeSinceLevelLoad;
+                        NpcController.Npc.transform.position = this.transform.position;
+                        Plugin.LogDebug($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
+                    }
+                }
+                else
+                {
+                    this.transform.position = NpcController.Npc.thisController.transform.position;
                 }
             }
 
             // Controller stuck in world ?
             Vector3 forward = NpcController.Npc.thisController.transform.forward;
-            if ((forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
+            if (NpcController.Npc.isMovementHindered == 0
+                && (forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
             {
-                Plugin.LogDebug($"TimeSinceStuck {timeSinceStuck}");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {(forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude}");
                 timeSinceStuck += AIIntervalTime;
             }
             else if (!NpcController.IsJumping)
@@ -432,7 +444,7 @@ namespace LethalInternship.AI
             if (timeSinceStuck > Const.TIMER_STUCK_WAY_TOO_MUCH)
             {
                 timeSinceStuck = 0f;
-                Plugin.LogDebug($"- !!! Stuck since way too much - ({Const.TIMER_STUCK_WAY_TOO_MUCH}sec) -> teleport if target known");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} - !!! Stuck since way too much - ({Const.TIMER_STUCK_WAY_TOO_MUCH}sec) -> teleport if target known");
                 // Teleport player
                 if (this.targetPlayer != null)
                 {
@@ -443,7 +455,7 @@ namespace LethalInternship.AI
 
             if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
             {
-                Plugin.LogDebug($"- Stuck since too much - ({Const.TIMER_STUCK_TOO_MUCH}sec) -> teleport");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} - Stuck since too much - ({Const.TIMER_STUCK_TOO_MUCH}sec) -> teleport");
                 // Teleport player
                 if (StuckTeleportTry1)
                 {
@@ -451,10 +463,27 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    Plugin.LogDebug($"Teleport to {NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f}");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} Teleport to {NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f}");
                     TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f);
                 }
                 StuckTeleportTry1 = !StuckTeleportTry1;
+            }
+        }
+
+        /// <summary>
+        /// Set the destination in <c>EnemyAI</c>, not on the agent
+        /// </summary>
+        /// <param name="position">the destination</param>
+        public void SetDestinationToPositionInternAI(Vector3 position)
+        {
+            moveTowardsDestination = true;
+            movingTowardsTargetPlayer = false;
+
+            if (previousWantedDestination != position)
+            {
+                previousWantedDestination = position;
+                isDestinationChanged = true;
+                destination = position;
             }
         }
 
@@ -463,6 +492,11 @@ namespace LethalInternship.AI
         /// </summary>
         public void OrderMoveToDestination()
         {
+            if (!isDestinationChanged)
+            {
+                return;
+            }
+
             if (agent.isActiveAndEnabled && agent.isOnNavMesh && !isEnemyDead && !NpcController.Npc.isPlayerDead)
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
@@ -472,12 +506,16 @@ namespace LethalInternship.AI
                 agent.SetDestination(destination);
             }
             NpcController.OrderToMove();
+            isDestinationChanged = false;
         }
 
         public void StopMoving()
         {
-            NpcController.OrderToStopMoving();
-            TeleportAgentAndBody(NpcController.Npc.thisController.transform.position);
+            if (NpcController.HasToMove)
+            {
+                NpcController.OrderToStopMoving();
+                TeleportAgentAndBody(NpcController.Npc.thisController.transform.position);
+            }
         }
 
         /// <summary>
@@ -609,7 +647,8 @@ namespace LethalInternship.AI
             for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
             {
                 PlayerControllerB player = instanceSOR.allPlayerScripts[i];
-                if (!PlayerIsTargetable(player))
+
+                if (!player.isPlayerControlled || player.isPlayerDead)
                 {
                     continue;
                 }
@@ -617,6 +656,11 @@ namespace LethalInternship.AI
                 // Target close enough ?
                 Vector3 cameraPlayerPosition = player.gameplayCamera.transform.position;
                 if ((cameraPlayerPosition - this.transform.position).sqrMagnitude > range * range)
+                {
+                    continue;
+                }
+
+                if (!PlayerIsTargetable(player))
                 {
                     continue;
                 }
@@ -707,7 +751,6 @@ namespace LethalInternship.AI
                     continue;
                 }
                 // Enemy in distance of fear range
-                Plugin.LogDebug($"fear range {fearRange}");
 
                 // Proximity awareness, danger
                 if (proximityAwareness > -1
@@ -735,10 +778,9 @@ namespace LethalInternship.AI
         /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
         private float? GetFearRangeForEnemies(EnemyAI enemy)
         {
-            Plugin.LogDebug($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
+            //Plugin.LogDebug($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
             switch (enemy.enemyType.enemyName)
             {
-                case "Flowerman":
                 case "Crawler":
                 case "Bunker Spider":
                 case "Spring":
@@ -754,6 +796,7 @@ namespace LethalInternship.AI
                 case "Earth Leviathan":
                 case "Blob":
                 case "Clay Surgeon":
+                case "Flowerman":
                 case "Bush Wolf":
                     return 5f;
 
@@ -811,7 +854,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 10f;
                     }
                     else
                     {
@@ -837,9 +880,12 @@ namespace LethalInternship.AI
                 networkObject.AutoObjectParentSync = false;
             }
 
-            Plugin.LogDebug($" npcController.Npc.transform.parent {NpcController.Npc.transform.parent}");
-            NpcController.Npc.transform.parent = newParent;
-            Plugin.LogDebug($"npcController.Npc.transform.parent {NpcController.Npc.transform.parent}");
+            if (NpcController.Npc.transform.parent != newParent)
+            {
+                Plugin.LogDebug($"npcController.Npc.transform.parent before {NpcController.Npc.transform.parent}");
+                NpcController.Npc.transform.parent = newParent;
+                Plugin.LogDebug($"npcController.Npc.transform.parent after {NpcController.Npc.transform.parent}");
+            }
 
             foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
             {
@@ -873,7 +919,7 @@ namespace LethalInternship.AI
                 return null;
             }
 
-            VehicleController vehicleController = Object.FindObjectOfType<VehicleController>();
+            VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {
                 return null;
@@ -885,17 +931,6 @@ namespace LethalInternship.AI
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Set the destination in <c>EnemyAI</c>, not on the agent
-        /// </summary>
-        /// <param name="position">the destination</param>
-        public void SetDestinationToPositionInternAI(Vector3 position)
-        {
-            moveTowardsDestination = true;
-            movingTowardsTargetPlayer = false;
-            destination = RoundManager.Instance.GetNavMeshPosition(position, RoundManager.Instance.navHit, 2.7f);
         }
 
         /// <summary>
@@ -1115,6 +1150,13 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Object in range ?
+                float sqrDistanceEyeGameObject = (gameObjectPosition - this.eye.position).sqrMagnitude;
+                if (sqrDistanceEyeGameObject > Const.INTERN_OBJECT_RANGE * Const.INTERN_OBJECT_RANGE)
+                {
+                    continue;
+                }
+
                 GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
                 if (grabbableObject == null)
                 {
@@ -1122,7 +1164,6 @@ namespace LethalInternship.AI
                 }
 
                 // Object close to awareness distance ?
-                float sqrDistanceEyeGameObject = (gameObjectPosition - this.eye.position).sqrMagnitude;
                 if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
                 {
                     if (!IsGrabbableObjectGrabbable(grabbableObject))
@@ -1137,8 +1178,7 @@ namespace LethalInternship.AI
                 }
 
                 // Object visible ?
-                if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_RANGE * Const.INTERN_OBJECT_RANGE
-                    && !Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                if (!Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
                 {
                     Vector3 to = gameObjectPosition - eye.position;
                     if (Vector3.Angle(eye.forward, to) < Const.INTERN_FOV)
@@ -1180,12 +1220,6 @@ namespace LethalInternship.AI
                 return false;
             }
 
-            if (ListInvalidObjects.Contains(grabbableObject))
-            {
-                Plugin.LogDebug($"object {grabbableObject.name} invalid to grab");
-                return false;
-            }
-
             // Item dropped to close the the ship
             if ((grabbableObject.transform.position - InternManager.Instance.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
                     < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
@@ -1205,8 +1239,9 @@ namespace LethalInternship.AI
             // Trim dictionnary if too large
             TrimDictJustDroppedItems();
 
-            // Is the item reachable with the agent pathfind ?
-            if (this.PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
+            // Is the item reachable with the agent pathfind ? (only owner knows and calculate) real position of ai intern)
+            if (IsOwner
+                && this.PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
             {
                 Plugin.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
                 return false;
@@ -1291,7 +1326,7 @@ namespace LethalInternship.AI
             if (isUsingEntrance)
             {
                 NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
-                TimeSinceUsingEntrance = Time.timeSinceLevelLoad;
+                TimeSinceTeleporting = Time.timeSinceLevelLoad;
                 EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside);
                 if (entranceTeleport.doorAudios != null && entranceTeleport.doorAudios.Length != 0)
                 {
@@ -1739,6 +1774,25 @@ namespace LethalInternship.AI
         [ServerRpc(RequireOwnership = false)]
         public void GrabItemServerRpc(NetworkObjectReference networkObjectReference)
         {
+            if (!networkObjectReference.TryGet(out NetworkObject networkObject))
+            {
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                return;
+            }
+
+            GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                return;
+            }
+
+            if (!IsGrabbableObjectGrabbable(grabbableObject))
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
+                return;
+            }
+
             GrabItemClientRpc(networkObjectReference);
         }
 
@@ -1751,30 +1805,24 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
             if (this.HeldItem == grabbableObject)
             {
-                Plugin.LogError($"Try to grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} Try to grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
             GrabItem(grabbableObject);
-
-            if (AreHandsFree())
-            {
-                // Problem with taking object
-                ListInvalidObjects.Add(grabbableObject);
-            }
         }
 
         /// <summary>
@@ -1783,7 +1831,7 @@ namespace LethalInternship.AI
         /// <param name="grabbableObject">Item to grab</param>
         private void GrabItem(GrabbableObject grabbableObject)
         {
-            Plugin.LogInfo($"Grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+            Plugin.LogInfo($"{NpcController.Npc.playerUsername} Grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
             this.HeldItem = grabbableObject;
 
             grabbableObject.GrabItemFromEnemy(this);
@@ -2073,7 +2121,8 @@ namespace LethalInternship.AI
                                   bool fallDamage,
                                   Vector3 force)
         {
-            Plugin.LogDebug($"DamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug(@$"DamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId},
+                            damageNumber {damageNumber}, causeOfDeath {causeOfDeath}, deathAnimation {deathAnimation}, fallDamage {fallDamage}, force {force}");
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -2094,7 +2143,6 @@ namespace LethalInternship.AI
                 NpcController.Npc.health = Mathf.Clamp(NpcController.Npc.health - damageNumber, 0, 100);
             }
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
-            Plugin.LogDebug($"intern health {NpcController.Npc.health}, damage : {damageNumber}");
 
             // Kill intern if necessary
             if (NpcController.Npc.health <= 0)
@@ -2102,9 +2150,9 @@ namespace LethalInternship.AI
                 if (IsClientOwnerOfIntern())
                 {
                     // Call the server to spawn dead bodies
-                    KillInternSpawnBodyServerRpc(true);
+                    KillInternSpawnBodyServerRpc(spawnBody: true);
                 }
-                // Kill on this client side only, since we are already in an rpc send to all clients
+                // Kill on this client side only, since we are already in a rpc send to all clients
                 this.KillIntern(force, spawnBody: true, causeOfDeath, deathAnimation, positionOffset: default);
             }
             else
@@ -2347,7 +2395,8 @@ namespace LethalInternship.AI
                                 int deathAnimation,
                                 Vector3 positionOffset)
         {
-            Plugin.LogDebug($"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug(@$"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}
+                            bodyVelocity {bodyVelocity}, spawnBody {spawnBody}, causeOfDeath {causeOfDeath}, deathAnimation {deathAnimation}, positionOffset {positionOffset}");
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -2385,7 +2434,6 @@ namespace LethalInternship.AI
             NpcController.Npc.setPositionOfDeadPlayer = true;
             NpcController.Npc.snapToServerPosition = false;
             NpcController.Npc.causeOfDeath = causeOfDeath;
-            Plugin.LogDebug($"Running kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
             if (spawnBody)
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
@@ -2400,6 +2448,7 @@ namespace LethalInternship.AI
                 this.DropItem();
             }
             NpcController.Npc.DisableJetpackControlsLocally();
+            Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
         }
 
         #endregion

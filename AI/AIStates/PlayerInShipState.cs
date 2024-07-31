@@ -17,25 +17,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public override EnumAIStates GetAIState() { return STATE; }
 
-        /// <summary>
-        /// <inheritdoc cref="InternManager.ShipBoundClosestPoint"/>
-        /// </summary>
-        private Vector3 shipBoundClosestPointFromIntern
-        {
-            get { return InternManager.Instance.ShipBoundClosestPoint(npcController.Npc.transform.position); }
-        }
-
-        /// <summary>
-        /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the closest point of the ship, 
-        /// only on axis x and z, y at 0, and squared
-        /// </summary>
-        private float SqrHorizDistanceWithShipBoundPoint
-        {
-            get
-            {
-                return Vector3.Scale((shipBoundClosestPointFromIntern - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
-            }
-        }
+        private Vector3 ShipBoundClosestPointFromIntern = default;
+        private float ShipClosestPointTimer = 1f;
 
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
@@ -80,7 +63,8 @@ namespace LethalInternship.AI.AIStates
             // The target player is in the ship or too close to it
             // and the intern is close enough of the closest point of the ship
             // The intern stop moving and drop his item
-            if (SqrHorizDistanceWithShipBoundPoint < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)
+            float sqrHorizDistanceWithDestination = Vector3.Scale((ai.destination - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
+            if (sqrHorizDistanceWithDestination < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)
             {
                 if (!ai.AreHandsFree())
                 {
@@ -106,8 +90,18 @@ namespace LethalInternship.AI.AIStates
 
             // Target player in ship or too close to it
             // the intern still need to get close to the ship
-            ai.SetDestinationToPositionInternAI(shipBoundClosestPointFromIntern);
-            if (SqrHorizDistanceWithShipBoundPoint > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
+            if(this.ShipClosestPointTimer >= 1f)
+            {
+                this.ShipClosestPointTimer = 0f;
+                ShipBoundClosestPointFromIntern = InternManager.Instance.ShipBoundClosestPoint(npcController.Npc.transform.position);
+            }
+            else
+            {
+                this.ShipClosestPointTimer += ai.AIIntervalTime;
+            }
+            
+            ai.SetDestinationToPositionInternAI(ShipBoundClosestPointFromIntern);
+            if (sqrHorizDistanceWithDestination > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
             {
                 npcController.OrderToSprint();
             }

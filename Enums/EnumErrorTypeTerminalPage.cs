@@ -6,7 +6,8 @@
     internal enum EnumErrorTypeTerminalPage
     {
         Default,
-        CannotPurchase,
+        NotEnoughCredits,
+        NoMoreInterns,
         ShipLeavingMoon
     }
 }

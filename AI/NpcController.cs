@@ -39,7 +39,6 @@ namespace LethalInternship.AI
         public bool GrabbedObjectValidated;
         public float UpdatePlayerLookInterval;
         public int PlayerMask;
-
         private InternAI InternAIController
         {
             get
@@ -86,7 +85,6 @@ namespace LethalInternship.AI
         private Vector3 directionToUpdateTurnBodyTowardsToNormalized;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
-
 
         private Vector2 lastMoveVector;
         private float floatSprint;
@@ -631,10 +629,11 @@ namespace LethalInternship.AI
                 {
                     num3 *= 15f;
                 }
-                if (movementHinderedPrev > 0)
-                {
-                    num3 /= 2f * Npc.hinderedMultiplier;
-                }
+                // hindered mvt when sinking (water or quicksand) disable because too strong for intern, don't know why
+                //if (movementHinderedPrev > 0)
+                //{
+                //    num3 /= 2f * Npc.hinderedMultiplier;
+                //}
                 if (Npc.drunkness > 0f)
                 {
                     num3 *= instanceSOR.drunknessSpeedEffect.Evaluate(Npc.drunkness) / 5f + 1f;

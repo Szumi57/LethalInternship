@@ -1,9 +1,12 @@
 ﻿using HarmonyLib;
+using LethalInternship.AI.AIStates;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
+using System.Xml.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -327,4 +330,72 @@ namespace LethalInternship.Patches.GameEnginePatches
             SaveManager.Instance.SyncNbInternsOwnedServerRpc(__instance.NetworkManager.LocalClientId);
         }
     }
+
+    //[HarmonyPatch(typeof(ShowerTrigger))] // make sure Harmony inspects the class
+    //class MyPatches
+    //{
+    //    [HarmonyPatch("CheckBoundsForPlayers")]
+    //    [HarmonyPrefix]
+    //    static void Prefix(out System.Diagnostics.Stopwatch __state)
+    //    {
+    //        __state = System.Diagnostics.Stopwatch.StartNew();
+    //    }
+
+    //    [HarmonyPatch("CheckBoundsForPlayers")]
+    //    [HarmonyPostfix]
+    //    static void Postfix(System.Diagnostics.Stopwatch __state)
+    //    {
+    //        __state.Stop();
+    //        var elapsedMs = __state.Elapsed.TotalMilliseconds;
+    //        Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
+    //    }
+    //}
+
+    //[HarmonyPatch] // make sure Harmony inspects the class
+    //class MyPatches
+    //{
+    //    static IEnumerable<MethodBase> TargetMethods()
+    //    {
+    //        var a = AccessTools.GetTypesFromAssembly(typeof(StartOfRound).Assembly)
+    //            .SelectMany(type => type.GetMethods())
+    //            .Where(method => //method.ReturnType != typeof(void) &&
+    //                            !method.DeclaringType.Name.Contains("BaseServer`3")&&
+    //                            !method.DeclaringType.Name.Contains("BaseClient`3") &&
+    //                            method.Name.Contains("Update"));
+    //        foreach(var method in a)
+    //        {
+    //            Plugin.LogDebug($"{method.DeclaringType.Name}.{method.Name}");
+    //        }
+
+    //        return AccessTools.GetTypesFromAssembly(typeof(StartOfRound).Assembly)
+    //            .SelectMany(type => type.GetMethods())
+    //            .Where(method => //method.ReturnType != typeof(void) &&
+    //                            !method.DeclaringType.Name.Contains("BaseServer`3") && 
+    //                            !method.DeclaringType.Name.Contains("BaseClient`3") &&
+    //                            method.Name.Contains("Update"))
+    //            .Cast<MethodBase>();
+    //    }
+
+    //    // prefix all methods in someAssembly with a non-void return type and beginning with "Player"
+    //    static void Prefix(out System.Diagnostics.Stopwatch __state)
+    //    {
+    //        __state = System.Diagnostics.Stopwatch.StartNew();
+    //    }
+
+    //    static void Postfix(MethodBase __originalMethod, System.Diagnostics.Stopwatch __state)
+    //    {
+    //        __state.Stop();
+    //        var elapsedMs = __state.Elapsed.TotalMilliseconds;
+    //        string name = __originalMethod.FullDescription();
+    //        if (!name.Contains("GrabbableObject"))
+    //        {
+    //            if(elapsedMs > 0.5)
+    //            {
+    //        Plugin.LogDebug($"Method {name}: {elapsedMs}ms");
+    //            }
+
+    //        }
+
+    //    }
+    //}
 }

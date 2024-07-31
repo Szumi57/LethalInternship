@@ -40,7 +40,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                 }
 
                 internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)internController.playerClientId);
-                if(internAI == null)
+                if (internAI == null)
                 {
                     continue;
                 }
