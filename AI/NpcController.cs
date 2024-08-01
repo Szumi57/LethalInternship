@@ -1201,7 +1201,8 @@ namespace LethalInternship.AI
                     }
                     if (Npc.isSprinting)
                     {
-                        Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * Npc.carryWeight * num2, 0f, 1f);
+                        // Cut exhaustion for now
+                        //Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * Npc.carryWeight * num2, 0f, 1f);
                     }
                     else if (Npc.isMovementHindered > 0)
                     {

@@ -1,8 +1,14 @@
 ﻿using HarmonyLib;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
@@ -10,6 +16,7 @@ namespace LethalInternship.Patches.GameEnginePatches
     /// Patch for the <c>HUDManager</c>
     /// </summary>
     [HarmonyPatch(typeof(HUDManager))]
+    [HarmonyAfter(Const.BETTER_EXP_GUID)]
     internal class HUDManagerPatch
     {
         /// <summary>
@@ -55,6 +62,31 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
 
             return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("Start")]
+        [HarmonyPostfix]
+        public static void Start_Postfix(HUDManager __instance)
+        {
+            EndOfGameStatUIElements statsUIElements = __instance.statsUIElements;
+            GameObject gameObjectParent = statsUIElements.playerNamesText[0].gameObject.transform.parent.gameObject;
+
+            int allEntitiesCount = InternManager.Instance.AllEntitiesCount;
+            Array.Resize(ref statsUIElements.playerNamesText, allEntitiesCount);
+            Array.Resize(ref statsUIElements.playerStates, allEntitiesCount);
+            Array.Resize(ref statsUIElements.playerNotesText, allEntitiesCount);
+
+            for(int i = InternManager.Instance.IndexBeginOfInterns; i < allEntitiesCount; i++)
+            {
+                GameObject newGameObjectParent = Object.Instantiate<GameObject>(gameObjectParent);
+                GameObject gameObjectPlayerName = newGameObjectParent.transform.Find("PlayerName1").gameObject;
+                GameObject gameObjectNotes = newGameObjectParent.transform.Find("Notes").gameObject;
+                GameObject gameObjectSymbol = newGameObjectParent.transform.Find("Symbol").gameObject;
+
+                statsUIElements.playerNamesText[i] = gameObjectPlayerName.GetComponent<TextMeshProUGUI>();
+                statsUIElements.playerNotesText[i] = gameObjectNotes.GetComponent<TextMeshProUGUI>();
+                statsUIElements.playerStates[i] = gameObjectSymbol.GetComponent<Image>();
+            }
         }
     }
 }

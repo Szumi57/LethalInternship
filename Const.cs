@@ -8,6 +8,7 @@ namespace LethalInternship
     internal class Const
     {
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
+        public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
 
