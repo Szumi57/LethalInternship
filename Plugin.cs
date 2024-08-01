@@ -44,7 +44,7 @@ namespace LethalInternship
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
 
-            var bundleName = "modassets";
+            var bundleName = "internnpcmodassets";
             ModAssets = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Info.Location), bundleName));
             if (ModAssets == null)
             {

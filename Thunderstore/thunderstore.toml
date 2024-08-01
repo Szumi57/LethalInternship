@@ -5,7 +5,7 @@ schemaVersion = "0.0.1"
 repository = "https://thunderstore.io"
 
 [package]
-description = "Recuit interns, take them with you, grab items, make company happy, they may or may not help but what can you do ? It's their first experience."
+description = "Recruit interns, take them with you, grab items, make company happy, they may or may not help but what can you do ? It's their first experience."
 websiteUrl = "https://github.com/Szumi57/LethalInternship"
 containsNsfwContent = false
 [package.dependencies]
@@ -22,7 +22,7 @@ source = "../bin/Release/netstandard2.1/LethalInternship.dll"
 target = "plugins/Szumi57-LethalInternship/"
 
 [[build.copy]]
-source = "../../UnityProject/AssetBundles/StandaloneWindows/modassets"
+source = "../../UnityProject/AssetBundles/StandaloneWindows/internnpcmodassets"
 target = "plugins/Szumi57-LethalInternship/"
 
 [[build.copy]]
