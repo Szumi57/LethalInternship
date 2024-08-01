@@ -299,7 +299,7 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            
+
             // Do the AI calculation behaviour for the current state
             State.DoAI();
 
@@ -1774,7 +1774,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="networkObjectReference">Item reference over the network</param>
         [ServerRpc(RequireOwnership = false)]
-        public void GrabItemServerRpc(NetworkObjectReference networkObjectReference)
+        public void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven)
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
@@ -1789,10 +1789,13 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (!IsGrabbableObjectGrabbable(grabbableObject))
+            if (!itemGiven)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
-                return;
+                if (!IsGrabbableObjectGrabbable(grabbableObject))
+                {
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
+                    return;
+                }
             }
 
             GrabItemClientRpc(networkObjectReference);

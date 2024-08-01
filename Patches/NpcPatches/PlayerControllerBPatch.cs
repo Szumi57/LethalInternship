@@ -268,7 +268,7 @@ namespace LethalInternship.Patches.NpcPatches
                     // Intern take item from player hands
                     GrabbableObject grabbableObject = __instance.currentlyHeldObjectServer;
                     __instance.DiscardHeldObject(placeObject: true);
-                    intern.GrabItemServerRpc(grabbableObject.NetworkObject);
+                    intern.GrabItemServerRpc(grabbableObject.NetworkObject, itemGiven: true);
                 }
 
                 return false;

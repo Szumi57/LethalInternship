@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.3 [Alpha] - 2024-08-01
+### <Fixed>
+- Fix for giving item to intern and it floats, issue 2 ([#4](https://github.com/Szumi57/LethalInternship/issues/4))
+
 ## 0.14.2 [Alpha] - 2024-08-01
 ### <Fixed>
 - Possible fix for compatibility with BepInExFasterLoadAssetBundlesPatcher ([#5](https://github.com/Szumi57/LethalInternship/issues/5))
