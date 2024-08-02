@@ -124,7 +124,7 @@ namespace LethalInternship
         public static readonly string STRING_INTERNSHIP_PROGRAM_COMMAND = "internship program";
         public static readonly string STRING_BUY_COMMAND = "buy";
         public static readonly string STRING_CONFIRM_COMMAND = "confirm";
-        public static readonly string STRING_CANCEL_COMMAND = "cancel";
+        public static readonly string STRING_CANCEL_COMMAND = "deny";
         public static readonly string STRING_BACK_COMMAND = "back";
 
         public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = $">{STRING_INTERNSHIP_PROGRAM_COMMAND.ToUpper()}\nNeed some help ? Try our new workforce, ready to assist you and gain experience\n\n";
@@ -151,7 +151,7 @@ namespace LethalInternship
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns.
                                                                        
                                                                        Do you confirm you purchase ?
-                                                                       (enter confirm or cancel)";
+                                                                       (enter confirm or deny)";
 
         public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
         public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";

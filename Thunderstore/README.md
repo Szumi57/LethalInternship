@@ -31,3 +31,13 @@ These passionate workers are available in a new section of your shop.
 ## On a more serious note
 This mod is very alpha and I still need to do a lot of polishing.
 <br/>I'm just happy to share this project with you, in hope that you find it fun and enjoyable.
+
+## Things to add
+- Voice lines, I still need to figure out how to implement all of this and find someone or use AI.
+- Configurable things: health, number max, price, items to ignore, etc.
+- Make the intern go inside the ship. Will take some time, it is not easy at the moment.
+- More suits and animations (using the other mods)
+- Orders, a system to control the interns in some way. Can take some time to implement that too.
+
+## For now
+- Priority: compatibility with mods, and critical/major bugs
