@@ -9,6 +9,9 @@ namespace LethalInternship
     {
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
         public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
+        public const string MOREEMOTES_GUID = "MoreEmotes";
+        public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
+
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
 

@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
 using LethalInternship.Managers;
@@ -6,6 +7,7 @@ using LethalInternship.Patches.EnemiesPatches;
 using LethalInternship.Patches.GameEnginePatches;
 using LethalInternship.Patches.MapHazardsPatches;
 using LethalInternship.Patches.MapPatches;
+using LethalInternship.Patches.ModPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
@@ -76,6 +78,15 @@ namespace LethalInternship
 
             InitPluginManager();
 
+            PatchBaseGame();
+
+            PatchOtherMods();
+
+            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+        }
+
+        private void PatchBaseGame()
+        {
             // Game engine
             _harmony.PatchAll(typeof(DebugPatch));
             _harmony.PatchAll(typeof(GameNetworkManagerPatch));
@@ -127,8 +138,35 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(TerminalPatch));
 
             //_harmony.PatchAll(typeof(MyPatches));
+        }
 
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+        private void PatchOtherMods()
+        {
+            bool modMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
+            bool modMoreCompany = IsModLoaded(Const.MORECOMPANY_GUID);
+            bool modModelReplacementAPI = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+
+            // Compatibility with other mods
+            if (modMoreEmoteLoaded)
+            {
+                _harmony.PatchAll(typeof(MoreEmotesPatch));
+            }
+
+            if (modModelReplacementAPI && modMoreCompany)
+            {
+                _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
+            }
+        }
+
+        private bool IsModLoaded(string modGUID)
+        {
+            bool ret = Chainloader.PluginInfos.ContainsKey(modGUID);
+            if (ret)
+            {
+                Logger.LogDebug($"Mod loaded : GUID {modGUID}");
+            }
+
+            return ret;
         }
 
         private static void InitializeNetworkBehaviours()

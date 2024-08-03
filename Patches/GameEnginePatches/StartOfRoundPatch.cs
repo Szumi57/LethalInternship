@@ -1,14 +1,12 @@
 ﻿using HarmonyLib;
-using LethalInternship.AI.AIStates;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Xml.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {

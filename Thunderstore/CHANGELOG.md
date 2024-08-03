@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.5 [Alpha] - 2024-08-03
+### <Hotfix>
+- Fix compatibility with MoreEmotes and ModelReplacementAPI, thanks @Nysvaa on discord. Fixed but not functionnal for interns, no change (I hope) for the players. 
+
 ## 0.14.4 [Alpha] - 2024-08-02
 ### <Hotfix>
 - Fix for "Typing Pro flashlight into the terminal forces you to the interns page preventing purchases of the pro", thanks @Loot Bug on discord.

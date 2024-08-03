@@ -3,6 +3,7 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
+using MoreEmotes.Patch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace LethalInternship.Patches.NpcPatches
         /// </summary>
         /// <returns></returns>
         [HarmonyPatch("Update")]
+        [HarmonyAfter(Const.MOREEMOTES_GUID)]
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance,
                                   ref bool ___isCameraDisabled,
