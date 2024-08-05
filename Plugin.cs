@@ -109,9 +109,11 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(ButlerEnemyAIPatch));
             _harmony.PatchAll(typeof(CentipedeAIPatch));
             _harmony.PatchAll(typeof(CrawlerAIPatch));
+            _harmony.PatchAll(typeof(FlowermanAIPatch));
             _harmony.PatchAll(typeof(FlowerSnakeEnemyPatch));
             _harmony.PatchAll(typeof(ForestGiantAIPatch));
             _harmony.PatchAll(typeof(JesterAIPatch));
+            _harmony.PatchAll(typeof(MaskedPlayerEnemyPatch));
             _harmony.PatchAll(typeof(MouthDogAIPatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
@@ -142,19 +144,27 @@ namespace LethalInternship
 
         private void PatchOtherMods()
         {
-            bool modMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
-            bool modMoreCompany = IsModLoaded(Const.MORECOMPANY_GUID);
-            bool modModelReplacementAPI = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+            bool isModMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
+            bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
+            bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+            bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
 
             // Compatibility with other mods
-            if (modMoreEmoteLoaded)
+            if (isModMoreEmoteLoaded)
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
             }
 
-            if (modModelReplacementAPI && modMoreCompany)
+            if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
+            }
+
+            if (isModLethalPhonesLoaded)
+            {
+                _harmony.PatchAll(typeof(PlayerPhonePatchPatch));
+                _harmony.PatchAll(typeof(PhoneBehaviorPatch));
+                _harmony.PatchAll(typeof(PlayerPhonePatchLI));
             }
         }
 

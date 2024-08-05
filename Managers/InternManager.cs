@@ -309,7 +309,7 @@ namespace LethalInternship.Managers
             internController.isPlayerDead = false;
             internController.isPlayerControlled = true;
             internController.health = Const.INTERN_MAX_HEALTH;
-            internController.DisablePlayerModel(objectParent, true, true);
+            DisableInternControllerModel(objectParent, internController, true, true);
             internController.isInsideFactory = !isOutside;
             internController.isMovementHindered = 0;
             internController.hinderedMultiplier = 1f;
@@ -320,6 +320,7 @@ namespace LethalInternship.Managers
             internController.inSpecialInteractAnimation = false;
             internController.freeRotationInInteractAnimation = false;
             internController.disableSyncInAnimation = false;
+            internController.disableLookInput = false;
             internController.inAnimationWithEnemy = null;
             internController.holdingWalkieTalkie = false;
             internController.speakingToWalkieTalkie = false;
@@ -328,12 +329,12 @@ namespace LethalInternship.Managers
             internController.sinkingValue = 0f;
             internController.sourcesCausingSinking = 0;
             internController.isClimbingLadder = false;
-            internController.disableLookInput = true;
             internController.setPositionOfDeadPlayer = false;
             internController.mapRadarDotAnimator.SetBool(Const.MAPDOT_ANIMATION_BOOL_DEAD, false);
             internController.externalForceAutoFade = Vector3.zero;
             internController.voiceMuffledByEnemy = false;
             internController.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_LIMP, false);
+            internController.climbSpeed = Const.CLIMB_SPEED;
             AccessTools.Field(typeof(PlayerControllerB), "updatePositionForNewlyJoinedClient").SetValue(internController, true);
 
             internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();
@@ -355,6 +356,22 @@ namespace LethalInternship.Managers
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
 
             internAI.Init();
+        }
+
+        /// <summary>
+        /// Manual DisablePlayerModel, for compatibility with mod LethalPhones, does not trigger patch of DisablePlayerModel in LethalPhones
+        /// </summary>
+        private void DisableInternControllerModel(GameObject internObject, PlayerControllerB internController, bool enable = false, bool disableLocalArms = false)
+        {
+            SkinnedMeshRenderer[] componentsInChildren = internObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+            for (int i = 0; i < componentsInChildren.Length; i++)
+            {
+                componentsInChildren[i].enabled = enable;
+            }
+            if (disableLocalArms)
+            {
+                internController.thisPlayerModelArms.enabled = false;
+            }
         }
 
         #endregion

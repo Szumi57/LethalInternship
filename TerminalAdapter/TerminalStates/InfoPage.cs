@@ -32,15 +32,15 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return false;
             }
 
-            if (Const.STRING_INTERNSHIP_PROGRAM_COMMAND.Contains(firstWord)
-               || Const.STRING_BACK_COMMAND.Contains(firstWord))
+            if (terminalParser.IsMatchWord(firstWord, Const.STRING_INTERNSHIP_PROGRAM_COMMAND)
+               || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
             {
                 // stay on info page
                 return true;
             }
 
             // firstWord Buy
-            if (!Const.STRING_BUY_COMMAND.Contains(firstWord))
+            if (!terminalParser.IsMatchWord(firstWord, Const.STRING_BUY_COMMAND))
             {
                 return false;
             }

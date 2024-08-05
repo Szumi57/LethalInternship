@@ -3,7 +3,6 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
-using MoreEmotes.Patch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -1009,6 +1008,7 @@ namespace LethalInternship.Patches.NpcPatches
                 break;
             }
         }
+
 
         #endregion
     }
