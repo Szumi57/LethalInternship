@@ -33,12 +33,13 @@ namespace LethalInternship.Patches.TerminalPatches
             string command = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
 
             if (__result != null
-                && __result != __instance.terminalNodes.specialNodes[10]  // ParserError1 (TerminalNode)
+                && __result != __instance.terminalNodes.specialNodes[10] // ParserError1 (TerminalNode)
                 && __result != __instance.terminalNodes.specialNodes[11] // ParserError2 (TerminalNode)
                 && __result != __instance.terminalNodes.specialNodes[12] // ParserError3 (TerminalNode)
                 && command != Const.STRING_INTERNSHIP_PROGRAM_COMMAND) 
             {
                 // Command valid parsed by base game
+                TerminalManager.Instance.ResetTerminalParser();
                 return;
             }
 

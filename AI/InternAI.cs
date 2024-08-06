@@ -170,11 +170,7 @@ namespace LethalInternship.AI
             addPlayerVelocityToDestination = 3f;
 
             // Position
-            if (IsOwner)
-            {
-                base.SyncPositionToClients();
-            }
-            else if (agent != null)
+            if (!IsOwner && agent != null)
             {
                 SetClientCalculatingAI(false);
             }
@@ -735,6 +731,19 @@ namespace LethalInternship.AI
                 if (sqrDistanceToEnemy > range * range)
                 {
                     continue;
+                }
+
+                // Force collision with enemy if close enough
+                // todo : see why collision of intern so big, it prevents normal collision with enemies
+                // todo : make the distance different for some enemies ?
+                if (sqrDistanceToEnemy < Const.COLLISION_RANGE * Const.COLLISION_RANGE)
+                {
+                    Collider internCollider = NpcController.Npc.GetComponentInChildren<Collider>();
+                    if (internCollider != null)
+                    {
+                        spawnedEnemy.OnCollideWithPlayer(internCollider);
+                        break;
+                    }
                 }
 
                 // Obstructed
@@ -1320,10 +1329,7 @@ namespace LethalInternship.AI
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         private void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
-            NpcController.Npc.isInsideFactory = !setOutside;
-            SetEnemyOutside(setOutside);
-
-            TeleportAgentAndBody(pos);
+            TeleportAgentAndBody(pos, setOutside);
 
             if (isUsingEntrance)
             {
@@ -1341,12 +1347,31 @@ namespace LethalInternship.AI
         /// Teleport the brain and body of intern
         /// </summary>
         /// <param name="pos"></param>
-        private void TeleportAgentAndBody(Vector3 pos)
+        private void TeleportAgentAndBody(Vector3 pos, bool? setOutside = null)
         {
             // Only teleport when necessary
             if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
             {
                 return;
+            }
+
+            if (setOutside.HasValue)
+            {
+                NpcController.Npc.isInsideFactory = !setOutside.Value;
+                SetEnemyOutside(setOutside.Value);
+            }
+            else
+            {
+                if (this.isOutside && pos.y < -80f)
+                {
+                    NpcController.Npc.isInsideFactory = true;
+                    this.SetEnemyOutside(false);
+                }
+                else if (!this.isOutside && pos.y > -80f)
+                {
+                    NpcController.Npc.isInsideFactory = false;
+                    this.SetEnemyOutside(true);
+                }
             }
 
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);

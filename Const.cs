@@ -11,6 +11,7 @@ namespace LethalInternship
         public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
         public const string MOREEMOTES_GUID = "MoreEmotes";
         public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
+        public const string LETHALPHONES_GUID = "LethalPhones";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
@@ -25,6 +26,8 @@ namespace LethalInternship
         public static readonly float INTERN_OBJECT_AWARNESS = 3f;
         public static readonly float INTERN_OBJECT_RANGE = 15f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
+        public static readonly float COLLISION_RANGE = 2.8f;
+        public static readonly float CLIMB_SPEED = 8f;
 
         public static readonly float AGENT_SPEED = 3.5f;
         public static readonly float AGENT_SPEED_CROUCH = 1.75f;

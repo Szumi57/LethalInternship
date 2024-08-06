@@ -13,7 +13,15 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// </summary>
         public override EnumTerminalStates GetTerminalState() { return STATE; }
 
+        /// <summary>
+        /// <inheritdoc cref="TerminalState(TerminalParser)"/>
+        /// </summary>
         public WaitForMainCommandPage(TerminalParser terminalParser) : base(terminalParser) { }
+
+        /// <summary>
+        /// <inheritdoc cref="TerminalState(TerminalState)"/>
+        /// </summary>
+        public WaitForMainCommandPage(TerminalState newState) : base(newState) { }
 
         /// <summary>
         /// <inheritdoc cref="TerminalState.ParseCommandValid"/><br/>
@@ -22,7 +30,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         {
             string firstWord = words[0];
             if (string.IsNullOrWhiteSpace(firstWord)
-                || !Const.STRING_INTERNSHIP_PROGRAM_COMMAND.Contains(firstWord))
+                || !terminalParser.IsMatchWord(firstWord, Const.STRING_INTERNSHIP_PROGRAM_COMMAND))
             {
                 return false;
             }
