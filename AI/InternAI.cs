@@ -1166,13 +1166,16 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                if (IsGrabbableObjectBlackListed(gameObject))
+                {
+                    continue;
+                }
+                
                 GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
                 if (grabbableObject == null)
                 {
                     return null;
                 }
-
-                // todo: grab "RedLocustHive(Clone)", bodies "RagdollGrabbableObject(Clone)" ?
 
                 // Object close to awareness distance ?
                 if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
@@ -1275,6 +1278,25 @@ namespace LethalInternship.AI
                     DictJustDroppedItems.Remove(item.Key);
                 }
             }
+        }
+
+        private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
+        {
+            // Bee nest
+            if (gameObjectToEvaluate.name.Contains("RedLocustHive"))
+            {
+                return true;
+            }
+
+            // Dead bodies
+            if (gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
+                && gameObjectToEvaluate.tag == "PhysicsProp"
+                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         #region TeleportIntern RPC

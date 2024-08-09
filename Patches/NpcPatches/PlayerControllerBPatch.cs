@@ -1009,6 +1009,16 @@ namespace LethalInternship.Patches.NpcPatches
             }
         }
 
+        [HarmonyPatch("IVisibleThreat.GetThreatTransform")]
+        [HarmonyPostfix]
+        static void GetThreatTransform_PostFix(PlayerControllerB __instance, ref Transform __result)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                __result = internAI.transform;
+            }
+        }
 
         #endregion
     }

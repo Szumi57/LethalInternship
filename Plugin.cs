@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
+using FasterItemDropship;
 using HarmonyLib;
 using LethalInternship.Managers;
 using LethalInternship.Patches.EnemiesPatches;
@@ -11,10 +12,16 @@ using LethalInternship.Patches.ModPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
+using LethalLib.Modules;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship
 {
@@ -74,6 +81,16 @@ namespace LethalInternship
             {
                 Object.DestroyImmediate(transform.gameObject);
             }
+
+            // randomize GlobalObjectIdHash
+            byte[] value = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + gameObject.name + bundleName));
+            uint newGlobalObjectIdHash = BitConverter.ToUInt32(value, 0);
+            Type type = typeof(NetworkObject);
+            FieldInfo fieldInfo = type.GetField("GlobalObjectIdHash", BindingFlags.NonPublic | BindingFlags.Instance);
+            var networkObject = InternNPCPrefab.enemyPrefab.GetComponent<NetworkObject>();
+            fieldInfo.SetValue(networkObject, newGlobalObjectIdHash);
+
+            // Register the network prefab with the randomized GlobalObjectIdHash
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(InternNPCPrefab.enemyPrefab);
 
             InitPluginManager();
@@ -115,6 +132,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(JesterAIPatch));
             _harmony.PatchAll(typeof(MaskedPlayerEnemyPatch));
             _harmony.PatchAll(typeof(MouthDogAIPatch));
+            _harmony.PatchAll(typeof(RadMechMissilePatch));
             _harmony.PatchAll(typeof(RedLocustBeesPatch));
             _harmony.PatchAll(typeof(SandSpiderAIPatch));
             _harmony.PatchAll(typeof(SandWormAIPatch));
@@ -135,6 +153,7 @@ namespace LethalInternship
             // Objects
             _harmony.PatchAll(typeof(DeadBodyInfoPatch));
             _harmony.PatchAll(typeof(ShotgunItemPatch));
+            _harmony.PatchAll(typeof(StunGrenadeItemPatch));
 
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));
@@ -148,23 +167,26 @@ namespace LethalInternship
             bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
+            bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
 
             // Compatibility with other mods
             if (isModMoreEmoteLoaded)
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
             }
-
             if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
             }
-
             if (isModLethalPhonesLoaded)
             {
                 _harmony.PatchAll(typeof(PlayerPhonePatchPatch));
                 _harmony.PatchAll(typeof(PhoneBehaviorPatch));
                 _harmony.PatchAll(typeof(PlayerPhonePatchLI));
+            }
+            if (isModFasterItemDropshipLoaded)
+            {
+                _harmony.PatchAll(typeof(FasterItemDropshipPatch));
             }
         }
 
