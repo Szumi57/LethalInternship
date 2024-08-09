@@ -169,7 +169,6 @@ namespace LethalInternship.Patches.NpcPatches
         {
             PlayerControllerB internControllerFound = null!;
 
-            __instance.mostOptimalDistance = 2000f;
             for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
                 PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[i];
@@ -248,9 +247,8 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPostfix]
         static void TargetClosestPlayer_PostFix(EnemyAI __instance, ref bool __result, float bufferDistance, bool requireLineOfSight, float viewWidth)
         {
-            __instance.mostOptimalDistance = 2000f;
-            PlayerControllerB playerControllerB = __instance.targetPlayer;
-            __instance.targetPlayer = null;
+            PlayerControllerB playerTargetted = __instance.targetPlayer;
+            
             for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];
@@ -267,10 +265,10 @@ namespace LethalInternship.Patches.NpcPatches
                     }
                 }
             }
-            if (__instance.targetPlayer != null && bufferDistance > 0f && playerControllerB != null
-                && Mathf.Abs(__instance.mostOptimalDistance - Vector3.Distance(__instance.transform.position, playerControllerB.transform.position)) < bufferDistance)
+            if (__instance.targetPlayer != null && bufferDistance > 0f && playerTargetted != null
+                && Mathf.Abs(__instance.mostOptimalDistance - Vector3.Distance(__instance.transform.position, playerTargetted.transform.position)) < bufferDistance)
             {
-                __instance.targetPlayer = playerControllerB;
+                __instance.targetPlayer = playerTargetted;
             }
             __result = __instance.targetPlayer != null;
         }

@@ -12,6 +12,7 @@ namespace LethalInternship
         public const string MOREEMOTES_GUID = "MoreEmotes";
         public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
         public const string LETHALPHONES_GUID = "LethalPhones";
+        public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;

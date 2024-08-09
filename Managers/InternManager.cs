@@ -93,7 +93,6 @@ namespace LethalInternship.Managers
         {
             StartOfRound instance = StartOfRound.Instance;
 
-            Plugin.LogInfo("Attempt to populate pool of interns.");
             if (instance.allPlayerObjects[3].gameObject == null)
             {
                 Plugin.LogInfo("No player objects initialized in game, aborting interns initializations.");
@@ -111,6 +110,7 @@ namespace LethalInternship.Managers
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
+                Plugin.LogInfo("Pool of interns ok. The arrays have not been resize between round");
                 return;
             }
 
@@ -134,6 +134,8 @@ namespace LethalInternship.Managers
         /// <param name="irlPlayersCount">Number of "real" players, 4 without morecompany, for calculating resizing</param>
         private void ResizePoolOfInterns(int irlPlayersCount)
         {
+            Plugin.LogInfo($"Attempt to resize pool of interns. irlPlayersCount {irlPlayersCount}");
+
             StartOfRound instance = StartOfRound.Instance;
             Plugin.LogDebug($"instance.allPlayerObjects.Length {instance.allPlayerObjects.Length} AllEntitiesCount {AllEntitiesCount}");
 
@@ -154,6 +156,7 @@ namespace LethalInternship.Managers
         /// <param name="irlPlayersCount">Number of "real" players, 4 without morecompany, for calculating parameterization</param>
         private void PopulatePoolOfInterns(int irlPlayersCount)
         {
+            Plugin.LogDebug($"Attempt to populate pool of interns. irlPlayersCount {irlPlayersCount}");
             StartOfRound instance = StartOfRound.Instance;
             GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
 
@@ -278,7 +281,7 @@ namespace LethalInternship.Managers
                                           int indexNextIntern, int indexNextPlayerObject,
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
-            Plugin.LogInfo($"Client receive NOR after spawned on server...");
+            Plugin.LogInfo($"Client receive RPC to spawn intern on his side...");
 
             networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
             InternAI internAI = networkObjectInternAI.gameObject.GetComponent<InternAI>();
