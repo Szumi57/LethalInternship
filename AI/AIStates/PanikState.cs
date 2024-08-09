@@ -59,20 +59,9 @@ namespace LethalInternship.AI.AIStates
             {
                 this.enemyTransform = enemyAI.transform;
             }
-
-            float sqrDistanceToEnemy = (npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude;
-            if (sqrDistanceToEnemy < 2.5f * 2.5f)
-            {
-                EnemyAI enemyAIClose = enemyTransform.gameObject.GetComponentInChildren<EnemyAI>();
-                Collider internCollider = npcController.Npc.GetComponentInChildren<Collider>();
-                if (enemyAI != null
-                    && internCollider != null)
-                {
-                    enemyAIClose.OnCollideWithPlayer(internCollider);
-                }
-            }
-
+            
             // Check to see if the intern can see the enemy, or enemy has line of sight to intern
+            float sqrDistanceToEnemy = (npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude;
             if (Physics.Linecast(enemyTransform.position, npcController.Npc.gameplayCamera.transform.position,
                                  StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore))
             {

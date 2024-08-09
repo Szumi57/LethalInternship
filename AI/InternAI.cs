@@ -170,11 +170,7 @@ namespace LethalInternship.AI
             addPlayerVelocityToDestination = 3f;
 
             // Position
-            if (IsOwner)
-            {
-                base.SyncPositionToClients();
-            }
-            else if (agent != null)
+            if (!IsOwner && agent != null)
             {
                 SetClientCalculatingAI(false);
             }
@@ -299,7 +295,7 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            
+
             // Do the AI calculation behaviour for the current state
             State.DoAI();
 
@@ -737,6 +733,19 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Force collision with enemy if close enough
+                // todo : see why collision of intern so big, it prevents normal collision with enemies
+                // todo : make the distance different for some enemies ?
+                if (sqrDistanceToEnemy < Const.COLLISION_RANGE * Const.COLLISION_RANGE)
+                {
+                    Collider internCollider = NpcController.Npc.GetComponentInChildren<Collider>();
+                    if (internCollider != null)
+                    {
+                        spawnedEnemy.OnCollideWithPlayer(internCollider);
+                        break;
+                    }
+                }
+
                 // Obstructed
                 if (Physics.Linecast(thisInternCamera.position, positionEnemy, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
@@ -1157,6 +1166,11 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                if (IsGrabbableObjectBlackListed(gameObject))
+                {
+                    continue;
+                }
+                
                 GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
                 if (grabbableObject == null)
                 {
@@ -1266,6 +1280,25 @@ namespace LethalInternship.AI
             }
         }
 
+        private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
+        {
+            // Bee nest
+            if (gameObjectToEvaluate.name.Contains("RedLocustHive"))
+            {
+                return true;
+            }
+
+            // Dead bodies
+            if (gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
+                && gameObjectToEvaluate.tag == "PhysicsProp"
+                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         #region TeleportIntern RPC
 
         /// <summary>
@@ -1318,10 +1351,7 @@ namespace LethalInternship.AI
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         private void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
-            NpcController.Npc.isInsideFactory = !setOutside;
-            SetEnemyOutside(setOutside);
-
-            TeleportAgentAndBody(pos);
+            TeleportAgentAndBody(pos, setOutside);
 
             if (isUsingEntrance)
             {
@@ -1339,12 +1369,31 @@ namespace LethalInternship.AI
         /// Teleport the brain and body of intern
         /// </summary>
         /// <param name="pos"></param>
-        private void TeleportAgentAndBody(Vector3 pos)
+        private void TeleportAgentAndBody(Vector3 pos, bool? setOutside = null)
         {
             // Only teleport when necessary
             if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
             {
                 return;
+            }
+
+            if (setOutside.HasValue)
+            {
+                NpcController.Npc.isInsideFactory = !setOutside.Value;
+                SetEnemyOutside(setOutside.Value);
+            }
+            else
+            {
+                if (this.isOutside && pos.y < -80f)
+                {
+                    NpcController.Npc.isInsideFactory = true;
+                    this.SetEnemyOutside(false);
+                }
+                else if (!this.isOutside && pos.y > -80f)
+                {
+                    NpcController.Npc.isInsideFactory = false;
+                    this.SetEnemyOutside(true);
+                }
             }
 
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);
@@ -1772,7 +1821,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="networkObjectReference">Item reference over the network</param>
         [ServerRpc(RequireOwnership = false)]
-        public void GrabItemServerRpc(NetworkObjectReference networkObjectReference)
+        public void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven)
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
@@ -1787,10 +1836,13 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (!IsGrabbableObjectGrabbable(grabbableObject))
+            if (!itemGiven)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
-                return;
+                if (!IsGrabbableObjectGrabbable(grabbableObject))
+                {
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
+                    return;
+                }
             }
 
             GrabItemClientRpc(networkObjectReference);

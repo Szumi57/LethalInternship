@@ -149,10 +149,17 @@ namespace LethalInternship.AI
                 // Disabling controller if in special interaction animation
                 // (fix for a bug: animation of the forest giant eating intern causing weird effect
                 // if controller enabled on the intern)
-                if (Npc.thisController.enabled != !Npc.inSpecialInteractAnimation
-                    && Npc.transform.parent == Npc.playersManager.playersContainer)
+                if (Npc.transform.parent == Npc.playersManager.playersContainer)
                 {
-                    Npc.thisController.enabled = !Npc.inSpecialInteractAnimation;
+                    if (Npc.inSpecialInteractAnimation
+                        && Npc.inAnimationWithEnemy != null && Npc.inAnimationWithEnemy.enemyType.enemyName == "ForestGiant")
+                    {
+                        Npc.thisController.enabled = false;
+                    }
+                    else
+                    {
+                        Npc.thisController.enabled = true;
+                    }
                 }
 
                 Npc.rightArmProceduralRig.weight = Mathf.Lerp(Npc.rightArmProceduralRig.weight, 0f, 25f * Time.deltaTime);
@@ -383,8 +390,7 @@ namespace LethalInternship.AI
             if (IsWalking)
             {
                 if (Npc.moveInputVector.sqrMagnitude <= 0.001
-                    || Npc.inSpecialInteractAnimation
-                    && !Npc.isClimbingLadder && !Npc.inShockingMinigame)
+                    || (Npc.inSpecialInteractAnimation && !Npc.isClimbingLadder && !Npc.inShockingMinigame))
                 {
                     IsWalking = false;
                     Npc.isSprinting = false;
@@ -455,15 +461,17 @@ namespace LethalInternship.AI
                 {
                     Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
                 }
-                else if (Npc.isClimbingLadder)
-                {
-                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 0f);
-                }
-                if (!Npc.isFreeCamera && Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
+                
+                if (Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
                 {
                     IsWalking = true;
                     Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
                 }
+            }
+
+            if (Npc.isClimbingLadder)
+            {
+                Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 2f);
             }
         }
 
@@ -1182,7 +1190,8 @@ namespace LethalInternship.AI
                             if (!Npc.playersManager.newGameIsLoading)
                             {
                                 InternAIController.SyncUpdateInternPosition(Npc.thisPlayerBody.localPosition, Npc.isInElevator, Npc.isInHangarShipRoom, Npc.isExhausted, Npc.thisController.isGrounded);
-                                Npc.oldPlayerPosition = Npc.transform.localPosition;
+                                Npc.serverPlayerPosition = Npc.transform.localPosition;
+                                Npc.oldPlayerPosition = Npc.serverPlayerPosition;
                             }
                         }
 
@@ -1201,7 +1210,8 @@ namespace LethalInternship.AI
                     }
                     if (Npc.isSprinting)
                     {
-                        Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * Npc.carryWeight * num2, 0f, 1f);
+                        // Cut exhaustion for now
+                        //Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * Npc.carryWeight * num2, 0f, 1f);
                     }
                     else if (Npc.isMovementHindered > 0)
                     {
@@ -1266,7 +1276,8 @@ namespace LethalInternship.AI
             }
 
             if (Npc.playersManager.connectedPlayersAmount < 1
-                || Npc.playersManager.newGameIsLoading)
+                || Npc.playersManager.newGameIsLoading
+                || Npc.disableLookInput)
             {
                 return;
             }
@@ -1381,7 +1392,7 @@ namespace LethalInternship.AI
             this.CrouchMeter = Mathf.Min(this.CrouchMeter + 0.3f, 1.3f);
             Npc.Crouch(!Npc.isCrouching);
         }
-        
+
         /// <summary>
         /// Set the direction the controller should turn towards, using a vector position
         /// </summary>
@@ -1532,13 +1543,14 @@ namespace LethalInternship.AI
                 return false;
             }
 
-            if ((this.Npc.isHoldingObject && !ladder.oneHandedItemAllowed)
-                || (this.Npc.twoHanded &&
-                                   (!ladder.twoHandedItemAllowed || ladder.specialCharacterAnimation)))
-            {
-                Plugin.LogDebug("no ladder cuz holding things");
-                return false;
-            }
+            // todo : ladder item holding configurable ?
+            //if ((this.Npc.isHoldingObject && !ladder.oneHandedItemAllowed)
+            //    || (this.Npc.twoHanded &&
+            //                       (!ladder.twoHandedItemAllowed || ladder.specialCharacterAnimation)))
+            //{
+            //    Plugin.LogDebug("no ladder cuz holding things");
+            //    return false;
+            //}
 
             if (this.Npc.sinkingValue > 0.73f)
             {

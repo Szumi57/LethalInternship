@@ -6,7 +6,7 @@
     <AssemblyName>LethalInternship</AssemblyName>
     <Product>LethalInternship</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>0.13.4</Version>
+    <Version>0.14.7</Version>
   </PropertyGroup>
 
   <!-- Project Properties -->
@@ -82,7 +82,7 @@
     <PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="lib\" />
+    <Folder Include="lib\mods\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -90,6 +90,18 @@
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>lib\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="FasterItemDropship">
+      <HintPath>lib\mods\FasterItemDropship.dll</HintPath>
+    </Reference>
+    <Reference Include="FuckYouMod">
+      <HintPath>lib\mods\MoreEmotes1.3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="LethalPhones">
+      <HintPath>lib\mods\LethalPhones.dll</HintPath>
+    </Reference>
+    <Reference Include="ModelReplacementAPI">
+      <HintPath>lib\mods\ModelReplacementAPI.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Animation.Rigging">
       <HintPath>lib\Unity.Animation.Rigging.dll</HintPath>
@@ -105,6 +117,9 @@
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>lib\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>lib\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
 

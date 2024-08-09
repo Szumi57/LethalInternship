@@ -1,14 +1,12 @@
 ﻿using HarmonyLib;
-using LethalInternship.AI.AIStates;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Xml.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
@@ -26,25 +24,27 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPrefix]
         static void Awake_Prefix(StartOfRound __instance)
         {
+            Plugin.LogDebug("Initialize managers...");
+
+            GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
-                Plugin.LogDebug("Initialize managers...");
-
-                GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
                 objectManager.GetComponent<NetworkObject>().Spawn();
-
-                objectManager = Object.Instantiate(PluginManager.Instance.SaveManagerPrefab);
-                objectManager.GetComponent<NetworkObject>().Spawn();
-
-                objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
-                objectManager.GetComponent<NetworkObject>().Spawn();
-
-                Plugin.LogDebug("... Managers started");
             }
-            else
+
+            objectManager = Object.Instantiate(PluginManager.Instance.SaveManagerPrefab);
+            if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
-                Plugin.LogDebug("Client does not initialize managers.");
+                objectManager.GetComponent<NetworkObject>().Spawn();
             }
+
+            objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
+            if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
+            {
+                objectManager.GetComponent<NetworkObject>().Spawn();
+            }
+
+            Plugin.LogDebug("... Managers started");
         }
 
         /// <summary>

@@ -37,7 +37,8 @@ namespace LethalInternship.Patches.GameEnginePatches
 
         [HarmonyPatch("OnTransformParentChanged")]
         [HarmonyPrefix]
-        static bool OnTransformParentChanged_PreFix(NetworkObject __instance)
+        static bool OnTransformParentChanged_PreFix(NetworkObject __instance,
+                                                    Transform ___m_CachedParent)
         {
             if (!Const.SHOW_LOG_DEBUG)
             {
@@ -45,6 +46,23 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
 
             if (!__instance.AutoObjectParentSync)
+            {
+                return true;
+            }
+
+            if (__instance.transform.parent == ___m_CachedParent)
+            {
+                return true;
+            }
+            if (__instance.NetworkManager == null || !__instance.NetworkManager.IsListening)
+            {
+                return true;
+            }
+            if (!__instance.NetworkManager.IsServer)
+            {
+                return true;
+            }
+            if (!__instance.IsSpawned)
             {
                 return true;
             }

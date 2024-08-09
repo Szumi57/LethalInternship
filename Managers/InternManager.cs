@@ -2,7 +2,6 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
-using LethalLib.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -94,7 +93,6 @@ namespace LethalInternship.Managers
         {
             StartOfRound instance = StartOfRound.Instance;
 
-            Plugin.LogInfo("Attempt to populate pool of interns.");
             if (instance.allPlayerObjects[3].gameObject == null)
             {
                 Plugin.LogInfo("No player objects initialized in game, aborting interns initializations.");
@@ -112,6 +110,7 @@ namespace LethalInternship.Managers
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
+                Plugin.LogInfo("Pool of interns ok. The arrays have not been resize between round");
                 return;
             }
 
@@ -135,6 +134,8 @@ namespace LethalInternship.Managers
         /// <param name="irlPlayersCount">Number of "real" players, 4 without morecompany, for calculating resizing</param>
         private void ResizePoolOfInterns(int irlPlayersCount)
         {
+            Plugin.LogInfo($"Attempt to resize pool of interns. irlPlayersCount {irlPlayersCount}");
+
             StartOfRound instance = StartOfRound.Instance;
             Plugin.LogDebug($"instance.allPlayerObjects.Length {instance.allPlayerObjects.Length} AllEntitiesCount {AllEntitiesCount}");
 
@@ -155,6 +156,7 @@ namespace LethalInternship.Managers
         /// <param name="irlPlayersCount">Number of "real" players, 4 without morecompany, for calculating parameterization</param>
         private void PopulatePoolOfInterns(int irlPlayersCount)
         {
+            Plugin.LogDebug($"Attempt to populate pool of interns. irlPlayersCount {irlPlayersCount}");
             StartOfRound instance = StartOfRound.Instance;
             GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
 
@@ -279,7 +281,7 @@ namespace LethalInternship.Managers
                                           int indexNextIntern, int indexNextPlayerObject,
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
-            Plugin.LogInfo($"Client receive NOR after spawned on server...");
+            Plugin.LogInfo($"Client receive RPC to spawn intern on his side...");
 
             networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
             InternAI internAI = networkObjectInternAI.gameObject.GetComponent<InternAI>();
@@ -310,7 +312,7 @@ namespace LethalInternship.Managers
             internController.isPlayerDead = false;
             internController.isPlayerControlled = true;
             internController.health = Const.INTERN_MAX_HEALTH;
-            internController.DisablePlayerModel(objectParent, true, true);
+            DisableInternControllerModel(objectParent, internController, true, true);
             internController.isInsideFactory = !isOutside;
             internController.isMovementHindered = 0;
             internController.hinderedMultiplier = 1f;
@@ -321,6 +323,7 @@ namespace LethalInternship.Managers
             internController.inSpecialInteractAnimation = false;
             internController.freeRotationInInteractAnimation = false;
             internController.disableSyncInAnimation = false;
+            internController.disableLookInput = false;
             internController.inAnimationWithEnemy = null;
             internController.holdingWalkieTalkie = false;
             internController.speakingToWalkieTalkie = false;
@@ -329,12 +332,12 @@ namespace LethalInternship.Managers
             internController.sinkingValue = 0f;
             internController.sourcesCausingSinking = 0;
             internController.isClimbingLadder = false;
-            internController.disableLookInput = true;
             internController.setPositionOfDeadPlayer = false;
             internController.mapRadarDotAnimator.SetBool(Const.MAPDOT_ANIMATION_BOOL_DEAD, false);
             internController.externalForceAutoFade = Vector3.zero;
             internController.voiceMuffledByEnemy = false;
             internController.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_LIMP, false);
+            internController.climbSpeed = Const.CLIMB_SPEED;
             AccessTools.Field(typeof(PlayerControllerB), "updatePositionForNewlyJoinedClient").SetValue(internController, true);
 
             internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();
@@ -356,6 +359,22 @@ namespace LethalInternship.Managers
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
 
             internAI.Init();
+        }
+
+        /// <summary>
+        /// Manual DisablePlayerModel, for compatibility with mod LethalPhones, does not trigger patch of DisablePlayerModel in LethalPhones
+        /// </summary>
+        private void DisableInternControllerModel(GameObject internObject, PlayerControllerB internController, bool enable = false, bool disableLocalArms = false)
+        {
+            SkinnedMeshRenderer[] componentsInChildren = internObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+            for (int i = 0; i < componentsInChildren.Length; i++)
+            {
+                componentsInChildren[i].enabled = enable;
+            }
+            if (disableLocalArms)
+            {
+                internController.thisPlayerModelArms.enabled = false;
+            }
         }
 
         #endregion

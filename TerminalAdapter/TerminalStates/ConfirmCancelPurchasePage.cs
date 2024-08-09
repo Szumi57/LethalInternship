@@ -38,16 +38,16 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return false;
             }
 
-            if (Const.STRING_INTERNSHIP_PROGRAM_COMMAND.Contains(firstWord)
-                || Const.STRING_CANCEL_COMMAND.Contains(firstWord)
-                || Const.STRING_BACK_COMMAND.Contains(firstWord))
+            if (terminalParser.IsMatchWord(firstWord, Const.STRING_INTERNSHIP_PROGRAM_COMMAND)
+                || terminalParser.IsMatchWord(firstWord, Const.STRING_CANCEL_COMMAND)
+                || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
             {
                 // get back to info page
                 terminalParser.TerminalState = new InfoPage(this);
                 return true;
             }
 
-            if (Const.STRING_CONFIRM_COMMAND.Contains(firstWord))
+            if (terminalParser.IsMatchWord(firstWord, Const.STRING_CONFIRM_COMMAND))
             {
                 InternManager instanceIM = InternManager.Instance;
                 TerminalManager instanceTM = TerminalManager.Instance;
