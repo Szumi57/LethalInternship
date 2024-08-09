@@ -104,7 +104,7 @@ namespace LethalInternship.AI.AIStates
             if (SqrHorizontalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
                 || SqrVerticalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {
-                // todo check sound
+                // todo detect sound
                 npcController.OrderToLookForward();
                 ai.State = new GetCloseToPlayerState(this);
                 return;

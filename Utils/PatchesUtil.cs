@@ -23,6 +23,7 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo IsPlayerLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerLocalOrInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo IsColliderFromLocalOrInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsColliderFromLocalOrInternOwnerLocal(new Collider()));
         public static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => IndexBeginOfInterns());
+        public static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
         public static readonly MethodInfo IsIdPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsIdPlayerIntern(new int()));
         public static readonly MethodInfo IsPlayerInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
@@ -31,7 +32,6 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
         public static readonly MethodInfo SyncLandFromJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncLandFromJump(new ulong(), new bool()));
 
-        private static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
 
         public static List<CodeInstruction> InsertIsPlayerInternInstructions(List<CodeInstruction> codes,
                                                                              ILGenerator generator,

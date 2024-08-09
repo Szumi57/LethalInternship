@@ -1,4 +1,5 @@
 ﻿using LethalInternship.TerminalAdapter;
+using LethalInternship.TerminalAdapter.TerminalStates;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -76,6 +77,18 @@ namespace LethalInternship.Managers
                 terminalParser = new TerminalParser();
             }
             return terminalParser.ParseCommand(command, ref terminal);
+        }
+
+        public void ResetTerminalParser()
+        {
+            if (terminalParser == null)
+            {
+                terminalParser = new TerminalParser();
+            }
+            else
+            {
+                terminalParser.TerminalState = new WaitForMainCommandPage(terminalParser.TerminalState);
+            }
         }
 
         /// <summary>

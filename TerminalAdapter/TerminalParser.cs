@@ -58,5 +58,10 @@ namespace LethalInternship.TerminalAdapter
                 return null;
             }
         }
+
+        public bool IsMatchWord(string word, string match)
+        {
+            return match.Contains(word) && match[0] == word[0];
+        }
     }
 }

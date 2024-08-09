@@ -8,6 +8,12 @@ namespace LethalInternship
     internal class Const
     {
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
+        public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
+        public const string MOREEMOTES_GUID = "MoreEmotes";
+        public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
+        public const string LETHALPHONES_GUID = "LethalPhones";
+        public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
+
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
 
@@ -21,6 +27,8 @@ namespace LethalInternship
         public static readonly float INTERN_OBJECT_AWARNESS = 3f;
         public static readonly float INTERN_OBJECT_RANGE = 15f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
+        public static readonly float COLLISION_RANGE = 2.8f;
+        public static readonly float CLIMB_SPEED = 8f;
 
         public static readonly float AGENT_SPEED = 3.5f;
         public static readonly float AGENT_SPEED_CROUCH = 1.75f;
@@ -36,11 +44,11 @@ namespace LethalInternship
         public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 6f;
 
         // Debug
-        public static readonly bool DRAW_LINES = true;
+        public static readonly bool DRAW_LINES = false;
         public static readonly bool SHOW_LOG_DEBUG = true;
-        public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
+        public static readonly bool SPAWN_INTERN_WITH_EMOTE = false;
         public static readonly bool INVULNERABILITY = false;
-        public static readonly bool INVINCIBILITY = true;
+        public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
 
         // NpcController
@@ -123,7 +131,7 @@ namespace LethalInternship
         public static readonly string STRING_INTERNSHIP_PROGRAM_COMMAND = "internship program";
         public static readonly string STRING_BUY_COMMAND = "buy";
         public static readonly string STRING_CONFIRM_COMMAND = "confirm";
-        public static readonly string STRING_CANCEL_COMMAND = "cancel";
+        public static readonly string STRING_CANCEL_COMMAND = "deny";
         public static readonly string STRING_BACK_COMMAND = "back";
 
         public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = $">{STRING_INTERNSHIP_PROGRAM_COMMAND.ToUpper()}\nNeed some help ? Try our new workforce, ready to assist you and gain experience\n\n";
@@ -150,7 +158,7 @@ namespace LethalInternship
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns.
                                                                        
                                                                        Do you confirm you purchase ?
-                                                                       (enter confirm or cancel)";
+                                                                       (enter confirm or deny)";
 
         public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
         public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";

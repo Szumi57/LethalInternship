@@ -28,6 +28,7 @@ namespace LethalInternship.Patches.NpcPatches
         /// </summary>
         /// <returns></returns>
         [HarmonyPatch("Update")]
+        [HarmonyAfter(Const.MOREEMOTES_GUID)]
         [HarmonyPrefix]
         static bool Update_PreFix(PlayerControllerB __instance,
                                   ref bool ___isCameraDisabled,
@@ -268,7 +269,7 @@ namespace LethalInternship.Patches.NpcPatches
                     // Intern take item from player hands
                     GrabbableObject grabbableObject = __instance.currentlyHeldObjectServer;
                     __instance.DiscardHeldObject(placeObject: true);
-                    intern.GrabItemServerRpc(grabbableObject.NetworkObject);
+                    intern.GrabItemServerRpc(grabbableObject.NetworkObject, itemGiven: true);
                 }
 
                 return false;
@@ -1005,6 +1006,17 @@ namespace LethalInternship.Patches.NpcPatches
                 __instance.cursorTip.text = sb.ToString();
 
                 break;
+            }
+        }
+
+        [HarmonyPatch("IVisibleThreat.GetThreatTransform")]
+        [HarmonyPostfix]
+        static void GetThreatTransform_PostFix(PlayerControllerB __instance, ref Transform __result)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                __result = internAI.transform;
             }
         }
 

@@ -57,7 +57,7 @@ namespace LethalInternship.AI.AIStates
                 if (!npcController.Npc.inAnimationWithEnemy 
                     && !npcController.Npc.activatingItem)
                 {
-                    ai.GrabItemServerRpc(this.targetItem.NetworkObject);
+                    ai.GrabItemServerRpc(this.targetItem.NetworkObject, itemGiven: false);
                     this.targetItem = null;
                     ai.State = new GetCloseToPlayerState(this);
                     return;
