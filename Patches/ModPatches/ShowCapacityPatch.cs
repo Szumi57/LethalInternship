@@ -30,7 +30,7 @@ namespace LethalInternship.Patches.ModPatches
                 return;
             }
 
-            GrabbableObject grabbableObjectLocalPlayer = StartOfRound.Instance.localPlayerController.currentlyHeldObjectServer;
+            GrabbableObject? grabbableObjectLocalPlayer = StartOfRound.Instance?.localPlayerController?.currentlyHeldObjectServer;
             if (grabbableObjectLocalPlayer == null)
             {
                 capacityMeter.SetActive(false);
