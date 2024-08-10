@@ -43,7 +43,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             if (startIndex > -1)
             {
-                for (var i = startIndex; i < startIndex + 40; i++)
+                for (var i = startIndex; i < startIndex + 4; i++)
                 {
                     codes[i].opcode = OpCodes.Nop;
                     codes[i].operand = null;
@@ -57,7 +57,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern normal mode.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern in TurretMode.Firing");
             }
 
             // ----------------------------------------------------------------------
@@ -73,7 +73,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             if (startIndex > -1)
             {
-                for (var i = startIndex; i < startIndex + 40; i++)
+                for (var i = startIndex; i < startIndex + 4; i++)
                 {
                     codes[i].opcode = OpCodes.Nop;
                     codes[i].operand = null;
@@ -87,7 +87,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern berzerk mode.");
+                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.TurretPatch.Update_Transpiler use other method for shooting player/intern in TurretMode.berzerk");
             }
 
             return codes.AsEnumerable();
@@ -97,20 +97,22 @@ namespace LethalInternship.Patches.MapHazardsPatches
         /// Method injected in code, for checking intern and damage/kill them
         /// </summary>
         /// <param name="turret"></param>
-        private static void DamagePlayersInLOS(Turret turret)
+        private static PlayerControllerB? DamagePlayersInLOS(Turret turret)
         {
             PlayerControllerB player = turret.CheckForPlayersInLineOfSight(3f, false);
             if (player == null)
             {
-                return;
+                return null;
             }
 
             InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)player.playerClientId);
             if (internAI == null)
             {
-                return;
+                // Player not intern
+                return player;
             }
 
+            // intern
             if (player.health > 50)
             {
                 internAI.SyncDamageIntern(50, CauseOfDeath.Gunshots, 0, false, default);
@@ -120,6 +122,8 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 Plugin.LogDebug($"SyncKillIntern from turret for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.SyncKillIntern(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0, default);
             }
+
+            return null;
         }
     }
 }

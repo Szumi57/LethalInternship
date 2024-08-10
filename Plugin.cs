@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
-using FasterItemDropship;
 using HarmonyLib;
 using LethalInternship.Managers;
 using LethalInternship.Patches.EnemiesPatches;
@@ -12,7 +11,6 @@ using LethalInternship.Patches.ModPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
-using LethalLib.Modules;
 using System;
 using System.IO;
 using System.Linq;
@@ -168,6 +166,8 @@ namespace LethalInternship
             bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
+            bool isModAdditionalNetworkingLoaded = IsModLoaded(Const.ADDITIONALNETWORKING_GUID);
+            bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
 
             // Compatibility with other mods
             if (isModMoreEmoteLoaded)
@@ -187,6 +187,18 @@ namespace LethalInternship
             if (isModFasterItemDropshipLoaded)
             {
                 _harmony.PatchAll(typeof(FasterItemDropshipPatch));
+            }
+            if (isModAdditionalNetworkingLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("AdditionalNetworking.Patches.Inventory.PlayerControllerBPatch"), "OnStart"), 
+                               null,
+                               null, 
+                               new HarmonyMethod(typeof(AdditionalNetworkingPatch), nameof(AdditionalNetworkingPatch.Start_Transpiler)));
+            }
+            if (isModShowCapacityLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ShowCapacity.Patches.PlayerControllerBPatch"), "Update_PreFix"),
+                               new HarmonyMethod(typeof(ShowCapacityPatch), nameof(ShowCapacityPatch.Update_PreFix_Prefix)));
             }
         }
 
@@ -238,6 +250,11 @@ namespace LethalInternship
         internal static void LogInfo(string infoLog)
         {
             Logger.LogInfo(infoLog);
+        }
+
+        internal static void LogWarning(string warningLog)
+        {
+            Logger.LogWarning(warningLog);
         }
 
         internal static void LogError(string errorLog)

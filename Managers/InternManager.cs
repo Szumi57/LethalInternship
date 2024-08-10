@@ -2,6 +2,7 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
+using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -524,7 +525,8 @@ namespace LethalInternship.Managers
         {
             foreach (var internAI in AllInternAIs)
             {
-                if (!internAI.IsSpawned
+                if (internAI == null
+                    || !internAI.IsSpawned
                     || internAI.isEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
@@ -534,7 +536,7 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
-                if (internAI.HeldItem.NetworkObjectId == grabbableObject.NetworkObjectId)
+                if (internAI.HeldItem == grabbableObject)
                 {
                     return internAI;
                 }
