@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.8 [Alpha] - 2024-08-10
+### Fixed
+- Turret not damaging players. Thanks @Kimiko on Discord, Imiquel on Github, issue 21 ([#21](https://github.com/Szumi57/LethalInternship/issues/21))
+- Conflicts with AdditionalNetworking and ShowCapacity, thanks @wwww on Discord
+
 ## 0.14.7 [Alpha] - 2024-08-09
 ### Changed
 - Interns ignore bee nest and dead bodies, configurable on next update.
