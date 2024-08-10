@@ -1893,6 +1893,7 @@ namespace LethalInternship.AI
             grabbableObject.isInFactory = NpcController.Npc.isInsideFactory;
 
             NpcController.Npc.isHoldingObject = true;
+            NpcController.Npc.currentlyHeldObjectServer = grabbableObject;
             NpcController.Npc.twoHanded = grabbableObject.itemProperties.twoHanded;
             NpcController.Npc.twoHandedAnimation = grabbableObject.itemProperties.twoHandedAnimation;
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
@@ -2010,6 +2011,7 @@ namespace LethalInternship.AI
             DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
             this.HeldItem = null;
             NpcController.Npc.isHoldingObject = false;
+            NpcController.Npc.currentlyHeldObjectServer = null;
             NpcController.Npc.twoHanded = false;
             NpcController.Npc.twoHandedAnimation = false;
             NpcController.Npc.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
