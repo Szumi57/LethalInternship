@@ -103,6 +103,9 @@
     <Reference Include="ModelReplacementAPI">
       <HintPath>lib\mods\ModelReplacementAPI.dll</HintPath>
     </Reference>
+    <Reference Include="MoreCompany">
+      <HintPath>lib\mods\MoreCompany.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.Animation.Rigging">
       <HintPath>lib\Unity.Animation.Rigging.dll</HintPath>
     </Reference>

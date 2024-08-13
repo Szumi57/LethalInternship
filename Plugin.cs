@@ -174,6 +174,10 @@ namespace LethalInternship
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
             }
+            if(isModMoreCompanyLoaded)
+            {
+                _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
+            }
             if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
