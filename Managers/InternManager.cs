@@ -1,14 +1,19 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Configs;
+using LethalInternship.Enums;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using Random = System.Random;
 
 namespace LethalInternship.Managers
 {
@@ -63,7 +68,14 @@ namespace LethalInternship.Managers
         /// <summary>
         /// Maximum interns actually purchasable minus the ones already bought
         /// </summary>
-        public int NbInternsPurchasable { get { return Const.INTERN_AVAILABLE_MAX - NbInternsOwned; } }
+        public int NbInternsPurchasable
+        {
+            get
+            {
+                int val = Plugin.BoundConfig.MaxInternsAvailable.Value - NbInternsOwned;
+                return val < 0 ? 0 : val;
+            }
+        }
         public VehicleController? VehicleController;
 
         private InternAI[] AllInternAIs = null!;
@@ -71,6 +83,9 @@ namespace LethalInternship.Managers
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
         private Bounds? shipBoundsExpanded;
+
+        private List<string> listOfNames = new List<string>();
+        private int indexIterationName = 0;
 
         /// <summary>
         /// Initialize instance,
@@ -93,6 +108,7 @@ namespace LethalInternship.Managers
         public void ManagePoolOfInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
+            int maxInternsAvailable = Plugin.BoundConfig.MaxInternsAvailable.Value;
 
             if (instance.allPlayerObjects[3].gameObject == null)
             {
@@ -101,11 +117,11 @@ namespace LethalInternship.Managers
             }
 
             // Initialize back ups
-            if (AllPlayerObjectsBackUp == null || AllPlayerObjectsBackUp.Length != Const.INTERN_AVAILABLE_MAX)
+            if (AllPlayerObjectsBackUp == null || AllPlayerObjectsBackUp.Length != maxInternsAvailable)
             {
-                AllInternAIs = new InternAI[Const.INTERN_AVAILABLE_MAX];
-                AllPlayerObjectsBackUp = new GameObject[Const.INTERN_AVAILABLE_MAX];
-                AllPlayerScriptsBackUp = new PlayerControllerB[Const.INTERN_AVAILABLE_MAX];
+                AllInternAIs = new InternAI[maxInternsAvailable];
+                AllPlayerObjectsBackUp = new GameObject[maxInternsAvailable];
+                AllPlayerScriptsBackUp = new PlayerControllerB[maxInternsAvailable];
             }
 
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
@@ -122,7 +138,7 @@ namespace LethalInternship.Managers
             }
             else
             {
-                irlPlayersCount = Plugin.IrlPlayersCount - Const.INTERN_AVAILABLE_MAX < 0 ? 0 : Plugin.IrlPlayersCount - Const.INTERN_AVAILABLE_MAX;
+                irlPlayersCount = Plugin.IrlPlayersCount - maxInternsAvailable < 0 ? 0 : Plugin.IrlPlayersCount - maxInternsAvailable;
             }
 
             ResizePoolOfInterns(irlPlayersCount);
@@ -130,7 +146,7 @@ namespace LethalInternship.Managers
         }
 
         /// <summary>
-        /// Resize <c>allPlayerScripts</c>, <c>allPlayerObjects</c> by adding <see cref="Const.INTERN_AVAILABLE_MAX"><c>Const.INTERN_AVAILABLE_MAX</c></see>
+        /// Resize <c>allPlayerScripts</c>, <c>allPlayerObjects</c> by adding <see cref="Config.MaxInternsAvailable"><c>Config.MaxInternsAvailable</c></see>
         /// </summary>
         /// <param name="irlPlayersCount">Number of "real" players, 4 without morecompany, for calculating resizing</param>
         private void ResizePoolOfInterns(int irlPlayersCount)
@@ -140,7 +156,7 @@ namespace LethalInternship.Managers
             StartOfRound instance = StartOfRound.Instance;
             Plugin.LogDebug($"instance.allPlayerObjects.Length {instance.allPlayerObjects.Length} AllEntitiesCount {AllEntitiesCount}");
 
-            int irlPlayersAndInternsCount = irlPlayersCount + Const.INTERN_AVAILABLE_MAX;
+            int irlPlayersAndInternsCount = irlPlayersCount + Plugin.BoundConfig.MaxInternsAvailable.Value;
             Array.Resize(ref instance.allPlayerObjects, irlPlayersAndInternsCount);
             Array.Resize(ref instance.allPlayerScripts, irlPlayersAndInternsCount);
             Array.Resize(ref instance.gameStats.allPlayerStats, irlPlayersAndInternsCount);
@@ -152,14 +168,17 @@ namespace LethalInternship.Managers
         }
 
         /// <summary>
-        /// Populate allPlayerScripts, allPlayerObjects with new controllers, instantiated of the 3rd player, initiated and named
+        /// Populate allPlayerScripts, allPlayerObjects with new controllers, instantiated of the 4th player, initiated and named
         /// </summary>
-        /// <param name="irlPlayersCount">Number of "real" players, 4 without morecompany, for calculating parameterization</param>
+        /// <param name="irlPlayersCount">Number of "real" players, 4 base game (without morecompany), for calculating parameterization</param>
         private void PopulatePoolOfInterns(int irlPlayersCount)
         {
             Plugin.LogDebug($"Attempt to populate pool of interns. irlPlayersCount {irlPlayersCount}");
             StartOfRound instance = StartOfRound.Instance;
             GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
+            EnumOptionInternNames optionInternNames = Plugin.BoundConfig.GetOptionInternNames();
+            string[] arrayOfUserCustomNames = Plugin.BoundConfig.GetArrayOfUserCustomNames();
+            indexIterationName = 0;
 
             // Using back up if available,
             // If the size of array has been modified by morecompany for example when loading scene or the game, at some point
@@ -183,10 +202,10 @@ namespace LethalInternship.Managers
                 internController.playerClientId = (ulong)(indexPlusIrlPlayersCount);
                 internController.isPlayerDead = false;
                 internController.isPlayerControlled = false;
-                internController.transform.localScale = new Vector3(Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN, Const.SIZE_SCALE_INTERN);
-                internController.thisController.radius *= Const.SIZE_SCALE_INTERN;
+                internController.transform.localScale = new Vector3(Plugin.BoundConfig.InternSizeScale.Value, Plugin.BoundConfig.InternSizeScale.Value, Plugin.BoundConfig.InternSizeScale.Value);
+                internController.thisController.radius *= Plugin.BoundConfig.InternSizeScale.Value;
                 internController.actualClientId = internController.playerClientId;
-                internController.playerUsername = $"{Const.INTERN_NAME}{internController.playerClientId - (ulong)irlPlayersCount}";
+                internController.playerUsername = GetNameOfIntern(optionInternNames, internController.playerClientId - (ulong)irlPlayersCount, arrayOfUserCustomNames);
 
                 instance.allPlayerObjects[indexPlusIrlPlayersCount] = internObject;
                 instance.allPlayerScripts[indexPlusIrlPlayersCount] = internController;
@@ -200,6 +219,64 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogInfo("Pool of interns populated.");
+        }
+
+        private string GetNameOfIntern(EnumOptionInternNames optionInternNames, ulong internNumber, string[] arrayOfUserCustomNames)
+        {
+            switch (optionInternNames)
+            {
+                case EnumOptionInternNames.Default:
+                    return string.Format(Const.DEFAULT_INTERN_NAME, internNumber);
+
+                case EnumOptionInternNames.DefaultCustomList:
+                    return GetRandomNameFromArray(Const.DEFAULT_LIST_CUSTOM_INTERN_NAMES);
+
+                case EnumOptionInternNames.UserCustomList:
+                    return GetRandomNameFromArray(arrayOfUserCustomNames);
+
+                default:
+                    Plugin.LogWarning($"Option for intern names invalid: {optionInternNames}");
+                    return string.Format(Const.DEFAULT_INTERN_NAME, internNumber);
+            }
+        }
+
+        private string GetRandomNameFromArray(string[] originalArrayOfNames)
+        {
+            if (listOfNames.Count == 0)
+            {
+                listOfNames.AddRange(originalArrayOfNames);
+            }
+
+            if (listOfNames.Count == 0)
+            {
+                return "List of names empty !";
+            }
+
+            string name;
+            string iterationString = indexIterationName == 0 ? string.Empty : $" ({indexIterationName})";
+
+            if (listOfNames.Count == 1)
+            {
+                name = listOfNames[0] + iterationString;
+                listOfNames.AddRange(originalArrayOfNames);
+                indexIterationName++;
+                return name;
+            }
+
+            int index;
+            if (Plugin.BoundConfig.UseCustomNamesRandomly.Value)
+            {
+                Random randomInstance = new Random();
+                index = randomInstance.Next(0, listOfNames.Count - 1);
+            }
+            else
+            {
+                index = 0;
+            }
+
+            name = listOfNames[index] + iterationString;
+            listOfNames.RemoveAt(index);
+            return name;
         }
 
         #region Spawn Intern
@@ -312,7 +389,7 @@ namespace LethalInternship.Managers
             PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
             internController.isPlayerDead = false;
             internController.isPlayerControlled = true;
-            internController.health = Const.INTERN_MAX_HEALTH;
+            internController.health = Plugin.BoundConfig.InternMaxHealth.Value;
             DisableInternControllerModel(objectParent, internController, true, true);
             internController.isInsideFactory = !isOutside;
             internController.isMovementHindered = 0;
@@ -388,6 +465,12 @@ namespace LethalInternship.Managers
         /// <param name="spawnPositions">Positions of spawn for interns</param>
         public void SpawnInternsFromDropShip(Transform[] spawnPositions)
         {
+            StartCoroutine(SpawnInternsCoroutine(spawnPositions));
+        }
+
+        private IEnumerator SpawnInternsCoroutine(Transform[] spawnPositions)
+        {
+            yield return null;
             int pos = 0;
             for (int i = 0; i < NbInternsToDropShip; i++)
             {
@@ -397,6 +480,7 @@ namespace LethalInternship.Managers
                 }
                 Transform transform = spawnPositions[pos++];
                 SpawnInternServerRpc(transform.position, transform.eulerAngles.y, true);
+                yield return new WaitForSeconds(0.1f);
             }
             EndSpawnInternsFromDropShipServerRpc();
         }

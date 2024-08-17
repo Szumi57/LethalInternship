@@ -61,8 +61,8 @@ namespace LethalInternship.Managers
         /// </summary>
         private void LoadInfosInSave()
         {
-            InternManager.Instance.NbInternsOwned = Save.NbInternOwned;
-            InternManager.Instance.NbInternsToDropShip = Save.NbInternOwned;
+            InternManager.Instance.NbInternsOwned = Plugin.BoundConfig.MaxInternsAvailable.Value < Save.NbInternOwned ? Plugin.BoundConfig.MaxInternsAvailable.Value : Save.NbInternOwned;
+            InternManager.Instance.NbInternsToDropShip = InternManager.Instance.NbInternsOwned;
         }
 
         /// <summary>

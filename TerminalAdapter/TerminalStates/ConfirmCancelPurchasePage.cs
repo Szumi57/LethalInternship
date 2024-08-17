@@ -23,7 +23,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// </summary>
         public ConfirmCancelPurchasePage(TerminalState oldState, int nbOrdered) : base(oldState)
         {
-            int maxOrder = (int)Math.Floor((float)TerminalManager.Instance.GetTerminal().groupCredits / (float)Const.PRICE_INTERN);
+            int maxOrder = (int)Math.Floor((float)TerminalManager.Instance.GetTerminal().groupCredits / (float)Plugin.BoundConfig.InternPrice.Value);
             this.NbOrdered = nbOrdered < maxOrder ? nbOrdered : maxOrder;
         }
 
@@ -53,7 +53,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 TerminalManager instanceTM = TerminalManager.Instance;
 
                 // Confirm
-                int newCredits = instanceTM.GetTerminal().groupCredits - (Const.PRICE_INTERN * this.NbOrdered);
+                int newCredits = instanceTM.GetTerminal().groupCredits - (Plugin.BoundConfig.InternPrice.Value * this.NbOrdered);
                 instanceIM.AddNewCommandOfInterns(this.NbOrdered);
                 instanceTM.GetTerminal().groupCredits = newCredits;
 
@@ -86,7 +86,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 this.NbOrdered = internsAvailable;
             }
 
-            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE, textIfTooMuchOrdered, this.NbOrdered);
+            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE, 
+                                                     textIfTooMuchOrdered, 
+                                                     this.NbOrdered,
+                                                     Plugin.BoundConfig.InternPrice.Value,
+                                                     Plugin.BoundConfig.InternPrice.Value * this.NbOrdered);
 
             return terminalNode;
         }

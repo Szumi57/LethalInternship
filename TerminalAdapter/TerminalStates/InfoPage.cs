@@ -46,7 +46,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
 
             // Can buy ?
-            if (TerminalManager.Instance.GetTerminal().groupCredits < Const.PRICE_INTERN)
+            if (TerminalManager.Instance.GetTerminal().groupCredits < Plugin.BoundConfig.InternPrice.Value)
             {
                 terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.NotEnoughCredits);
                 return true;
@@ -109,7 +109,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 || instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID)
             {
                 // in space or on company building moon
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, instanceIM.NbInternsPurchasable, instanceIM.NbInternsToDropShip);
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, instanceIM.NbInternsPurchasable, Plugin.BoundConfig.InternPrice.Value, instanceIM.NbInternsToDropShip);
             }
             else
             {
@@ -122,7 +122,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 {
                     textNbInternsToDropShip = string.Format(Const.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, instanceIM.NbInternsPurchasable, textNbInternsToDropShip, nbInternsOnThisMoon);
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, instanceIM.NbInternsPurchasable, Plugin.BoundConfig.InternPrice.Value, textNbInternsToDropShip, nbInternsOnThisMoon);
             }
 
             terminalNode.displayText = textInfoPage;
