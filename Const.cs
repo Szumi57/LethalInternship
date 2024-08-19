@@ -8,6 +8,8 @@ namespace LethalInternship
     /// </summary>
     internal class Const
     {
+        public const string CSYNC_GUID = "com.sigurd.csync";
+
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
         public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
         public const string MOREEMOTES_GUID = "MoreEmotes";
@@ -23,7 +25,7 @@ namespace LethalInternship
         // Config
         public static readonly string ConfigSectionMain = "1. Internship program";
         public static readonly string ConfigSectionNames = "2. Intern names";
-        public static readonly string ConfigSectionMovements = "3. Movements";
+        public static readonly string ConfigSectionBehaviour = "3. Behaviour";
         public static readonly string ConfigSectionDebug = "4. Debug";
 
         public static readonly int DEFAULT_MAX_INTERNS_AVAILABLE = 16;
@@ -40,7 +42,7 @@ namespace LethalInternship
 
         public static readonly float DEFAULT_SIZE_SCALE_INTERN = 0.85f;
         public static readonly float MIN_SIZE_SCALE_INTERN = 0.85f;
-        public static readonly float MAX_SIZE_SCALE_INTERN = 1.5f;
+        public static readonly float MAX_SIZE_SCALE_INTERN = 1f;
 
         public static EnumOptionInternNames DEFAULT_CONFIG_ENUM_INTERN_NAMES = EnumOptionInternNames.DefaultCustomList;
         public static readonly string DEFAULT_INTERN_NAME = "Intern #{0}";
@@ -67,6 +69,8 @@ namespace LethalInternship
                                                                                          "Uriel Lucky",
                                                                                          "Zoltan Pepper"};
 
+
+
         // Interns
         public static readonly float INTERN_FOV = 90f;
         public static readonly int INTERN_ENTITIES_RANGE = 40;
@@ -85,6 +89,7 @@ namespace LethalInternship
 
         public static readonly float DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 1f;
         public static readonly float DISTANCE_CHECK_FOR_HOLES = 2.5f;
+        public static readonly float DISTANCE_ITEMS_TO_ENTRANCE = 6f;
 
         public static readonly int COMPANY_BUILDING_MOON_ID = 3;
         public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 6f;
@@ -175,36 +180,58 @@ namespace LethalInternship
 
         public static readonly string STRING_INTERNSHIP_PROGRAM_COMMAND = "internship program";
         public static readonly string STRING_BUY_COMMAND = "buy";
+        public static readonly string STRING_LAND_COMMAND = "land";
+        public static readonly string STRING_ABORT_COMMAND = "abort";
         public static readonly string STRING_CONFIRM_COMMAND = "confirm";
         public static readonly string STRING_CANCEL_COMMAND = "deny";
         public static readonly string STRING_BACK_COMMAND = "back";
+
+        public static readonly string STRING_LANDING_STATUS_ALLOWED = "+ Allowed +";
+        public static readonly string STRING_LANDING_STATUS_ABORTED = "--Aborted--";
+        public static readonly string STRING_LANDING_STATUS_ABORTED_COMPANY_MOON = " (aborted on company building moon)";
 
         public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = $">{STRING_INTERNSHIP_PROGRAM_COMMAND.ToUpper()}\nNeed some help ? Try our new workforce, ready to assist you and gain experience\n\n";
 
 
         public static readonly string TEXT_INFO_PAGE_IN_SPACE = @"Numbers of interns purchasable : {0}
-                                                                  Price : {1}
-                                                                  
-                                                                  
-                                                                  --> Interns scheduled on next moon : {2}
-                                                                  
-                                                                  Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
+Unit price : ${1}
+
+----------------------------------------
+--> Interns scheduled on next moon : {2}
+----------------------------------------
+
+Interns landing status : {3}
+
+
+Commands :
+- Type 'Land' or 'Abort' to allow interns to drop on moons
+- Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
+
         public static readonly string TEXT_INFO_PAGE_INTERN_TO_DROPSHIP = "Interns waiting to land : {0}";
         public static readonly string TEXT_INFO_PAGE_ON_MOON = @"Numbers of interns purchasable : {0}
-                                                                 Price : {1}
-                                                                 
-                                                                 {2}
-                                                                 --> Interns on this moon : {3}
-                                                                 
-                                                                 Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
+Unit price : ${1}
+
+{2}
+------------------------------
+--> Interns on this moon : {3}
+------------------------------
+
+Interns landing status : {4}
+
+
+Commands :
+ - Type 'Land' or 'Abort' to allow interns to drop on moons
+ - Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
 
 
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM = " a maximum of";
         public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns.
-                                                                       
-                                                                       Unit price : {2}, total : {3}
-                                                                       Do you confirm you purchase ?
-                                                                       (enter confirm or deny)";
+
+Unit price : ${2}, total : ${3}
+
+
+Do you confirm you purchase ?
+(enter confirm or deny)";
 
         public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
         public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";

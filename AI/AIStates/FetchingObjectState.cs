@@ -52,7 +52,7 @@ namespace LethalInternship.AI.AIStates
             Plugin.LogDebug($"{ai.NpcController.Npc.playerUsername} try to grab {this.targetItem.name}");
             float sqrMagDistanceItem = (this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude;
             // Close enough to item for grabbing, attempt to grab
-            if (sqrMagDistanceItem < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Plugin.BoundConfig.InternSizeScale.Value)
+            if (sqrMagDistanceItem < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Plugin.Config.InternSizeScale.Value)
             {
                 if (!npcController.Npc.inAnimationWithEnemy 
                     && !npcController.Npc.activatingItem)

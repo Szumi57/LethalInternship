@@ -2,7 +2,6 @@
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
-using LethalInternship.Configs;
 using LethalInternship.Managers;
 using LethalInternship.Patches.EnemiesPatches;
 using LethalInternship.Patches.GameEnginePatches;
@@ -29,6 +28,7 @@ namespace LethalInternship
     /// </summary>
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID, BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency(Const.CSYNC_GUID, BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -36,9 +36,9 @@ namespace LethalInternship
         public static AssetBundle ModAssets = null!;
 
         internal static EnemyType InternNPCPrefab = null!;
-        internal static int IrlPlayersCount = 0;
+        internal static int PluginIrlPlayersCount = 0;
 
-        internal static Config BoundConfig { get; private set; } = null!;
+        internal static new Configs.Config Config = null!;
 
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
@@ -47,7 +47,7 @@ namespace LethalInternship
         {
             Logger = base.Logger;
 
-            BoundConfig = new Config(base.Config);
+            Config = new Configs.Config(base.Config);
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
@@ -245,7 +245,7 @@ namespace LethalInternship
 
         internal static void LogDebug(string debugLog)
         {
-            if (!BoundConfig.EnableDebugLog.Value)
+            if (!Plugin.Config.EnableDebugLog.Value)
             {
                 return;
             }

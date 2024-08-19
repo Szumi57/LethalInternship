@@ -11,6 +11,7 @@ containsNsfwContent = false
 [package.dependencies]
 BepInEx-BepInExPack = "5.4.2100"
 Evaisa-LethalLib = "0.16.1"
+Sigurd-CSync = "5.0.1"
 
 [build]
 icon = "./icon.png"

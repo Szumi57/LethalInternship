@@ -1,4 +1,6 @@
 ﻿using BepInEx.Configuration;
+using CSync.Extensions;
+using CSync.Lib;
 using LethalInternship.Enums;
 using System;
 using System.Collections.Generic;
@@ -7,83 +9,102 @@ using System.Reflection;
 
 namespace LethalInternship.Configs
 {
+    // For more info on custom configs, see https://lethal.wiki/dev/intermediate/custom-configs
+    // Csync https://lethal.wiki/dev/apis/csync/usage-guide
+
     /// <summary>
     /// Config class, manage parameters editable by the player (irl)
     /// </summary>
-    public class Config
+    public class Config : SyncedConfig2<Config>
     {
-        // For more info on custom configs, see https://lethal.wiki/dev/intermediate/custom-configs
-
         // Internship program
-        public ConfigEntry<int> MaxInternsAvailable;
-        public ConfigEntry<int> InternPrice;
-        public ConfigEntry<int> InternMaxHealth;
-        public ConfigEntry<float> InternSizeScale;
-
-        // Interns names
-        public ConfigEntry<int> OptionInternNames;
-        public ConfigEntry<string> ListUserCustomNames;
-        public ConfigEntry<bool> UseCustomNamesRandomly;
-
-        // Movements
-        public ConfigEntry<bool> TeleportWhenUsingLadders;
-
+        [SyncedEntryField] public SyncedEntry<int> MaxInternsAvailable;
+        [SyncedEntryField] public SyncedEntry<int> InternPrice;
+        [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
+        [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
+                           
+        // Interns names   
+        [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
+        [SyncedEntryField] public SyncedEntry<string> ListUserCustomNames;
+        [SyncedEntryField] public SyncedEntry<bool> UseCustomNamesRandomly;
+                           
+        // Behaviour       
+        [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
+        [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
+        [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
+        [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
+        
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
         public ConfigEntry<bool> EnableStackTraceInDebugLog;
 
-        public Config(ConfigFile cfg)
+        public Config(ConfigFile cfg) : base(PluginInfo.PLUGIN_GUID)
         {
             cfg.SaveOnConfigSet = false;
 
             // Internship program
-            MaxInternsAvailable = cfg.Bind(Const.ConfigSectionMain,
+            MaxInternsAvailable = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                            "Max amount of interns purchasable",
                                            defaultValue: Const.DEFAULT_MAX_INTERNS_AVAILABLE,
                                            new ConfigDescription("Be aware of possible performance problems when more than ~16 interns spawned",
                                                                  new AcceptableValueRange<int>(Const.MIN_INTERNS_AVAILABLE, Const.MAX_INTERNS_AVAILABLE)));
 
-            InternPrice = cfg.Bind(Const.ConfigSectionMain,
+            InternPrice = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                    "Price",
                                    defaultValue: Const.DEFAULT_PRICE_INTERN,
                                    new ConfigDescription("Price for one intern",
                                                          new AcceptableValueRange<int>(Const.MIN_PRICE_INTERN, Const.MAX_PRICE_INTERN)));
 
-            InternMaxHealth = cfg.Bind(Const.ConfigSectionMain,
+            InternMaxHealth = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                        "Max health",
                                        defaultValue: Const.DEFAULT_INTERN_MAX_HEALTH,
                                        new ConfigDescription("Max health of intern",
                                                              new AcceptableValueRange<int>(Const.MIN_INTERN_MAX_HEALTH, Const.MAX_INTERN_MAX_HEALTH)));
 
-            InternSizeScale = cfg.Bind(Const.ConfigSectionMain,
+            InternSizeScale = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                        "Size multiplier of intern",
                                        defaultValue: Const.DEFAULT_SIZE_SCALE_INTERN,
-                                       new ConfigDescription("Shrink (less than 1) or increase (more than 1) size of interns",
+                                       new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
 
             // Names
-            OptionInternNames = cfg.Bind(Const.ConfigSectionNames,
+            OptionInternNames = cfg.BindSyncedEntry(Const.ConfigSectionNames,
                                          "Option for custom names",
                                          defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_NAMES,
                                          new ConfigDescription("0: default names \"Intern #(number)\" | 1: default custom names list used by the mod | 2: user defined custom names list",
                                                                new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionInternNames)).Cast<int>().Min(),
                                                                                              Enum.GetValues(typeof(EnumOptionInternNames)).Cast<int>().Max())));
 
-            ListUserCustomNames = cfg.Bind(Const.ConfigSectionNames,
-                                       "List of user custom names for interns",
-                                       defaultValue: string.Empty,
-                                       "Write your own list of names like : name surname, name surname, etc... (needs list of user custom names to be chosen");
+            ListUserCustomNames = cfg.BindSyncedEntry(Const.ConfigSectionNames,
+                                       "List of user custom names for interns, to use with option 2 : user defined custom names list",
+                                       defaultVal: String.Join(", ", Const.DEFAULT_LIST_CUSTOM_INTERN_NAMES),
+                                       "Write your own list of names like : name surname, name surname, etc... (needs option 2 : user defined custom names list)");
 
-            UseCustomNamesRandomly = cfg.Bind(Const.ConfigSectionNames,
+            UseCustomNamesRandomly = cfg.BindSyncedEntry(Const.ConfigSectionNames,
                                               "Randomness of custom names",
-                                              defaultValue: true,
+                                              defaultVal: true,
                                               "Use the list of custom names randomly ?");
 
-            // Movements
-            TeleportWhenUsingLadders = cfg.Bind(Const.ConfigSectionMovements,
+            // Behaviour
+            TeleportWhenUsingLadders = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
                                                "Teleport when using ladders",
-                                               defaultValue: false,
-                                               "Should the intern just teleport and bypass any animation when using ladders ?");
+                                               defaultVal: false,
+                                               "Should the intern just teleport and bypass any animations when using ladders ?");
+
+            GrabItemsNearEntrances = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                               "Grab items near entrances",
+                                               defaultVal: true,
+                                               "Should the intern grab the items near main entrance and fire exits ?");
+
+            GrabBeesNest = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                    "Grab bees nests",
+                                    defaultVal: false,
+                                    "Should the intern try to grab bees nests ?");
+
+            GrabDeadBodies = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                      "Grab dead bodies",
+                                      defaultVal: false,
+                                      "Should the intern try to grab dead bodies ?");
 
             // Debug
             EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
@@ -97,6 +118,8 @@ namespace LethalInternship.Configs
 
             ClearUnusedEntries(cfg);
             cfg.SaveOnConfigSet = true;
+
+            ConfigManager.Register(this);
         }
 
         public EnumOptionInternNames GetOptionInternNames()
@@ -117,7 +140,13 @@ namespace LethalInternship.Configs
                 return new string[] { };
             }
 
-            return ListUserCustomNames.Value.Split(new[] { ',', ';' });
+            string[] arrayOfNames = ListUserCustomNames.Value.Split(new[] { ',', ';' });
+            for (int i = 0; i < arrayOfNames.Length; i++)
+            {
+                arrayOfNames[i] = arrayOfNames[i].Trim();
+            }
+
+            return arrayOfNames;
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)

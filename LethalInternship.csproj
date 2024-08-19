@@ -91,6 +91,9 @@
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>lib\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="com.sigurd.csync">
+      <HintPath>lib\mods\com.sigurd.csync.dll</HintPath>
+    </Reference>
     <Reference Include="FasterItemDropship">
       <HintPath>lib\mods\FasterItemDropship.dll</HintPath>
     </Reference>
