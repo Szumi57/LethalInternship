@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.15.0 [Alpha] - 2024-08-19
+### Added
+- Configurable parameters for the internship program. You can now configure :
+	- The maximum of interns available to buy, from 1 to 32, default to 16
+	- The price of one intern, from 0 to 200, default to 19
+	- The maximum health of an intern, from 1 to 200, default to 51
+	- The size of an intern, from 85% to 100% of player size, default to 85%
+	- The names of the interns, choose between de default names "Intern #(number)", a list of random names of my own (mostly reddit actually),
+	or your own list of names.	
+	</br></br>
+    You can configure the behaviour of an intern too :
+	- Should the intern just teleport when using ladders ? default to false
+	- Should the intern grab items near entrances (main and fire exits) ? default to true
+	- Should the intern grab bees nets ? default to false
+	- Should the intern grab dead bodies ? default to false
+	</br></br>
+	All of those configs are synced with the host, that means that whatever config you have, if you are a client you will use the host's config.
+	Not for the log debug stuff though, that's still client side.
+	</br></br>
+
+- Added a landing option for intern, should the dropship land intern on moons or keep them for later ?
+### Changed
+- Raised default hp to 51, thanks @Ogryn named Finger, on discord for the suggestion
+- Spawning from the dropship should be smoother
+### Fixed
+- SpringManAI patch not working (v60 compatibility)
+- Forest giant not targeting players, was actually a conflit with more company, thanks @jakeisloud discord, @doubletime32 on Github issue 17 ([#17](https://github.com/Szumi57/LethalInternship/issues/17))
+
 ## 0.14.8 [Alpha] - 2024-08-10
 ### Fixed
 - Turret not damaging players. Thanks @Kimiko on Discord, Imiquel on Github, issue 21 ([#21](https://github.com/Szumi57/LethalInternship/issues/21))
