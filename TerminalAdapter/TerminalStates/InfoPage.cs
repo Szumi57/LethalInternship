@@ -40,13 +40,25 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
 
             // firstWord Buy
-            if (!terminalParser.IsMatchWord(firstWord, Const.STRING_BUY_COMMAND))
+            if (terminalParser.IsMatchWord(firstWord, Const.STRING_BUY_COMMAND))
             {
-                return false;
+                return BuyCommandSetNextPage(words);
             }
 
+            // firstWord landing status
+            if (terminalParser.IsMatchWord(firstWord, Const.STRING_LAND_COMMAND)
+                || terminalParser.IsMatchWord(firstWord, Const.STRING_ABORT_COMMAND))
+            {
+                return LandingStatusCommand(firstWord);
+            }
+
+            return false;
+        }
+
+        private bool BuyCommandSetNextPage(string[] words)
+        {
             // Can buy ?
-            if (TerminalManager.Instance.GetTerminal().groupCredits < Const.PRICE_INTERN)
+            if (TerminalManager.Instance.GetTerminal().groupCredits < Plugin.Config.InternPrice.Value)
             {
                 terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.NotEnoughCredits);
                 return true;
@@ -88,12 +100,32 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             return true;
         }
 
+        private bool LandingStatusCommand(string command)
+        {
+            TerminalManager instanceTM = TerminalManager.Instance;
+            InternManager instanceIM = InternManager.Instance;
+
+            if (terminalParser.IsMatchWord(command, Const.STRING_LAND_COMMAND))
+            {
+                instanceIM.LandingStatusAllowed = true;
+            }
+            else if (terminalParser.IsMatchWord(command, Const.STRING_ABORT_COMMAND))
+            {
+                instanceIM.LandingStatusAllowed = false;
+            }
+
+            instanceTM.SyncLandingStatusServerRpc(instanceIM.LandingStatusAllowed);
+
+            // stay on info page
+            return true;
+        }
+
         /// <summary>
         /// <inheritdoc cref="TerminalState.DisplayNode"/>
         /// </summary>
         public override TerminalNode? DisplayNode()
         {
-            StartOfRound instanceSOR = StartOfRound.Instance; 
+            StartOfRound instanceSOR = StartOfRound.Instance;
             InternManager instanceIM = InternManager.Instance;
 
             if (!dictTerminalNodeByState.TryGetValue(this.GetTerminalState(), out TerminalNode terminalNode))
@@ -103,13 +135,26 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
             terminalNode.clearPreviousText = true;
 
+            // Landing status
+            string landingStatus = instanceIM.LandingStatusAllowed ? Const.STRING_LANDING_STATUS_ALLOWED : Const.STRING_LANDING_STATUS_ABORTED;
+            bool isCurrentMoonCompanyBuilding = instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID;
+            if (isCurrentMoonCompanyBuilding)
+            {
+                landingStatus += Const.STRING_LANDING_STATUS_ABORTED_COMPANY_MOON;
+            }
+
             string textInfoPage;
-            if (instanceSOR.inShipPhase 
+
+            if (instanceSOR.inShipPhase
                 || instanceSOR.shipIsLeaving
-                || instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID)
+                || isCurrentMoonCompanyBuilding)
             {
                 // in space or on company building moon
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, instanceIM.NbInternsPurchasable, instanceIM.NbInternsToDropShip);
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, 
+                                             instanceIM.NbInternsPurchasable, 
+                                             Plugin.Config.InternPrice.Value, 
+                                             instanceIM.NbInternsToDropShip,
+                                             landingStatus);
             }
             else
             {
@@ -117,12 +162,17 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 string textNbInternsToDropShip = string.Empty;
                 int nbInternsToDropShip = instanceIM.NbInternsToDropShip;
                 int nbInternsOnThisMoon = instanceIM.NbInternsOwned - nbInternsToDropShip;
-                if (nbInternsToDropShip > 0 
+                if (nbInternsToDropShip > 0
                     && !instanceSOR.shipIsLeaving)
                 {
                     textNbInternsToDropShip = string.Format(Const.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, instanceIM.NbInternsPurchasable, textNbInternsToDropShip, nbInternsOnThisMoon);
+                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, 
+                                             instanceIM.NbInternsPurchasable, 
+                                             Plugin.Config.InternPrice.Value, 
+                                             textNbInternsToDropShip, 
+                                             nbInternsOnThisMoon,
+                                             landingStatus);
             }
 
             terminalNode.displayText = textInfoPage;

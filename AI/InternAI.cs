@@ -46,11 +46,14 @@ namespace LethalInternship.AI
         /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
         /// </remarks>
         public AIState State { get; set; } = null!;
-        public string InternId = "Not initialized";
         /// <summary>
         /// Pilot class of the body <c>PlayerControllerB</c> of the intern.
         /// </summary>
         public NpcController NpcController = null!;
+
+        public string InternId = "Not initialized";
+        public bool AlreadyNamed = false;
+        public int MaxHealth = 100;
 
         /// <summary>
         /// Currently held item by intern
@@ -86,6 +89,9 @@ namespace LethalInternship.AI
                 enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
             }
             currentBehaviourStateIndex = -1;
+
+            // Max health
+            MaxHealth = Plugin.Config.InternMaxHealth.Value;
         }
 
         /// <summary>
@@ -521,6 +527,12 @@ namespace LethalInternship.AI
         public bool IsClientOwnerOfIntern()
         {
             return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public int MaxHealthPercent(int percentage)
+        {
+            int healthPercent = (int)(((double)percentage / (double)100) * (double)MaxHealth);
+            return healthPercent < 1 ? 1 : healthPercent;
         }
 
         /// <summary>
@@ -1106,6 +1118,14 @@ namespace LethalInternship.AI
                 return false;
             }
 
+            // Intern wants to use ladder
+            if (Plugin.Config.TeleportWhenUsingLadders.Value)
+            {
+                NpcController.Npc.transform.position = this.transform.position;
+                return true;
+            }
+
+            // Try to use ladder
             if (NpcController.CanUseLadder(ladder))
             {
                 InteractTriggerPatch.Interact_ReversePatch(ladder, NpcController.Npc.thisPlayerBody);
@@ -1166,11 +1186,13 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Black listed ? 
                 if (IsGrabbableObjectBlackListed(gameObject))
                 {
                     continue;
                 }
-                
+
+                // Get grabbable object infos
                 GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
                 if (grabbableObject == null)
                 {
@@ -1234,6 +1256,15 @@ namespace LethalInternship.AI
                 return false;
             }
 
+            // Item just dropped, should wait a bit before grab it again
+            if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
+            {
+                if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
+                {
+                    return false;
+                }
+            }
+
             // Item dropped to close the the ship
             if ((grabbableObject.transform.position - InternManager.Instance.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
                     < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
@@ -1241,12 +1272,15 @@ namespace LethalInternship.AI
                 return false;
             }
 
-            // Item just dropped, should wait a bit before grab it again
-            if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
+            // Is item too close to entrance (with config option enabled)
+            if (!Plugin.Config.GrabItemsNearEntrances.Value)
             {
-                if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
+                for (int j = 0; j < entrancesTeleportArray.Length; j++)
                 {
-                    return false;
+                    if ((grabbableObject.transform.position - entrancesTeleportArray[j].entrancePoint.position).sqrMagnitude < Const.DISTANCE_ITEMS_TO_ENTRANCE * Const.DISTANCE_ITEMS_TO_ENTRANCE)
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -1283,13 +1317,15 @@ namespace LethalInternship.AI
         private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
         {
             // Bee nest
-            if (gameObjectToEvaluate.name.Contains("RedLocustHive"))
+            if (!Plugin.Config.GrabBeesNest.Value
+                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
             {
                 return true;
             }
 
             // Dead bodies
-            if (gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
+            if (!Plugin.Config.GrabDeadBodies.Value
+                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
                 && gameObjectToEvaluate.tag == "PhysicsProp"
                 && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
             {
@@ -2078,7 +2114,7 @@ namespace LethalInternship.AI
             }
 
             NpcController.Npc.movementAudio.PlayOneShot(StartOfRound.Instance.hitPlayerSFX);
-            if (NpcController.Npc.health < 6)
+            if (NpcController.Npc.health < MaxHealthPercent(6))
             {
                 NpcController.Npc.DropBlood(hitDirection, true, false);
                 NpcController.Npc.bodyBloodDecals[0].SetActive(true);
@@ -2188,13 +2224,14 @@ namespace LethalInternship.AI
 
             // Apply damage, if not killed, set the minimum health to 5
             if (NpcController.Npc.health - damageNumber <= 0
-                && !NpcController.Npc.criticallyInjured && damageNumber < 50)
+                && !NpcController.Npc.criticallyInjured
+                && damageNumber < MaxHealthPercent(50))
             {
-                NpcController.Npc.health = 5;
+                NpcController.Npc.health = MaxHealthPercent(5);
             }
             else
             {
-                NpcController.Npc.health = Mathf.Clamp(NpcController.Npc.health - damageNumber, 0, 100);
+                NpcController.Npc.health = Mathf.Clamp(NpcController.Npc.health - damageNumber, 0, MaxHealth);
             }
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
 
@@ -2212,7 +2249,7 @@ namespace LethalInternship.AI
             else
             {
                 // Critically injured
-                if (NpcController.Npc.health < 10
+                if (NpcController.Npc.health < MaxHealthPercent(10)
                     && !NpcController.Npc.criticallyInjured)
                 {
                     // Client side only, since we are already in an rpc send to all clients
@@ -2221,7 +2258,7 @@ namespace LethalInternship.AI
                 else
                 {
                     // Limit sprinting when close to death
-                    if (damageNumber >= 10)
+                    if (damageNumber >= MaxHealthPercent(10))
                     {
                         NpcController.Npc.sprintMeter = Mathf.Clamp(NpcController.Npc.sprintMeter + (float)damageNumber / 125f, 0f, 1f);
                     }

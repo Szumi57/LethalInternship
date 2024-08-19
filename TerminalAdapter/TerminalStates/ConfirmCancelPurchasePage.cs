@@ -23,8 +23,16 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// </summary>
         public ConfirmCancelPurchasePage(TerminalState oldState, int nbOrdered) : base(oldState)
         {
-            int maxOrder = (int)Math.Floor((float)TerminalManager.Instance.GetTerminal().groupCredits / (float)Const.PRICE_INTERN);
-            this.NbOrdered = nbOrdered < maxOrder ? nbOrdered : maxOrder;
+            int internPrice = Plugin.Config.InternPrice.Value;
+            if (internPrice <= 0)
+            {
+                this.NbOrdered = nbOrdered;
+            }
+            else
+            {
+                int maxOrder = (int)Math.Floor((float)TerminalManager.Instance.GetTerminal().groupCredits / (float)internPrice);
+                this.NbOrdered = nbOrdered < maxOrder ? nbOrdered : maxOrder;
+            }
         }
 
         /// <summary>
@@ -53,7 +61,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 TerminalManager instanceTM = TerminalManager.Instance;
 
                 // Confirm
-                int newCredits = instanceTM.GetTerminal().groupCredits - (Const.PRICE_INTERN * this.NbOrdered);
+                int newCredits = instanceTM.GetTerminal().groupCredits - (Plugin.Config.InternPrice.Value * this.NbOrdered);
                 instanceIM.AddNewCommandOfInterns(this.NbOrdered);
                 instanceTM.GetTerminal().groupCredits = newCredits;
 
@@ -86,7 +94,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 this.NbOrdered = internsAvailable;
             }
 
-            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE, textIfTooMuchOrdered, this.NbOrdered);
+            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE,
+                                                     textIfTooMuchOrdered,
+                                                     this.NbOrdered,
+                                                     Plugin.Config.InternPrice.Value,
+                                                     Plugin.Config.InternPrice.Value * this.NbOrdered);
 
             return terminalNode;
         }
