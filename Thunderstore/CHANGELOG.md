@@ -1,7 +1,12 @@
 # Changelog
 
+## 0.15.1 [Alpha] - 2024-08-20
+### Fixed
+- Fix softlock at end of game with a client (not host), thanks @Instaplayer on Discord
+
 ## 0.15.0 [Alpha] - 2024-08-19
 ### Added
+- Added a landing option for intern, should the dropship land intern on moons or keep them for later ? Type 'land' or 'abort' to change the option.
 - Configurable parameters for the internship program. You can now configure :
 	- The maximum of interns available to buy, from 1 to 32, default to 16
 	- The price of one intern, from 0 to 200, default to 19
@@ -18,15 +23,12 @@
 	</br></br>
 	All of those configs are synced with the host, that means that whatever config you have, if you are a client you will use the host's config.
 	Not for the log debug stuff though, that's still client side.
-	</br></br>
-
-- Added a landing option for intern, should the dropship land intern on moons or keep them for later ?
 ### Changed
 - Raised default hp to 51, thanks @Ogryn named Finger, on discord for the suggestion
 - Spawning from the dropship should be smoother
 ### Fixed
 - SpringManAI patch not working (v60 compatibility)
-- Forest giant not targeting players, was actually a conflit with more company, thanks @jakeisloud discord, @doubletime32 on Github issue 17 ([#17](https://github.com/Szumi57/LethalInternship/issues/17))
+- Forest giant not targeting players, was actually a conflict with more company, thanks @jakeisloud discord, @doubletime32 on Github issue 17 ([#17](https://github.com/Szumi57/LethalInternship/issues/17))
 
 ## 0.14.8 [Alpha] - 2024-08-10
 ### Fixed
