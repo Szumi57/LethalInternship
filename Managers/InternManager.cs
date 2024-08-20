@@ -153,7 +153,9 @@ namespace LethalInternship.Managers
             }
             int irlPlayersCount = Plugin.PluginIrlPlayersCount;
             int irlPlayersAndInternsCount = irlPlayersCount + maxInternsAvailable;
-            if (instance.allPlayerScripts.Length == irlPlayersAndInternsCount)
+            AllEntitiesCount = irlPlayersAndInternsCount;
+
+            if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
                 Plugin.LogInfo("Pool of interns ok. The arrays have not been resize");
@@ -178,8 +180,6 @@ namespace LethalInternship.Managers
             Array.Resize(ref instance.gameStats.allPlayerStats, irlPlayersAndInternsCount);
             Array.Resize(ref instance.playerSpawnPositions, irlPlayersAndInternsCount);
             Plugin.LogDebug($"Resized arrays from {previousSize} to {irlPlayersAndInternsCount}");
-
-            AllEntitiesCount = irlPlayersAndInternsCount;
         }
 
         /// <summary>
