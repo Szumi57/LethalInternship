@@ -12,6 +12,9 @@ namespace LethalInternship.Managers
     {
         public static TerminalManager Instance { get; private set; } = null!;
 
+        public string StringIntershipProgram = null!;
+        public string CommandIntershipProgram = null!;
+
         private Terminal Terminal = null!;
         private TerminalParser terminalParser = null!;
         private bool helpTextAlreadyAdded;
@@ -19,6 +22,8 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
+            this.CommandIntershipProgram = Plugin.Config.TitleInHelpMenu.Value.ToLower();
+            this.StringIntershipProgram = Plugin.Config.GetTitleInternshipProgram();
         }
 
         /// <summary>
@@ -60,7 +65,7 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            helpTerminalNode.displayText = helpTerminalNode.displayText.Insert(indexOther, Const.STRING_INTERNSHIP_PROGRAM_HELP);
+            helpTerminalNode.displayText = helpTerminalNode.displayText.Insert(indexOther, StringIntershipProgram);
             helpTextAlreadyAdded = true;
         }
 
@@ -91,6 +96,8 @@ namespace LethalInternship.Managers
             }
         }
 
+        #region Sync UpdatePurchaseAndCredits
+
         /// <summary>
         /// Server side, udpate to the client the group credits and the interns ordered after purchase
         /// </summary>
@@ -100,7 +107,6 @@ namespace LethalInternship.Managers
         [ServerRpc(RequireOwnership = false)]
         public void UpdatePurchaseAndCreditsServerRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
         {
-            Plugin.LogInfo($"Client send to server to sync credits to ${newCredits}, calling ClientRpc...");
             UpdatePurchaseAndCreditsClientRpc(nbInternsOwned, nbInternToDropShip, newCredits);
         }
 
@@ -113,7 +119,6 @@ namespace LethalInternship.Managers
         [ClientRpc]
         private void UpdatePurchaseAndCreditsClientRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
         {
-            Plugin.LogInfo($"Server send to clients to sync credits to ${newCredits}, client execute...");
             UpdatePurchaseAndCredits(nbInternsOwned, nbInternToDropShip, newCredits);
         }
 
@@ -128,5 +133,24 @@ namespace LethalInternship.Managers
             InternManager.Instance.UpdateInternsOrdered(nbInternsOwned, nbInternToDropShip);
             GetTerminal().groupCredits = newCredits;
         }
+
+        #endregion
+
+        #region Sync landing status
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncLandingStatusServerRpc(bool landingAllowed)
+        {
+            SyncLandingStatusClientRpc(landingAllowed);
+        }
+
+        [ClientRpc]
+        private void SyncLandingStatusClientRpc(bool landingAllowed)
+        {
+            Plugin.LogInfo($"Client: sync landing status to allowed : {landingAllowed}, client execute...");
+            InternManager.Instance.LandingStatusAllowed = landingAllowed;
+        }
+
+        #endregion
     }
 }

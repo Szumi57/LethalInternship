@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.15.2 [Alpha] - 2024-08-21
+### Added
+- Added config for internship program title in help menu, be careful, the title will become the command to type in the terminal to access the internship program
+### Changed
+- Some strings in the terminal, suggestion from @Ryyye on GitHub
+### Fixed
+- Fix doors not working, looked like a v62 compil problem with the mod, thanks @jakeisloud on Discord, @Ryyye on GitHub, issue 24 ([#24](https://github.com/Szumi57/LethalInternship/issues/24))
+
+## 0.15.1 [Alpha] - 2024-08-20
+### Fixed
+- Fix softlock at end of game with a client (not host), thanks @Instaplayer on Discord
+
+## 0.15.0 [Alpha] - 2024-08-19
+### Added
+- Added a landing option for intern, should the dropship land intern on moons or keep them for later ? Type 'land' or 'abort' to change the option.
+- Configurable parameters for the internship program. You can now configure :
+	- The maximum of interns available to buy, from 1 to 32, default to 16
+	- The price of one intern, from 0 to 200, default to 19
+	- The maximum health of an intern, from 1 to 200, default to 51
+	- The size of an intern, from 85% to 100% of player size, default to 85%
+	- The names of the interns, choose between de default names "Intern #(number)", a list of random names of my own (mostly reddit actually),
+	or your own list of names.	
+	</br></br>
+    You can configure the behaviour of an intern too :
+	- Should the intern just teleport when using ladders ? default to false
+	- Should the intern grab items near entrances (main and fire exits) ? default to true
+	- Should the intern grab bees nets ? default to false
+	- Should the intern grab dead bodies ? default to false
+	</br></br>
+	All of those configs are synced with the host, that means that whatever config you have, if you are a client you will use the host's config.
+	Not for the log debug stuff though, that's still client side.
+### Changed
+- Raised default hp to 51, thanks @Ogryn named Finger, on discord for the suggestion
+- Spawning from the dropship should be smoother
+### Fixed
+- SpringManAI patch not working (v60 compatibility)
+- Forest giant not targeting players, was actually a conflict with more company, thanks @jakeisloud discord, @doubletime32 on Github issue 17 ([#17](https://github.com/Szumi57/LethalInternship/issues/17))
+
 ## 0.14.8 [Alpha] - 2024-08-10
 ### Fixed
 - Turret not damaging players. Thanks @Kimiko on Discord, Imiquel on Github, issue 21 ([#21](https://github.com/Szumi57/LethalInternship/issues/21))

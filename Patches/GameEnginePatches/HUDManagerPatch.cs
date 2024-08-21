@@ -76,7 +76,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             Array.Resize(ref statsUIElements.playerStates, allEntitiesCount);
             Array.Resize(ref statsUIElements.playerNotesText, allEntitiesCount);
 
-            for(int i = InternManager.Instance.IndexBeginOfInterns; i < allEntitiesCount; i++)
+            for (int i = InternManager.Instance.IndexBeginOfInterns; i < allEntitiesCount; i++)
             {
                 GameObject newGameObjectParent = Object.Instantiate<GameObject>(gameObjectParent);
                 GameObject gameObjectPlayerName = newGameObjectParent.transform.Find("PlayerName1").gameObject;

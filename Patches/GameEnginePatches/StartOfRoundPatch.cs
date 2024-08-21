@@ -327,7 +327,12 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPostfix]
         static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance)
         {
-            SaveManager.Instance.SyncNbInternsOwnedServerRpc(__instance.NetworkManager.LocalClientId);
+            // Sync save file
+            if (!__instance.IsServer && !__instance.IsHost)
+            {
+                ulong clientId = __instance.NetworkManager.LocalClientId;
+                SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
+            }
         }
     }
 
