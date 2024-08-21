@@ -27,7 +27,7 @@ namespace LethalInternship.Managers
             {
                 FetchSaveFile();
                 LoadInfosInSave();
-                Plugin.LogDebug($"Init NbInternsOwned to {InternManager.Instance.NbInternsOwned}.");
+                Plugin.LogDebug($"Init NbInternsOwned to {InternManager.Instance.NbInternsOwned}. Landing status allowed : {InternManager.Instance.LandingStatusAllowed}");
             }
         }
 
@@ -54,6 +54,7 @@ namespace LethalInternship.Managers
         private void SaveInfosInSave()
         {
             Save.NbInternOwned = InternManager.Instance.NbInternsOwned;
+            Save.LandingStatusAborted = !InternManager.Instance.LandingStatusAllowed;
         }
 
         /// <summary>
@@ -61,8 +62,10 @@ namespace LethalInternship.Managers
         /// </summary>
         private void LoadInfosInSave()
         {
-            InternManager.Instance.NbInternsOwned = Save.NbInternOwned;
-            InternManager.Instance.NbInternsToDropShip = Save.NbInternOwned;
+            int maxInternsAvailable = Plugin.Config.MaxInternsAvailable.Value;
+            InternManager.Instance.NbInternsOwned = maxInternsAvailable < Save.NbInternOwned ? maxInternsAvailable : Save.NbInternOwned;
+            InternManager.Instance.NbInternsToDropShip = InternManager.Instance.NbInternsOwned;
+            InternManager.Instance.LandingStatusAllowed = !Save.LandingStatusAborted;
         }
 
         /// <summary>
@@ -92,6 +95,8 @@ namespace LethalInternship.Managers
             }
         }
 
+        #region Sync loaded save file
+
         /// <summary>
         /// Send to the specific client, the data load by the server/host, so the client can initialize its managers
         /// </summary>
@@ -100,14 +105,18 @@ namespace LethalInternship.Managers
         /// </remarks>
         /// <param name="clientId">Client id of caller</param>
         [ServerRpc(RequireOwnership = false)]
-        public void SyncNbInternsOwnedServerRpc(ulong clientId)
+        public void SyncLoadedSaveInfosServerRpc(ulong clientId)
         {
+            Plugin.LogDebug($"Client {clientId} ask server/host {NetworkManager.LocalClientId} to SyncLoadedSaveInfos");
             ClientRpcParams.Send = new ClientRpcSendParams()
             {
                 TargetClientIds = new ulong[] { clientId }
             };
 
-            SyncNbInternsOwnedClientRpc(InternManager.Instance.NbInternsOwned, InternManager.Instance.NbInternsToDropShip, ClientRpcParams);
+            SyncLoadedSaveInfosClientRpc(InternManager.Instance.NbInternsOwned, 
+                                         InternManager.Instance.NbInternsToDropShip, 
+                                         InternManager.Instance.LandingStatusAllowed,
+                                         ClientRpcParams);
         }
 
         /// <summary>
@@ -117,16 +126,22 @@ namespace LethalInternship.Managers
         /// <param name="NbInternsToDropShip"></param>
         /// <param name="clientRpcParams"></param>
         [ClientRpc]
-        private void SyncNbInternsOwnedClientRpc(int nbInternsOwned, int NbInternsToDropShip, ClientRpcParams clientRpcParams = default)
+        private void SyncLoadedSaveInfosClientRpc(int nbInternsOwned, 
+                                                 int NbInternsToDropShip,
+                                                 bool landingAllowed,
+                                                 ClientRpcParams clientRpcParams = default)
         {
             if (IsOwner)
             {
                 return;
             }
 
-            Plugin.LogInfo($"Client: sync interns alive and ready to {nbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip} client execute...");
+            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync interns alive and ready to {nbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}, landingAllowed {landingAllowed}, client execute...");
             InternManager.Instance.NbInternsOwned = nbInternsOwned;
             InternManager.Instance.NbInternsToDropShip = NbInternsToDropShip;
+            InternManager.Instance.LandingStatusAllowed = landingAllowed;
         }
+
+        #endregion
     }
 }

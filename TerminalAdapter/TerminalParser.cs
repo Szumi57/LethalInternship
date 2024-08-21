@@ -11,6 +11,7 @@ namespace LethalInternship.TerminalAdapter
     internal class TerminalParser
     {
         public TerminalState TerminalState = null!;
+        
 
         /// <summary>
         /// Constructor, set the state/page to the default <c>WaitForMainCommandPage</c>

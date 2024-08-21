@@ -41,7 +41,7 @@ namespace LethalInternship.Managers
 
             SaveManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("SaveManager");
             SaveManagerPrefab.AddComponent<SaveManager>();
-            
+
             TerminalManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("TerminalManager");
             TerminalManagerPrefab.AddComponent<TerminalManager>();
         }

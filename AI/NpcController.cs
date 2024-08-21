@@ -1240,13 +1240,13 @@ namespace LethalInternship.AI
                     {
                         this.limpMultiplier -= Time.deltaTime / 1.8f;
                     }
-                    if (Npc.health < 20)
+                    if (Npc.health < InternAIController.MaxHealthPercent(20))
                     {
                         if (Npc.healthRegenerateTimer <= 0f)
                         {
                             Npc.healthRegenerateTimer = 1f;
                             Npc.health++;
-                            if (Npc.health >= 20)
+                            if (Npc.health >= InternAIController.MaxHealthPercent(20))
                             {
                                 InternAIController.SyncMakeCriticallyInjured(false);
                             }
