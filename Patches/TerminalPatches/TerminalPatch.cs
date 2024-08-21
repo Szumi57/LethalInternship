@@ -36,7 +36,7 @@ namespace LethalInternship.Patches.TerminalPatches
                 && __result != __instance.terminalNodes.specialNodes[10] // ParserError1 (TerminalNode)
                 && __result != __instance.terminalNodes.specialNodes[11] // ParserError2 (TerminalNode)
                 && __result != __instance.terminalNodes.specialNodes[12] // ParserError3 (TerminalNode)
-                && command != Const.STRING_INTERNSHIP_PROGRAM_COMMAND) 
+                && command != Plugin.Config.GetTitleInternshipProgram()) 
             {
                 // Command valid parsed by base game
                 TerminalManager.Instance.ResetTerminalParser();

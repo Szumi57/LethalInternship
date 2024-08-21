@@ -46,7 +46,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return false;
             }
 
-            if (terminalParser.IsMatchWord(firstWord, Const.STRING_INTERNSHIP_PROGRAM_COMMAND)
+            TerminalManager instanceTM = TerminalManager.Instance;
+
+            if (terminalParser.IsMatchWord(firstWord, instanceTM.CommandIntershipProgram)
                 || terminalParser.IsMatchWord(firstWord, Const.STRING_CANCEL_COMMAND)
                 || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
             {
@@ -58,7 +60,6 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             if (terminalParser.IsMatchWord(firstWord, Const.STRING_CONFIRM_COMMAND))
             {
                 InternManager instanceIM = InternManager.Instance;
-                TerminalManager instanceTM = TerminalManager.Instance;
 
                 // Confirm
                 int newCredits = instanceTM.GetTerminal().groupCredits - (Plugin.Config.InternPrice.Value * this.NbOrdered);
@@ -95,9 +96,8 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
 
             terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE,
-                                                     textIfTooMuchOrdered,
                                                      this.NbOrdered,
-                                                     Plugin.Config.InternPrice.Value,
+                                                     textIfTooMuchOrdered,
                                                      Plugin.Config.InternPrice.Value * this.NbOrdered);
 
             return terminalNode;

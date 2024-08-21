@@ -32,7 +32,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return false;
             }
 
-            if (terminalParser.IsMatchWord(firstWord, Const.STRING_INTERNSHIP_PROGRAM_COMMAND)
+            if (terminalParser.IsMatchWord(firstWord, TerminalManager.Instance.CommandIntershipProgram)
                || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
             {
                 // stay on info page

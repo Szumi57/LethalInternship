@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Managers;
 
 namespace LethalInternship.TerminalAdapter.TerminalStates
 {
@@ -30,7 +31,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         {
             string firstWord = words[0];
             if (string.IsNullOrWhiteSpace(firstWord)
-                || !terminalParser.IsMatchWord(firstWord, Const.STRING_INTERNSHIP_PROGRAM_COMMAND))
+                || !terminalParser.IsMatchWord(firstWord, TerminalManager.Instance.CommandIntershipProgram))
             {
                 return false;
             }
