@@ -12,6 +12,9 @@ namespace LethalInternship.Managers
     {
         public static TerminalManager Instance { get; private set; } = null!;
 
+        public string StringIntershipProgram = null!;
+        public string CommandIntershipProgram = null!;
+
         private Terminal Terminal = null!;
         private TerminalParser terminalParser = null!;
         private bool helpTextAlreadyAdded;
@@ -19,6 +22,8 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
+            this.CommandIntershipProgram = Plugin.Config.TitleInHelpMenu.Value.ToLower();
+            this.StringIntershipProgram = Plugin.Config.GetTitleInternshipProgram();
         }
 
         /// <summary>
@@ -60,7 +65,7 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            helpTerminalNode.displayText = helpTerminalNode.displayText.Insert(indexOther, Const.STRING_INTERNSHIP_PROGRAM_HELP);
+            helpTerminalNode.displayText = helpTerminalNode.displayText.Insert(indexOther, StringIntershipProgram);
             helpTextAlreadyAdded = true;
         }
 

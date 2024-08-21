@@ -22,6 +22,9 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> InternPrice;
         [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
         [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
+
+        [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
+        [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
                            
         // Interns names   
         [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
@@ -66,6 +69,16 @@ namespace LethalInternship.Configs
                                        defaultValue: Const.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
+
+            TitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+                                       "Title visible in help menu in the terminal",
+                                       defaultVal: Const.DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE,
+                                       "Careful ! This title will become your command to type in to enter the intership program");
+
+            SubTitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+                                       "Subtitle visible in help menu under the title of intership program",
+                                       defaultVal: Const.DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE,
+                                       "");
 
             // Names
             OptionInternNames = cfg.BindSyncedEntry(Const.ConfigSectionNames,
@@ -147,6 +160,11 @@ namespace LethalInternship.Configs
             }
 
             return arrayOfNames;
+        }
+
+        public string GetTitleInternshipProgram()
+        {
+            return string.Format(Const.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)

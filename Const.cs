@@ -44,6 +44,9 @@ namespace LethalInternship
         public static readonly float MIN_SIZE_SCALE_INTERN = 0.85f;
         public static readonly float MAX_SIZE_SCALE_INTERN = 1f;
 
+        public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE = "INTERNSHIP PROGRAM";
+        public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE = "Need some help ? Try our new workforce, ready to assist you and gain experience";
+
         public static EnumOptionInternNames DEFAULT_CONFIG_ENUM_INTERN_NAMES = EnumOptionInternNames.DefaultCustomList;
         public static readonly string DEFAULT_INTERN_NAME = "Intern #{0}";
         public static readonly string[] DEFAULT_LIST_CUSTOM_INTERN_NAMES = new string[] {"Amy Stake",
@@ -178,7 +181,6 @@ namespace LethalInternship
         public static readonly int INDEX_HELP_TERMINALNODE = 13;
         public static readonly string STRING_OTHER_HELP = ">OTHER";
 
-        public static readonly string STRING_INTERNSHIP_PROGRAM_COMMAND = "internship program";
         public static readonly string STRING_BUY_COMMAND = "buy";
         public static readonly string STRING_LAND_COMMAND = "land";
         public static readonly string STRING_ABORT_COMMAND = "abort";
@@ -190,10 +192,10 @@ namespace LethalInternship
         public static readonly string STRING_LANDING_STATUS_ABORTED = "--Aborted--";
         public static readonly string STRING_LANDING_STATUS_ABORTED_COMPANY_MOON = " (aborted on company building moon)";
 
-        public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = $">{STRING_INTERNSHIP_PROGRAM_COMMAND.ToUpper()}\nNeed some help ? Try our new workforce, ready to assist you and gain experience\n\n";
+        public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = ">{0}\n{1}\n\n";
 
 
-        public static readonly string TEXT_INFO_PAGE_IN_SPACE = @"Numbers of interns purchasable : {0}
+        public static readonly string TEXT_INFO_PAGE_IN_SPACE = @"Remaining interns : {0}
 Unit price : ${1}
 
 ----------------------------------------
@@ -208,7 +210,7 @@ Commands :
 - Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
 
         public static readonly string TEXT_INFO_PAGE_INTERN_TO_DROPSHIP = "Interns waiting to land : {0}";
-        public static readonly string TEXT_INFO_PAGE_ON_MOON = @"Numbers of interns purchasable : {0}
+        public static readonly string TEXT_INFO_PAGE_ON_MOON = @"Remaining interns : {0}
 Unit price : ${1}
 
 {2}
@@ -224,14 +226,13 @@ Commands :
  - Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
 
 
-        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM = " a maximum of";
-        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You ordered{0} {1} more interns.
+        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM = "(max)";
+        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You have requested to order interns. Amount {0}{1}
 
-Unit price : ${2}, total : ${3}
+Total cost of items: ${2}
 
 
-Do you confirm you purchase ?
-(enter confirm or deny)";
+Please CONFIRM or DENY.";
 
         public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
         public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";
