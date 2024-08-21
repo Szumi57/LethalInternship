@@ -3,6 +3,8 @@
 ## 0.15.2 [Alpha] - 2024-08-21
 ### Added
 - Added config for internship program title in help menu, be careful, the title will become the command to type in the terminal to access the internship program
+### Changed
+- Some strings in the terminal, suggestion from @Ryyye on GitHub
 ### Fixed
 - Fix doors not working, looked like a v62 compil problem with the mod, thanks @jakeisloud on Discord, @Ryyye on GitHub, issue 24 ([#24](https://github.com/Szumi57/LethalInternship/issues/24))
 
