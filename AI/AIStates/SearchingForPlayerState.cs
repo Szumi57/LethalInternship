@@ -71,6 +71,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
+            ai.SetDestinationToPositionInternAI(ai.destination);
             ai.OrderMoveToDestination();
 
             if (!searchForPlayers.inProgress)

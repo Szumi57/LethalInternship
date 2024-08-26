@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
+using LethalInternship.Utils;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -17,8 +18,7 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public override EnumAIStates GetAIState() { return STATE; }
 
-        private Vector3 ShipBoundClosestPointFromIntern = default;
-        private float ShipClosestPointTimer = 1f;
+        private Vector3? ShipBoundClosestPointFromIntern = null;
 
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
@@ -54,7 +54,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             // If target player not in the ship or too close to it, the intern follow him
-            if (!ai.IsTargetInShipBoundsExpanded())
+            if (!ai.IsPlayerInShipBoundsExpanded(ai.targetPlayer))
             {
                 ai.State = new GetCloseToPlayerState(this);
                 return;
@@ -63,8 +63,9 @@ namespace LethalInternship.AI.AIStates
             // The target player is in the ship or too close to it
             // and the intern is close enough of the closest point of the ship
             // The intern stop moving and drop his item
-            float sqrHorizDistanceWithDestination = Vector3.Scale((ai.destination - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
-            if (sqrHorizDistanceWithDestination < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)
+            //float sqrHorizDistanceWithDestination = Vector3.Scale((ai.destination - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
+            //if (sqrHorizDistanceWithDestination < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)
+            if (InternManager.Instance.GetExpandedShipBounds().Contains(npcController.Npc.transform.position))
             {
                 if (!ai.AreHandsFree())
                 {
@@ -73,9 +74,10 @@ namespace LethalInternship.AI.AIStates
                 }
 
                 // Looking
-                PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(180, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
                 if (playerToLook != null)
                 {
+                    Plugin.LogDebug($"look at player");
                     npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
                 }
                 else
@@ -88,24 +90,26 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            // Target player in ship or too close to it
-            // the intern still need to get close to the ship
-            if(this.ShipClosestPointTimer >= 1f)
-            {
-                this.ShipClosestPointTimer = 0f;
-                ShipBoundClosestPointFromIntern = InternManager.Instance.ShipBoundClosestPoint(npcController.Npc.transform.position);
-            }
-            else
-            {
-                this.ShipClosestPointTimer += ai.AIIntervalTime;
-            }
-            
-            ai.SetDestinationToPositionInternAI(ShipBoundClosestPointFromIntern);
-            if (sqrHorizDistanceWithDestination > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
-            {
-                npcController.OrderToSprint();
-            }
+            ai.SetDestinationToPositionInternAI(ai.targetPlayer.transform.position);
             ai.OrderMoveToDestination();
+
+            //// Target player in ship or too close to it
+            //// the intern still need to get close to the ship
+            //if (!ShipBoundClosestPointFromIntern.HasValue)
+            //{
+            //    ShipBoundClosestPointFromIntern = InternManager.Instance.ShipBoundClosestPoint(npcController.Npc.transform.position);
+            //    Plugin.LogDebug($"first ShipBoundClosestPointFromIntern {ShipBoundClosestPointFromIntern}, ");
+            //}
+
+            //ai.SetDestinationToPositionInternAI(ShipBoundClosestPointFromIntern.Value);
+            //if (sqrHorizDistanceWithDestination > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)
+            //{
+            //    npcController.OrderToSprint();
+            //}
+            //Plugin.LogDebug($"ShipBoundClosestPointFromIntern {ShipBoundClosestPointFromIntern}, npcController.Npc.transform.position {npcController.Npc.transform.position}");
+            //ai.OrderMoveToDestination();
+            //// Destination after path checking might be not the same now
+            //ShipBoundClosestPointFromIntern = ai.destination;
         }
     }
 }

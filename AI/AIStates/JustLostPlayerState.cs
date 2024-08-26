@@ -131,6 +131,8 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+            // Destination after path checking might be not the same now
+            targetLastKnownPosition = ai.destination;
         }
 
         /// <summary>

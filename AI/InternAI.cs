@@ -492,8 +492,10 @@ namespace LethalInternship.AI
         /// <summary>
         /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
         /// </summary>
-        public void OrderMoveToDestination()
+        public void OrderMoveToDestination(bool avoidLineOfSight = true)
         {
+            NpcController.OrderToMove();
+
             if (!isDestinationChanged)
             {
                 return;
@@ -503,11 +505,11 @@ namespace LethalInternship.AI
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
-                    destination = this.ChooseClosestNodeToPosition(NpcController.Npc.transform.position, avoidLineOfSight: false).position;
+                    Plugin.LogDebug($"ChooseClosestNodeToPosition");
+                    //destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
                 }
                 agent.SetDestination(destination);
             }
-            NpcController.OrderToMove();
             isDestinationChanged = false;
         }
 
@@ -674,9 +676,19 @@ namespace LethalInternship.AI
                 }
 
                 // Nothing in between to break line of sight ?
-                if (Physics.Linecast(NpcController.Npc.gameplayCamera.transform.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
+                if (IsPlayerInShipBoundsExpanded(instanceSOR.allPlayerScripts[i]))
                 {
-                    continue;
+                    if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMask))
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
+                    {
+                        continue;
+                    }
                 }
 
                 Vector3 vectorInternToPlayer = cameraPlayerPosition - thisInternCamera.position;
@@ -918,14 +930,14 @@ namespace LethalInternship.AI
         /// Is the target player in the ship or outside but close to the ship ?
         /// </summary>
         /// <returns></returns>
-        public bool IsTargetInShipBoundsExpanded()
+        public bool IsPlayerInShipBoundsExpanded(PlayerControllerB player)
         {
-            if (targetPlayer == null)
+            if (player == null)
             {
                 return false;
             }
 
-            return targetPlayer.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(targetPlayer.transform.position);
+            return player.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(player.transform.position);
         }
 
         /// <summary>
