@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.16.0 [Alpha] - 2024-08-
+### Added
+- Indicator of state in the name of the intern, an small attempt at giving intern more personnality and information.
+### Changed
+- 
+### Fixed
+- Fix some movements and behaviours, the state of looking for players should be working, and the intern should less teleport when losing player.
+- Fix some more conflicts with lethalphones, especially when an intern dies
+- Fix major bug when a 4th player join lobby (taking control and other weird things), thanks @Dyz89 on Discord
+- Fix menu "Lethal Internship" duplicating in the terminal help menu, thanks @Ryyye on GitHub, issue 29 ([#29](https://github.com/Szumi57/LethalInternship/issues/29))
+
 ## 0.15.2 [Alpha] - 2024-08-21
 ### Added
 - Added config for internship program title in help menu, be careful, the title will become the command to type in the terminal to access the internship program
