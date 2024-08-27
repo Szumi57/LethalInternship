@@ -105,6 +105,11 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
         }
 
+        public override string GetBillboardStateIndicator()
+        {
+            return string.Empty;
+        }
+
         private Vector3 GetNextRandomInCruiserPos()
         {
             float x = Random.Range(Const.FIRST_CORNER_INTERN_IN_CRUISER.x, Const.SECOND_CORNER_INTERN_IN_CRUISER.x);

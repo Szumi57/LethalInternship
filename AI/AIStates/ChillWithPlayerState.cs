@@ -124,5 +124,10 @@ namespace LethalInternship.AI.AIStates
             // Chill
             ai.StopMoving();
         }
+
+        public override string GetBillboardStateIndicator()
+        {
+            return string.Empty;
+        }
     }
 }

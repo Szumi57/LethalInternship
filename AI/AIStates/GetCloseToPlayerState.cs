@@ -143,5 +143,10 @@ namespace LethalInternship.AI.AIStates
 
             ai.OrderMoveToDestination();
         }
+
+        public override string GetBillboardStateIndicator()
+        {
+            return string.Empty;
+        }
     }
 }

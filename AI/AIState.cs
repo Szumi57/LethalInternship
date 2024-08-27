@@ -65,5 +65,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <returns></returns>
         public abstract EnumAIStates GetAIState();
+
+        public abstract string GetBillboardStateIndicator();
     }
 }

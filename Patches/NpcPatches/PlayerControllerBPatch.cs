@@ -975,13 +975,15 @@ namespace LethalInternship.Patches.NpcPatches
                 {
                     continue;
                 }
-                player.ShowNameBillboard();
 
                 InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
                 if (intern == null)
                 {
                     continue;
                 }
+
+                // Name billboard
+                intern.NpcController.ShowFullNameBillboard();
 
                 StringBuilder sb = new StringBuilder();
                 // Line item

@@ -133,6 +133,11 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
         }
 
+        public override string GetBillboardStateIndicator()
+        {
+            return "??";
+        }
+
         /// <summary>
         /// Check if the target player is in line of sight
         /// </summary>
