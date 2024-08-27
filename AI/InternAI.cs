@@ -966,6 +966,11 @@ namespace LethalInternship.AI
             return null;
         }
 
+        public string GetBillboardStateIndicator()
+        {
+            return State.GetBillboardStateIndicator();
+        }
+
         /// <summary>
         /// Search for all the loaded ladders on the map.
         /// </summary>

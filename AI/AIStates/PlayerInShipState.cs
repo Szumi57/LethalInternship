@@ -111,5 +111,10 @@ namespace LethalInternship.AI.AIStates
             //// Destination after path checking might be not the same now
             //ShipBoundClosestPointFromIntern = ai.destination;
         }
+
+        public override string GetBillboardStateIndicator()
+        {
+            return "...";
+        }
     }
 }

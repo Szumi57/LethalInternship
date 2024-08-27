@@ -81,6 +81,11 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        public override string GetBillboardStateIndicator()
+        {
+            return "?";
+        }
+
         /// <summary>
         /// Coroutine for when searching, alternate between sprinting and walking
         /// </summary>
