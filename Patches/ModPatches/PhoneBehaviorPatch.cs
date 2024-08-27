@@ -18,9 +18,9 @@ namespace LethalInternship.Patches.ModPatches
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 3; i++)
+            for (var i = 0; i < codes.Count - 2; i++)
             {
-                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()" // 336
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()" 
                     && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
                     && codes[i + 2].ToString() == "ldlen NULL")
                 {
@@ -34,10 +34,8 @@ namespace LethalInternship.Patches.ModPatches
                 codes[startIndex].operand = null;
                 codes[startIndex + 1].opcode = OpCodes.Nop;
                 codes[startIndex + 1].operand = null;
-                codes[startIndex + 2].opcode = OpCodes.Nop;
-                codes[startIndex + 2].operand = null;
-                codes[startIndex + 3].opcode = OpCodes.Call;
-                codes[startIndex + 3].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
                 startIndex = -1;
             }
             else
