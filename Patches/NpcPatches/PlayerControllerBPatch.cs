@@ -997,11 +997,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
 
                 // Line Follow
-                if (intern.OwnerClientId == __instance.actualClientId)
-                {
-                    sb.Append("Following you");
-                }
-                else
+                if (intern.OwnerClientId != __instance.actualClientId)
                 {
                     sb.Append("Follow me: [E]");
                 }
