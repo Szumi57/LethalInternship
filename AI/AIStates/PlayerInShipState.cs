@@ -61,7 +61,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             // The target player is in the ship or too close to it
-            // and the intern is close enough of the closest point of the ship
+            // and the intern is close enough of the closest point of the ship or in the ship
             // The intern stop moving and drop his item
             //float sqrHorizDistanceWithDestination = Vector3.Scale((ai.destination - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
             //if (sqrHorizDistanceWithDestination < Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT)

@@ -85,8 +85,6 @@ namespace LethalInternship.Managers
         public RagdollGrabbableObject[] RagdollDeadBodies = null!;
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
-        private Bounds? shipBoundsExpanded;
-
         private List<string> listOfNames = new List<string>();
         private EnumOptionInternNames optionInternNames;
         private string[] arrayOfUserCustomNames = null!;
@@ -929,14 +927,9 @@ namespace LethalInternship.Managers
         /// <returns></returns>
         public Bounds GetExpandedShipBounds()
         {
-            if (shipBoundsExpanded == null)
-            {
-                Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
-                shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
-                shipBoundsExpanded = shipBounds;
-            }
-
-            return shipBoundsExpanded.Value;
+            Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
+            shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
+            return shipBounds;
         }
 
         #region SyncEndOfRoundInterns
