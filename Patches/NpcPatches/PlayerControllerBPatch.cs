@@ -467,7 +467,7 @@ namespace LethalInternship.Patches.NpcPatches
                     return true;
                 }
 
-                InternAI? internAI = InternManager.Instance.GetInternAiObjectOwnerOf(grabbableObject);
+                InternAI? internAI = InternManager.Instance.GetInternAiOwnerOfObject(grabbableObject);
                 if (internAI == null)
                 {
                     // Quit and continue original method

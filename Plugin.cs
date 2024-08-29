@@ -123,6 +123,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(BushWolfEnemyPatch));
             _harmony.PatchAll(typeof(ButlerBeesEnemyAIPatch));
             _harmony.PatchAll(typeof(ButlerEnemyAIPatch));
+            _harmony.PatchAll(typeof(CaveDwellerAIPatch));
             _harmony.PatchAll(typeof(CentipedeAIPatch));
             _harmony.PatchAll(typeof(CrawlerAIPatch));
             _harmony.PatchAll(typeof(FlowermanAIPatch));

@@ -104,6 +104,7 @@ namespace LethalInternship
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = true;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
+        public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
 
         // NpcController
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";

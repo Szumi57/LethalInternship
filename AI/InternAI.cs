@@ -897,6 +897,18 @@ namespace LethalInternship.AI
                         return null;
                     }
 
+
+                case "Maneater":
+                    if (enemy.currentBehaviourStateIndex > 0)
+                    {
+                        // Mad
+                        return 30f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
                 default:
                     // Not dangerous enemies (at first sight)
 
@@ -1944,9 +1956,12 @@ namespace LethalInternship.AI
 
             grabbableObject.GrabItemFromEnemy(this);
             grabbableObject.parentObject = NpcController.Npc.localItemHolder;
+            grabbableObject.playerHeldBy = NpcController.Npc;
+            //grabbableObject.parentObject = NpcController.Npc.gameObject.transform.Find("ScavengerModel/metarig/spine/spine.001/spine.002/spine.003/shoulder.R/arm.R_upper/arm.R_lower/hand.R");
             grabbableObject.isHeld = true;
             grabbableObject.hasHitGround = false;
             grabbableObject.isInFactory = NpcController.Npc.isInsideFactory;
+            grabbableObject.EquipItem();
 
             NpcController.Npc.isHoldingObject = true;
             NpcController.Npc.currentlyHeldObjectServer = grabbableObject;
@@ -2049,6 +2064,7 @@ namespace LethalInternship.AI
             GrabbableObject grabbableObject = this.HeldItem;
             Vector3 targetFloorPosition = grabbableObject.GetItemFloorPosition();
 
+            grabbableObject.playerHeldBy = null;
             grabbableObject.parentObject = null;
             grabbableObject.transform.SetParent(StartOfRound.Instance.propsContainer, true);
             grabbableObject.EnablePhysics(true);

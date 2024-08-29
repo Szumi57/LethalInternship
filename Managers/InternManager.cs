@@ -688,7 +688,7 @@ namespace LethalInternship.Managers
         /// </summary>
         /// <param name="grabbableObject">Object held by the <c>InternAI</c> the method is looking for</param>
         /// <returns><c>InternAI</c> if holding the <c>GrabbableObject</c>, else returns null</returns>
-        public InternAI? GetInternAiObjectOwnerOf(GrabbableObject grabbableObject)
+        public InternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject)
         {
             foreach (var internAI in AllInternAIs)
             {
@@ -881,6 +881,17 @@ namespace LethalInternship.Managers
             }
 
             return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)
+        {
+            InternAI? internAI = GetInternAiOwnerOfObject(grabbableObject);
+            if (internAI == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public InternAI[] GetInternsAIOwnedByLocal()

@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Collections.Generic;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
@@ -23,6 +24,38 @@ namespace LethalInternship.Patches.GameEnginePatches
             Plugin.LogDebug($"__instance.currentLevel.moldSpreadIterations {__instance.currentLevel.moldSpreadIterations}");
 
             return true;
+        }
+
+        [HarmonyPatch("GenerateNewFloor")]
+        [HarmonyPrefix]
+        static void GenerateNewFloor_Postfix(RoundManager __instance)
+        {
+            if (!Const.SPAWN_MINESHAFT_FOR_DEBUG)
+            {
+                return;
+            }
+
+            IntWithRarity intWithRarity;
+            for (int i = 0; i < __instance.currentLevel.dungeonFlowTypes.Length; i++)
+            {
+                intWithRarity = __instance.currentLevel.dungeonFlowTypes[i];
+                // Factory
+                if (intWithRarity.id == 0)
+                {
+                    intWithRarity.rarity = 0;
+                }
+                // Manor
+                if (intWithRarity.id == 1)
+                {
+                    intWithRarity.rarity = 0;
+                }
+                // Cave
+                if (intWithRarity.id == 4)
+                {
+                    intWithRarity.rarity = 300;
+                }
+                Plugin.LogDebug($"dungeonFlowTypes {intWithRarity.id} {intWithRarity.rarity}");
+            }
         }
     }
 }
