@@ -41,12 +41,11 @@ This mod is very alpha and I still need to do a lot of polishing.
 ## Bug to fix
 - Sand spider web trap not working for interns
 - Nutcracker ignoring interns
-- v60 stuff still to fix, new enemy, etc
+- v60 stuff mineshaft elevator to fix
 - Item in player hand disapearing when intern climb ladders -> conflit with mod BetterLadders
 - Interns keep item after end of moon and spawn with it on next moon, if players manage to take off quicly enough for the interns to not drop their item in hands
 - Compatibility with mods 'Sehelitar's Zaprillator', 'OpJosMods ReviveCompany', 'bunkbedrevive'
 - Compatibility with modded maps, for environmental hazards damages
 - Intern not owned by player cannot take damage from said player
-- Playerphone mod error when intern dying, only on client
 - Body of intern just disappears when shot by shotgun
 - Only on march, with more than 6 interns, if they get close to the front door of the ship, massive framerate drop (why ???)

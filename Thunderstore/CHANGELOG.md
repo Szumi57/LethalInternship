@@ -7,6 +7,7 @@
 ### Changed
 - Removed "Following you" tooltip because of the new indicator in the billboard name above interns.
 ### Fixed
+- Fix some v60 conflict, the maneater should be working with interns, for the mineshaft elevator, for now you can grab interns with you, I will look for a fix so they come with you in the elevator on next update
 - Fix some movements and behaviours, the state of looking for players should be working, and the intern should less teleport when losing player.
 - Fix some more conflicts with lethalphones, especially when an intern dies
 - Fix major bug when a 4th player join lobby (taking control and other weird things), thanks @Dyz89 on Discord
