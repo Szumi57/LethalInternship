@@ -56,7 +56,7 @@ namespace LethalInternship.AI
             ragdollGrabbableObject.isHeld = false;
             ragdollGrabbableObject.parentObject = null;
             ragdollGrabbableObject.ragdoll.gameObject.SetActive(false);
-            ragdollGrabbableObject.gameObject.SetActive(true);
+            ragdollGrabbableObject.gameObject.SetActive(false);
         }
 
         public float GetWeight()
