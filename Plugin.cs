@@ -151,6 +151,8 @@ namespace LethalInternship
 
             // Objects
             _harmony.PatchAll(typeof(DeadBodyInfoPatch));
+            _harmony.PatchAll(typeof(GrabbableObjectPatch));
+            _harmony.PatchAll(typeof(RagdollGrabbableObjectPatch));
             _harmony.PatchAll(typeof(ShotgunItemPatch));
             _harmony.PatchAll(typeof(StunGrenadeItemPatch));
 
