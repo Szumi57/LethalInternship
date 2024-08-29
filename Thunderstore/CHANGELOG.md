@@ -2,9 +2,10 @@
 
 ## 0.16.0 [Alpha] - 2024-08-
 ### Added
-- Indicator of state in the name of the intern, an small attempt at giving intern more personnality and information.
+- Grab interns ! You can grab multiple interns with you but be carefull : their weight and their held item weight gets added to your weight. You may not be able to move after...
+- Indicator of state in the name of the intern, an attempt at giving intern more personnality and information.
 ### Changed
-- 
+- Removed "Following you" tooltip because of the new indicator in the billboard name above interns.
 ### Fixed
 - Fix some movements and behaviours, the state of looking for players should be working, and the intern should less teleport when losing player.
 - Fix some more conflicts with lethalphones, especially when an intern dies
