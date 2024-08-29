@@ -1246,7 +1246,8 @@ namespace LethalInternship.AI
         /// <returns></returns>
         public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject)
         {
-            if (grabbableObject == null)
+            if (grabbableObject == null
+                || !grabbableObject.gameObject.activeSelf)
             {
                 return false;
             }
@@ -2878,6 +2879,9 @@ namespace LethalInternship.AI
 
             NpcController.Npc.gameObject.SetActive(true);
             this.gameObject.SetActive(true);
+
+            // Unsuscribe from events to prevent double trigger
+            PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
         }
 
         #endregion
