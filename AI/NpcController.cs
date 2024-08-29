@@ -1161,7 +1161,7 @@ namespace LethalInternship.AI
             }
 
             // Text billboard
-            Npc.usernameBillboardText.text = InternAIController.GetBillboardStateIndicator();
+            Npc.usernameBillboardText.text = InternAIController.GetSizedBillboardStateIndicator();
             if (timerShowName >= 0f)
             {
                 timerShowName -= Time.deltaTime;
@@ -1180,7 +1180,6 @@ namespace LethalInternship.AI
 
             if (InternAIController.IsClientOwnerOfIntern())
             {
-
                 this.InternRotationAndLookUpdate();
 
                 if (Npc.isPlayerControlled && !Npc.isPlayerDead)
@@ -1317,7 +1316,8 @@ namespace LethalInternship.AI
             if (this.UpdatePlayerLookInterval > 0.25f && Physics.OverlapSphere(Npc.transform.position, 35f, this.PlayerMask).Length != 0)
             {
                 this.UpdatePlayerLookInterval = 0f;
-                InternAIController.SyncUpdateInternRotationAndLook(newDirectionToUpdateTurnBodyTowardsTo,
+                InternAIController.SyncUpdateInternRotationAndLook(InternAIController.State.GetBillboardStateIndicator(),
+                                                                   newDirectionToUpdateTurnBodyTowardsTo,
                                                                    newIntEnumObjectsLookingAt,
                                                                    newPlayerEyeToLookAt,
                                                                    newPositionPlayerToLookAt);

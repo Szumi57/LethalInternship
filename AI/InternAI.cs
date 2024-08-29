@@ -73,6 +73,7 @@ namespace LethalInternship.AI
 
         private Coroutine grabObjectCoroutine = null!;
 
+        private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
         private bool isDestinationChanged;
         private float timeSinceStuck;
@@ -981,9 +982,22 @@ namespace LethalInternship.AI
             return null;
         }
 
-        public string GetBillboardStateIndicator()
+        public string GetSizedBillboardStateIndicator()
         {
-            return State.GetBillboardStateIndicator();
+            string indicator;
+            int sizePercentage = Math.Clamp((int)(100f + 2.5f * (StartOfRound.Instance.localPlayerController.transform.position - NpcController.Npc.transform.position).sqrMagnitude),
+                                 100, 1000);
+
+            if (IsOwner)
+            {
+                indicator = State.GetBillboardStateIndicator();
+            }
+            else
+            {
+                indicator = stateIndicatorServer;
+            }
+            
+            return $"<size={sizePercentage}%>{indicator}</size>";
         }
 
         /// <summary>
@@ -1684,15 +1698,15 @@ namespace LethalInternship.AI
         /// <param name="intEnumObjectsLookingAt">State to know where the intern should look</param>
         /// <param name="playerEyeToLookAt">Position of the player eyes to look at</param>
         /// <param name="positionToLookAt">Position to look at</param>
-        public void SyncUpdateInternRotationAndLook(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
+        public void SyncUpdateInternRotationAndLook(string stateIndicator, Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
             if (IsServer)
             {
-                UpdateInternRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
+                UpdateInternRotationAndLookClientRpc(stateIndicator, direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
             }
             else
             {
-                UpdateInternRotationAndLookServerRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
+                UpdateInternRotationAndLookServerRpc(stateIndicator, direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
             }
         }
 
@@ -1704,9 +1718,9 @@ namespace LethalInternship.AI
         /// <param name="playerEyeToLookAt">Position of the player eyes to look at</param>
         /// <param name="positionToLookAt">Position to look at</param>
         [ServerRpc(RequireOwnership = false)]
-        private void UpdateInternRotationAndLookServerRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
+        private void UpdateInternRotationAndLookServerRpc(string stateIndicator, Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
-            UpdateInternRotationAndLookClientRpc(direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
+            UpdateInternRotationAndLookClientRpc(stateIndicator, direction, intEnumObjectsLookingAt, playerEyeToLookAt, positionToLookAt);
         }
 
         /// <summary>
@@ -1717,7 +1731,7 @@ namespace LethalInternship.AI
         /// <param name="playerEyeToLookAt">Position of the player eyes to look at</param>
         /// <param name="positionToLookAt">Position to look at</param>
         [ClientRpc]
-        private void UpdateInternRotationAndLookClientRpc(Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
+        private void UpdateInternRotationAndLookClientRpc(string stateIndicator, Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
             if (NpcController == null)
             {
@@ -1730,6 +1744,10 @@ namespace LethalInternship.AI
                 return;
             }
 
+            // Update state indicator
+            this.stateIndicatorServer = stateIndicator;
+
+            // Update direction
             NpcController.SetTurnBodyTowardsDirection(direction);
             switch ((EnumObjectsLookingAt)intEnumObjectsLookingAt)
             {

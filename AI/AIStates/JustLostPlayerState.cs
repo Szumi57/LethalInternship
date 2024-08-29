@@ -137,7 +137,7 @@ namespace LethalInternship.AI.AIStates
 
         public override string GetBillboardStateIndicator()
         {
-            return "??";
+            return "!";
         }
 
         /// <summary>
