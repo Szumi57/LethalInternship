@@ -43,8 +43,7 @@ This mod is very alpha and I still need to do a lot of polishing.
 - Nutcracker ignoring interns
 - v60 stuff mineshaft elevator to fix
 - Item in player hand disapearing when intern climb ladders -> conflit with mod BetterLadders
-- Interns keep item after end of moon and spawn with it on next moon, if players manage to take off quicly enough for the interns to not drop their item in hands
-- Compatibility with mods 'Sehelitar's Zaprillator', 'OpJosMods ReviveCompany', 'bunkbedrevive'
+- Compatibility with mods 'Sehelitar's Zaprillator', 'bunkbedrevive'
 - Compatibility with modded maps, for environmental hazards damages
 - Intern not owned by player cannot take damage from said player
 - Body of intern just disappears when shot by shotgun

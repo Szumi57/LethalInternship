@@ -13,6 +13,7 @@
 - Fix major bug when a 4th player join lobby (taking control and other weird things), thanks @Dyz89 on Discord
 - Fix menu "Lethal Internship" duplicating in the terminal help menu, thanks @Ryyye on GitHub, issue 29 ([#29](https://github.com/Szumi57/LethalInternship/issues/29))
 - Fix compatibility with ReviveCompany, you can revive intern now with this mod
+- Fix interns keeping items in hand for next round at the end of round, if items are not in the ship
 
 ## 0.15.2 [Alpha] - 2024-08-21
 ### Added
