@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.16.0 [Alpha] - 2024-08-
+## 0.16.0 [Alpha] - 2024-08-30
 ### Added
 - Grab interns ! You can grab multiple interns with you but be carefull : their weight and their held item weight gets added to your weight. You may not be able to move after...
 - Indicator of state in the name of the intern, an attempt at giving intern more personnality and information.
