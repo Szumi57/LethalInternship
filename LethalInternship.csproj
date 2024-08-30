@@ -109,6 +109,9 @@
     <Reference Include="MoreCompany">
       <HintPath>lib\mods\MoreCompany.dll</HintPath>
     </Reference>
+    <Reference Include="OPJosMod">
+      <HintPath>lib\mods\ReviveCompany.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.Animation.Rigging">
       <HintPath>lib\Unity.Animation.Rigging.dll</HintPath>
     </Reference>

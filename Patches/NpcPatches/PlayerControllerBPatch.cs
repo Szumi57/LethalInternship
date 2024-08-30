@@ -3,6 +3,7 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
+using OPJosMod.ReviveCompany;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.HID;
+using Label = System.Reflection.Emit.Label;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
 namespace LethalInternship.Patches.NpcPatches
@@ -1086,7 +1087,9 @@ namespace LethalInternship.Patches.NpcPatches
                     }
 
                     InternAI? internAI = InternManager.Instance.GetInternAI(ragdoll.bodyID.Value);
-                    if (internAI != null && !internAI.gameObject.activeSelf)
+                    if (internAI != null 
+                        && internAI.RagdollInternBody != null
+                        && internAI.RagdollInternBody.IsRagdollBodyHeldByPlayer((int)__instance.playerClientId))
                     {
                         // Remove tooltip text
                         __instance.cursorTip.text = string.Empty;
@@ -1145,7 +1148,6 @@ namespace LethalInternship.Patches.NpcPatches
                 break;
             }
         }
-
 
         [HarmonyPatch("IVisibleThreat.GetThreatTransform")]
         [HarmonyPostfix]

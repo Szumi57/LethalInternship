@@ -18,6 +18,7 @@ namespace LethalInternship
         public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
         public const string ADDITIONALNETWORKING_GUID = "mattymatty.AdditionalNetworking";
         public const string SHOWCAPACITY_GUID = "Piggy.ShowCapacity";
+        public const string REVIVECOMPANY_GUID = "OpJosMod.ReviveCompany";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;

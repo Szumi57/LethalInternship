@@ -17,16 +17,6 @@ namespace LethalInternship.AI
         {
             this.ragdollGrabbableObject = ragdollGrabbableObject;
             this.ragdollGrabbableObject.ragdoll = deadBodyInfo;
-
-            this.ragdollGrabbableObject.gameObject.SetActive(true);
-            this.ragdollGrabbableObject.ragdoll.gameObject.SetActive(true);
-            this.ragdollGrabbableObject.ragdoll.SetBodyPartsKinematic(false);
-
-            this.ragdollGrabbableObject.ragdoll.attachedTo = this.ragdollGrabbableObject.transform;
-            this.ragdollGrabbableObject.ragdoll.attachedLimb = this.ragdollGrabbableObject.ragdoll.bodyParts[1];
-            this.ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
-            this.ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
-
             this.IdPlayerHolder = idPlayerHolder;
 
             //for (int i = 0; i < this.ragdollGrabbableObject.ragdoll.bodyParts.Length; i++)
@@ -43,6 +33,17 @@ namespace LethalInternship.AI
 
         public void SetGrabbedBy(PlayerControllerB playerGrabberController)
         {
+            int bodyPart = 1;
+            this.ragdollGrabbableObject.gameObject.SetActive(true);
+            this.ragdollGrabbableObject.ragdoll.gameObject.SetActive(true);
+            this.ragdollGrabbableObject.ragdoll.SetBodyPartsKinematic(false);
+
+            this.ragdollGrabbableObject.ragdoll.attachedTo = this.ragdollGrabbableObject.transform;
+            this.ragdollGrabbableObject.ragdoll.attachedLimb = this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart];
+            this.ragdollGrabbableObject.transform.SetParent(this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart].transform);
+            this.ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
+            this.ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
+
             ragdollGrabbableObject.isHeld = true;
             //TreesUtils.PrintTransformTree(playerGrabberController.gameObject.GetComponentsInChildren<Transform>());
             //ragdollGrabbableObject.parentObject = playerGrabberController.localItemHolder;
@@ -55,6 +56,7 @@ namespace LethalInternship.AI
         {
             ragdollGrabbableObject.isHeld = false;
             ragdollGrabbableObject.parentObject = null;
+            ragdollGrabbableObject.hasHitGround = false;
             ragdollGrabbableObject.ragdoll.gameObject.SetActive(false);
             ragdollGrabbableObject.gameObject.SetActive(false);
         }
@@ -72,6 +74,11 @@ namespace LethalInternship.AI
         public DeadBodyInfo? GetDeadBodyInfo()
         {
             return ragdollGrabbableObject?.ragdoll;
+        }
+
+        public bool IsRagdollBodyHeldByPlayer(int idPlayer)
+        {
+            return idPlayer == IdPlayerHolder && ragdollGrabbableObject.isHeld;
         }
     }
 }

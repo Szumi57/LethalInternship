@@ -40,6 +40,8 @@ namespace LethalInternship
 
         internal static new Configs.Config Config = null!;
 
+        internal static bool IsModReviveCompanyLoaded = false;
+
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -172,13 +174,14 @@ namespace LethalInternship
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
             bool isModAdditionalNetworkingLoaded = IsModLoaded(Const.ADDITIONALNETWORKING_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
+            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
 
             // Compatibility with other mods
             if (isModMoreEmoteLoaded)
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
             }
-            if(isModMoreCompanyLoaded)
+            if (isModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
             }
@@ -198,15 +201,19 @@ namespace LethalInternship
             }
             if (isModAdditionalNetworkingLoaded)
             {
-                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("AdditionalNetworking.Patches.Inventory.PlayerControllerBPatch"), "OnStart"), 
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("AdditionalNetworking.Patches.Inventory.PlayerControllerBPatch"), "OnStart"),
                                null,
-                               null, 
+                               null,
                                new HarmonyMethod(typeof(AdditionalNetworkingPatch), nameof(AdditionalNetworkingPatch.Start_Transpiler)));
             }
             if (isModShowCapacityLoaded)
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ShowCapacity.Patches.PlayerControllerBPatch"), "Update_PreFix"),
                                new HarmonyMethod(typeof(ShowCapacityPatch), nameof(ShowCapacityPatch.Update_PreFix_Prefix)));
+            }
+            if (IsModReviveCompanyLoaded)
+            {
+                _harmony.PatchAll(typeof(ReviveCompanyGeneralUtilPatch));
             }
         }
 

@@ -996,7 +996,7 @@ namespace LethalInternship.AI
             {
                 indicator = stateIndicatorServer;
             }
-            
+
             return $"<size={sizePercentage}%>{indicator}</size>";
         }
 
@@ -2505,7 +2505,9 @@ namespace LethalInternship.AI
             }
             else
             {
-                InternManager.Instance.RagdollDeadBodies[(int)NpcController.Npc.playerClientId].gameObject.SetActive(true);
+                GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.ragdollGrabbableObjectPrefab, NpcController.Npc.playersManager.propsContainer);
+                gameObject.GetComponent<NetworkObject>().Spawn(false);
+                gameObject.GetComponent<RagdollGrabbableObject>().bodyID.Value = (int)NpcController.Npc.playerClientId;
             }
         }
 
@@ -2593,6 +2595,24 @@ namespace LethalInternship.AI
             }
             NpcController.Npc.DisableJetpackControlsLocally();
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+
+            // Compat with revive company mod
+            if (Plugin.IsModReviveCompanyLoaded)
+            {
+                ReviveCompanySetPlayerDiedAt((int)NpcController.Npc.playerClientId);
+            }
+        }
+
+        /// <summary>
+        /// Method separate to not load type of plugin of revive company if mod is not loaded in modpack
+        /// </summary>
+        /// <param name="playerClientId"></param>
+        private void ReviveCompanySetPlayerDiedAt(int playerClientId)
+        {
+            if (OPJosMod.ReviveCompany.GlobalVariables.ModActivated)
+            {
+                OPJosMod.ReviveCompany.GeneralUtil.SetPlayerDiedAt(playerClientId);
+            }
         }
 
         #endregion
@@ -2820,8 +2840,30 @@ namespace LethalInternship.AI
         [ServerRpc(RequireOwnership = false)]
         public void GrabInternServerRpc(ulong idPlayerGrabberController)
         {
-            RagdollGrabbableObject internBody = InternManager.Instance.RagdollInternBodies[(int)NpcController.Npc.playerClientId];
-            GrabInternClientRpc(internBody.GetComponentInChildren<NetworkObject>(), idPlayerGrabberController);
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            int internClientId = (int)NpcController.Npc.playerClientId;
+
+            RagdollGrabbableObject? ragdollInternBody = InternManager.Instance.RagdollInternBodies[internClientId];
+            NetworkObject networkObject;
+            if (ragdollInternBody == null)
+            {
+                GameObject gameObject = Object.Instantiate<GameObject>(instanceSOR.ragdollGrabbableObjectPrefab, instanceSOR.propsContainer);
+                networkObject = gameObject.GetComponent<NetworkObject>();
+                networkObject.Spawn(false);
+                ragdollInternBody = gameObject.GetComponent<RagdollGrabbableObject>();
+                ragdollInternBody.bodyID.Value = internClientId;
+                InternManager.Instance.RagdollInternBodies[internClientId] = ragdollInternBody;
+            }
+            else
+            {
+                networkObject = ragdollInternBody.GetComponentInChildren<NetworkObject>();
+                if (!networkObject.IsSpawned)
+                {
+                    networkObject.Spawn(false);
+                }
+            }
+
+            GrabInternClientRpc(networkObject, idPlayerGrabberController);
         }
 
         [ClientRpc]
@@ -2829,12 +2871,16 @@ namespace LethalInternship.AI
                                          ulong idPlayerGrabberController)
         {
             PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
-            InstantiateDeadBodyInfo(playerGrabberController);
 
-            networkObjectReferenceRagdollGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
-            RagdollInternBody = new RagdollInternBody(networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>(),
-                                                      ragdollBodyDeadBodyInfo,
-                                                      (int)playerGrabberController.playerClientId);
+            if (RagdollInternBody == null)
+            {
+                InstantiateDeadBodyInfo(playerGrabberController);
+                networkObjectReferenceRagdollGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
+                RagdollInternBody = new RagdollInternBody(networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>(),
+                                                          ragdollBodyDeadBodyInfo,
+                                                          (int)playerGrabberController.playerClientId);
+            }
+
             RagdollInternBody.SetGrabbedBy(playerGrabberController);
 
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
@@ -2920,8 +2966,6 @@ namespace LethalInternship.AI
             PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (NpcController.Npc.carryWeight - 1f), 1f, 10f);
-
-            RagdollInternBody = null;
 
             if (HeldItem != null)
             {
