@@ -2596,6 +2596,12 @@ namespace LethalInternship.AI
             NpcController.Npc.DisableJetpackControlsLocally();
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
 
+            // Remove grabbed bodies if we die with intern in hand
+            if (RagdollInternBody != null)
+            {
+                RagdollInternBody.SetReleased();
+            }
+
             // Compat with revive company mod
             if (Plugin.IsModReviveCompanyLoaded)
             {

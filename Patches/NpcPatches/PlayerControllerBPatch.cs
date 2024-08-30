@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Analytics;
 using UnityEngine.InputSystem;
 using Label = System.Reflection.Emit.Label;
 using OpCodes = System.Reflection.Emit.OpCodes;
@@ -205,10 +206,11 @@ namespace LethalInternship.Patches.NpcPatches
                                       int deathAnimation,
                                       Vector3 positionOffset)
         {
+            // Try to kill an intern ?
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
-                Plugin.LogDebug($"SyncKillIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
+                Plugin.LogDebug($"SyncKillIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, Intern #{internAI.InternId}");
                 internAI.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
                 return false;
             }
@@ -219,6 +221,34 @@ namespace LethalInternship.Patches.NpcPatches
                 Plugin.LogDebug($"Bootleg invincibility");
                 return false;
             }
+
+            // Check if we hold interns
+            InternAI[] internsAIsHoldByPlayer = InternManager.Instance.GetInternsAiHoldByPlayer((int)__instance.playerClientId);
+            if (internsAIsHoldByPlayer.Length > 0)
+            {
+                InternAI internAIHeld;
+                for (int i = 0; i < internsAIsHoldByPlayer.Length; i++)
+                {
+                    internAIHeld = internsAIsHoldByPlayer[i];
+
+                    // Release interns
+                    internAIHeld.SyncReleaseIntern(__instance);
+                    internAIHeld.SyncTeleportIntern(__instance.transform.position, !__instance.isInsideFactory, isUsingEntrance: false);
+
+                    switch (causeOfDeath)
+                    {
+                        case CauseOfDeath.Gravity:
+                        case CauseOfDeath.Blast:
+                        case CauseOfDeath.Suffocation:
+                        case CauseOfDeath.Drowning:
+                        case CauseOfDeath.Abandoned:
+                            Plugin.LogDebug($"SyncKillIntern on held intern on LOCAL client #{internAIHeld.NetworkManager.LocalClientId}, Intern #{internAIHeld.InternId}");
+                            internAIHeld.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
+                            break;
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -1141,7 +1171,7 @@ namespace LethalInternship.Patches.NpcPatches
                 }
 
                 // Grab intern
-                sb.Append("Grab intern: [A]");
+                sb.Append("Grab intern: [Q]");
 
                 __instance.cursorTip.text = sb.ToString();
 
