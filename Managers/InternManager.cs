@@ -400,7 +400,6 @@ namespace LethalInternship.Managers
                 }
             }
             RagdollDeadBodies[ragdollDeadBody.bodyID.Value] = ragdollDeadBody;
-            ragdollDeadBody.gameObject.SetActive(false);
 
             // Spawn grabbable ragdoll intern body of intern
             RagdollGrabbableObject ragdollInternBody;
@@ -421,7 +420,6 @@ namespace LethalInternship.Managers
                 }
             }
             RagdollInternBodies[ragdollInternBody.bodyID.Value] = ragdollInternBody;
-            ragdollInternBody.gameObject.SetActive(false);
         }
 
         /// <summary>

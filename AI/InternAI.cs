@@ -2837,8 +2837,9 @@ namespace LethalInternship.AI
                                                       (int)playerGrabberController.playerClientId);
             RagdollInternBody.SetGrabbedBy(playerGrabberController);
 
-            playerGrabberController.carryWeight += Mathf.Clamp(RagdollInternBody.GetWeight() - 1f, 0f, 10f);
-            playerGrabberController.carryWeight += Mathf.Clamp(NpcController.Npc.carryWeight - 1f, 0f, 10f);
+            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
+            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (NpcController.Npc.carryWeight - 1f), 1f, 10f);
+            Plugin.LogDebug($"+playerGrabberController.carryWeight {playerGrabberController.carryWeight} | {RagdollInternBody.GetWeight() - 1f} | {NpcController.Npc.carryWeight - 1f}");
 
             if (HeldItem != null)
             {
@@ -2918,8 +2919,9 @@ namespace LethalInternship.AI
             RagdollInternBody.SetReleased();
 
             PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
-            playerGrabberController.carryWeight -= Mathf.Clamp(RagdollInternBody.GetWeight() - 1f, 0f, 10f);
-            playerGrabberController.carryWeight -= Mathf.Clamp(NpcController.Npc.carryWeight - 1f, 0f, 10f);
+            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
+            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (NpcController.Npc.carryWeight - 1f), 1f, 10f);
+            Plugin.LogDebug($"-playerGrabberController.carryWeight {playerGrabberController.carryWeight} | {RagdollInternBody.GetWeight() - 1f} | {NpcController.Npc.carryWeight - 1f}");
 
             RagdollInternBody = null;
 
@@ -2931,7 +2933,7 @@ namespace LethalInternship.AI
             NpcController.Npc.gameObject.SetActive(true);
             this.gameObject.SetActive(true);
 
-            // Unsuscribe from events to prevent double trigger
+            // Unsubscribe from events to prevent double trigger
             PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
         }
 

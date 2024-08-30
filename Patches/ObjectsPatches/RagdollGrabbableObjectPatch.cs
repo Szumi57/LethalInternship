@@ -17,7 +17,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                 return true;
             }
 
-            if(internAI.RagdollInternBody == null)
+            if (internAI.RagdollInternBody == null)
             {
                 Plugin.LogDebug("internAI.RagdollInternBody is null !");
                 return true;
