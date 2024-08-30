@@ -2875,11 +2875,12 @@ namespace LethalInternship.AI
             if (RagdollInternBody == null)
             {
                 InstantiateDeadBodyInfo(playerGrabberController);
-                networkObjectReferenceRagdollGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
-                RagdollInternBody = new RagdollInternBody(networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>(),
-                                                          ragdollBodyDeadBodyInfo,
-                                                          (int)playerGrabberController.playerClientId);
             }
+
+            networkObjectReferenceRagdollGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
+            RagdollInternBody = new RagdollInternBody(networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>(),
+                                                      ragdollBodyDeadBodyInfo,
+                                                      (int)playerGrabberController.playerClientId);
 
             RagdollInternBody.SetGrabbedBy(playerGrabberController);
 

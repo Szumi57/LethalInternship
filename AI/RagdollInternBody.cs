@@ -34,15 +34,15 @@ namespace LethalInternship.AI
         public void SetGrabbedBy(PlayerControllerB playerGrabberController)
         {
             int bodyPart = 1;
-            this.ragdollGrabbableObject.gameObject.SetActive(true);
-            this.ragdollGrabbableObject.ragdoll.gameObject.SetActive(true);
-            this.ragdollGrabbableObject.ragdoll.SetBodyPartsKinematic(false);
+            ragdollGrabbableObject.gameObject.SetActive(true);
+            ragdollGrabbableObject.ragdoll.gameObject.SetActive(true);
 
-            this.ragdollGrabbableObject.ragdoll.attachedTo = this.ragdollGrabbableObject.transform;
-            this.ragdollGrabbableObject.ragdoll.attachedLimb = this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart];
-            this.ragdollGrabbableObject.transform.SetParent(this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart].transform);
-            this.ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
-            this.ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
+            ragdollGrabbableObject.ragdoll.attachedTo = this.ragdollGrabbableObject.transform;
+            ragdollGrabbableObject.ragdoll.attachedLimb = this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart];
+            ragdollGrabbableObject.transform.SetParent(this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart].transform);
+            ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
+            ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
+            ragdollGrabbableObject.ragdoll.SetBodyPartsKinematic(false);
 
             ragdollGrabbableObject.isHeld = true;
             //TreesUtils.PrintTransformTree(playerGrabberController.gameObject.GetComponentsInChildren<Transform>());
@@ -54,6 +54,11 @@ namespace LethalInternship.AI
 
         public void SetReleased()
         {
+            ragdollGrabbableObject.ragdoll.attachedTo = null;
+            ragdollGrabbableObject.ragdoll.attachedLimb = null;
+            ragdollGrabbableObject.ragdoll.matchPositionExactly = false;
+            ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = false;
+
             ragdollGrabbableObject.isHeld = false;
             ragdollGrabbableObject.parentObject = null;
             ragdollGrabbableObject.hasHitGround = false;
