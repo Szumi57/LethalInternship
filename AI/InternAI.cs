@@ -2839,7 +2839,6 @@ namespace LethalInternship.AI
 
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (NpcController.Npc.carryWeight - 1f), 1f, 10f);
-            Plugin.LogDebug($"+playerGrabberController.carryWeight {playerGrabberController.carryWeight} | {RagdollInternBody.GetWeight() - 1f} | {NpcController.Npc.carryWeight - 1f}");
 
             if (HeldItem != null)
             {
@@ -2921,7 +2920,6 @@ namespace LethalInternship.AI
             PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (NpcController.Npc.carryWeight - 1f), 1f, 10f);
-            Plugin.LogDebug($"-playerGrabberController.carryWeight {playerGrabberController.carryWeight} | {RagdollInternBody.GetWeight() - 1f} | {NpcController.Npc.carryWeight - 1f}");
 
             RagdollInternBody = null;
 
