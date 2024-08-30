@@ -944,6 +944,20 @@ namespace LethalInternship.Managers
 
             if (base.IsServer)
             {
+                foreach (InternAI internAI in AllInternAIs)
+                {
+                    if (internAI == null
+                        || internAI.isEnemyDead
+                        || internAI.NpcController.Npc.isPlayerDead
+                        || !internAI.NpcController.Npc.isPlayerControlled
+                        || internAI.AreHandsFree())
+                    {
+                        continue;
+                    }
+
+                    internAI.DropItemServerRpc();
+                }
+
                 SyncEndOfRoundInternsFromServerToClientRpc();
             }
             else
@@ -984,11 +998,13 @@ namespace LethalInternship.Managers
             }
 
             int alive = 0;
+            PlayerControllerB internController;
             for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
             {
-                if (!instance.allPlayerScripts[i].isPlayerDead && instance.allPlayerScripts[i].isPlayerControlled)
+                internController = instance.allPlayerScripts[i];
+                if (!internController.isPlayerDead && internController.isPlayerControlled)
                 {
-                    instance.allPlayerScripts[i].isPlayerControlled = false;
+                    internController.isPlayerControlled = false;
                     instance.allPlayerObjects[i].SetActive(false);
                     alive++;
                 }
