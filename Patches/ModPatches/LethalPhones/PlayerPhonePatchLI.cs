@@ -3,6 +3,7 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using Scoops.misc;
+using UnityEngine;
 
 namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
@@ -18,6 +19,19 @@ namespace LethalInternship.Patches.ModPatches.LethalPhones
             {
                 return false;
             }
+
+            Transform? phoneTransform = playerController.transform.Find("PhonePrefab(Clone)");
+            if (phoneTransform == null)
+            {
+                return false;
+            }
+
+            PlayerPhone? playerPhone = phoneTransform.GetComponent<PlayerPhone>();
+            if (playerPhone == null)
+            {
+                return false;
+            }
+
             return true;
         }
     }
