@@ -31,3 +31,20 @@ These passionate workers are available in a new section of your shop.
 ## On a more serious note
 This mod is very alpha and I still need to do a lot of polishing.
 <br/>I'm just happy to share this project with you, in hope that you find it fun and enjoyable.
+
+## Things to add
+- Voice lines, I still need to figure out how to implement all of this and find someone or use AI.
+- Make the intern go inside the ship. Will take some time, it is not easy at the moment.
+- More suits and animations (using the other mods)
+- Orders, a system to control the interns in some way. Can take some time to implement that too.
+
+## Bug to fix
+- Sand spider web trap not working for interns
+- Nutcracker ignoring interns
+- v60 stuff mineshaft elevator to fix
+- Item in player hand disapearing when intern climb ladders -> conflit with mod BetterLadders
+- Compatibility with mods 'Sehelitar's Zaprillator', 'bunkbedrevive'
+- Compatibility with modded maps, for environmental hazards damages
+- Intern not owned by player cannot take damage from said player
+- Body of intern just disappears when shot by shotgun
+- Only on march, with more than 6 interns, if they get close to the front door of the ship, massive framerate drop (why ???)

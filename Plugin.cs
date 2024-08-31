@@ -28,6 +28,7 @@ namespace LethalInternship
     /// </summary>
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID, BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency(Const.CSYNC_GUID, BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -35,9 +36,11 @@ namespace LethalInternship
         public static AssetBundle ModAssets = null!;
 
         internal static EnemyType InternNPCPrefab = null!;
-        internal static int IrlPlayersCount = 0;
+        internal static int PluginIrlPlayersCount = 0;
 
-        internal static Config BoundConfig { get; private set; } = null!;
+        internal static new Configs.Config Config = null!;
+
+        internal static bool IsModReviveCompanyLoaded = false;
 
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
@@ -46,7 +49,7 @@ namespace LethalInternship
         {
             Logger = base.Logger;
 
-            BoundConfig = new Config(base.Config);
+            Config = new Configs.Config(base.Config);
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
@@ -122,6 +125,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(BushWolfEnemyPatch));
             _harmony.PatchAll(typeof(ButlerBeesEnemyAIPatch));
             _harmony.PatchAll(typeof(ButlerEnemyAIPatch));
+            _harmony.PatchAll(typeof(CaveDwellerAIPatch));
             _harmony.PatchAll(typeof(CentipedeAIPatch));
             _harmony.PatchAll(typeof(CrawlerAIPatch));
             _harmony.PatchAll(typeof(FlowermanAIPatch));
@@ -150,6 +154,8 @@ namespace LethalInternship
 
             // Objects
             _harmony.PatchAll(typeof(DeadBodyInfoPatch));
+            _harmony.PatchAll(typeof(GrabbableObjectPatch));
+            _harmony.PatchAll(typeof(RagdollGrabbableObjectPatch));
             _harmony.PatchAll(typeof(ShotgunItemPatch));
             _harmony.PatchAll(typeof(StunGrenadeItemPatch));
 
@@ -168,11 +174,16 @@ namespace LethalInternship
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
             bool isModAdditionalNetworkingLoaded = IsModLoaded(Const.ADDITIONALNETWORKING_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
+            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
 
             // Compatibility with other mods
             if (isModMoreEmoteLoaded)
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
+            }
+            if (isModMoreCompanyLoaded)
+            {
+                _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
             }
             if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
             {
@@ -190,15 +201,19 @@ namespace LethalInternship
             }
             if (isModAdditionalNetworkingLoaded)
             {
-                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("AdditionalNetworking.Patches.Inventory.PlayerControllerBPatch"), "OnStart"), 
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("AdditionalNetworking.Patches.Inventory.PlayerControllerBPatch"), "OnStart"),
                                null,
-                               null, 
+                               null,
                                new HarmonyMethod(typeof(AdditionalNetworkingPatch), nameof(AdditionalNetworkingPatch.Start_Transpiler)));
             }
             if (isModShowCapacityLoaded)
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ShowCapacity.Patches.PlayerControllerBPatch"), "Update_PreFix"),
                                new HarmonyMethod(typeof(ShowCapacityPatch), nameof(ShowCapacityPatch.Update_PreFix_Prefix)));
+            }
+            if (IsModReviveCompanyLoaded)
+            {
+                _harmony.PatchAll(typeof(ReviveCompanyGeneralUtilPatch));
             }
         }
 
@@ -240,7 +255,7 @@ namespace LethalInternship
 
         internal static void LogDebug(string debugLog)
         {
-            if (!BoundConfig.EnableDebugLog.Value)
+            if (!Plugin.Config.EnableDebugLog.Value)
             {
                 return;
             }

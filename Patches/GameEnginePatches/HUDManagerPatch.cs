@@ -64,6 +64,105 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("SyncAllPlayerLevelsServerRpc", new Type[] { })]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SyncAllPlayerLevelsServerRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.SyncAllPlayerLevelsServerRpc_Transpiler 1 could not use irl number of player in list.");
+            }
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.SyncAllPlayerLevelsServerRpc_Transpiler 2 could not use irl number of player in list.");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("SyncAllPlayerLevelsClientRpc", new Type[] { typeof(int[]), typeof(bool[]) })]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SyncAllPlayerLevelsClientRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.SyncAllPlayerLevelsClientRpc_Transpiler could not use irl number of player in list.");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         public static void Start_Postfix(HUDManager __instance)
@@ -76,7 +175,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             Array.Resize(ref statsUIElements.playerStates, allEntitiesCount);
             Array.Resize(ref statsUIElements.playerNotesText, allEntitiesCount);
 
-            for(int i = InternManager.Instance.IndexBeginOfInterns; i < allEntitiesCount; i++)
+            for (int i = InternManager.Instance.IndexBeginOfInterns; i < allEntitiesCount; i++)
             {
                 GameObject newGameObjectParent = Object.Instantiate<GameObject>(gameObjectParent);
                 GameObject gameObjectPlayerName = newGameObjectParent.transform.Find("PlayerName1").gameObject;

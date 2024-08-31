@@ -9,5 +9,6 @@ namespace LethalInternship.Managers.SaveInfos
     internal class SaveFile
     {
         public int NbInternOwned;
+        public bool LandingStatusAborted;
     }
 }

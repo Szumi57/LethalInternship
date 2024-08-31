@@ -6,7 +6,7 @@
     <AssemblyName>LethalInternship</AssemblyName>
     <Product>LethalInternship</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>0.14.8</Version>
+    <Version>0.16.0</Version>
   </PropertyGroup>
 
   <!-- Project Properties -->
@@ -91,6 +91,9 @@
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>lib\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="com.sigurd.csync">
+      <HintPath>lib\mods\com.sigurd.csync.dll</HintPath>
+    </Reference>
     <Reference Include="FasterItemDropship">
       <HintPath>lib\mods\FasterItemDropship.dll</HintPath>
     </Reference>
@@ -102,6 +105,12 @@
     </Reference>
     <Reference Include="ModelReplacementAPI">
       <HintPath>lib\mods\ModelReplacementAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="MoreCompany">
+      <HintPath>lib\mods\MoreCompany.dll</HintPath>
+    </Reference>
+    <Reference Include="OPJosMod">
+      <HintPath>lib\mods\ReviveCompany.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Animation.Rigging">
       <HintPath>lib\Unity.Animation.Rigging.dll</HintPath>
