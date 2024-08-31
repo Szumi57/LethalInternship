@@ -82,7 +82,7 @@ namespace LethalInternship.Managers
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
-        private Bounds? shipBoundsExpanded;
+        public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
         private List<string> listOfNames = new List<string>();
         private EnumOptionInternNames optionInternNames;
@@ -132,29 +132,34 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            if (Plugin.PluginIrlPlayersCount == 0)
+            {
+                Plugin.PluginIrlPlayersCount = instance.allPlayerObjects.Length;
+                Plugin.LogDebug($"PluginIrlPlayersCount = {Plugin.PluginIrlPlayersCount}");
+            }
+
+            int irlPlayersCount = Plugin.PluginIrlPlayersCount;
+            int irlPlayersAndInternsCount = irlPlayersCount + maxInternsAvailable;
+
             // Initialize back ups
             if (AllPlayerObjectsBackUp == null)
             {
                 AllInternAIs = new InternAI[maxInternsAvailable];
                 AllPlayerObjectsBackUp = new GameObject[maxInternsAvailable];
                 AllPlayerScriptsBackUp = new PlayerControllerB[maxInternsAvailable];
+
+                RagdollInternBodies = new RagdollGrabbableObject[irlPlayersAndInternsCount];
             }
             else if (AllPlayerObjectsBackUp.Length != maxInternsAvailable)
             {
                 Array.Resize(ref AllInternAIs, maxInternsAvailable);
                 Array.Resize(ref AllPlayerObjectsBackUp, maxInternsAvailable);
                 Array.Resize(ref AllPlayerScriptsBackUp, maxInternsAvailable);
+
+                Array.Resize(ref RagdollInternBodies, irlPlayersAndInternsCount);
             }
 
-            if (Plugin.PluginIrlPlayersCount == 0)
-            {
-                Plugin.PluginIrlPlayersCount = instance.allPlayerObjects.Length;
-                Plugin.LogDebug($"PluginIrlPlayersCount = {Plugin.PluginIrlPlayersCount}");
-            }
-            int irlPlayersCount = Plugin.PluginIrlPlayersCount;
-            int irlPlayersAndInternsCount = irlPlayersCount + maxInternsAvailable;
             AllEntitiesCount = irlPlayersAndInternsCount;
-
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
@@ -255,6 +260,17 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            SpawnInternServer(indexNextPlayerObject, spawnPosition, yRot, isOutside);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SpawnThisInternServerRpc(int indexPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
+        {
+            SpawnInternServer(indexPlayerObject, spawnPosition, yRot, isOutside);
+        }
+
+        private void SpawnInternServer(int indexNextPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
+        {
             NetworkObject networkObject;
             int indexNextIntern = indexNextPlayerObject - IndexBeginOfInterns;
             InternAI internAI = AllInternAIs[indexNextIntern];
@@ -275,12 +291,16 @@ namespace LethalInternship.Managers
             }
 
             // Get a name for the intern
-            string internName = StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject].playerUsername;
+            PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject];
+            string internName = internController.playerUsername;
             if (!internAI.AlreadyNamed)
             {
                 internName = GetNameForIntern(internName, optionInternNames, arrayOfUserCustomNames);
                 internAI.AlreadyNamed = true;
             }
+
+            // Spawn ragdoll dead bodies of intern
+            SpawnRagdollBodies((int)internController.playerClientId);
 
             // Send to client to spawn intern
             SpawnInternClientRpc(networkObject,
@@ -363,6 +383,31 @@ namespace LethalInternship.Managers
             name = listOfNames[index] + iterationString;
             listOfNames.RemoveAt(index);
             return name;
+        }
+
+        private void SpawnRagdollBodies(int playerClientId)
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+
+            // Spawn grabbable ragdoll intern body of intern
+            RagdollGrabbableObject? ragdollInternBody = RagdollInternBodies[playerClientId];
+            if (ragdollInternBody == null)
+            {
+                GameObject gameObject = Object.Instantiate<GameObject>(instanceSOR.ragdollGrabbableObjectPrefab, instanceSOR.propsContainer);
+                gameObject.GetComponent<NetworkObject>().Spawn(false);
+                ragdollInternBody = gameObject.GetComponent<RagdollGrabbableObject>();
+                ragdollInternBody.bodyID.Value = playerClientId;
+                RagdollInternBodies[ragdollInternBody.bodyID.Value] = ragdollInternBody;
+            }
+            else
+            {
+                ragdollInternBody = RagdollInternBodies[playerClientId];
+                NetworkObject networkObjectRagdoll = ragdollInternBody.gameObject.GetComponent<NetworkObject>();
+                if (!networkObjectRagdoll.IsSpawned)
+                {
+                    networkObjectRagdoll.Spawn(false);
+                }
+            }
         }
 
         /// <summary>
@@ -460,6 +505,18 @@ namespace LethalInternship.Managers
 
             // Unsuscribe from events to prevent double trigger
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
+
+            // Remove dead bodies if exists
+            if (internController.deadBody != null)
+            {
+                //RagdollGrabbableObject ragdollDeadBody = RagdollDeadBodies[internController.playerClientId];
+                //ragdollDeadBody.ragdoll = null;
+                //AccessTools.Field(typeof(RagdollGrabbableObject), "foundRagdollObject").SetValue(ragdollDeadBody, false);
+
+                UnityEngine.Object.Destroy(internController.deadBody.gameObject);
+                //internController.deadBody.gameObject.SetActive(false);
+                internController.deadBody = null;
+            }
 
             internAI.Init();
         }
@@ -630,7 +687,7 @@ namespace LethalInternship.Managers
         /// </summary>
         /// <param name="grabbableObject">Object held by the <c>InternAI</c> the method is looking for</param>
         /// <returns><c>InternAI</c> if holding the <c>GrabbableObject</c>, else returns null</returns>
-        public InternAI? GetInternAiObjectOwnerOf(GrabbableObject grabbableObject)
+        public InternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject)
         {
             foreach (var internAI in AllInternAIs)
             {
@@ -652,6 +709,56 @@ namespace LethalInternship.Managers
             }
 
             return null;
+        }
+
+        public InternAI? GetInternAiOfRagdollBody(RagdollGrabbableObject ragdoll)
+        {
+            foreach (var internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.RagdollInternBody == null)
+                {
+                    continue;
+                }
+
+                if (internAI.RagdollInternBody.GetRagdollGrabbableObject() == ragdoll)
+                {
+                    return internAI;
+                }
+            }
+
+            return null;
+        }
+
+        public InternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder)
+        {
+            List<InternAI> results = new List<InternAI>();
+
+            foreach (var internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.RagdollInternBody == null)
+                {
+                    continue;
+                }
+
+                if (internAI.RagdollInternBody.IsRagdollBodyHeldByPlayer(idPlayerHolder))
+                {
+                    results.Add(internAI);
+                }
+            }
+
+            return results.ToArray();
         }
 
         /// <summary>
@@ -775,6 +882,17 @@ namespace LethalInternship.Managers
             return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
+        public bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)
+        {
+            InternAI? internAI = GetInternAiOwnerOfObject(grabbableObject);
+            if (internAI == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public InternAI[] GetInternsAIOwnedByLocal()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
@@ -807,14 +925,9 @@ namespace LethalInternship.Managers
         /// <returns></returns>
         public Bounds GetExpandedShipBounds()
         {
-            if (shipBoundsExpanded == null)
-            {
-                Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
-                shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
-                shipBoundsExpanded = shipBounds;
-            }
-
-            return shipBoundsExpanded.Value;
+            Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
+            shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
+            return shipBounds;
         }
 
         #region SyncEndOfRoundInterns
@@ -831,6 +944,20 @@ namespace LethalInternship.Managers
 
             if (base.IsServer)
             {
+                foreach (InternAI internAI in AllInternAIs)
+                {
+                    if (internAI == null
+                        || internAI.isEnemyDead
+                        || internAI.NpcController.Npc.isPlayerDead
+                        || !internAI.NpcController.Npc.isPlayerControlled
+                        || internAI.AreHandsFree())
+                    {
+                        continue;
+                    }
+
+                    internAI.DropItemServerRpc();
+                }
+
                 SyncEndOfRoundInternsFromServerToClientRpc();
             }
             else
@@ -871,11 +998,13 @@ namespace LethalInternship.Managers
             }
 
             int alive = 0;
+            PlayerControllerB internController;
             for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
             {
-                if (!instance.allPlayerScripts[i].isPlayerDead && instance.allPlayerScripts[i].isPlayerControlled)
+                internController = instance.allPlayerScripts[i];
+                if (!internController.isPlayerDead && internController.isPlayerControlled)
                 {
-                    instance.allPlayerScripts[i].isPlayerControlled = false;
+                    internController.isPlayerControlled = false;
                     instance.allPlayerObjects[i].SetActive(false);
                     alive++;
                 }

@@ -17,7 +17,6 @@ namespace LethalInternship.Managers
 
         private Terminal Terminal = null!;
         private TerminalParser terminalParser = null!;
-        private bool helpTextAlreadyAdded;
 
         private void Awake()
         {
@@ -46,11 +45,6 @@ namespace LethalInternship.Managers
         /// <param name="terminalNodesList">List of all terminal nodes from the base game terminal</param>
         public void AddTextToHelpTerminalNode(TerminalNodesList terminalNodesList)
         {
-            if (helpTextAlreadyAdded)
-            {
-                return;
-            }
-
             TerminalNode helpTerminalNode = terminalNodesList.specialNodes[Const.INDEX_HELP_TERMINALNODE];
             if (helpTerminalNode == null)
             {
@@ -65,8 +59,14 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            int indexMenuInternAlreadyAdded = helpTerminalNode.displayText.IndexOf(StringIntershipProgram);
+            if (indexMenuInternAlreadyAdded > 0)
+            {
+                // Text already added
+                return;
+            }
+
             helpTerminalNode.displayText = helpTerminalNode.displayText.Insert(indexOther, StringIntershipProgram);
-            helpTextAlreadyAdded = true;
         }
 
         /// <summary>

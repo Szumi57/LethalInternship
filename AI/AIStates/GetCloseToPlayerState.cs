@@ -72,7 +72,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Target in ship, wait outside
-            if (ai.IsTargetInShipBoundsExpanded())
+            if (ai.IsPlayerInShipBoundsExpanded(ai.targetPlayer))
             {
                 ai.State = new PlayerInShipState(this);
                 return;
@@ -142,6 +142,11 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+        }
+
+        public override string GetBillboardStateIndicator()
+        {
+            return string.Empty;
         }
     }
 }

@@ -96,6 +96,11 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
         }
 
+        public override string GetBillboardStateIndicator()
+        {
+            return @"/!\";
+        }
+
         /// <summary>
         /// Coroutine to find the closest node after some distance (<see cref="Const.DISTANCE_FLEEING"><c>Const.DISTANCE_FLEEING</c></see>).
         /// In other word, find a path node to flee from the enemy.

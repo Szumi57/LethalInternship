@@ -1,4 +1,6 @@
 ﻿using HarmonyLib;
+using LethalInternship.AI;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
 using System.Data;
@@ -13,6 +15,21 @@ namespace LethalInternship.Patches.ObjectsPatches
     [HarmonyPatch(typeof(DeadBodyInfo))]
     internal class DeadBodyInfoPatch
     {
+        [HarmonyPatch("DetectIfSeenByLocalPlayer")]
+        [HarmonyPrefix]
+        static bool DetectIfSeenByLocalPlayer_PreFix(DeadBodyInfo __instance)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerObjectId);
+            if (internAI != null
+                && internAI.RagdollInternBody != null
+                && internAI.RagdollInternBody.GetDeadBodyInfo() == __instance)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Patch for assigning right tag to a dead body for not getting debug logs of errors
         /// </summary>

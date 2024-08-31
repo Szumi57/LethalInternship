@@ -71,6 +71,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
+            ai.SetDestinationToPositionInternAI(ai.destination);
             ai.OrderMoveToDestination();
 
             if (!searchForPlayers.inProgress)
@@ -78,6 +79,11 @@ namespace LethalInternship.AI.AIStates
                 // Start the coroutine from base game to search for players
                 ai.StartSearch(ai.transform.position, searchForPlayers);
             }
+        }
+
+        public override string GetBillboardStateIndicator()
+        {
+            return "?";
         }
 
         /// <summary>
