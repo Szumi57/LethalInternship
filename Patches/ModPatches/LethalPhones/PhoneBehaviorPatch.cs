@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
     [HarmonyPatch(typeof(PhoneBehavior))]
     internal class PhoneBehaviorPatch
@@ -20,7 +20,7 @@ namespace LethalInternship.Patches.ModPatches
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 2; i++)
             {
-                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()" 
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
                     && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
                     && codes[i + 2].ToString() == "ldlen NULL")
                 {

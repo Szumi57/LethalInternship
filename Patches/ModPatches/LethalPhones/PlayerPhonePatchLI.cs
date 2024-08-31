@@ -4,7 +4,7 @@ using LethalInternship.AI;
 using LethalInternship.Managers;
 using Scoops.misc;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
     [HarmonyPatch(typeof(PlayerPhone))]
     internal class PlayerPhonePatchLI

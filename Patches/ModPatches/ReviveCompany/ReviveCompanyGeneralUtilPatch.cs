@@ -5,7 +5,7 @@ using LethalInternship.Managers;
 using OPJosMod.ReviveCompany;
 using UnityEngine;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.ReviveCompany
 {
     [HarmonyPatch(typeof(GeneralUtil))]
     internal class ReviveCompanyGeneralUtilPatch
