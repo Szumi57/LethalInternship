@@ -930,6 +930,44 @@ namespace LethalInternship.Managers
             return shipBounds;
         }
 
+        public void SetInternsInElevatorLateUpdate(StartOfRound instanceSOR)
+        {
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null)
+                {
+                    continue;
+                }
+
+                if (internAI.NpcController.Npc.isInElevator
+                    && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
+                    && internAI.NpcController.Npc.thisController.isGrounded)
+                {
+                    if (!internAI.AreHandsFree())
+                    {
+                        internAI.NpcController.Npc.SetItemInElevator(false, false, internAI.HeldItem);
+                    }
+                    internAI.NpcController.Npc.isInElevator = false;
+                    internAI.NpcController.Npc.isInHangarShipRoom = false;
+                }
+                else if (!internAI.NpcController.Npc.isInElevator
+                    && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
+                    && internAI.NpcController.Npc.thisController.isGrounded)
+                {
+                    internAI.NpcController.Npc.isInElevator = true;
+                    if (instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
+                        && internAI.NpcController.Npc.thisController.isGrounded)
+                    {
+                        internAI.NpcController.Npc.isInHangarShipRoom = true;
+                    }
+                    else if (!internAI.AreHandsFree())
+                    {
+                        internAI.NpcController.Npc.SetItemInElevator(false, true, internAI.HeldItem);
+                    }
+                }
+            }
+        }
+
         #region SyncEndOfRoundInterns
 
         /// <summary>
