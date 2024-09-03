@@ -77,7 +77,6 @@ namespace LethalInternship.AI
         private Vector3 previousWantedDestination;
         private bool isDestinationChanged;
         private float timeSinceStuck;
-        private bool StuckTeleportTry1;
         private float updateDestinationIntervalInternAI;
         private float timerCheckDoor;
 
