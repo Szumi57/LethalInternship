@@ -253,6 +253,12 @@ namespace LethalInternship.Managers
         [ServerRpc(RequireOwnership = false)]
         public void SpawnInternServerRpc(Vector3 spawnPosition, float yRot, bool isOutside)
         {
+            if (AllInternAIs == null || AllInternAIs.Length == 0)
+            {
+                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console");
+                return;
+            }
+
             int indexNextPlayerObject = GetNextAvailablePlayerObject();
             if (indexNextPlayerObject < 0)
             {
@@ -266,6 +272,12 @@ namespace LethalInternship.Managers
         [ServerRpc(RequireOwnership = false)]
         public void SpawnThisInternServerRpc(int indexPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
         {
+            if (AllInternAIs == null || AllInternAIs.Length == 0)
+            {
+                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console");
+                return;
+            }
+
             SpawnInternServer(indexPlayerObject, spawnPosition, yRot, isOutside);
         }
 
@@ -430,6 +442,12 @@ namespace LethalInternship.Managers
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
             Plugin.LogInfo($"Client receive RPC to spawn intern... position : {spawnPosition}, yRot: {yRot}");
+
+            if (AllInternAIs == null || AllInternAIs.Length == 0)
+            {
+                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console");
+                return;
+            }
 
             // Get internAI from server
             networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
