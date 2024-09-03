@@ -50,11 +50,6 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
                 Plugin.LogError($"LethalInternship.Patches.ModPatches.ReviveCompany.ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler could not check for closest dead body null");
             }
 
-            for (int i = 0; i < codes.Count; i++)
-            {
-                Plugin.LogDebug($"{i} {codes[i]}");
-            }
-
             return codes.AsEnumerable();
         }
     }
