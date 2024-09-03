@@ -160,7 +160,7 @@ namespace LethalInternship
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
         
         // StuckState
-        public static readonly float TIMER_STUCK_TOO_MUCH = 2f;
+        public static readonly float TIMER_STUCK_TOO_MUCH = 1.5f;
         public static readonly float TIMER_STUCK_WAY_TOO_MUCH = 5f;
 
         // Player in ShipState

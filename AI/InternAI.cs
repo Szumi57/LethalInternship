@@ -434,11 +434,10 @@ namespace LethalInternship.AI
             }
 
             // Controller stuck in world ?
-            Vector3 forward = NpcController.Npc.thisController.transform.forward;
             if (NpcController.Npc.isMovementHindered == 0
-                && (forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
+                && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {(forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude}");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
                 timeSinceStuck += AIIntervalTime;
             }
             else if (!NpcController.IsJumping)
@@ -447,32 +446,41 @@ namespace LethalInternship.AI
                 timeSinceStuck = 0f;
             }
 
-            if (timeSinceStuck > Const.TIMER_STUCK_WAY_TOO_MUCH)
-            {
-                timeSinceStuck = 0f;
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} - !!! Stuck since way too much - ({Const.TIMER_STUCK_WAY_TOO_MUCH}sec) -> teleport if target known");
-                // Teleport player
-                if (this.targetPlayer != null)
-                {
-                    Plugin.LogDebug($"Teleport to {this.targetPlayer.transform.position}");
-                    TeleportAgentAndBody(this.targetPlayer.transform.position);
-                }
-            }
-
+            // If stuck only teleport if no player can see the intern
             if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} - Stuck since too much - ({Const.TIMER_STUCK_TOO_MUCH}sec) -> teleport");
-                // Teleport player
-                if (StuckTeleportTry1)
+                bool isAPlayerSeeingIntern = false;
+                StartOfRound instanceSOR = StartOfRound.Instance;
+                Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
+                PlayerControllerB player;
+                Vector3 vectorPlayerToIntern;
+                for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
                 {
-                    NpcController.Npc.thisPlayerBody.transform.position = this.transform.position;
+                    player = instanceSOR.allPlayerScripts[i];
+                    if (player.isPlayerDead
+                        || !player.isPlayerControlled)
+                    {
+                        continue;
+                    }
+
+                    if (Physics.Linecast(player.gameplayCamera.transform.position, thisInternCamera.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                    {
+                        continue;
+                    }
+
+                    vectorPlayerToIntern = thisInternCamera.position - player.gameplayCamera.transform.position;
+                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
+                    {
+                        isAPlayerSeeingIntern = true;
+                        break;
+                    }
                 }
-                else
+
+                if (!isAPlayerSeeingIntern)
                 {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} Teleport to {NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f}");
-                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f);
+                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * 0.5f));
+                    timeSinceStuck = 0f;
                 }
-                StuckTeleportTry1 = !StuckTeleportTry1;
             }
         }
 
@@ -2629,8 +2637,8 @@ namespace LethalInternship.AI
             PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
 
             InstantiateDeadBodyInfo(playerGrabberController);
-            RagdollInternBody.SetGrabbedBy(playerGrabberController, 
-                                           ragdollBodyDeadBodyInfo, 
+            RagdollInternBody.SetGrabbedBy(playerGrabberController,
+                                           ragdollBodyDeadBodyInfo,
                                            (int)idPlayerGrabberController);
 
             playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (RagdollInternBody.GetWeight() - 1f), 1f, 10f);

@@ -1064,6 +1064,14 @@ namespace LethalInternship.Patches.NpcPatches
 
         #region Postfixes
 
+        [HarmonyPatch("Start")]
+        [HarmonyAfter(Const.MOREEMOTES_GUID)]
+        [HarmonyPostfix]
+        static void Start_PostFix(PlayerControllerB __instance, ref Collider[] ___nearByPlayers)
+        {
+            ___nearByPlayers = new Collider[InternManager.Instance.AllEntitiesCount];
+        }
+
         /// <summary>
         /// Debug patch to spawn an intern at will
         /// </summary>

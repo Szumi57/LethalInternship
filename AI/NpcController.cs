@@ -676,8 +676,10 @@ namespace LethalInternship.AI
             {
                 Npc.moveInputVector = Vector2.zero;
             }
+
+            // Near other players detection
             Vector3 vector = new Vector3(0f, 0f, 0f);
-            int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.65f, nearByPlayers, instanceSOR.playersMask);
+            int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.95f, nearByPlayers, instanceSOR.playersMask);
             for (int i = 0; i < num5; i++)
             {
                 vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[i].transform.position) * 100f) * 1.2f;
@@ -691,6 +693,7 @@ namespace LethalInternship.AI
                     vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
                 }
             }
+
             float num7;
             if (IsFallingFromJump || isFallingNoJump)
             {
