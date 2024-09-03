@@ -369,26 +369,41 @@ namespace LethalInternship.Patches.GameEnginePatches
                 SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
             }
         }
+
+        [HarmonyPatch("LateUpdate")]
+        [HarmonyPostfix]
+        static void LateUpdate_PostFix(StartOfRound __instance)
+        {
+            if (!__instance.inShipPhase 
+                && __instance.shipDoorsEnabled 
+                && !__instance.suckingPlayersOutOfShip)
+            {
+                InternManager.Instance.SetInternsInElevatorLateUpdate(__instance);
+            }
+        }
     }
 
-    //[HarmonyPatch(typeof(ShowerTrigger))] // make sure Harmony inspects the class
+    //[HarmonyPatch(typeof(EnemyAICollisionDetect))] // make sure Harmony inspects the class
     //class MyPatches
     //{
-    //    [HarmonyPatch("CheckBoundsForPlayers")]
+    //    [HarmonyPatch("OnTriggerStay")]
     //    [HarmonyPrefix]
-    //    static void Prefix(out System.Diagnostics.Stopwatch __state)
+    //    static void Prefix(Collider other)
     //    {
-    //        __state = System.Diagnostics.Stopwatch.StartNew();
+    //        if (other.CompareTag("Player"))
+    //        { 
+    //            Plugin.LogDebug($"intern? {other.gameObject.GetComponent<InternAI>()}");
+    //        }
     //    }
 
-    //    [HarmonyPatch("CheckBoundsForPlayers")]
-    //    [HarmonyPostfix]
-    //    static void Postfix(System.Diagnostics.Stopwatch __state)
-    //    {
-    //        __state.Stop();
-    //        var elapsedMs = __state.Elapsed.TotalMilliseconds;
-    //        Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
-    //    }
+    //    //[HarmonyPatch("CheckBoundsForPlayers")]
+    //    //[HarmonyPostfix]
+    //    //static void Postfix(System.Diagnostics.Stopwatch __state)
+    //    //{
+    //    //    __state.Stop();
+    //    //    var elapsedMs = __state.Elapsed.TotalMilliseconds;
+    //    //    Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
+    //    //}
     //}
 
     //[HarmonyPatch] // make sure Harmony inspects the class

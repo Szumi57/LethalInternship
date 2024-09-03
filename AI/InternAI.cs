@@ -510,7 +510,7 @@ namespace LethalInternship.AI
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
                     Plugin.LogDebug($"ChooseClosestNodeToPosition");
-                    //destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
+                    destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
                 }
                 agent.SetDestination(destination);
             }
@@ -924,22 +924,7 @@ namespace LethalInternship.AI
 
         public void ReParentIntern(Transform newParent)
         {
-            foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = false;
-            }
-
-            if (NpcController.Npc.transform.parent != newParent)
-            {
-                Plugin.LogDebug($"npcController.Npc.transform.parent before {NpcController.Npc.transform.parent}");
-                NpcController.Npc.transform.parent = newParent;
-                Plugin.LogDebug($"npcController.Npc.transform.parent after {NpcController.Npc.transform.parent}");
-            }
-
-            foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = true;
-            }
+            NpcController.ReParentNotSpawnedTransform(newParent);
         }
 
         /// <summary>
@@ -2600,7 +2585,7 @@ namespace LethalInternship.AI
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
             NpcController.Npc.lastSyncedPhysicsParent = null;
-            StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
+            NpcController.CurrentInternPhysicsRegions.Clear();
             this.ReParentIntern(NpcController.Npc.playersManager.playersContainer);
             if (this.HeldItem != null)
             {
