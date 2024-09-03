@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System;
@@ -17,6 +18,51 @@ namespace LethalInternship.Patches.ObjectsPatches
         static bool SetControlTipsForItem_PreFix(GrabbableObject __instance)
         {
             return InternManager.Instance.IsAnInternAiOwnerOfObject(__instance);
+        }
+
+        /// <summary>
+        /// ScanNodeProperties can be null, so perfix patch to cover cases with ragdoll bodies only
+        /// </summary>
+        /// <returns></returns>
+        [HarmonyPatch("SetScrapValue")]
+        [HarmonyPrefix]
+        static bool SetScrapValue_PreFix(GrabbableObject __instance, int setValueTo)
+        {
+            RagdollGrabbableObject? ragdollGrabbableObject = __instance as RagdollGrabbableObject;
+            if (ragdollGrabbableObject == null)
+            {
+                // Other scrap = do base game logic
+                return true;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAI(ragdollGrabbableObject.bodyID.Value);
+            if (internAI == null)
+            {
+                if (ragdollGrabbableObject.gameObject.GetComponentInChildren<ScanNodeProperties>() == null)
+                {
+                    // ragdoll of irl player with ScanNodeProperties null, we do the base game logic without the error
+                    __instance.scrapValue = setValueTo;
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (internAI.NpcController.Npc.isPlayerDead
+                && ragdollGrabbableObject.gameObject.GetComponentInChildren<ScanNodeProperties>() == null)
+            {
+                if (ragdollGrabbableObject.gameObject.GetComponentInChildren<ScanNodeProperties>() == null)
+                {
+                    // ragdoll of intern with ScanNodeProperties null, we do the base game logic without the error
+                    __instance.scrapValue = setValueTo;
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Grabbable ragdoll body, not sellable, intern not dead
+            return false;
         }
 
         [HarmonyReversePatch]

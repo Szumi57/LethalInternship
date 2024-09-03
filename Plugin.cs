@@ -18,6 +18,7 @@ using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -33,8 +34,17 @@ namespace LethalInternship
     /// Main mod plugin class, start everything
     /// </summary>
     [BepInPlugin(ModGUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+    // HardDependencies
     [BepInDependency(LethalLib.Plugin.ModGUID, BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(Const.CSYNC_GUID, BepInDependency.DependencyFlags.HardDependency)]
+    // SoftDependencies
+    [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.MORECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.MODELREPLACEMENT_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.LETHALPHONES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.FASTERITEMDROPSHIP_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.SHOWCAPACITY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -173,15 +183,27 @@ namespace LethalInternship
 
         private void PatchOtherMods()
         {
+            // -----------------------
+            // Are these mods loaded ?
+            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             bool isModMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
-            bool isModAdditionalNetworkingLoaded = IsModLoaded(Const.ADDITIONALNETWORKING_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
-            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
 
+            // -------------------
+            // Read the preloaders
+            List<string> preloadersFileNames = new List<string>();
+            foreach (string file in System.IO.Directory.GetFiles(Path.GetFullPath(Paths.PatcherPluginPath), "*.dll", SearchOption.AllDirectories))
+            {
+                preloadersFileNames.Add(Path.GetFileName(file));
+            }
+            // Are these preloaders loaded ?
+            bool isModAdditionalNetworkingLoaded = IsPreLoaderLoaded(Const.ADDITIONALNETWORKING_DLLFILENAME, preloadersFileNames);
+
+            // -----------------------------
             // Compatibility with other mods
             if (isModMoreEmoteLoaded)
             {
@@ -220,6 +242,10 @@ namespace LethalInternship
             if (IsModReviveCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(ReviveCompanyGeneralUtilPatch));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("OPJosMod.ReviveCompany.Patches.PlayerControllerBPatch"), "setHoverTipAndCurrentInteractTriggerPatch"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(ReviveCompanyPlayerControllerBPatchPatch), nameof(ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler)));
             }
         }
 
@@ -228,7 +254,18 @@ namespace LethalInternship
             bool ret = Chainloader.PluginInfos.ContainsKey(modGUID);
             if (ret)
             {
-                Logger.LogDebug($"Mod loaded : GUID {modGUID}");
+                LogInfo($"Mod compatibility loaded for mod : GUID {modGUID}");
+            }
+
+            return ret;
+        }
+
+        private bool IsPreLoaderLoaded(string dllFileName, List<string> fileNames)
+        {
+            bool ret = fileNames.Contains(dllFileName);
+            if (ret)
+            {
+                LogInfo($"Mod compatibility loaded for preloader : {dllFileName}");
             }
 
             return ret;

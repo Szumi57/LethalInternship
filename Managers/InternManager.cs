@@ -163,7 +163,7 @@ namespace LethalInternship.Managers
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
-                Plugin.LogInfo("Pool of interns ok. The arrays have not been resize");
+                Plugin.LogInfo($"Pool of interns ok. The arrays have not been resized, PluginIrlPlayersCount: {Plugin.PluginIrlPlayersCount}, arrays length: {instance.allPlayerScripts.Length}");
                 return;
             }
 
@@ -300,10 +300,10 @@ namespace LethalInternship.Managers
             }
 
             // Spawn ragdoll dead bodies of intern
-            SpawnRagdollBodies((int)internController.playerClientId);
+            NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)internController.playerClientId);
 
             // Send to client to spawn intern
-            SpawnInternClientRpc(networkObject,
+            SpawnInternClientRpc(networkObject, networkObjectRagdollBody,
                                  indexNextIntern, indexNextPlayerObject,
                                  internName,
                                  spawnPosition, yRot, isOutside);
@@ -385,29 +385,31 @@ namespace LethalInternship.Managers
             return name;
         }
 
-        private void SpawnRagdollBodies(int playerClientId)
+        private NetworkObject SpawnRagdollBodies(int playerClientId)
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
+            NetworkObject networkObjectRagdoll;
 
             // Spawn grabbable ragdoll intern body of intern
             RagdollGrabbableObject? ragdollInternBody = RagdollInternBodies[playerClientId];
             if (ragdollInternBody == null)
             {
                 GameObject gameObject = Object.Instantiate<GameObject>(instanceSOR.ragdollGrabbableObjectPrefab, instanceSOR.propsContainer);
-                gameObject.GetComponent<NetworkObject>().Spawn(false);
+                networkObjectRagdoll = gameObject.GetComponent<NetworkObject>();
+                networkObjectRagdoll.Spawn(false);
                 ragdollInternBody = gameObject.GetComponent<RagdollGrabbableObject>();
-                ragdollInternBody.bodyID.Value = playerClientId;
-                RagdollInternBodies[ragdollInternBody.bodyID.Value] = ragdollInternBody;
+                ragdollInternBody.bodyID.Value = Const.INIT_RAGDOLL_ID;
+                RagdollInternBodies[playerClientId] = ragdollInternBody;
             }
             else
             {
-                ragdollInternBody = RagdollInternBodies[playerClientId];
-                NetworkObject networkObjectRagdoll = ragdollInternBody.gameObject.GetComponent<NetworkObject>();
+                networkObjectRagdoll = ragdollInternBody.gameObject.GetComponent<NetworkObject>();
                 if (!networkObjectRagdoll.IsSpawned)
                 {
                     networkObjectRagdoll.Spawn(false);
                 }
             }
+            return networkObjectRagdoll;
         }
 
         /// <summary>
@@ -422,18 +424,24 @@ namespace LethalInternship.Managers
         /// <param name="isOutside">Spawning outside or inside the facility (used for initializing AI Nodes)</param>
         [ClientRpc]
         private void SpawnInternClientRpc(NetworkObjectReference networkObjectReferenceInternAI,
+                                          NetworkObjectReference networkObjectReferenceRagdollInternBody,
                                           int indexNextIntern, int indexNextPlayerObject,
                                           string internName,
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
             Plugin.LogInfo($"Client receive RPC to spawn intern... position : {spawnPosition}, yRot: {yRot}");
 
+            // Get internAI from server
             networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
             InternAI internAI = networkObjectInternAI.gameObject.GetComponent<InternAI>();
             AllInternAIs[indexNextIntern] = internAI;
 
+            // Get ragdoll body from server
+            networkObjectReferenceRagdollInternBody.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
+            RagdollGrabbableObject ragdollBody = networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>();
+
             internAI.SetEnemyOutside(isOutside);
-            InitInternSpawning(internAI, indexNextPlayerObject, internName, spawnPosition, yRot, isOutside);
+            InitInternSpawning(internAI, ragdollBody, indexNextPlayerObject, internName, spawnPosition, yRot, isOutside);
         }
 
         /// <summary>
@@ -445,7 +453,8 @@ namespace LethalInternship.Managers
         /// <param name="spawnPosition">Where the interns will spawn</param>
         /// <param name="yRot">Rotation of the interns when spawning</param>
         /// <param name="isOutside">Spawning outside or inside the facility (used for initializing AI Nodes)</param>
-        private void InitInternSpawning(InternAI internAI, int indexNextPlayerObject,
+        private void InitInternSpawning(InternAI internAI, RagdollGrabbableObject ragdollBody,
+                                        int indexNextPlayerObject,
                                         string internName,
                                         Vector3 spawnPosition, float yRot, bool isOutside)
         {
@@ -493,6 +502,9 @@ namespace LethalInternship.Managers
             internAI.NpcController = new NpcController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
 
+            // Attach ragdoll body
+            internAI.RagdollInternBody = new RagdollInternBody(ragdollBody);
+
             // Plug ai on intern body
             Plugin.LogDebug($"Adding AI \"{internAI.InternId}\" for body {internController.playerUsername}");
             internAI.enabled = false;
@@ -509,12 +521,7 @@ namespace LethalInternship.Managers
             // Remove dead bodies if exists
             if (internController.deadBody != null)
             {
-                //RagdollGrabbableObject ragdollDeadBody = RagdollDeadBodies[internController.playerClientId];
-                //ragdollDeadBody.ragdoll = null;
-                //AccessTools.Field(typeof(RagdollGrabbableObject), "foundRagdollObject").SetValue(ragdollDeadBody, false);
-
                 UnityEngine.Object.Destroy(internController.deadBody.gameObject);
-                //internController.deadBody.gameObject.SetActive(false);
                 internController.deadBody = null;
             }
 
@@ -711,30 +718,6 @@ namespace LethalInternship.Managers
             return null;
         }
 
-        public InternAI? GetInternAiOfRagdollBody(RagdollGrabbableObject ragdoll)
-        {
-            foreach (var internAI in AllInternAIs)
-            {
-                if (internAI == null
-                    || !internAI.IsSpawned
-                    || internAI.isEnemyDead
-                    || internAI.NpcController == null
-                    || internAI.NpcController.Npc.isPlayerDead
-                    || !internAI.NpcController.Npc.isPlayerControlled
-                    || internAI.RagdollInternBody == null)
-                {
-                    continue;
-                }
-
-                if (internAI.RagdollInternBody.GetRagdollGrabbableObject() == ragdoll)
-                {
-                    return internAI;
-                }
-            }
-
-            return null;
-        }
-
         public InternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder)
         {
             List<InternAI> results = new List<InternAI>();
@@ -746,8 +729,7 @@ namespace LethalInternship.Managers
                     || internAI.isEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
-                    || !internAI.NpcController.Npc.isPlayerControlled
-                    || internAI.RagdollInternBody == null)
+                    || !internAI.NpcController.Npc.isPlayerControlled)
                 {
                     continue;
                 }
