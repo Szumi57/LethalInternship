@@ -3,14 +3,12 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
-using OPJosMod.ReviveCompany;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
-using UnityEngine.Analytics;
 using UnityEngine.InputSystem;
 using Label = System.Reflection.Emit.Label;
 using OpCodes = System.Reflection.Emit.OpCodes;
@@ -215,6 +213,8 @@ namespace LethalInternship.Patches.NpcPatches
                 return false;
             }
 
+            // A player is killed 
+
             if (Const.INVINCIBILITY)
             {
                 // Bootleg invincibility
@@ -230,11 +230,6 @@ namespace LethalInternship.Patches.NpcPatches
                 for (int i = 0; i < internsAIsHoldByPlayer.Length; i++)
                 {
                     internAIHeld = internsAIsHoldByPlayer[i];
-
-                    // Release interns
-                    internAIHeld.SyncReleaseIntern(__instance);
-                    internAIHeld.SyncTeleportIntern(__instance.transform.position, !__instance.isInsideFactory, isUsingEntrance: false);
-
                     switch (causeOfDeath)
                     {
                         case CauseOfDeath.Gravity:
@@ -242,7 +237,7 @@ namespace LethalInternship.Patches.NpcPatches
                         case CauseOfDeath.Suffocation:
                         case CauseOfDeath.Drowning:
                         case CauseOfDeath.Abandoned:
-                            Plugin.LogDebug($"SyncKillIntern on held intern on LOCAL client #{internAIHeld.NetworkManager.LocalClientId}, Intern #{internAIHeld.InternId}");
+                            Plugin.LogDebug($"SyncKillIntern on held intern by {__instance.playerUsername} {__instance.playerClientId} on LOCAL client #{internAIHeld.NetworkManager.LocalClientId}, Intern #{internAIHeld.InternId}");
                             internAIHeld.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
                             break;
                     }
@@ -420,12 +415,9 @@ namespace LethalInternship.Patches.NpcPatches
             InternAI[] internsAIsHoldByPlayer = InternManager.Instance.GetInternsAiHoldByPlayer((int)__instance.playerClientId);
             if (internsAIsHoldByPlayer.Length > 0)
             {
-                InternAI internAI;
                 for (int i = 0; i < internsAIsHoldByPlayer.Length; i++)
                 {
-                    internAI = internsAIsHoldByPlayer[i];
-                    internAI.SyncReleaseIntern(__instance);
-                    internAI.SyncTeleportIntern(__instance.transform.position, !__instance.isInsideFactory, isUsingEntrance: false);
+                    internsAIsHoldByPlayer[i].SyncReleaseIntern(__instance);
                 }
 
                 return false;
@@ -1116,10 +1108,7 @@ namespace LethalInternship.Patches.NpcPatches
                         return;
                     }
 
-                    InternAI? internAI = InternManager.Instance.GetInternAI(ragdoll.bodyID.Value);
-                    if (internAI != null 
-                        && internAI.RagdollInternBody != null
-                        && internAI.RagdollInternBody.IsRagdollBodyHeldByPlayer((int)__instance.playerClientId))
+                    if (ragdoll.bodyID.Value == Const.INIT_RAGDOLL_ID)
                     {
                         // Remove tooltip text
                         __instance.cursorTip.text = string.Empty;

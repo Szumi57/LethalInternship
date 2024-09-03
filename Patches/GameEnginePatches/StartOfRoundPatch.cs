@@ -317,6 +317,41 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("OnClientConnect")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> OnClientConnect_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            if (Const.TEST_MORE_THAN_X_PLAYER_BYPASS)
+            {
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 11; i++)
+                {
+                    if (codes[i].ToString().StartsWith("ldc.i4.1 NULL") // 24
+                        && codes[i + 5].ToString().StartsWith("callvirt virtual bool System.Collections.Generic.List<int>::Contains") // 29
+                        && codes[i + 11].ToString() == "ldc.i4.1 NULL")// 35
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Ldc_I4_5;
+                    codes[startIndex].operand = null;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.OnClientConnect_Transpiler could not test with making the 2nd player the 4th");
+                }
+            }
+
+            return codes.AsEnumerable();
+        }
+
         #endregion
 
         /// <summary>

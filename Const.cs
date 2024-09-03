@@ -16,9 +16,10 @@ namespace LethalInternship
         public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
         public const string LETHALPHONES_GUID = "LethalPhones";
         public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
-        public const string ADDITIONALNETWORKING_GUID = "mattymatty.AdditionalNetworking";
         public const string SHOWCAPACITY_GUID = "Piggy.ShowCapacity";
         public const string REVIVECOMPANY_GUID = "OpJosMod.ReviveCompany";
+
+        public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
@@ -83,6 +84,7 @@ namespace LethalInternship
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
         public static readonly float COLLISION_RANGE = 2.8f;
         public static readonly float CLIMB_SPEED = 8f;
+        public static readonly int INIT_RAGDOLL_ID = -2;
 
         public static readonly float AGENT_SPEED = 3.5f;
         public static readonly float AGENT_SPEED_CROUCH = 1.75f;
@@ -106,6 +108,7 @@ namespace LethalInternship
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
+        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
 
         // NpcController
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
