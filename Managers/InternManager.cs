@@ -60,7 +60,7 @@ namespace LethalInternship.Managers
         {
             get
             {
-                return StartOfRound.Instance.allPlayerScripts.Length - AllInternAIs?.Length ?? 0;
+                return StartOfRound.Instance.allPlayerScripts.Length - (AllInternAIs?.Length ?? 0);
             }
         }
         /// <summary>
@@ -647,27 +647,18 @@ namespace LethalInternship.Managers
         /// <summary>
         /// Get <c>InternAI</c> from <c>PlayerControllerB</c> <c>playerClientId</c>
         /// </summary>
-        /// <param name="index"><c>playerClientId</c> of <c>PlayerControllerB</c></param>
+        /// <param name="playerClientId"><c>playerClientId</c> of <c>PlayerControllerB</c></param>
         /// <returns><c>InternAI</c> if the <c>PlayerControllerB</c> has an <c>InternAI</c> associated, else returns null</returns>
-        public InternAI? GetInternAI(int index)
+        public InternAI? GetInternAI(int playerClientId)
         {
-            if (AllInternAIs == null)
+            if (IndexBeginOfInterns == StartOfRound.Instance.allPlayerScripts.Length
+                || playerClientId < IndexBeginOfInterns)
             {
-                // Ai not yet initialized
+                // Real player
                 return null;
             }
 
-            int oldPlayersCount = StartOfRound.Instance.allPlayerObjects.Length - AllInternAIs.Length;
-            if (index < IndexBeginOfInterns)
-            {
-                return null;
-            }
-
-            if (AllInternAIs.Length > 0)
-            {
-                return AllInternAIs[index < 0 ? 0 : index - oldPlayersCount];
-            }
-            return null;
+            return AllInternAIs[playerClientId - IndexBeginOfInterns];
         }
 
         /// <summary>

@@ -339,7 +339,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 }
                 if (startIndex > -1)
                 {
-                    codes[startIndex].opcode = OpCodes.Ldc_I4_5;
+                    codes[startIndex].opcode = OpCodes.Ldc_I4_3;
                     codes[startIndex].operand = null;
                     startIndex = -1;
                 }
