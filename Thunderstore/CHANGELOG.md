@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.17.0 [Alpha] - 2024-08-
+### Added
+- InputUtils, change the keybinds for your intern how you want.
+### Fixed
+- Fix hard and soft dependencies completely forgotten in the plugin setup... hope compatibility fixes gets better for people now.
+- Attempt to fix the 4th player or 5th player (with moreCompany) bug with intern taking control and all that. Really not sure it's fixed, need further testing.
+- Fix some more movements for interns, they only teleport when no one is looking at them now.
+- Complete rewrite of the behaviour of grabbable intern body, should work better, fixes issue 42, thanks @ShadowWolf90 on GitHub ([#42](https://github.com/Szumi57/LethalInternship/issues/42))
+- Fix some more bug with lethalPhones et ReviveCompany.
+
+- , thanks @ on Discord
+
 ## 0.16.0 [Alpha] - 2024-08-30
 ### Added
 - Grab interns ! You can grab multiple interns with you but be carefull : their weight and their held item weight gets added to your weight. You may not be able to move after...

@@ -6,7 +6,7 @@
     <AssemblyName>LethalInternship</AssemblyName>
     <Product>LethalInternship</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>0.16.0</Version>
+    <Version>0.17.0</Version>
   </PropertyGroup>
 
   <!-- Project Properties -->
