@@ -111,6 +111,7 @@ namespace LethalInternship
         public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
 
         // NpcController
+        public static readonly int PLAYER_MASK = 8;
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSBOTHHANDS = "HoldingItemsBothHands";
         public static readonly string PLAYER_ANIMATION_WEIGHT_SPECIALANIMATIONS = "SpecialAnimations";
@@ -181,6 +182,14 @@ namespace LethalInternship
         public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
+
+        // Tips
+        public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
+        public static readonly string TOOLTIP_TAKE_ITEM = "Take my item : [{0}]";
+        public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
+        public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
+        public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
+        public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
 
         // Terminal
         public static readonly int INDEX_HELP_TERMINALNODE = 13;

@@ -2,6 +2,7 @@
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
+using LethalInternship.Inputs;
 using LethalInternship.Managers;
 using LethalInternship.Patches.EnemiesPatches;
 using LethalInternship.Patches.GameEnginePatches;
@@ -37,6 +38,7 @@ namespace LethalInternship
     // HardDependencies
     [BepInDependency(LethalLib.Plugin.ModGUID, BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(Const.CSYNC_GUID, BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency(LethalCompanyInputUtils.LethalCompanyInputUtilsPlugin.ModId, BepInDependency.DependencyFlags.HardDependency)]
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -55,6 +57,7 @@ namespace LethalInternship
         internal static int PluginIrlPlayersCount = 0;
 
         internal static new Configs.Config Config = null!;
+        internal static LethalInternshipInputs InputActionsInstance = null!;
 
         internal static bool IsModReviveCompanyLoaded = false;
 
@@ -66,6 +69,7 @@ namespace LethalInternship
             Logger = base.Logger;
 
             Config = new Configs.Config(base.Config);
+            InputActionsInstance = new LethalInternshipInputs();
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();

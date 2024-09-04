@@ -44,6 +44,9 @@ namespace LethalInternship.Patches.GameEnginePatches
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
 
+            objectManager = new GameObject("InputManager");
+            objectManager.AddComponent<InputManager>();
+
             Plugin.LogDebug("... Managers started");
         }
 
