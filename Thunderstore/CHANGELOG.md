@@ -11,6 +11,7 @@
 - Fix some more movements for interns, they only teleport when no one is looking at them now.
 - Complete rewrite of the behaviour of grabbable intern body, should work better, fixes issue 42, thanks @ShadowWolf90 on GitHub ([#42](https://github.com/Szumi57/LethalInternship/issues/42))
 - Fix some more bug with lethalPhones et ReviveCompany.
+- Fix picking up and release intern if their weight gets set to 0 with other mods, thanks @ShadowWolf90 on GitHub, issue 41 ([#41](https://github.com/Szumi57/LethalInternship/issues/41))
 
 - , thanks @ on Discord
 
