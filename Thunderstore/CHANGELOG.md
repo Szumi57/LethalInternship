@@ -3,6 +3,8 @@
 ## 0.17.0 [Alpha] - 2024-08-
 ### Added
 - InputUtils, change the keybinds for your intern how you want.
+### Changed
+- Grab and release intern keybinds are now separate, default 'Q' for grab, 'R' for release.
 ### Fixed
 - Fix hard and soft dependencies completely forgotten in the plugin setup... hope compatibility fixes gets better for people now.
 - Attempt to fix the 4th player or 5th player (with moreCompany) bug with intern taking control and all that. Really not sure it's fixed, need further testing.
