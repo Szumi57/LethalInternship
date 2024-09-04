@@ -3,6 +3,7 @@
 ## 0.17.0 [Alpha] - 2024-08-
 ### Added
 - InputUtils, change the keybinds for your intern how you want.
+- Added config option for intern to grab or not the maneater as a baby, default to false, thanks @ShadowWolf90 on GitHub, issue 40 ([#40](https://github.com/Szumi57/LethalInternship/issues/40)).
 ### Changed
 - Grab and release intern keybinds are now separate, default 'Q' for grab, 'R' for release.
 ### Fixed
