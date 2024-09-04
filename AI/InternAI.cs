@@ -516,7 +516,6 @@ namespace LethalInternship.AI
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
-                    Plugin.LogDebug($"ChooseClosestNodeToPosition");
                     destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
                 }
                 agent.SetDestination(destination);
@@ -1369,6 +1368,13 @@ namespace LethalInternship.AI
                 && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
             {
                 return true;
+            }
+
+            // Maneater
+            if (!Plugin.Config.GrabManeaterBaby.Value
+                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
+            {
+                return true; 
             }
 
             return false;

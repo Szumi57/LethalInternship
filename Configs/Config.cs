@@ -36,6 +36,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
+        [SyncedEntryField] public SyncedEntry<bool> GrabManeaterBaby;
         
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
@@ -118,6 +119,11 @@ namespace LethalInternship.Configs
                                       "Grab dead bodies",
                                       defaultVal: false,
                                       "Should the intern try to grab dead bodies ?");
+
+            GrabManeaterBaby = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                      "Grab the baby maneater",
+                                      defaultVal: false,
+                                      "Should the intern try to grab the baby maneater ?");
 
             // Debug
             EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
