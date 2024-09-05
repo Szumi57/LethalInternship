@@ -188,7 +188,7 @@ namespace LethalInternship.AI
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
             // Init state
-            State = new SearchingForPlayerState(this);
+            InitStateToSearching();
         }
 
         /// <summary>
@@ -539,6 +539,11 @@ namespace LethalInternship.AI
         public bool IsClientOwnerOfIntern()
         {
             return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public void InitStateToSearching()
+        {
+            State = new SearchingForPlayerState(this);
         }
 
         public int MaxHealthPercent(int percentage)
@@ -1430,7 +1435,7 @@ namespace LethalInternship.AI
         /// <param name="pos">Position destination</param>
         /// <param name="setOutside">Is the teleport destination outside of the facility</param>
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
-        private void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
+        public void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             TeleportAgentAndBody(pos, setOutside);
 
@@ -1653,7 +1658,7 @@ namespace LethalInternship.AI
         /// <param name="inShipRoom">Is the intern in the ship room ?</param>
         /// <param name="exhausted">Is the intern exhausted ?</param>
         /// <param name="isPlayerGrounded">Is the intern player body touching the ground ?</param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void UpdateInternPositionServerRpc(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
         {
             UpdateInternPositionClientRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
@@ -1770,7 +1775,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="animationState">Current animation state</param>
         /// <param name="animationSpeed">Current animation speed</param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership =false)]
         public void UpdateInternAnimationServerRpc(int animationState, float animationSpeed)
         {
             UpdateInternAnimationClientRpc(animationState, animationSpeed);
@@ -2069,7 +2074,7 @@ namespace LethalInternship.AI
         /// <summary>
         /// Make the intern drop his item like an enemy, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
-        private void DropItem()
+        public void DropItem()
         {
             Plugin.LogInfo($"Try to drop item on client #{NetworkManager.LocalClientId}");
             if (this.HeldItem == null)
@@ -2593,7 +2598,6 @@ namespace LethalInternship.AI
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
                 ResizeRagdoll(NpcController.Npc.deadBody.transform);
-                Plugin.LogDebug($"dead body for Intern #{this.InternId}: {NpcController.Npc.deadBody.GetInstanceID()}");
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;

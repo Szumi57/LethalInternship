@@ -37,10 +37,13 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
         [SyncedEntryField] public SyncedEntry<bool> GrabManeaterBaby;
-        
+
+        // Teleporters
+        [SyncedEntryField] public SyncedEntry<bool> InverseTeleportInternsAtRandomPos;
+        [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
+
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
-        public ConfigEntry<bool> EnableStackTraceInDebugLog;
 
         public Config(ConfigFile cfg) : base(PluginInfo.PLUGIN_GUID)
         {
@@ -125,15 +128,22 @@ namespace LethalInternship.Configs
                                       defaultVal: false,
                                       "Should the intern try to grab the baby maneater ?");
 
+            // Teleporters
+            InverseTeleportInternsAtRandomPos = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
+                                                                  "Inverse teleported intern random position (not if the intern is grabbed by player)",
+                                                                  defaultVal: true,
+                                                                  "Should the intern be inverse teleported at a random position (not next to player) ?");
+
+            TeleportedInternDropItems = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
+                                                            "Teleported intern drop item (not if the intern is grabbed by player)",
+                                                            defaultVal: true,
+                                                            "Should the intern his held item before teleporting ?");
+
             // Debug
             EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
                                       "EnableDebugLog",
                                       defaultValue: false,
                                       "Enable the debug logs used for this mod.");
-            EnableStackTraceInDebugLog = cfg.Bind(Const.ConfigSectionDebug,
-                                                  "EnableStackTraceInDebugLog",
-                                                  defaultValue: false,
-                                                  "Enable printing the stack trace in the error logs when using this mod.");
 
             ClearUnusedEntries(cfg);
             cfg.SaveOnConfigSet = true;

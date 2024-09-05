@@ -28,7 +28,8 @@ namespace LethalInternship
         public static readonly string ConfigSectionMain = "1. Internship program";
         public static readonly string ConfigSectionNames = "2. Intern names";
         public static readonly string ConfigSectionBehaviour = "3. Behaviour";
-        public static readonly string ConfigSectionDebug = "4. Debug";
+        public static readonly string ConfigSectionTeleporters = "4. Teleporters";
+        public static readonly string ConfigSectionDebug = "5. Debug";
 
         public static readonly int DEFAULT_MAX_INTERNS_AVAILABLE = 16;
         public static readonly int MIN_INTERNS_AVAILABLE = 1;

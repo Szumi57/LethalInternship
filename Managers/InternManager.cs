@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 using Object = UnityEngine.Object;
 using Random = System.Random;
 
@@ -608,6 +609,82 @@ namespace LethalInternship.Managers
         private void EndSpawnInternsFromDropShipClientRpc()
         {
             NbInternsToDropShip = 0;
+        }
+
+        #endregion
+
+        #region
+
+        /// <summary>
+        /// Teleport intern close to the teleporter
+        /// </summary>
+        /// <remarks>
+        /// We are coming from a client rpc method, so already client side, we have to only use client side methods, no sync
+        /// </remarks>
+        /// <param name="teleporter"></param>
+        /// <param name="teleportPos"></param>
+        public void TeleportOutInterns(ShipTeleporter teleporter,
+                                       int playerClientid,
+                                       Vector3 teleportPos, Random shipTeleporterSeed)
+        {
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                if ((internAI.NpcController.Npc.transform.position - teleporter.teleportOutPosition.position).sqrMagnitude > 2f * 2f)
+                {
+                    continue;
+                }
+
+                // Dropping or not items
+                if (Plugin.Config.TeleportedInternDropItems.Value
+                    && !internAI.AreHandsFree())
+                {
+                    internAI.DropItem();
+                }
+
+                // Random pos or not
+                if (Plugin.Config.InverseTeleportInternsAtRandomPos.Value)
+                {
+                    // Random pos
+                    Vector3 vector = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
+                    teleportPos = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(vector, 10f, default(NavMeshHit), shipTeleporterSeed, -1);
+                }
+                else
+                {
+                    // Follow owner of intern
+                    if (internAI.OwnerClientId != StartOfRound.Instance.allPlayerScripts[playerClientid].actualClientId)
+                    {
+                        // The player teleported is not owner of this intern
+                        // Check if another player is in this teleporter and is owner of intern
+                        // If so, we end the method and wait for the patch to come back here with owner player
+                        PlayerControllerB playerNearTeleporter;
+                        for (int i = 0; i < IndexBeginOfInterns; i++)
+                        {
+                            playerNearTeleporter = StartOfRound.Instance.allPlayerScripts[i];
+                            if ((playerNearTeleporter.transform.position - teleporter.teleportOutPosition.position).sqrMagnitude < 2f * 2f
+                                && internAI.OwnerClientId == playerNearTeleporter.actualClientId)
+                            {
+                                // We follow this owner
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                internAI.InitStateToSearching();
+                internAI.TeleportIntern(teleportPos, setOutside: false, isUsingEntrance: false);
+                internAI.NpcController.Npc.beamOutParticle.Play();
+                teleporter.shipTeleporterAudio.PlayOneShot(teleporter.teleporterBeamUpSFX);
+            }
         }
 
         #endregion

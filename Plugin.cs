@@ -170,6 +170,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(DoorLockPatch));
             _harmony.PatchAll(typeof(InteractTriggerPatch));
             _harmony.PatchAll(typeof(ItemDropShipPatch));
+            _harmony.PatchAll(typeof(ShipTeleporterPatch));
             _harmony.PatchAll(typeof(VehicleControllerPatch));
 
             // Objects
