@@ -2,6 +2,7 @@
 
 ## 0.17.0 [Alpha] - 2024-09-05
 ### Added
+- Lethal Company v64
 - InputUtils, change the keybinds for interacting with interns how you want.
 - Added config option for intern to grab or not the maneater as a baby, default to false, thanks @ShadowWolf90 on GitHub, issue 40 ([#40](https://github.com/Szumi57/LethalInternship/issues/40)).
 - Added config option to spectate or not interns.
