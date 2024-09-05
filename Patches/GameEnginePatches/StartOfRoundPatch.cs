@@ -183,10 +183,10 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 5; i++)
+            for (var i = 0; i < codes.Count - 4; i++)
             {
                 if (codes[i].ToString().StartsWith("ldstr \"Skipping player #{0} as they are not controlled or dead\"") //34
-                    && codes[i + 5].ToString().StartsWith("br")) //39
+                    && codes[i + 4].ToString().StartsWith("call static void UnityEngine.Debug::Log(object message)")) //38
                 {
                     startIndex = i;
                     break;
@@ -200,6 +200,46 @@ namespace LethalInternship.Patches.GameEnginePatches
             else
             {
                 Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 2");
+            }
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 6; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldstr \"Found a match for voice object") // 109
+                    && codes[i + 6].ToString().StartsWith("call static void UnityEngine.Debug::Log(object message)")) // 115
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                PatchesUtil.InsertIsBypass(codes, generator, startIndex, 7);
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 3");
+            }
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 30; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldstr \"player voice chat audiosource:") // 142
+                    && codes[i + 30].ToString().StartsWith("call static void UnityEngine.Debug::Log(object message)")) // 172
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                PatchesUtil.InsertIsBypass(codes, generator, startIndex, 31);
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 4");
             }
 
             // ----------------------------------------------------------------------
@@ -227,11 +267,6 @@ namespace LethalInternship.Patches.GameEnginePatches
             {
                 Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not change limit of for loop to only real players");
             }
-
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.LogDebug($"{i} {codes[i].ToString()}");
-            //}
 
             return codes.AsEnumerable();
         }
