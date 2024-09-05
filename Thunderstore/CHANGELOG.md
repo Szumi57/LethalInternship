@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.17.0 [Alpha] - 2024-08-
+## 0.17.0 [Alpha] - 2024-09-05
 ### Added
-- InputUtils, change the keybinds for your intern how you want.
+- InputUtils, change the keybinds for interacting with interns how you want.
 - Added config option for intern to grab or not the maneater as a baby, default to false, thanks @ShadowWolf90 on GitHub, issue 40 ([#40](https://github.com/Szumi57/LethalInternship/issues/40)).
-- Inverse teleporters works with interns, if they are close to the teleporters or grabbed by player.
+- Added config option to spectate or not interns.
+- Inverse teleporters works with interns, if they are close to the teleporters or grabbed by player, request from @AtomicJuno on GitHub, issue 39 ([#39](https://github.com/Szumi57/LethalInternship/issues/39)).
 - Same with regular teleporters, only the grabbed interns will be bring back to the ship with the player.
 ### Changed
 - Grab and release intern keybinds are now separate, default 'Q' for grab, 'R' for release.
@@ -15,10 +16,9 @@
 - Fix some more movements for interns, they only teleport when no one is looking at them now.
 - Complete rewrite of the behaviour of grabbable intern body, should work better, fixes issue 42, thanks @ShadowWolf90 on GitHub ([#42](https://github.com/Szumi57/LethalInternship/issues/42))
 - Fix size of intern bodies when dead or grabbed by player.
+- Fix dead interns appearing on the dead player spectator UI.
 - Fix some more bug with lethalPhones et ReviveCompany.
 - Fix picking up and release intern if their weight gets set to 0 with other mods, thanks @ShadowWolf90 on GitHub, issue 41 ([#41](https://github.com/Szumi57/LethalInternship/issues/41))
-
-- , thanks @ on Discord
 
 ## 0.16.0 [Alpha] - 2024-08-30
 ### Added
