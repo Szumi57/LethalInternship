@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 
@@ -16,6 +15,8 @@ namespace LethalInternship.AI
     internal class NpcController
     {
         public PlayerControllerB Npc { get; set; } = null!;
+
+        public List<PlayerPhysicsRegion> CurrentInternPhysicsRegions = new List<PlayerPhysicsRegion>();
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
         public bool InternAIInCruiser;
@@ -675,8 +676,10 @@ namespace LethalInternship.AI
             {
                 Npc.moveInputVector = Vector2.zero;
             }
+
+            // Near other players detection
             Vector3 vector = new Vector3(0f, 0f, 0f);
-            int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.65f, nearByPlayers, instanceSOR.playersMask);
+            int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.95f, nearByPlayers, instanceSOR.playersMask);
             for (int i = 0; i < num5; i++)
             {
                 vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[i].transform.position) * 100f) * 1.2f;
@@ -690,6 +693,7 @@ namespace LethalInternship.AI
                     vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
                 }
             }
+
             float num7;
             if (IsFallingFromJump || isFallingNoJump)
             {
@@ -1178,6 +1182,43 @@ namespace LethalInternship.AI
                 Npc.usernameBillboard.LookAt(instanceGNM.localPlayerController.localVisorTargetPoint);
             }
 
+            // Physics regions
+            int priority = 0;
+            Transform? transform = null;
+            for (int i = 0; i < CurrentInternPhysicsRegions.Count; i++)
+            {
+                if (CurrentInternPhysicsRegions[i].priority > priority)
+                {
+                    priority = CurrentInternPhysicsRegions[i].priority;
+                    transform = CurrentInternPhysicsRegions[i].physicsTransform;
+                }
+            }
+            if (Npc.isInElevator && priority <= 0)
+            {
+                transform = null;
+            }
+            Npc.physicsParent = transform;
+
+            if (Npc.physicsParent != null)
+            {
+                ReParentNotSpawnedTransform(Npc.physicsParent);
+            }
+            else
+            {
+                if (Npc.isInElevator)
+                {
+                    ReParentNotSpawnedTransform(Npc.playersManager.elevatorTransform);
+                    if (!InternAIController.AreHandsFree())
+                    {
+                        Npc.SetItemInElevator(Npc.isInHangarShipRoom, Npc.isInElevator, InternAIController.HeldItem);
+                    }
+                }
+                else
+                {
+                    ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
+                }
+            }
+
             if (InternAIController.IsClientOwnerOfIntern())
             {
                 this.InternRotationAndLookUpdate();
@@ -1186,21 +1227,21 @@ namespace LethalInternship.AI
                 {
                     if (instanceGNM != null)
                     {
-                        float num;
+                        float distMaxBeforeUpdating;
                         if (Npc.inSpecialInteractAnimation)
                         {
-                            num = 0.06f;
+                            distMaxBeforeUpdating = 0.06f;
                         }
                         else if (PlayerControllerBPatch.NearOtherPlayers_ReversePatch(Npc, Npc, 10f))
                         {
-                            num = 0.1f;
+                            distMaxBeforeUpdating = 0.1f;
                         }
                         else
                         {
-                            num = 0.24f;
+                            distMaxBeforeUpdating = 0.24f;
                         }
 
-                        if ((Npc.oldPlayerPosition - Npc.transform.localPosition).sqrMagnitude > num || UpdatePositionForNewlyJoinedClient)
+                        if ((Npc.oldPlayerPosition - Npc.transform.localPosition).sqrMagnitude > distMaxBeforeUpdating || UpdatePositionForNewlyJoinedClient)
                         {
                             UpdatePositionForNewlyJoinedClient = false;
                             if (!Npc.playersManager.newGameIsLoading)
@@ -1278,6 +1319,26 @@ namespace LethalInternship.AI
             {
                 Npc.localArmsTransform.position = Npc.cameraContainerTransform.transform.position + Npc.gameplayCamera.transform.up * -0.5f;
                 Npc.playerModelArmsMetarig.rotation = Npc.localArmsRotationTarget.rotation;
+            }
+        }
+
+        public void ReParentNotSpawnedTransform(Transform newParent)
+        {
+            foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
+            {
+                networkObject.AutoObjectParentSync = false;
+            }
+
+            if (Npc.transform.parent != newParent)
+            {
+                Plugin.LogDebug($"npcController.Npc.transform.parent before {Npc.transform.parent}");
+                Npc.transform.parent = newParent;
+                Plugin.LogDebug($"npcController.Npc.transform.parent after {Npc.transform.parent}");
+            }
+
+            foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
+            {
+                networkObject.AutoObjectParentSync = true;
             }
         }
 

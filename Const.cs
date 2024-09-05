@@ -16,9 +16,10 @@ namespace LethalInternship
         public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
         public const string LETHALPHONES_GUID = "LethalPhones";
         public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
-        public const string ADDITIONALNETWORKING_GUID = "mattymatty.AdditionalNetworking";
         public const string SHOWCAPACITY_GUID = "Piggy.ShowCapacity";
         public const string REVIVECOMPANY_GUID = "OpJosMod.ReviveCompany";
+
+        public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
@@ -27,7 +28,8 @@ namespace LethalInternship
         public static readonly string ConfigSectionMain = "1. Internship program";
         public static readonly string ConfigSectionNames = "2. Intern names";
         public static readonly string ConfigSectionBehaviour = "3. Behaviour";
-        public static readonly string ConfigSectionDebug = "4. Debug";
+        public static readonly string ConfigSectionTeleporters = "4. Teleporters";
+        public static readonly string ConfigSectionDebug = "5. Debug";
 
         public static readonly int DEFAULT_MAX_INTERNS_AVAILABLE = 16;
         public static readonly int MIN_INTERNS_AVAILABLE = 1;
@@ -83,6 +85,7 @@ namespace LethalInternship
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
         public static readonly float COLLISION_RANGE = 2.8f;
         public static readonly float CLIMB_SPEED = 8f;
+        public static readonly int INIT_RAGDOLL_ID = -2;
 
         public static readonly float AGENT_SPEED = 3.5f;
         public static readonly float AGENT_SPEED_CROUCH = 1.75f;
@@ -106,8 +109,10 @@ namespace LethalInternship
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
+        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
 
         // NpcController
+        public static readonly int PLAYER_MASK = 8;
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSBOTHHANDS = "HoldingItemsBothHands";
         public static readonly string PLAYER_ANIMATION_WEIGHT_SPECIALANIMATIONS = "SpecialAnimations";
@@ -157,7 +162,7 @@ namespace LethalInternship
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
         
         // StuckState
-        public static readonly float TIMER_STUCK_TOO_MUCH = 2f;
+        public static readonly float TIMER_STUCK_TOO_MUCH = 1.5f;
         public static readonly float TIMER_STUCK_WAY_TOO_MUCH = 5f;
 
         // Player in ShipState
@@ -178,6 +183,14 @@ namespace LethalInternship
         public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
+
+        // Tips
+        public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
+        public static readonly string TOOLTIP_TAKE_ITEM = "Take my item : [{0}]";
+        public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
+        public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
+        public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
+        public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
 
         // Terminal
         public static readonly int INDEX_HELP_TERMINALNODE = 13;

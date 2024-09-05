@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using MoreCompany;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.MoreCompany
 {
     [HarmonyPatch(typeof(LookForPlayersForestGiantPatch))]
     internal class LookForPlayersForestGiantPatchPatch

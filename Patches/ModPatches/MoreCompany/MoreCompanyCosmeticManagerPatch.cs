@@ -3,7 +3,7 @@ using HarmonyLib;
 using LethalInternship.Managers;
 using ModelReplacement.Monobehaviors;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.MoreCompany
 {
     [HarmonyPatch(typeof(MoreCompanyCosmeticManager))]
     internal class MoreCompanyCosmeticManagerPatch

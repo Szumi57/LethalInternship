@@ -25,7 +25,9 @@ namespace LethalInternship.Configs
 
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
-                           
+
+        [SyncedEntryField] public SyncedEntry<bool> CanSpectateInterns;
+
         // Interns names   
         [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
         [SyncedEntryField] public SyncedEntry<string> ListUserCustomNames;
@@ -36,10 +38,14 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
-        
+        [SyncedEntryField] public SyncedEntry<bool> GrabManeaterBaby;
+
+        // Teleporters
+        [SyncedEntryField] public SyncedEntry<bool> InverseTeleportInternsAtRandomPos;
+        [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
+
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
-        public ConfigEntry<bool> EnableStackTraceInDebugLog;
 
         public Config(ConfigFile cfg) : base(PluginInfo.PLUGIN_GUID)
         {
@@ -69,6 +75,11 @@ namespace LethalInternship.Configs
                                        defaultValue: Const.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
+
+            CanSpectateInterns = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+                                                     "Spectate interns",
+                                                     defaultVal: false,
+                                                     "Can a dead player spectate interns ?");
 
             TitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                        "Title visible in help menu in the terminal",
@@ -119,15 +130,27 @@ namespace LethalInternship.Configs
                                       defaultVal: false,
                                       "Should the intern try to grab dead bodies ?");
 
+            GrabManeaterBaby = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                      "Grab the baby maneater",
+                                      defaultVal: false,
+                                      "Should the intern try to grab the baby maneater ?");
+
+            // Teleporters
+            InverseTeleportInternsAtRandomPos = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
+                                                                  "Inverse teleported intern random position (not if the intern is grabbed by player)",
+                                                                  defaultVal: true,
+                                                                  "Should the intern be inverse teleported at a random position (not next to player) ?");
+
+            TeleportedInternDropItems = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
+                                                            "Teleported intern drop item (not if the intern is grabbed by player)",
+                                                            defaultVal: true,
+                                                            "Should the intern his held item before teleporting ?");
+
             // Debug
             EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
                                       "EnableDebugLog",
                                       defaultValue: false,
                                       "Enable the debug logs used for this mod.");
-            EnableStackTraceInDebugLog = cfg.Bind(Const.ConfigSectionDebug,
-                                                  "EnableStackTraceInDebugLog",
-                                                  defaultValue: false,
-                                                  "Enable printing the stack trace in the error logs when using this mod.");
 
             ClearUnusedEntries(cfg);
             cfg.SaveOnConfigSet = true;

@@ -1,32 +1,42 @@
-﻿using HarmonyLib;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
-using MoreEmotes.Patch;
-using System;
+using Scoops.patch;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
-    [HarmonyPatch(typeof(EmotePatch))]
-    internal class MoreEmotesPatch
+    [HarmonyPatch(typeof(PlayerPhonePatch))]
+    internal class PlayerPhonePatchPatch
     {
-        [HarmonyPatch("UpdatePrefix")]
+        [HarmonyPatch("PlayerModelDisabled")]
         [HarmonyPrefix]
-        static void UpdatePrefix_Prefix(ref bool[] ___s_wasPerformingEmote)
+        static bool PlayerModelDisabled_Prefix(PlayerControllerB __0)
         {
-            int allEntitiesCount = InternManager.Instance.AllEntitiesCount;
-            if (___s_wasPerformingEmote!= null 
-                && ___s_wasPerformingEmote.Length < allEntitiesCount)
+            if (InternManager.Instance.IsPlayerIntern(__0))
             {
-                Array.Resize(ref ___s_wasPerformingEmote, allEntitiesCount);
+                return false;
             }
+            return true;
         }
 
-        [HarmonyPatch("UpdatePostfix")]
+        [HarmonyPatch("PlayerSpawnBody")]
+        [HarmonyPrefix]
+        static bool PlayerSpawnBody_Prefix(PlayerControllerB __0)
+        {
+            if (InternManager.Instance.IsPlayerIntern(__0))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        [HarmonyPatch("CreatePhoneAssets")]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> UpdatePostfix_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        static IEnumerable<CodeInstruction> CreatePhoneAssets_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var startIndex = 0;
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
@@ -38,6 +48,7 @@ namespace LethalInternship.Patches.ModPatches
             List<CodeInstruction> codesToAdd = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Ldind_Ref), // ref arg 0 !
                 new CodeInstruction(OpCodes.Call, PatchesUtil.IsPlayerInternMethod),
                 new CodeInstruction(OpCodes.Brfalse, labelToJumpTo),
                 new CodeInstruction(OpCodes.Ret, null)

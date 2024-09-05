@@ -44,6 +44,9 @@ namespace LethalInternship.Patches.GameEnginePatches
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
 
+            objectManager = new GameObject("InputManager");
+            objectManager.AddComponent<InputManager>();
+
             Plugin.LogDebug("... Managers started");
         }
 
@@ -180,10 +183,10 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 5; i++)
+            for (var i = 0; i < codes.Count - 4; i++)
             {
                 if (codes[i].ToString().StartsWith("ldstr \"Skipping player #{0} as they are not controlled or dead\"") //34
-                    && codes[i + 5].ToString().StartsWith("br")) //39
+                    && codes[i + 4].ToString().StartsWith("call static void UnityEngine.Debug::Log(object message)")) //38
                 {
                     startIndex = i;
                     break;
@@ -197,6 +200,46 @@ namespace LethalInternship.Patches.GameEnginePatches
             else
             {
                 Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 2");
+            }
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 6; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldstr \"Found a match for voice object") // 109
+                    && codes[i + 6].ToString().StartsWith("call static void UnityEngine.Debug::Log(object message)")) // 115
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                PatchesUtil.InsertIsBypass(codes, generator, startIndex, 7);
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 3");
+            }
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 30; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldstr \"player voice chat audiosource:") // 142
+                    && codes[i + 30].ToString().StartsWith("call static void UnityEngine.Debug::Log(object message)")) // 172
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                PatchesUtil.InsertIsBypass(codes, generator, startIndex, 31);
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not bypass debug log 4");
             }
 
             // ----------------------------------------------------------------------
@@ -224,11 +267,6 @@ namespace LethalInternship.Patches.GameEnginePatches
             {
                 Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.RefreshPlayerVoicePlaybackObjects could not change limit of for loop to only real players");
             }
-
-            //for (var i = 0; i < codes.Count; i++)
-            //{
-            //    Plugin.LogDebug($"{i} {codes[i].ToString()}");
-            //}
 
             return codes.AsEnumerable();
         }
@@ -317,6 +355,41 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("OnClientConnect")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> OnClientConnect_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            if (Const.TEST_MORE_THAN_X_PLAYER_BYPASS)
+            {
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 11; i++)
+                {
+                    if (codes[i].ToString().StartsWith("ldc.i4.1 NULL") // 24
+                        && codes[i + 5].ToString().StartsWith("callvirt virtual bool System.Collections.Generic.List<int>::Contains") // 29
+                        && codes[i + 11].ToString() == "ldc.i4.1 NULL")// 35
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Ldc_I4_3;
+                    codes[startIndex].operand = null;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.OnClientConnect_Transpiler could not test with making the 2nd player the 4th");
+                }
+            }
+
+            return codes.AsEnumerable();
+        }
+
         #endregion
 
         /// <summary>
@@ -334,26 +407,41 @@ namespace LethalInternship.Patches.GameEnginePatches
                 SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
             }
         }
+
+        [HarmonyPatch("LateUpdate")]
+        [HarmonyPostfix]
+        static void LateUpdate_PostFix(StartOfRound __instance)
+        {
+            if (!__instance.inShipPhase 
+                && __instance.shipDoorsEnabled 
+                && !__instance.suckingPlayersOutOfShip)
+            {
+                InternManager.Instance.SetInternsInElevatorLateUpdate(__instance);
+            }
+        }
     }
 
-    //[HarmonyPatch(typeof(ShowerTrigger))] // make sure Harmony inspects the class
+    //[HarmonyPatch(typeof(EnemyAICollisionDetect))] // make sure Harmony inspects the class
     //class MyPatches
     //{
-    //    [HarmonyPatch("CheckBoundsForPlayers")]
+    //    [HarmonyPatch("OnTriggerStay")]
     //    [HarmonyPrefix]
-    //    static void Prefix(out System.Diagnostics.Stopwatch __state)
+    //    static void Prefix(Collider other)
     //    {
-    //        __state = System.Diagnostics.Stopwatch.StartNew();
+    //        if (other.CompareTag("Player"))
+    //        { 
+    //            Plugin.LogDebug($"intern? {other.gameObject.GetComponent<InternAI>()}");
+    //        }
     //    }
 
-    //    [HarmonyPatch("CheckBoundsForPlayers")]
-    //    [HarmonyPostfix]
-    //    static void Postfix(System.Diagnostics.Stopwatch __state)
-    //    {
-    //        __state.Stop();
-    //        var elapsedMs = __state.Elapsed.TotalMilliseconds;
-    //        Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
-    //    }
+    //    //[HarmonyPatch("CheckBoundsForPlayers")]
+    //    //[HarmonyPostfix]
+    //    //static void Postfix(System.Diagnostics.Stopwatch __state)
+    //    //{
+    //    //    __state.Stop();
+    //    //    var elapsedMs = __state.Elapsed.TotalMilliseconds;
+    //    //    Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
+    //    //}
     //}
 
     //[HarmonyPatch] // make sure Harmony inspects the class

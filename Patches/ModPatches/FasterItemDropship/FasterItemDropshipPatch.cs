@@ -3,7 +3,7 @@ using HarmonyLib;
 using LethalInternship.Managers;
 using UnityEngine;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.FasterItemDropship
 {
     [HarmonyPatch(typeof(ItemDropship))]
     internal class FasterItemDropshipPatch
@@ -48,9 +48,9 @@ namespace LethalInternship.Patches.ModPatches
         static void Update_Postfix(ItemDropship __instance,
                                    Terminal ___terminalScript)
         {
-            if (__instance.IsServer 
-                && !__instance.deliveringOrder 
-                && (__instance.shipTimer < previousShipTimer || (previousFirstOrder && !__instance.playersFirstOrder)) 
+            if (__instance.IsServer
+                && !__instance.deliveringOrder
+                && (__instance.shipTimer < previousShipTimer || previousFirstOrder && !__instance.playersFirstOrder)
                 && (___terminalScript.orderedItemsFromTerminal.Count > 0 || ___terminalScript.orderedVehicleFromTerminal != -1 || InternManager.Instance.AreInternsScheduledToLand()))
             {
                 __instance.shipTimer = 40 - ConfigSettings.dropshipDeliveryTime.Value;
