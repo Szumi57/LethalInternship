@@ -5,7 +5,7 @@ using LethalInternship.Managers;
 using OPJosMod.ReviveCompany;
 using UnityEngine;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.ReviveCompany
 {
     [HarmonyPatch(typeof(GeneralUtil))]
     internal class ReviveCompanyGeneralUtilPatch
@@ -56,6 +56,18 @@ namespace LethalInternship.Patches.ModPatches
             InternManager.Instance.SpawnThisInternServerRpc((int)internAI.NpcController.Npc.playerClientId, revivePos, yRot, !isInsideFactory);
 
             return false;
+        }
+
+        [HarmonyPatch("GetClosestDeadBody")]
+        [HarmonyPostfix]
+        static void GetClosestDeadBody_PostFix(ref RagdollGrabbableObject __result)
+        {
+            if(__result != null && __result.ragdoll == null)
+            {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                __result = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+            }
         }
     }
 }

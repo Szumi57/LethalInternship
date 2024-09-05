@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 
-namespace LethalInternship.Patches.ModPatches
+namespace LethalInternship.Patches.ModPatches.AdditionalNetworking
 {
     internal class AdditionalNetworkingPatch
     {

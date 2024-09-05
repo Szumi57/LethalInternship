@@ -50,7 +50,7 @@ namespace LethalInternship.AI
         /// Pilot class of the body <c>PlayerControllerB</c> of the intern.
         /// </summary>
         public NpcController NpcController = null!;
-        public RagdollInternBody? RagdollInternBody = null;
+        public RagdollInternBody RagdollInternBody = null!;
 
         public string InternId = "Not initialized";
         public bool AlreadyNamed = false;
@@ -77,7 +77,6 @@ namespace LethalInternship.AI
         private Vector3 previousWantedDestination;
         private bool isDestinationChanged;
         private float timeSinceStuck;
-        private bool StuckTeleportTry1;
         private float updateDestinationIntervalInternAI;
         private float timerCheckDoor;
 
@@ -189,7 +188,7 @@ namespace LethalInternship.AI
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
             // Init state
-            State = new SearchingForPlayerState(this);
+            InitStateToSearching();
         }
 
         /// <summary>
@@ -434,11 +433,10 @@ namespace LethalInternship.AI
             }
 
             // Controller stuck in world ?
-            Vector3 forward = NpcController.Npc.thisController.transform.forward;
             if (NpcController.Npc.isMovementHindered == 0
-                && (forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude < 0.15f * 0.15f)
+                && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {(forward * Vector3.Dot(forward, NpcController.Npc.thisController.velocity)).sqrMagnitude}");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
                 timeSinceStuck += AIIntervalTime;
             }
             else if (!NpcController.IsJumping)
@@ -447,32 +445,41 @@ namespace LethalInternship.AI
                 timeSinceStuck = 0f;
             }
 
-            if (timeSinceStuck > Const.TIMER_STUCK_WAY_TOO_MUCH)
-            {
-                timeSinceStuck = 0f;
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} - !!! Stuck since way too much - ({Const.TIMER_STUCK_WAY_TOO_MUCH}sec) -> teleport if target known");
-                // Teleport player
-                if (this.targetPlayer != null)
-                {
-                    Plugin.LogDebug($"Teleport to {this.targetPlayer.transform.position}");
-                    TeleportAgentAndBody(this.targetPlayer.transform.position);
-                }
-            }
-
+            // If stuck only teleport if no player can see the intern
             if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} - Stuck since too much - ({Const.TIMER_STUCK_TOO_MUCH}sec) -> teleport");
-                // Teleport player
-                if (StuckTeleportTry1)
+                bool isAPlayerSeeingIntern = false;
+                StartOfRound instanceSOR = StartOfRound.Instance;
+                Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
+                PlayerControllerB player;
+                Vector3 vectorPlayerToIntern;
+                for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
                 {
-                    NpcController.Npc.thisPlayerBody.transform.position = this.transform.position;
+                    player = instanceSOR.allPlayerScripts[i];
+                    if (player.isPlayerDead
+                        || !player.isPlayerControlled)
+                    {
+                        continue;
+                    }
+
+                    if (Physics.Linecast(player.gameplayCamera.transform.position, thisInternCamera.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                    {
+                        continue;
+                    }
+
+                    vectorPlayerToIntern = thisInternCamera.position - player.gameplayCamera.transform.position;
+                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
+                    {
+                        isAPlayerSeeingIntern = true;
+                        break;
+                    }
                 }
-                else
+
+                if (!isAPlayerSeeingIntern)
                 {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} Teleport to {NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f}");
-                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + NpcController.Npc.thisPlayerBody.transform.forward * 1f);
+                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * 0.5f));
+                    timeSinceStuck = 0f;
                 }
-                StuckTeleportTry1 = !StuckTeleportTry1;
             }
         }
 
@@ -509,8 +516,7 @@ namespace LethalInternship.AI
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
-                    Plugin.LogDebug($"ChooseClosestNodeToPosition");
-                    //destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
+                    destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
                 }
                 agent.SetDestination(destination);
             }
@@ -533,6 +539,11 @@ namespace LethalInternship.AI
         public bool IsClientOwnerOfIntern()
         {
             return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public void InitStateToSearching()
+        {
+            State = new SearchingForPlayerState(this);
         }
 
         public int MaxHealthPercent(int percentage)
@@ -924,22 +935,7 @@ namespace LethalInternship.AI
 
         public void ReParentIntern(Transform newParent)
         {
-            foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = false;
-            }
-
-            if (NpcController.Npc.transform.parent != newParent)
-            {
-                Plugin.LogDebug($"npcController.Npc.transform.parent before {NpcController.Npc.transform.parent}");
-                NpcController.Npc.transform.parent = newParent;
-                Plugin.LogDebug($"npcController.Npc.transform.parent after {NpcController.Npc.transform.parent}");
-            }
-
-            foreach (NetworkObject networkObject in NpcController.Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = true;
-            }
+            NpcController.ReParentNotSpawnedTransform(newParent);
         }
 
         /// <summary>
@@ -1379,6 +1375,13 @@ namespace LethalInternship.AI
                 return true;
             }
 
+            // Maneater
+            if (!Plugin.Config.GrabManeaterBaby.Value
+                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
+            {
+                return true; 
+            }
+
             return false;
         }
 
@@ -1432,7 +1435,7 @@ namespace LethalInternship.AI
         /// <param name="pos">Position destination</param>
         /// <param name="setOutside">Is the teleport destination outside of the facility</param>
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
-        private void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
+        public void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
         {
             TeleportAgentAndBody(pos, setOutside);
 
@@ -1655,7 +1658,7 @@ namespace LethalInternship.AI
         /// <param name="inShipRoom">Is the intern in the ship room ?</param>
         /// <param name="exhausted">Is the intern exhausted ?</param>
         /// <param name="isPlayerGrounded">Is the intern player body touching the ground ?</param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void UpdateInternPositionServerRpc(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
         {
             UpdateInternPositionClientRpc(newPos, inElevator, inShipRoom, exhausted, isPlayerGrounded);
@@ -1772,7 +1775,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="animationState">Current animation state</param>
         /// <param name="animationSpeed">Current animation speed</param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership =false)]
         public void UpdateInternAnimationServerRpc(int animationState, float animationSpeed)
         {
             UpdateInternAnimationClientRpc(animationState, animationSpeed);
@@ -2071,7 +2074,7 @@ namespace LethalInternship.AI
         /// <summary>
         /// Make the intern drop his item like an enemy, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
-        private void DropItem()
+        public void DropItem()
         {
             Plugin.LogInfo($"Try to drop item on client #{NetworkManager.LocalClientId}");
             if (this.HeldItem == null)
@@ -2520,11 +2523,13 @@ namespace LethalInternship.AI
         /// <param name="deathAnimation"></param>
         [ClientRpc]
         private void KillInternClientRpc(Vector3 bodyVelocity,
-                                                 bool spawnBody,
-                                                 CauseOfDeath causeOfDeath,
-                                                 int deathAnimation,
-                                                 Vector3 positionOffset)
+                                         bool spawnBody,
+                                         CauseOfDeath causeOfDeath,
+                                         int deathAnimation,
+                                         Vector3 positionOffset)
         {
+
+
             KillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
         }
 
@@ -2550,6 +2555,15 @@ namespace LethalInternship.AI
             if (!NpcController.Npc.AllowPlayerDeath())
             {
                 return;
+            }
+
+            // If ragdoll body of intern is held
+            // Release the intern before killing him
+            if (RagdollInternBody.IsRagdollBodyHeld())
+            {
+                PlayerControllerB playerHolder = RagdollInternBody.GetPlayerHolder();
+                ReleaseIntern(playerHolder.playerClientId);
+                TeleportIntern(playerHolder.transform.position, !playerHolder.isInsideFactory, isUsingEntrance: false);
             }
 
             // Reset body
@@ -2583,11 +2597,12 @@ namespace LethalInternship.AI
             if (spawnBody)
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
+                ResizeRagdoll(NpcController.Npc.deadBody.transform);
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
             NpcController.Npc.lastSyncedPhysicsParent = null;
-            StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
+            NpcController.CurrentInternPhysicsRegions.Clear();
             this.ReParentIntern(NpcController.Npc.playersManager.playersContainer);
             if (this.HeldItem != null)
             {
@@ -2595,12 +2610,6 @@ namespace LethalInternship.AI
             }
             NpcController.Npc.DisableJetpackControlsLocally();
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
-
-            // Remove grabbed bodies if we die with intern in hand
-            if (RagdollInternBody != null)
-            {
-                RagdollInternBody.SetReleased();
-            }
 
             // Compat with revive company mod
             if (Plugin.IsModReviveCompanyLoaded)
@@ -2619,6 +2628,175 @@ namespace LethalInternship.AI
             {
                 OPJosMod.ReviveCompany.GeneralUtil.SetPlayerDiedAt(playerClientId);
             }
+        }
+
+        #endregion
+
+        #region Grab intern
+
+        [ServerRpc(RequireOwnership = false)]
+        public void GrabInternServerRpc(ulong idPlayerGrabberController)
+        {
+            GrabInternClientRpc(idPlayerGrabberController);
+        }
+
+        [ClientRpc]
+        private void GrabInternClientRpc(ulong idPlayerGrabberController)
+        {
+            PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
+
+            InstantiateDeadBodyInfo(playerGrabberController);
+            RagdollInternBody.SetGrabbedBy(playerGrabberController,
+                                           ragdollBodyDeadBodyInfo,
+                                           (int)idPlayerGrabberController);
+
+            if (idPlayerGrabberController == StartOfRound.Instance.localPlayerController.playerClientId)
+            {
+                float weightToGain = RagdollInternBody.GetWeight() - 1f < 0f ? 0f : RagdollInternBody.GetWeight() - 1f;
+                playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + weightToGain, 1f, 10f);
+
+                weightToGain = NpcController.Npc.carryWeight - 1f < 0f ? 0f : NpcController.Npc.carryWeight - 1f;
+                playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + weightToGain, 1f, 10f);
+            }
+
+            if (HeldItem != null)
+            {
+                HeldItem.gameObject.SetActive(false);
+            }
+
+            NpcController.Npc.gameObject.SetActive(false);
+            this.gameObject.SetActive(false);
+        }
+
+        private void InstantiateDeadBodyInfo(PlayerControllerB playerGrabberController)
+        {
+            float num = 1.32f;
+            int deathAnimation = 0;
+
+            Transform parent = null!;
+            if (playerGrabberController.isInElevator)
+            {
+                parent = playerGrabberController.playersManager.elevatorTransform;
+            }
+
+            Vector3 position = NpcController.Npc.thisPlayerBody.position + Vector3.up * num;
+            Quaternion rotation = NpcController.Npc.thisPlayerBody.rotation;
+            if (ragdollBodyDeadBodyInfo == null)
+            {
+                GameObject gameObject = UnityEngine.Object.Instantiate(NpcController.Npc.playersManager.playerRagdolls[deathAnimation],
+                                                                       position,
+                                                                       rotation,
+                                                                       parent);
+                ragdollBodyDeadBodyInfo = gameObject.GetComponent<DeadBodyInfo>();
+
+                // Scale ragdoll (without stretching the body parts)
+                ResizeRagdoll(ragdollBodyDeadBodyInfo.transform);
+            }
+
+            ragdollBodyDeadBodyInfo.transform.position = position;
+            ragdollBodyDeadBodyInfo.transform.rotation = rotation;
+            ragdollBodyDeadBodyInfo.transform.parent = parent;
+
+            if (playerGrabberController.physicsParent != null)
+            {
+                ragdollBodyDeadBodyInfo.SetPhysicsParent(playerGrabberController.physicsParent);
+            }
+
+            ragdollBodyDeadBodyInfo.parentedToShip = playerGrabberController.isInElevator;
+            ragdollBodyDeadBodyInfo.playerObjectId = (int)NpcController.Npc.playerClientId;
+        }
+
+        /// <summary>
+        /// Scale ragdoll (without stretching the body parts)
+        /// </summary>
+        /// <param name="transform"></param>
+        private void ResizeRagdoll(Transform transform)
+        {
+            // https://discussions.unity.com/t/joint-system-scale-problems/182154/4
+            // https://stackoverflow.com/questions/68663372/how-to-enlarge-a-ragdoll-in-game-unity
+            // Grab references to joints anchors, to update them during the game.
+            Joint[] joints;
+            List<Vector3> connectedAnchors = new List<Vector3>();
+            List<Vector3> anchors = new List<Vector3>();
+            joints = transform.GetComponentsInChildren<Joint>();
+
+            Joint curJoint;
+            for (int i = 0; i < joints.Length; i++)
+            {
+                curJoint = joints[i];
+                connectedAnchors.Add(curJoint.connectedAnchor);
+                anchors.Add(curJoint.anchor);
+            }
+
+            transform.localScale = new Vector3(Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value);
+
+            // Update joints by resetting them to their original values
+            Joint joint;
+            for (int i = 0; i < joints.Length; i++)
+            {
+                joint = joints[i];
+                joint.connectedAnchor = connectedAnchors[i];
+                joint.anchor = anchors[i];
+            }
+        }
+
+        #endregion
+
+        #region Release intern
+
+        public void SyncReleaseIntern(PlayerControllerB playerGrabberController)
+        {
+            if (IsServer)
+            {
+                ReleaseInternClientRpc(playerGrabberController.playerClientId,
+                                       playerGrabberController.transform.position, !playerGrabberController.isInsideFactory, isUsingEntrance: false);
+            }
+            else
+            {
+                ReleaseInternServerRpc(playerGrabberController.playerClientId,
+                                       playerGrabberController.transform.position, !playerGrabberController.isInsideFactory, isUsingEntrance: false);
+            }
+        }
+
+        [ServerRpc]
+        private void ReleaseInternServerRpc(ulong idPlayerGrabberController,
+                                            Vector3 pos, bool setOutside, bool isUsingEntrance)
+        {
+            ReleaseInternClientRpc(idPlayerGrabberController, pos, setOutside, isUsingEntrance);
+        }
+
+        [ClientRpc]
+        private void ReleaseInternClientRpc(ulong idPlayerGrabberController,
+                                            Vector3 pos, bool setOutside, bool isUsingEntrance)
+        {
+            ReleaseIntern(idPlayerGrabberController);
+            TeleportIntern(pos, setOutside, isUsingEntrance);
+        }
+
+        private void ReleaseIntern(ulong idPlayerGrabberController)
+        {
+            NpcController.Npc.gameObject.SetActive(true);
+            this.gameObject.SetActive(true);
+
+            if (idPlayerGrabberController == StartOfRound.Instance.localPlayerController.playerClientId)
+            {
+                PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
+                float weightToLose = RagdollInternBody.GetWeight() - 1f < 0f ? 0f : RagdollInternBody.GetWeight() - 1f;
+                playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - weightToLose, 1f, 10f);
+
+                weightToLose = NpcController.Npc.carryWeight - 1f < 0f ? 0f : NpcController.Npc.carryWeight - 1f;
+                playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - weightToLose, 1f, 10f);
+            }
+
+            if (HeldItem != null)
+            {
+                HeldItem.gameObject.SetActive(true);
+            }
+
+            RagdollInternBody.SetReleased();
+
+            // Unsubscribe from events to prevent double trigger
+            PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
         }
 
         #endregion
@@ -2837,153 +3015,6 @@ namespace LethalInternship.AI
         private void StopPerformingEmoteClientRpc()
         {
             NpcController.Npc.performingEmote = false;
-        }
-
-        #endregion
-
-        #region Grab intern
-
-        [ServerRpc(RequireOwnership = false)]
-        public void GrabInternServerRpc(ulong idPlayerGrabberController)
-        {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            int internClientId = (int)NpcController.Npc.playerClientId;
-
-            RagdollGrabbableObject? ragdollInternBody = InternManager.Instance.RagdollInternBodies[internClientId];
-            NetworkObject networkObject;
-            if (ragdollInternBody == null)
-            {
-                GameObject gameObject = Object.Instantiate<GameObject>(instanceSOR.ragdollGrabbableObjectPrefab, instanceSOR.propsContainer);
-                networkObject = gameObject.GetComponent<NetworkObject>();
-                networkObject.Spawn(false);
-                ragdollInternBody = gameObject.GetComponent<RagdollGrabbableObject>();
-                ragdollInternBody.bodyID.Value = internClientId;
-                InternManager.Instance.RagdollInternBodies[internClientId] = ragdollInternBody;
-            }
-            else
-            {
-                networkObject = ragdollInternBody.GetComponentInChildren<NetworkObject>();
-                if (!networkObject.IsSpawned)
-                {
-                    networkObject.Spawn(false);
-                }
-            }
-
-            GrabInternClientRpc(networkObject, idPlayerGrabberController);
-        }
-
-        [ClientRpc]
-        private void GrabInternClientRpc(NetworkObjectReference networkObjectReferenceRagdollGrabbableObject,
-                                         ulong idPlayerGrabberController)
-        {
-            PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
-
-            if (RagdollInternBody == null)
-            {
-                InstantiateDeadBodyInfo(playerGrabberController);
-            }
-
-            networkObjectReferenceRagdollGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
-            RagdollInternBody = new RagdollInternBody(networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>(),
-                                                      ragdollBodyDeadBodyInfo,
-                                                      (int)playerGrabberController.playerClientId);
-
-            RagdollInternBody.SetGrabbedBy(playerGrabberController);
-
-            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
-            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + (NpcController.Npc.carryWeight - 1f), 1f, 10f);
-
-            if (HeldItem != null)
-            {
-                HeldItem.gameObject.SetActive(false);
-            }
-
-            NpcController.Npc.gameObject.SetActive(false);
-            this.gameObject.SetActive(false);
-        }
-
-        private void InstantiateDeadBodyInfo(PlayerControllerB playerGrabberController)
-        {
-            float num = 1.32f;
-            int deathAnimation = 0;
-
-            Transform parent = null!;
-            if (playerGrabberController.isInElevator)
-            {
-                parent = playerGrabberController.playersManager.elevatorTransform;
-            }
-
-            Vector3 position = NpcController.Npc.thisPlayerBody.position + Vector3.up * num;
-            Quaternion rotation = NpcController.Npc.thisPlayerBody.rotation;
-            if (ragdollBodyDeadBodyInfo == null)
-            {
-                GameObject gameObject = UnityEngine.Object.Instantiate(NpcController.Npc.playersManager.playerRagdolls[deathAnimation],
-                                                                       position,
-                                                                       rotation,
-                                                                       parent);
-                ragdollBodyDeadBodyInfo = gameObject.GetComponent<DeadBodyInfo>();
-            }
-            else
-            {
-                ragdollBodyDeadBodyInfo.transform.position = position;
-                ragdollBodyDeadBodyInfo.transform.rotation = rotation;
-                ragdollBodyDeadBodyInfo.transform.parent = parent;
-            }
-
-            if (playerGrabberController.physicsParent != null)
-            {
-                ragdollBodyDeadBodyInfo.SetPhysicsParent(playerGrabberController.physicsParent);
-            }
-
-            ragdollBodyDeadBodyInfo.parentedToShip = playerGrabberController.isInElevator;
-            ragdollBodyDeadBodyInfo.playerObjectId = (int)NpcController.Npc.playerClientId;
-        }
-
-        #endregion
-
-        #region Release intern
-
-        public void SyncReleaseIntern(PlayerControllerB playerGrabberController)
-        {
-            if (IsServer)
-            {
-                ReleaseInternClientRpc(playerGrabberController.playerClientId);
-            }
-            else
-            {
-                ReleaseInternServerRpc(playerGrabberController.playerClientId);
-            }
-        }
-
-        [ServerRpc]
-        private void ReleaseInternServerRpc(ulong idPlayerGrabberController)
-        {
-            ReleaseInternClientRpc(idPlayerGrabberController);
-        }
-
-        [ClientRpc]
-        private void ReleaseInternClientRpc(ulong idPlayerGrabberController)
-        {
-            if (RagdollInternBody == null)
-            {
-                return;
-            }
-            RagdollInternBody.SetReleased();
-
-            PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
-            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (RagdollInternBody.GetWeight() - 1f), 1f, 10f);
-            playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - (NpcController.Npc.carryWeight - 1f), 1f, 10f);
-
-            if (HeldItem != null)
-            {
-                HeldItem.gameObject.SetActive(true);
-            }
-
-            NpcController.Npc.gameObject.SetActive(true);
-            this.gameObject.SetActive(true);
-
-            // Unsubscribe from events to prevent double trigger
-            PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
         }
 
         #endregion

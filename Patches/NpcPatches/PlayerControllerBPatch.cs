@@ -3,14 +3,12 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
-using OPJosMod.ReviveCompany;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
-using UnityEngine.Analytics;
 using UnityEngine.InputSystem;
 using Label = System.Reflection.Emit.Label;
 using OpCodes = System.Reflection.Emit.OpCodes;
@@ -215,6 +213,8 @@ namespace LethalInternship.Patches.NpcPatches
                 return false;
             }
 
+            // A player is killed 
+
             if (Const.INVINCIBILITY)
             {
                 // Bootleg invincibility
@@ -230,11 +230,6 @@ namespace LethalInternship.Patches.NpcPatches
                 for (int i = 0; i < internsAIsHoldByPlayer.Length; i++)
                 {
                     internAIHeld = internsAIsHoldByPlayer[i];
-
-                    // Release interns
-                    internAIHeld.SyncReleaseIntern(__instance);
-                    internAIHeld.SyncTeleportIntern(__instance.transform.position, !__instance.isInsideFactory, isUsingEntrance: false);
-
                     switch (causeOfDeath)
                     {
                         case CauseOfDeath.Gravity:
@@ -242,209 +237,12 @@ namespace LethalInternship.Patches.NpcPatches
                         case CauseOfDeath.Suffocation:
                         case CauseOfDeath.Drowning:
                         case CauseOfDeath.Abandoned:
-                            Plugin.LogDebug($"SyncKillIntern on held intern on LOCAL client #{internAIHeld.NetworkManager.LocalClientId}, Intern #{internAIHeld.InternId}");
+                            Plugin.LogDebug($"SyncKillIntern on held intern by {__instance.playerUsername} {__instance.playerClientId} on LOCAL client #{internAIHeld.NetworkManager.LocalClientId}, Intern #{internAIHeld.InternId}");
                             internAIHeld.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
                             break;
                     }
                 }
             }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Patch for intercepting the discard action from the player,
-        /// if he is looking at an intern, orders him to drop his item
-        /// </summary>
-        /// <returns></returns>
-        [HarmonyPatch("Discard_performed")]
-        [HarmonyPrefix]
-        static bool Discard_performed_PreFix(PlayerControllerB __instance,
-                                             float ___timeSinceSwitchingSlots,
-                                             bool ___throwingObject,
-                                             ref InputAction.CallbackContext context,
-                                             ref Ray ___interactRay,
-                                             ref int ___playerMask)
-        {
-            if (!__instance.IsOwner || !__instance.isPlayerControlled)
-            {
-                return true;
-            }
-
-            if (!context.performed)
-            {
-                return true;
-            }
-
-            // Make an intern drop his object
-            RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null)
-                {
-                    continue;
-                }
-
-                if (!intern.AreHandsFree())
-                {
-                    // Intern drop item
-                    intern.DropItemServerRpc();
-                }
-                else if (__instance.currentlyHeldObjectServer != null)
-                {
-                    // Intern take item from player hands
-                    GrabbableObject grabbableObject = __instance.currentlyHeldObjectServer;
-                    __instance.DiscardHeldObject(placeObject: true);
-                    intern.GrabItemServerRpc(grabbableObject.NetworkObject, itemGiven: true);
-                }
-
-                return false;
-            }
-
-            if (___timeSinceSwitchingSlots < 0.2f || __instance.isGrabbingObjectAnimation || __instance.isTypingChat || __instance.inSpecialInteractAnimation)
-            {
-                return true;
-            }
-            if (__instance.activatingItem)
-            {
-                return true;
-            }
-            if (___throwingObject || !__instance.isHoldingObject || __instance.currentlyHeldObjectServer == null)
-            {
-                return true;
-            }
-
-            Plugin.LogDebug($"player dropped {__instance.currentlyHeldObjectServer}");
-            InternAI.DictJustDroppedItems[__instance.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
-            return true;
-        }
-
-        /// <summary>
-        /// Patch for intercepting the interact action from the player,
-        /// if he is looking at an intern, orders to follow him and change his ownership
-        /// </summary>
-        /// <returns></returns>
-        [HarmonyPatch("Interact_performed")]
-        [HarmonyPrefix]
-        static bool Interact_performed_PreFix(PlayerControllerB __instance,
-                                              ref Ray ___interactRay,
-                                              ref int ___playerMask)
-        {
-            if (!__instance.IsOwner || !__instance.isPlayerControlled)
-            {
-                return true;
-            }
-
-            // Use of interact key to assign intern to player
-            RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null)
-                {
-                    continue;
-                }
-
-                if (intern.OwnerClientId != __instance.actualClientId)
-                {
-                    intern.SyncAssignTargetAndSetMovingTo(__instance);
-                }
-
-                return false;
-            }
-
-            return true;
-        }
-
-        [HarmonyPatch("ItemSecondaryUse_performed")]
-        [HarmonyPrefix]
-        private static bool ItemSecondaryUse_performed_PreFix(PlayerControllerB __instance,
-                                                              ref Ray ___interactRay,
-                                                              ref int ___playerMask)
-        {
-            if (!__instance.IsOwner || !__instance.isPlayerControlled)
-            {
-                return true;
-            }
-
-            // Use of secondary use key (A) to grab intern
-            RaycastHit[] raycastHits = Physics.RaycastAll(___interactRay, __instance.grabDistance, ___playerMask);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null)
-                {
-                    continue;
-                }
-
-                intern.SyncAssignTargetAndSetMovingTo(__instance);
-                // Grab intern
-                intern.GrabInternServerRpc(__instance.playerClientId);
-
-                return false;
-            }
-
-            // No intern in interact range
-            // Check if we hold interns
-            InternAI[] internsAIsHoldByPlayer = InternManager.Instance.GetInternsAiHoldByPlayer((int)__instance.playerClientId);
-            if (internsAIsHoldByPlayer.Length > 0)
-            {
-                InternAI internAI;
-                for (int i = 0; i < internsAIsHoldByPlayer.Length; i++)
-                {
-                    internAI = internsAIsHoldByPlayer[i];
-                    internAI.SyncReleaseIntern(__instance);
-                    internAI.SyncTeleportIntern(__instance.transform.position, !__instance.isInsideFactory, isUsingEntrance: false);
-                }
-
-                return false;
-            }
-
-            return true;
-        }
-
-        [HarmonyPatch("ItemTertiaryUse_performed")]
-        [HarmonyPrefix]
-        private static bool ItemTertiaryUse_performed_PreFix(PlayerControllerB __instance,
-                                                             InputAction.CallbackContext context)
-        {
-            if (!__instance.IsOwner || !__instance.isPlayerControlled)
-            {
-                return true;
-            }
-
-            // Nothing here for now
 
             return true;
         }
@@ -581,7 +379,7 @@ namespace LethalInternship.Patches.NpcPatches
 
         #endregion
 
-        #region reverse patches
+        #region Reverse patches
 
         /// <summary>
         /// Reverse patch modified, makes the code ignore some condition if is intern, <br/>
@@ -763,6 +561,10 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPatch("NearOtherPlayers")]
         [HarmonyReversePatch]
         public static bool NearOtherPlayers_ReversePatch(object instance, PlayerControllerB playerScript, float checkRadius) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.NearOtherPlayers_ReversePatch");
+
+        [HarmonyPatch("InteractTriggerUseConditionsMet")]
+        [HarmonyReversePatch]
+        public static bool InteractTriggerUseConditionsMet_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.InteractTriggerUseConditionsMet_ReversePatch");
 
         /// <summary>
         /// Reverse patch modified to update player position client side for the intern
@@ -1070,7 +872,84 @@ namespace LethalInternship.Patches.NpcPatches
 
         #endregion
 
+        #region Transpilers
+
+        [HarmonyPatch("SpectateNextPlayer")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SpectateNextPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            if (!Plugin.Config.CanSpectateInterns.Value)
+            {
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 2; i++)
+                {
+                    if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                        && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                        && codes[i + 2].ToString() == "ldlen NULL")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Nop;
+                    codes[startIndex].operand = null;
+                    codes[startIndex + 1].opcode = OpCodes.Nop;
+                    codes[startIndex + 1].operand = null;
+                    codes[startIndex + 2].opcode = OpCodes.Call;
+                    codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SpectateNextPlayer_Transpiler could not use irl number of player for iteration.");
+                }
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 2; i++)
+                {
+                    if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                        && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                        && codes[i + 2].ToString() == "ldlen NULL")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Nop;
+                    codes[startIndex].operand = null;
+                    codes[startIndex + 1].opcode = OpCodes.Nop;
+                    codes[startIndex + 1].operand = null;
+                    codes[startIndex + 2].opcode = OpCodes.Call;
+                    codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SpectateNextPlayer_Transpiler could not use irl number of player.");
+                }
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        #endregion
+
         #region Postfixes
+
+        [HarmonyPatch("Start")]
+        [HarmonyAfter(Const.MOREEMOTES_GUID)]
+        [HarmonyPostfix]
+        static void Start_PostFix(PlayerControllerB __instance, ref Collider[] ___nearByPlayers)
+        {
+            ___nearByPlayers = new Collider[InternManager.Instance.AllEntitiesCount];
+        }
 
         /// <summary>
         /// Debug patch to spawn an intern at will
@@ -1116,10 +995,7 @@ namespace LethalInternship.Patches.NpcPatches
                         return;
                     }
 
-                    InternAI? internAI = InternManager.Instance.GetInternAI(ragdoll.bodyID.Value);
-                    if (internAI != null 
-                        && internAI.RagdollInternBody != null
-                        && internAI.RagdollInternBody.IsRagdollBodyHeldByPlayer((int)__instance.playerClientId))
+                    if (ragdoll.bodyID.Value == Const.INIT_RAGDOLL_ID)
                     {
                         // Remove tooltip text
                         __instance.cursorTip.text = string.Empty;
@@ -1157,21 +1033,24 @@ namespace LethalInternship.Patches.NpcPatches
                 // Line item
                 if (!intern.AreHandsFree())
                 {
-                    sb.Append("Drop your item : [G]").AppendLine();
+                    sb.Append(string.Format(Const.TOOLTIP_DROP_ITEM, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GiveTakeItem)))
+                        .AppendLine();
                 }
                 else if (__instance.currentlyHeldObjectServer != null)
                 {
-                    sb.Append("Take my item : [G]").AppendLine();
+                    sb.Append(string.Format(Const.TOOLTIP_TAKE_ITEM, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GiveTakeItem)))
+                        .AppendLine();
                 }
 
                 // Line Follow
                 if (intern.OwnerClientId != __instance.actualClientId)
                 {
-                    sb.Append("Follow me: [E]").AppendLine();
+                    sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.LeadIntern)))
+                        .AppendLine();
                 }
 
                 // Grab intern
-                sb.Append("Grab intern: [Q]");
+                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GrabIntern)));
 
                 __instance.cursorTip.text = sb.ToString();
 

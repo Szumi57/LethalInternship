@@ -125,6 +125,11 @@ namespace LethalInternship.Utils
             return codes;
         }
 
+        public static bool IsGrabbableObjectEqualsToNull(GrabbableObject grabbableObject)
+        {
+            return grabbableObject == null;
+        }
+
         private static bool DisableOriginalGameDebugLogs()
         {
             return Const.DISABLE_ORIGINAL_GAME_DEBUG_LOGS;
