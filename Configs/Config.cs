@@ -25,7 +25,9 @@ namespace LethalInternship.Configs
 
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
-                           
+
+        [SyncedEntryField] public SyncedEntry<bool> CanSpectateInterns;
+
         // Interns names   
         [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
         [SyncedEntryField] public SyncedEntry<string> ListUserCustomNames;
@@ -73,6 +75,11 @@ namespace LethalInternship.Configs
                                        defaultValue: Const.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
+
+            CanSpectateInterns = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+                                                     "Spectate interns",
+                                                     defaultVal: false,
+                                                     "Can a dead player spectate interns ?");
 
             TitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                        "Title visible in help menu in the terminal",

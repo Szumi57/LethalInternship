@@ -379,7 +379,7 @@ namespace LethalInternship.Patches.NpcPatches
 
         #endregion
 
-        #region reverse patches
+        #region Reverse patches
 
         /// <summary>
         /// Reverse patch modified, makes the code ignore some condition if is intern, <br/>
@@ -868,6 +868,75 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             _ = Transpiler(null);
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+        }
+
+        #endregion
+
+        #region Transpilers
+
+        [HarmonyPatch("SpectateNextPlayer")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SpectateNextPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            if (!Plugin.Config.CanSpectateInterns.Value)
+            {
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 2; i++)
+                {
+                    if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                        && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                        && codes[i + 2].ToString() == "ldlen NULL")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Nop;
+                    codes[startIndex].operand = null;
+                    codes[startIndex + 1].opcode = OpCodes.Nop;
+                    codes[startIndex + 1].operand = null;
+                    codes[startIndex + 2].opcode = OpCodes.Call;
+                    codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SpectateNextPlayer_Transpiler could not use irl number of player for iteration.");
+                }
+
+                // ----------------------------------------------------------------------
+                for (var i = 0; i < codes.Count - 2; i++)
+                {
+                    if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                        && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                        && codes[i + 2].ToString() == "ldlen NULL")
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if (startIndex > -1)
+                {
+                    codes[startIndex].opcode = OpCodes.Nop;
+                    codes[startIndex].operand = null;
+                    codes[startIndex + 1].opcode = OpCodes.Nop;
+                    codes[startIndex + 1].operand = null;
+                    codes[startIndex + 2].opcode = OpCodes.Call;
+                    codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                    startIndex = -1;
+                }
+                else
+                {
+                    Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SpectateNextPlayer_Transpiler could not use irl number of player.");
+                }
+            }
+
+            return codes.AsEnumerable();
         }
 
         #endregion

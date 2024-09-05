@@ -162,6 +162,41 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("UpdateBoxesSpectateUI")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> UpdateBoxesSpectateUI_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()"
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.UpdateBoxesSpectateUI_Transpiler could not use irl number of player for iteration.");
+            }
+
+            return codes.AsEnumerable();
+        }
 
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
