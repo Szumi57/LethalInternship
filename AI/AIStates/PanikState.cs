@@ -12,12 +12,6 @@ namespace LethalInternship.AI.AIStates
     /// </summary>
     internal class PanikState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.Panik;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// Constructor for PanikState
         /// </summary>
@@ -25,6 +19,8 @@ namespace LethalInternship.AI.AIStates
         /// <param name="enemyAI">EnemyAI to flee</param>
         public PanikState(AIState oldState, EnemyAI enemyAI) : base(oldState)
         {
+            CurrentState = EnumAIStates.Panik;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);

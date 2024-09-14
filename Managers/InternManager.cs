@@ -220,7 +220,6 @@ namespace LethalInternship.Managers
                 GameObject internObject = Object.Instantiate<GameObject>(internObjectParent, internObjectParent.transform.parent);
 
                 PlayerControllerB internController = internObject.GetComponentInChildren<PlayerControllerB>();
-                //todo unique name and unique id
                 internController.playerClientId = (ulong)(indexPlusIrlPlayersCount);
                 internController.isPlayerDead = false;
                 internController.isPlayerControlled = false;
@@ -228,6 +227,10 @@ namespace LethalInternship.Managers
                 internController.thisController.radius *= Plugin.Config.InternSizeScale.Value;
                 internController.actualClientId = internController.playerClientId;
                 internController.playerUsername = string.Format(Const.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
+                if (internController.currentSuitID > 0)
+                {
+                    UnlockableSuit.SwitchSuitForPlayer(internController, 0, false);
+                }
 
                 instance.allPlayerObjects[indexPlusIrlPlayersCount] = internObject;
                 instance.allPlayerScripts[indexPlusIrlPlayersCount] = internController;
@@ -550,7 +553,7 @@ namespace LethalInternship.Managers
         /// <summary>
         /// Manual DisablePlayerModel, for compatibility with mod LethalPhones, does not trigger patch of DisablePlayerModel in LethalPhones
         /// </summary>
-        private void DisableInternControllerModel(GameObject internObject, PlayerControllerB internController, bool enable = false, bool disableLocalArms = false)
+        public void DisableInternControllerModel(GameObject internObject, PlayerControllerB internController, bool enable = false, bool disableLocalArms = false)
         {
             SkinnedMeshRenderer[] componentsInChildren = internObject.GetComponentsInChildren<SkinnedMeshRenderer>();
             for (int i = 0; i < componentsInChildren.Length; i++)

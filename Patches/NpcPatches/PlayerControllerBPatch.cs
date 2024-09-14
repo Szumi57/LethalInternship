@@ -1050,7 +1050,12 @@ namespace LethalInternship.Patches.NpcPatches
                 }
 
                 // Grab intern
-                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GrabIntern)));
+                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GrabIntern)))
+                    .AppendLine();
+
+                // Change suit intern
+                sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.ChangeSuitIntern)))
+                    .AppendLine();
 
                 __instance.cursorTip.text = sb.ToString();
 

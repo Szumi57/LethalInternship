@@ -1379,7 +1379,7 @@ namespace LethalInternship.AI
             if (!Plugin.Config.GrabManeaterBaby.Value
                 && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
             {
-                return true; 
+                return true;
             }
 
             return false;
@@ -1620,7 +1620,8 @@ namespace LethalInternship.AI
             {
                 this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
             }
-            else if (this.State == null || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
+            else if (this.State == null 
+                    || this.State.GetAIState() == EnumAIStates.SearchingForPlayer)
             {
                 this.State = new GetCloseToPlayerState(this);
             }
@@ -1775,7 +1776,7 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="animationState">Current animation state</param>
         /// <param name="animationSpeed">Current animation speed</param>
-        [ServerRpc(RequireOwnership =false)]
+        [ServerRpc(RequireOwnership = false)]
         public void UpdateInternAnimationServerRpc(int animationState, float animationSpeed)
         {
             UpdateInternAnimationClientRpc(animationState, animationSpeed);
@@ -2571,7 +2572,7 @@ namespace LethalInternship.AI
             NpcController.Npc.isPlayerControlled = false;
             NpcController.Npc.thisPlayerModelArms.enabled = false;
             NpcController.Npc.localVisor.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
-            NpcController.Npc.DisablePlayerModel(NpcController.Npc.gameObject, false, false);
+            NpcController.Npc.DisablePlayerModel(NpcController.Npc.gameObject, enable: false, disableLocalArms: false);
             NpcController.Npc.isInsideFactory = false;
             NpcController.Npc.IsInspectingItem = false;
             NpcController.Npc.inTerminalMenu = false;
@@ -2664,8 +2665,13 @@ namespace LethalInternship.AI
                 HeldItem.gameObject.SetActive(false);
             }
 
-            NpcController.Npc.gameObject.SetActive(false);
-            this.gameObject.SetActive(false);
+            // Hide intern
+            NpcController.Npc.localVisor.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
+            InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: false, disableLocalArms: false);
+            NpcController.Npc.transform.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
+
+            // Set intern to brain dead
+            State = new BrainDeadState(State);
         }
 
         private void InstantiateDeadBodyInfo(PlayerControllerB playerGrabberController)
@@ -2704,6 +2710,20 @@ namespace LethalInternship.AI
 
             ragdollBodyDeadBodyInfo.parentedToShip = playerGrabberController.isInElevator;
             ragdollBodyDeadBodyInfo.playerObjectId = (int)NpcController.Npc.playerClientId;
+
+            // False with model replacement API
+            ragdollBodyDeadBodyInfo.gameObject.GetComponentInChildren<SkinnedMeshRenderer>().enabled = true;
+
+            // Set suit ID
+            if (ragdollBodyDeadBodyInfo.setMaterialToPlayerSuit)
+            {
+                SkinnedMeshRenderer skinnedMeshRenderer = ragdollBodyDeadBodyInfo.gameObject.GetComponentInChildren<SkinnedMeshRenderer>();
+                if (skinnedMeshRenderer != null)
+                {
+                    skinnedMeshRenderer.sharedMaterial = StartOfRound.Instance.unlockablesList.unlockables[NpcController.Npc.currentSuitID].suitMaterial;
+                    skinnedMeshRenderer.renderingLayerMask = (513U | 1U << ragdollBodyDeadBodyInfo.playerObjectId + 12);
+                }
+            }
         }
 
         /// <summary>
@@ -2775,9 +2795,6 @@ namespace LethalInternship.AI
 
         private void ReleaseIntern(ulong idPlayerGrabberController)
         {
-            NpcController.Npc.gameObject.SetActive(true);
-            this.gameObject.SetActive(true);
-
             if (idPlayerGrabberController == StartOfRound.Instance.localPlayerController.playerClientId)
             {
                 PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
@@ -2794,6 +2811,9 @@ namespace LethalInternship.AI
             }
 
             RagdollInternBody.SetReleased();
+
+            // Set intern to brain dead
+            State = new ChillWithPlayerState(State);
 
             // Unsubscribe from events to prevent double trigger
             PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
@@ -3015,6 +3035,23 @@ namespace LethalInternship.AI
         private void StopPerformingEmoteClientRpc()
         {
             NpcController.Npc.performingEmote = false;
+        }
+
+        #endregion
+
+        #region Interns suits
+
+        [ServerRpc(RequireOwnership = false)]
+        public void ChangeSuitInternServerRpc(ulong idInternController, int suitID)
+        {
+            ChangeSuitInternClientRpc(idInternController, suitID);
+        }
+
+        [ClientRpc]
+        private void ChangeSuitInternClientRpc(ulong idInternController, int suitID)
+        {
+            UnlockableSuit.SwitchSuitForPlayer(StartOfRound.Instance.allPlayerScripts[idInternController], suitID, playAudio: false);
+            StartOfRound.Instance.allPlayerScripts[idInternController].thisPlayerModelArms.enabled = false;
         }
 
         #endregion

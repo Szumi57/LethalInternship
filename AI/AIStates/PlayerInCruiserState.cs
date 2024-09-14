@@ -6,12 +6,6 @@ namespace LethalInternship.AI.AIStates
 {
     internal class PlayerInCruiserState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.PlayerInCruiser;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         private VehicleController vehicleController;
 
         /// <summary>
@@ -19,6 +13,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public PlayerInCruiserState(AIState state, VehicleController vehicleController) : base(state)
         {
+            CurrentState = EnumAIStates.PlayerInCruiser;
+
             this.vehicleController = vehicleController;
         }
 
@@ -27,6 +23,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public PlayerInCruiserState(InternAI ai, VehicleController vehicleController) : base(ai)
         {
+            CurrentState = EnumAIStates.PlayerInCruiser;
+
             this.vehicleController = vehicleController;
         }
 
@@ -103,11 +101,6 @@ namespace LethalInternship.AI.AIStates
             ai.SetDestinationToPositionInternAI(entryPointInternCruiser);
             npcController.OrderToSprint();
             ai.OrderMoveToDestination();
-        }
-
-        public override string GetBillboardStateIndicator()
-        {
-            return string.Empty;
         }
 
         private Vector3 GetNextRandomInCruiserPos()

@@ -7,17 +7,13 @@ namespace LethalInternship.AI.AIStates
     /// </summary>
     internal class FetchingObjectState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.FetchingObject;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
         public FetchingObjectState(AIState state, GrabbableObject targetItem) : base(state)
         {
+            CurrentState = EnumAIStates.FetchingObject;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);

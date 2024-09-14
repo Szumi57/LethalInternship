@@ -13,12 +13,6 @@ namespace LethalInternship.AI.AIStates
     /// </remarks>
     internal class ChillWithPlayerState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.ChillWithPlayer;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the target player (owner of intern), 
         /// only on axis x and z, y at 0, and squared
@@ -48,6 +42,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public ChillWithPlayerState(AIState state) : base(state)
         {
+            CurrentState = EnumAIStates.ChillWithPlayer;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);
@@ -125,11 +121,6 @@ namespace LethalInternship.AI.AIStates
 
             // Chill
             ai.StopMoving();
-        }
-
-        public override string GetBillboardStateIndicator()
-        {
-            return string.Empty;
         }
     }
 }

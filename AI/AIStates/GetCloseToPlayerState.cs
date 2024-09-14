@@ -9,17 +9,13 @@ namespace LethalInternship.AI.AIStates
     /// </summary>
     internal class GetCloseToPlayerState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.GetCloseToPlayer;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
         public GetCloseToPlayerState(AIState state) : base(state)
         {
+            CurrentState = EnumAIStates.GetCloseToPlayer;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);
@@ -31,6 +27,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public GetCloseToPlayerState(InternAI ai) : base(ai)
         {
+            CurrentState = EnumAIStates.GetCloseToPlayer;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);
@@ -142,11 +140,6 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
-        }
-
-        public override string GetBillboardStateIndicator()
-        {
-            return string.Empty;
         }
     }
 }

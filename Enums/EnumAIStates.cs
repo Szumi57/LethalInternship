@@ -12,6 +12,7 @@
         FetchingObject,
         PlayerInShip,
         PlayerInCruiser,
-        Panik
+        Panik,
+        BrainDead
     }
 }

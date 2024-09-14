@@ -19,6 +19,7 @@ namespace LethalInternship.Managers
             Plugin.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
             Plugin.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
             Plugin.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
+            Plugin.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
         }
 
         public string GetKeyAction(InputAction inputAction)
@@ -230,6 +231,49 @@ namespace LethalInternship.Managers
 
             HUDManager.Instance.ClearControlTips();
             //HUDManager.Instance.ChangeControlTipMultiple(new string[] { Const.TOOLTIPS_ORDER_1 });
+        }
+
+        private void ChangeSuitIntern_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+        {
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+            if (!IsPerformedValid(localPlayer))
+            {
+                return;
+            }
+
+            // Use of change suit key to change suit of intern
+            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
+            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
+            foreach (RaycastHit hit in raycastHits)
+            {
+                if (hit.collider.tag != "Player")
+                {
+                    continue;
+                }
+
+                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (player == null)
+                {
+                    continue;
+                }
+                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
+                if (intern == null)
+                {
+                    continue;
+                }
+
+
+                if (intern.NpcController.Npc.currentSuitID == localPlayer.currentSuitID)
+                {
+                    intern.ChangeSuitInternServerRpc(intern.NpcController.Npc.playerClientId, 0);
+                }
+                else
+                {
+                    intern.ChangeSuitInternServerRpc(intern.NpcController.Npc.playerClientId, localPlayer.currentSuitID);
+                }
+
+                return;
+            }
         }
     }
 }

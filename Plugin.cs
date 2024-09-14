@@ -11,6 +11,7 @@ using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
 using LethalInternship.Patches.ModPatches.LethalPhones;
+using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
@@ -191,9 +192,9 @@ namespace LethalInternship
             // -----------------------
             // Are these mods loaded ?
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
+            bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             bool isModMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
-            bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
@@ -221,6 +222,10 @@ namespace LethalInternship
             if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
+            }
+            if (isModModelReplacementAPILoaded)
+            {
+                _harmony.PatchAll(typeof(BodyReplacementBasePatch));
             }
             if (isModLethalPhonesLoaded)
             {

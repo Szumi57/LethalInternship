@@ -9,6 +9,20 @@ namespace LethalInternship.AI
     internal abstract class AIState
     {
         protected InternAI ai;
+
+        private EnumAIStates currentState;
+        protected EnumAIStates CurrentState {
+            get
+            {
+                return this.currentState;
+            }
+            set
+            {
+                this.currentState = value;
+                Plugin.LogDebug($"Intern {npcController.Npc.playerClientId} ({npcController.Npc.playerUsername}) new state :                 {this.currentState}");
+            }
+        }
+
         /// <summary>
         /// <c>NpcController</c> from the <c>InternAI</c>
         /// </summary>
@@ -20,7 +34,7 @@ namespace LethalInternship.AI
 
         protected Coroutine? panikCoroutine;
         protected Transform? enemyTransform;
-        
+
         /// <summary>
         /// Constructor from another state
         /// </summary>
@@ -29,7 +43,7 @@ namespace LethalInternship.AI
         {
             this.targetLastKnownPosition = oldState.targetLastKnownPosition;
             this.targetItem = oldState.targetItem;
-            
+
             this.panikCoroutine = oldState.panikCoroutine;
             this.enemyTransform = oldState.enemyTransform;
         }
@@ -49,7 +63,6 @@ namespace LethalInternship.AI
             this.ai = ai;
 
             this.npcController = ai.NpcController;
-            Plugin.LogDebug($"Intern {npcController.Npc.playerClientId} ({npcController.Npc.playerUsername}) new state :                 {this.GetAIState()}");
 
             this.searchForPlayers = new AISearchRoutine();
             this.searchForPlayers.randomized = true;
@@ -64,8 +77,8 @@ namespace LethalInternship.AI
         /// Get the <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see> of current State
         /// </summary>
         /// <returns></returns>
-        public abstract EnumAIStates GetAIState();
+        public virtual EnumAIStates GetAIState() { return CurrentState; }
 
-        public abstract string GetBillboardStateIndicator();
+        public virtual string GetBillboardStateIndicator() { return string.Empty; }
     }
 }

@@ -14,23 +14,23 @@ namespace LethalInternship.AI.AIStates
     /// </remarks>
     internal class SearchingForPlayerState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.SearchingForPlayer;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         private PlayerControllerB? player;
         private Coroutine searchingWanderCoroutine = null!;
 
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
-        public SearchingForPlayerState(AIState oldState) : base(oldState) { }
+        public SearchingForPlayerState(AIState oldState) : base(oldState)
+        {
+            CurrentState = EnumAIStates.SearchingForPlayer;
+        }
         /// <summary>
         /// <inheritdoc cref="AIState(InternAI)"/>
         /// </summary>
-        public SearchingForPlayerState(InternAI ai) : base(ai) { }
+        public SearchingForPlayerState(InternAI ai) : base(ai)
+        {
+            CurrentState = EnumAIStates.SearchingForPlayer;
+        }
 
         /// <summary>
         /// <inheritdoc cref="AIState.DoAI"/>
@@ -96,7 +96,7 @@ namespace LethalInternship.AI.AIStates
         private IEnumerator SearchingWander()
         {
             yield return null;
-            while (ai.State != null 
+            while (ai.State != null
                     && ai.State.GetAIState() == EnumAIStates.SearchingForPlayer)
             {
                 float freezeTimeRandom = Random.Range(Const.MIN_TIME_SPRINT_SEARCH_WANDER, Const.MAX_TIME_SPRINT_SEARCH_WANDER);

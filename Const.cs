@@ -104,12 +104,12 @@ namespace LethalInternship
         // Debug
         public static readonly bool DRAW_LINES = false;
         public static readonly bool SHOW_LOG_DEBUG = true;
-        public static readonly bool SPAWN_INTERN_WITH_EMOTE = false;
+        public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
-        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
+        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = true;
 
         // NpcController
         public static readonly int PLAYER_MASK = 8;
@@ -190,6 +190,7 @@ namespace LethalInternship
         public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
         public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
         public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
+        public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
         public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
 
         // Terminal
