@@ -1620,7 +1620,7 @@ namespace LethalInternship.AI
             {
                 this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
             }
-            else if (this.State == null 
+            else if (this.State == null
                     || this.State.GetAIState() == EnumAIStates.SearchingForPlayer)
             {
                 this.State = new GetCloseToPlayerState(this);
@@ -2694,9 +2694,6 @@ namespace LethalInternship.AI
                                                                        rotation,
                                                                        parent);
                 ragdollBodyDeadBodyInfo = gameObject.GetComponent<DeadBodyInfo>();
-
-                // Scale ragdoll (without stretching the body parts)
-                ResizeRagdoll(ragdollBodyDeadBodyInfo.transform);
             }
 
             ragdollBodyDeadBodyInfo.transform.position = position;
@@ -2710,6 +2707,9 @@ namespace LethalInternship.AI
 
             ragdollBodyDeadBodyInfo.parentedToShip = playerGrabberController.isInElevator;
             ragdollBodyDeadBodyInfo.playerObjectId = (int)NpcController.Npc.playerClientId;
+
+            // Scale ragdoll (without stretching the body parts)
+            ResizeRagdoll(ragdollBodyDeadBodyInfo.transform);
 
             // False with model replacement API
             ragdollBodyDeadBodyInfo.gameObject.GetComponentInChildren<SkinnedMeshRenderer>().enabled = true;

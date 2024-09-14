@@ -32,24 +32,25 @@ namespace LethalInternship.AI
             ragdollGrabbableObject.ragdoll.grabBodyObject = ragdollGrabbableObject;
             ragdollGrabbableObject.ragdoll.attachedTo = this.ragdollGrabbableObject.transform;
             ragdollGrabbableObject.ragdoll.attachedLimb = this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart];
-            ragdollGrabbableObject.transform.SetParent(this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart].transform);
             ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
             ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
             ragdollGrabbableObject.ragdoll.SetBodyPartsKinematic(false);
             ragdollGrabbableObject.ragdoll.gameObject.SetActive(true);
             ragdollGrabbableObject.ragdoll.deactivated = false;
-            for (int i = 0; i < ragdollGrabbableObject.ragdoll.bodyParts.Length; i++)
-            {
-                ragdollGrabbableObject.ragdoll.bodyParts[i].GetComponent<Collider>().enabled = false;
-            }
 
-            ragdollGrabbableObject.isHeld = true;
+            Transform? transformParent = playerGrabberController.gameObject.transform.Find("ScavengerModel/metarig/spine/spine.001/spine.002/spine.003/shoulder.L/arm.L_upper/arm.L_lower/hand.L");
+            if (transformParent == null)
+            {
+                transformParent = playerGrabberController.localItemHolder;
+            }
+            ragdollGrabbableObject.parentObject = transformParent;
+            ragdollGrabbableObject.transform.SetParent(transformParent);
+
             //TreesUtils.PrintTransformTree(playerGrabberController.gameObject.GetComponentsInChildren<Transform>());
-            //ragdollGrabbableObject.parentObject = playerGrabberController.localItemHolder;
-            ragdollGrabbableObject.parentObject = playerGrabberController.gameObject.transform.Find("ScavengerModel/metarig/spine/spine.001/spine.002/spine.003/shoulder.L/arm.L_upper/arm.L_lower/hand.L");
+
             ragdollGrabbableObject.hasHitGround = false;
             ragdollGrabbableObject.isInFactory = playerGrabberController.isInsideFactory;
-
+            ragdollGrabbableObject.isHeld = true;
             this.idPlayerHolder = idPlayerHolder;
 
             //for (int i = 0; i < this.ragdollGrabbableObject.ragdoll.bodyParts.Length; i++)
@@ -62,16 +63,16 @@ namespace LethalInternship.AI
         {
             ragdollGrabbableObject.ragdoll.attachedTo = null;
             ragdollGrabbableObject.ragdoll.attachedLimb = null;
-            ragdollGrabbableObject.transform.SetParent(StartOfRound.Instance.propsContainer);
             ragdollGrabbableObject.ragdoll.matchPositionExactly = false;
             ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = false;
             ragdollGrabbableObject.ragdoll.gameObject.SetActive(false);
             ragdollGrabbableObject.ragdoll.deactivated = true;
 
-            ragdollGrabbableObject.isHeld = false;
             ragdollGrabbableObject.parentObject = null;
-            ragdollGrabbableObject.hasHitGround = false;
+            ragdollGrabbableObject.transform.SetParent(StartOfRound.Instance.propsContainer, worldPositionStays: true);
 
+            ragdollGrabbableObject.hasHitGround = false;
+            ragdollGrabbableObject.isHeld = false;
             this.idPlayerHolder = -1;
         }
 
