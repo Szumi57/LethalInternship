@@ -68,6 +68,10 @@ namespace LethalInternship.AI.AIStates
                 // new target
                 StopSearchingWanderCoroutine();
                 ai.SyncAssignTargetAndSetMovingTo(player);
+                if (Plugin.Config.AutoChangeSuit.Value)
+                {
+                    ai.ChangeSuitInternServerRpc(npcController.Npc.playerClientId, player.currentSuitID);
+                }
                 return;
             }
 

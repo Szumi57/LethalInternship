@@ -22,6 +22,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> InternPrice;
         [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
         [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
+        [SyncedEntryField] public SyncedEntry<bool> AutoChangeSuit;
 
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
@@ -75,6 +76,11 @@ namespace LethalInternship.Configs
                                        defaultValue: Const.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
+
+            AutoChangeSuit = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+                                               "Automatical changing suits of owned interns",
+                                               defaultVal: false,
+                                               "Should the intern change suit when the player get ownership of him ?");
 
             CanSpectateInterns = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                                      "Spectate interns",

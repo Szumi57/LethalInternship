@@ -112,6 +112,11 @@ namespace LethalInternship.Managers
                 if (intern.OwnerClientId != localPlayer.actualClientId)
                 {
                     intern.SyncAssignTargetAndSetMovingTo(localPlayer);
+
+                    if (Plugin.Config.AutoChangeSuit.Value)
+                    {
+                        intern.ChangeSuitInternServerRpc(player.playerClientId, localPlayer.currentSuitID);
+                    }
                 }
 
                 //HUDManager.Instance.ClearControlTips();
