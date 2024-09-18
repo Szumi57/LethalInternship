@@ -121,6 +121,9 @@ namespace LethalInternship.AI.AIStates
 
             // Chill
             ai.StopMoving();
+
+            // Emotes
+            npcController.MimicEmotes(ai.targetPlayer);
         }
     }
 }

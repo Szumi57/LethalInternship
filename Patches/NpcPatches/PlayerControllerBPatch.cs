@@ -377,6 +377,46 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        [HarmonyPatch("PerformEmote")]
+        [HarmonyPrefix]
+        static bool PerformEmote_PreFix(PlayerControllerB __instance, int emoteID)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            if (!CheckConditionsForEmote_ReversePatch(__instance))
+            {
+                return false;
+            }
+
+            __instance.performingEmote = true;
+            __instance.playerBodyAnimator.SetInteger("emoteNumber", emoteID);
+            internAI.StartPerformingEmoteInternServerRpc();
+            return false;
+        }
+
+        /// <summary>
+        /// Prefix for using the intern server rpc for emotes, for the ownership false
+        /// </summary>
+        /// <remarks>Calls from MoreEmotes mod typically</remarks>
+        /// <returns></returns>
+        [HarmonyPatch("StartPerformingEmoteServerRpc")]
+        [HarmonyPrefix]
+        static bool StartPerformingEmoteServerRpc_PreFix(PlayerControllerB __instance)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            internAI.StartPerformingEmoteInternServerRpc();
+            return false;
+        }
+
         #endregion
 
         #region Reverse patches

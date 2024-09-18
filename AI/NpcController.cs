@@ -492,9 +492,7 @@ namespace LethalInternship.AI
             {
                 Npc.performingEmote = false;
                 this.InternAIController.SyncStopPerformingEmote();
-                Npc.timeSinceStartingEmote = 0f;
             }
-            Npc.timeSinceStartingEmote += Time.deltaTime;
         }
 
         /// <summary>
@@ -1341,6 +1339,120 @@ namespace LethalInternship.AI
                 networkObject.AutoObjectParentSync = true;
             }
         }
+
+        #region Emotes
+
+        public void MimicEmotes(PlayerControllerB playerToMimic)
+        {
+            if (!HasToMove
+                && Npc.thisController.velocity == Vector3.zero
+                && playerToMimic.performingEmote)
+            {
+                if (Plugin.IsModTooManyEmotesLoaded)
+                {
+                    CheckAndPerformTooManyEmote(playerToMimic);
+                }
+                else
+                {
+                    PerformDefaultEmote(playerToMimic.playerBodyAnimator.GetInteger("emoteNumber"));
+                }
+            }
+            else
+            {
+                if (Npc.performingEmote)
+                {
+                    Npc.performingEmote = false;
+                    Npc.playerBodyAnimator.SetInteger("emoteNumber", 0);
+                    this.InternAIController.SyncStopPerformingEmote();
+                    if (Plugin.IsModTooManyEmotesLoaded)
+                    {
+                        StopPerformingTooManyEmote();
+                    }
+                }
+            }
+        }
+
+        private void CheckAndPerformTooManyEmote(PlayerControllerB playerToMimic)
+        {
+            TooManyEmotes.EmoteControllerPlayer emoteControllerPlayerOfplayerToMimic = playerToMimic.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerPlayerOfplayerToMimic == null)
+            {
+                return;
+            }
+            TooManyEmotes.EmoteControllerPlayer emoteControllerIntern = Npc.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerIntern == null)
+            {
+                return;
+            }
+
+            // Player performing emote but not tooManyEmote so default
+            if (!emoteControllerPlayerOfplayerToMimic.isPerformingEmote)
+            {
+                if (emoteControllerIntern.isPerformingEmote)
+                {
+                    emoteControllerIntern.StopPerformingEmote();
+                    InternAIController.StopPerformTooManyEmoteInternServerRpc();
+                }
+
+                // Default emote
+                PerformDefaultEmote(playerToMimic.playerBodyAnimator.GetInteger("emoteNumber"));
+                return;
+            }
+
+            // TooMany emotes
+            if (emoteControllerPlayerOfplayerToMimic.performingEmote == null)
+            {
+                return;
+            }
+
+            if (emoteControllerIntern.isPerformingEmote
+                && emoteControllerPlayerOfplayerToMimic.performingEmote.emoteId == emoteControllerIntern.performingEmote?.emoteId)
+            {
+                return;
+            }
+
+            // PerformEmote TooMany emote
+            InternAIController.PerformTooManyEmoteInternServerRpc(emoteControllerPlayerOfplayerToMimic.performingEmote.emoteId);
+        }
+
+        private void PerformDefaultEmote(int emoteNumberToMimic)
+        {
+            int emoteNumberIntern = Npc.playerBodyAnimator.GetInteger("emoteNumber");
+            if (!Npc.performingEmote
+                || emoteNumberIntern != emoteNumberToMimic)
+            {
+                Npc.performingEmote = true;
+                Npc.PerformEmote(new UnityEngine.InputSystem.InputAction.CallbackContext(), emoteNumberToMimic);
+            }
+        }
+
+        public void PerformTooManyEmote(int tooManyEmoteID)
+        {
+            TooManyEmotes.EmoteControllerPlayer emoteControllerIntern = Npc.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerIntern == null)
+            {
+                return;
+            }
+
+            if (emoteControllerIntern.isPerformingEmote)
+            {
+                emoteControllerIntern.StopPerformingEmote();
+            }
+
+            TooManyEmotes.UnlockableEmote unlockableEmote = TooManyEmotes.EmotesManager.allUnlockableEmotes[tooManyEmoteID];
+            emoteControllerIntern.PerformEmote(unlockableEmote);
+        }
+
+        public void StopPerformingTooManyEmote()
+        {
+            TooManyEmotes.EmoteControllerPlayer emoteControllerInternController = Npc.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerInternController != null)
+            {
+                emoteControllerInternController.StopPerformingEmote();
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Sync the rotation and the look at target to all clients

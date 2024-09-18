@@ -547,6 +547,9 @@ namespace LethalInternship.Managers
                 internController.deadBody = null;
             }
 
+            // CleanLegsFromMoreEmotesMod
+            CleanLegsFromMoreEmotesMod(internController);
+
             internAI.Init();
         }
 
@@ -563,6 +566,16 @@ namespace LethalInternship.Managers
             if (disableLocalArms)
             {
                 internController.thisPlayerModelArms.enabled = false;
+            }
+        }
+
+        private void CleanLegsFromMoreEmotesMod(PlayerControllerB internController)
+        {
+            GameObject? gameObject = internController.playerBodyAnimator.transform.Find("FistPersonLegs")?.gameObject;
+            if (gameObject != null)
+            {
+                Plugin.LogDebug($"{internController.playerUsername}: Cleaning legs from more emotes");
+                UnityEngine.Object.Destroy(gameObject);
             }
         }
 
@@ -951,6 +964,11 @@ namespace LethalInternship.Managers
             }
 
             return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
+
+        public bool IsPlayerInternControlledAndOwner(PlayerControllerB player)
+        {
+            return IsPlayerInternOwnerLocal(player) && player.isPlayerControlled;
         }
 
         public bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)

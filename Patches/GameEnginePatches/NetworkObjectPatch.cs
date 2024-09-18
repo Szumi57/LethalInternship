@@ -40,7 +40,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         static bool OnTransformParentChanged_PreFix(NetworkObject __instance,
                                                     Transform ___m_CachedParent)
         {
-            if (!Const.SHOW_LOG_DEBUG)
+            if (!Const.SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED)
             {
                 return true;
             }

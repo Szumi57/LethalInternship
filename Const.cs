@@ -18,6 +18,7 @@ namespace LethalInternship
         public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
         public const string SHOWCAPACITY_GUID = "Piggy.ShowCapacity";
         public const string REVIVECOMPANY_GUID = "OpJosMod.ReviveCompany";
+        public const string TOOMANYEMOTES_GUID = "FlipMods.TooManyEmotes";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 
@@ -103,13 +104,13 @@ namespace LethalInternship
 
         // Debug
         public static readonly bool DRAW_LINES = false;
-        public static readonly bool SHOW_LOG_DEBUG = true;
-        public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
+        public static readonly bool SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED = false;
+        public static readonly bool SPAWN_INTERN_WITH_EMOTE = false;
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
-        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = true;
+        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
 
         // NpcController
         public static readonly int PLAYER_MASK = 8;

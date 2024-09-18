@@ -3055,5 +3055,49 @@ namespace LethalInternship.AI
         }
 
         #endregion
+
+        #region Emotes
+
+        [ServerRpc(RequireOwnership = false)]
+        public void StartPerformingEmoteInternServerRpc()
+        {
+            StartPerformingEmoteInternClientRpc();
+        }
+
+        [ClientRpc]
+        private void StartPerformingEmoteInternClientRpc()
+        {
+            NpcController.Npc.performingEmote = true;
+        }
+
+        #endregion
+
+        #region TooManyEmotes
+
+        [ServerRpc(RequireOwnership = false)]
+        public void PerformTooManyEmoteInternServerRpc(int tooManyEmoteID)
+        {
+            PerformTooManyInternClientRpc(tooManyEmoteID);
+        }
+
+        [ClientRpc]
+        private void PerformTooManyInternClientRpc(int tooManyEmoteID)
+        {
+            NpcController.PerformTooManyEmote(tooManyEmoteID);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void StopPerformTooManyEmoteInternServerRpc()
+        {
+            StopPerformTooManyInternClientRpc();
+        }
+
+        [ClientRpc]
+        private void StopPerformTooManyInternClientRpc()
+        {
+            NpcController.StopPerformingTooManyEmote();
+        }
+
+        #endregion
     }
 }
