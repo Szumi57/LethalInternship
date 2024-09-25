@@ -3,8 +3,10 @@ using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
+using ModelReplacement;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -98,6 +100,7 @@ namespace LethalInternship.AI
         public NpcController(PlayerControllerB npc)
         {
             this.Npc = npc;
+            Init();
         }
 
         /// <summary>
@@ -106,6 +109,11 @@ namespace LethalInternship.AI
         public void Awake()
         {
             Plugin.LogDebug("Awake intern controller.");
+            Init();
+        }
+
+        private void Init()
+        {
             Npc.isHostPlayerObject = false;
             Npc.serverPlayerPosition = Npc.transform.position;
             Npc.gameplayCamera.enabled = false;
@@ -1834,6 +1842,60 @@ namespace LethalInternship.AI
                 Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
                 this.drowningTimer = Mathf.Clamp(this.drowningTimer + Time.deltaTime, 0.1f, 1f);
             }
+        }
+
+        /// <summary>
+        /// Unused for now, can't find the true size of models...
+        /// </summary>
+        public void RefreshBillBoardPosition()
+        {
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                Npc.usernameCanvas.transform.position = GetBillBoardPositionModelReplacementAPI(Npc.usernameCanvas.transform.position);
+            }
+            else
+            {
+                Npc.usernameCanvas.transform.position = GetBillBoardPosition(Npc.gameObject, Npc.usernameCanvas.transform.position);
+            }
+        }
+
+        private Vector3 GetBillBoardPosition(GameObject bodyModel, Vector3 lastPosition)
+        {
+            // Code from mod ModelReplacementAPI.BodyReplacementBase.GetBounds
+            IEnumerable<Bounds> source = from r in bodyModel.GetComponentsInChildren<SkinnedMeshRenderer>()
+                                         select r.bounds;
+            float yMax = (from x in source
+                          orderby x.size.y descending
+                          select x).First<Bounds>().size.y;
+
+            Plugin.LogDebug($"skinned y {yMax}");
+
+            foreach (var s in source)
+            {
+                Plugin.LogDebug($"skinned size {s.size}");
+
+            }
+
+            return new Vector3(lastPosition.x,
+                               bodyModel.transform.position.y + yMax,
+                               lastPosition.z);
+        }
+
+        private Vector3 GetBillBoardPositionModelReplacementAPI(Vector3 lastPosition)
+        {
+            BodyReplacementBase? bodyReplacement = Npc.gameObject.GetComponent<BodyReplacementBase>();
+            if (bodyReplacement == null)
+            {
+                return GetBillBoardPosition(Npc.gameObject, lastPosition);
+            }
+
+            GameObject? model = bodyReplacement.replacementModel;
+            if (model == null)
+            {
+                return GetBillBoardPosition(Npc.gameObject, lastPosition);
+            }
+
+            return GetBillBoardPosition(model, Npc.usernameCanvas.transform.position);
         }
     }
 }

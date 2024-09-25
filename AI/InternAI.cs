@@ -2812,6 +2812,9 @@ namespace LethalInternship.AI
 
             RagdollInternBody.SetReleased();
 
+            // Enable model
+            InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
+
             // Set intern to brain dead
             State = new ChillWithPlayerState(State);
 

@@ -110,7 +110,7 @@ namespace LethalInternship
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
-        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
+        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = true;
 
         // NpcController
         public static readonly int PLAYER_MASK = 8;
@@ -149,7 +149,7 @@ namespace LethalInternship
         // GetCloseToPlayerState
         public static readonly float DISTANCE_START_RUNNING = 8f;
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
-        public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 6f;
+        public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 5f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
         public static readonly float DISTANCE_AWARENESS_HOR = 25f;
         public static readonly float DISTANCE_AWARENESS_VER = 50f;

@@ -1054,13 +1054,13 @@ namespace LethalInternship.Patches.NpcPatches
                     continue;
                 }
 
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
+                PlayerControllerB internController = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (internController == null)
                 {
                     continue;
                 }
 
-                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
+                InternAI? intern = InternManager.Instance.GetInternAI((int)internController.playerClientId);
                 if (intern == null)
                 {
                     continue;
@@ -1094,8 +1094,11 @@ namespace LethalInternship.Patches.NpcPatches
                     .AppendLine();
 
                 // Change suit intern
-                sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.ChangeSuitIntern)))
-                    .AppendLine();
+                if (__instance.currentSuitID != 0 
+                    || internController.currentSuitID != __instance.currentSuitID)
+                {
+                    sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.ChangeSuitIntern)));
+                }
 
                 __instance.cursorTip.text = sb.ToString();
 

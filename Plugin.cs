@@ -62,6 +62,7 @@ namespace LethalInternship
 
         internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModTooManyEmotesLoaded = false;
+        internal static bool IsModModelReplacementAPILoaded = false;
 
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
@@ -194,7 +195,7 @@ namespace LethalInternship
             // Are these mods loaded ?
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
-            bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+            IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             bool isModMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
@@ -221,11 +222,11 @@ namespace LethalInternship
             {
                 _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
             }
-            if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
+            if (IsModModelReplacementAPILoaded && isModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
             }
-            if (isModModelReplacementAPILoaded)
+            if (IsModModelReplacementAPILoaded)
             {
                 _harmony.PatchAll(typeof(BodyReplacementBasePatch));
             }
@@ -292,11 +293,15 @@ namespace LethalInternship
                 var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
                 foreach (var method in methods)
                 {
-                    var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
-                    if (attributes.Length > 0)
+                    try
                     {
-                        method.Invoke(null, null);
+                        var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                        if (attributes.Length > 0)
+                        {
+                            method.Invoke(null, null);
+                        }
                     }
+                    catch { }
                 }
             }
         }

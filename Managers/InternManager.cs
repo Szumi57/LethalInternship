@@ -517,8 +517,13 @@ namespace LethalInternship.Managers
             internController.voiceMuffledByEnemy = false;
             internController.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_LIMP, false);
             internController.climbSpeed = Const.CLIMB_SPEED;
+            internController.usernameBillboardText.enabled = true;
             AccessTools.Field(typeof(PlayerControllerB), "updatePositionForNewlyJoinedClient").SetValue(internController, true);
 
+            // CleanLegsFromMoreEmotesMod
+            CleanLegsFromMoreEmotesMod(internController);
+
+            // internAI
             internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();
             internAI.creatureAnimator = internController.playerBodyAnimator;
             internAI.NpcController = new NpcController(internController);
@@ -546,9 +551,6 @@ namespace LethalInternship.Managers
                 UnityEngine.Object.Destroy(internController.deadBody.gameObject);
                 internController.deadBody = null;
             }
-
-            // CleanLegsFromMoreEmotesMod
-            CleanLegsFromMoreEmotesMod(internController);
 
             internAI.Init();
         }
