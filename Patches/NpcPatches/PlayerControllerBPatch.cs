@@ -394,7 +394,8 @@ namespace LethalInternship.Patches.NpcPatches
 
             __instance.performingEmote = true;
             __instance.playerBodyAnimator.SetInteger("emoteNumber", emoteID);
-            internAI.StartPerformingEmoteInternServerRpc();
+            internAI.StartPerformingEmoteInternServerRpc(emoteID);
+
             return false;
         }
 
@@ -413,7 +414,7 @@ namespace LethalInternship.Patches.NpcPatches
                 return true;
             }
 
-            internAI.StartPerformingEmoteInternServerRpc();
+            internAI.StartPerformingEmoteInternServerRpc(__instance.playerBodyAnimator.GetInteger("emoteNumber"));
             return false;
         }
 

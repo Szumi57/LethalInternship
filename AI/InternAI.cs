@@ -3062,15 +3062,16 @@ namespace LethalInternship.AI
         #region Emotes
 
         [ServerRpc(RequireOwnership = false)]
-        public void StartPerformingEmoteInternServerRpc()
+        public void StartPerformingEmoteInternServerRpc(int emoteID)
         {
-            StartPerformingEmoteInternClientRpc();
+            StartPerformingEmoteInternClientRpc(emoteID);
         }
 
         [ClientRpc]
-        private void StartPerformingEmoteInternClientRpc()
+        private void StartPerformingEmoteInternClientRpc(int emoteID)
         {
             NpcController.Npc.performingEmote = true;
+            NpcController.Npc.playerBodyAnimator.SetInteger("emoteNumber", emoteID);
         }
 
         #endregion

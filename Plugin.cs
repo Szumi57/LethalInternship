@@ -9,6 +9,7 @@ using LethalInternship.Patches.GameEnginePatches;
 using LethalInternship.Patches.MapHazardsPatches;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
+using LethalInternship.Patches.ModPatches.BetterEmotes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
 using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
@@ -43,6 +44,7 @@ namespace LethalInternship
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.BETTEREMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MORECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MODELREPLACEMENT_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALPHONES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -196,7 +198,8 @@ namespace LethalInternship
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
             IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
-            bool isModMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
+            bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
+            bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
             bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
@@ -214,9 +217,22 @@ namespace LethalInternship
 
             // -----------------------------
             // Compatibility with other mods
-            if (isModMoreEmoteLoaded)
+            if (isModMoreEmotesLoaded)
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
+            }
+            if (isModBetterEmotesLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "UpdatePrefix"),
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.UpdatePrefix_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "UpdatePostfix"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.UpdatePostfix_Transpiler)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "PerformEmotePrefix"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.PerformEmotePrefix_Transpiler)));
             }
             if (isModMoreCompanyLoaded)
             {

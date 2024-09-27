@@ -13,6 +13,7 @@ namespace LethalInternship
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
         public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
         public const string MOREEMOTES_GUID = "MoreEmotes";
+        public const string BETTEREMOTES_GUID = "BetterEmotes";
         public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
         public const string LETHALPHONES_GUID = "LethalPhones";
         public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
@@ -110,7 +111,7 @@ namespace LethalInternship
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
-        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = true;
+        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
 
         // NpcController
         public static readonly int PLAYER_MASK = 8;
