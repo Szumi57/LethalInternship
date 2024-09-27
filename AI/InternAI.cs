@@ -1978,9 +1978,8 @@ namespace LethalInternship.AI
             this.HeldItem = grabbableObject;
 
             grabbableObject.GrabItemFromEnemy(this);
-            grabbableObject.parentObject = NpcController.Npc.localItemHolder;
+            grabbableObject.parentObject = NpcController.Npc.serverItemHolder;
             grabbableObject.playerHeldBy = NpcController.Npc;
-            //grabbableObject.parentObject = NpcController.Npc.gameObject.transform.Find("ScavengerModel/metarig/spine/spine.001/spine.002/spine.003/shoulder.R/arm.R_upper/arm.R_lower/hand.R");
             grabbableObject.isHeld = true;
             grabbableObject.hasHitGround = false;
             grabbableObject.isInFactory = NpcController.Npc.isInsideFactory;
