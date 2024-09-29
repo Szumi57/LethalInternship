@@ -911,6 +911,10 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        [HarmonyPatch("SetSpecialGrabAnimationBool")]
+        [HarmonyReversePatch]
+        public static void SetSpecialGrabAnimationBool_ReversePatch(object instance, bool setTrue, GrabbableObject currentItem) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.SetSpecialGrabAnimationBool_ReversePatch");
+
         #endregion
 
         #region Transpilers

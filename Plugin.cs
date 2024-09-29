@@ -15,6 +15,7 @@ using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
+using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
 using LethalInternship.Patches.NpcPatches;
@@ -50,6 +51,7 @@ namespace LethalInternship
     [BepInDependency(Const.LETHALPHONES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.FASTERITEMDROPSHIP_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.SHOWCAPACITY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.RESERVEDITEMSLOTCORE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -204,6 +206,7 @@ namespace LethalInternship
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
+            bool isModReservedItemSlotCoreLoaded = IsModLoaded(Const.RESERVEDITEMSLOTCORE_GUID);
 
             // -------------------
             // Read the preloaders
@@ -275,6 +278,13 @@ namespace LethalInternship
                                null,
                                null,
                                new HarmonyMethod(typeof(ReviveCompanyPlayerControllerBPatchPatch), nameof(ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler)));
+            }
+            if(isModReservedItemSlotCoreLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ReservedItemSlotCore.Patches.PlayerPatcher"), "InitializePlayerControllerLate"),
+                               new HarmonyMethod(typeof(PlayerPatcherPatch), nameof(PlayerPatcherPatch.InitializePlayerControllerLate_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ReservedItemSlotCore.Patches.PlayerPatcher"), "CheckForChangedInventorySize"),
+                               new HarmonyMethod(typeof(PlayerPatcherPatch), nameof(PlayerPatcherPatch.CheckForChangedInventorySize_Prefix)));
             }
         }
 

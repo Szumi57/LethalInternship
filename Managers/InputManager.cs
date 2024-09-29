@@ -143,12 +143,12 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
+                PlayerControllerB internController = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (internController == null)
                 {
                     continue;
                 }
-                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
+                InternAI? intern = InternManager.Instance.GetInternAI((int)internController.playerClientId);
                 if (intern == null)
                 {
                     continue;
@@ -161,19 +161,15 @@ namespace LethalInternship.Managers
                 }
                 else if (localPlayer.currentlyHeldObjectServer != null)
                 {
+                    // To cut Discard_performed from triggering after this input
+                    localPlayer.isHoldingObject = false;
+
                     // Intern take item from player hands
                     GrabbableObject grabbableObject = localPlayer.currentlyHeldObjectServer;
-                    localPlayer.DiscardHeldObject(placeObject: true);
-                    intern.GrabItemServerRpc(grabbableObject.NetworkObject, itemGiven: true);
+                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, grabbableObject.NetworkObject);
                 }
 
                 return;
-            }
-
-            if (localPlayer.currentlyHeldObjectServer != null)
-            {
-                Plugin.LogDebug($"player try to drop dropped {localPlayer.currentlyHeldObjectServer}");
-                InternAI.DictJustDroppedItems[localPlayer.currentlyHeldObjectServer] = Time.realtimeSinceStartup;
             }
         }
 

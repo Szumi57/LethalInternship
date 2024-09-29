@@ -1961,7 +1961,7 @@ namespace LethalInternship.AI
 
             if (this.HeldItem == grabbableObject)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} Try to grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} cannot grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
@@ -1974,7 +1974,7 @@ namespace LethalInternship.AI
         /// <param name="grabbableObject">Item to grab</param>
         private void GrabItem(GrabbableObject grabbableObject)
         {
-            Plugin.LogInfo($"{NpcController.Npc.playerUsername} Grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} try to grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
             this.HeldItem = grabbableObject;
 
             grabbableObject.GrabItemFromEnemy(this);
@@ -2008,6 +2008,8 @@ namespace LethalInternship.AI
                 base.StopCoroutine(this.grabObjectCoroutine);
             }
             this.grabObjectCoroutine = base.StartCoroutine(this.GrabAnimationCoroutine());
+
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} Grabbed item {grabbableObject} on client #{NetworkManager.LocalClientId}");
         }
 
         /// <summary>
@@ -2110,6 +2112,88 @@ namespace LethalInternship.AI
             NpcController.Npc.twoHandedAnimation = false;
             NpcController.Npc.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
             NpcController.GrabbedObjectValidated = false;
+        }
+
+        #endregion
+
+        #region Give item to intern RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference)
+        {
+            if (!networkObjectReference.TryGet(out NetworkObject networkObject))
+            {
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                return;
+            }
+
+            GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                return;
+            }
+
+            GiveItemToInternClientRpc(playerClientIdGiver, networkObjectReference);
+        }
+
+        [ClientRpc]
+        private void GiveItemToInternClientRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference)
+        {
+            if (!networkObjectReference.TryGet(out NetworkObject networkObject))
+            {
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternClientRpc for InternAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                return;
+            }
+
+            GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternClientRpc for InternAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                return;
+            }
+
+            GiveItemToIntern(playerClientIdGiver, grabbableObject);
+        }
+
+        private void GiveItemToIntern(ulong playerClientIdGiver, GrabbableObject grabbableObject)
+        {
+            Plugin.LogDebug($"GiveItemToIntern playerClientIdGiver {playerClientIdGiver}, localPlayerController {StartOfRound.Instance.localPlayerController.playerClientId}");
+            PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[playerClientIdGiver];
+
+            // Discard for player
+            if (player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
+            {
+                PlayerControllerBPatch.SetSpecialGrabAnimationBool_ReversePatch(player, false, player.currentlyHeldObjectServer);
+                player.playerBodyAnimator.SetBool("cancelHolding", true);
+                player.playerBodyAnimator.SetTrigger("Throw");
+                HUDManager.Instance.itemSlotIcons[player.currentItemSlot].enabled = false;
+                HUDManager.Instance.holdingTwoHandedItem.enabled = false;
+                HUDManager.Instance.ClearControlTips();
+                if (grabbableObject.playerHeldBy != null)
+                {
+                    grabbableObject.playerHeldBy.IsInspectingItem = false;
+                    grabbableObject.playerHeldBy.activatingItem = false;
+                }
+            }
+
+            if (grabbableObject.IsOwner)
+            {
+                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
+            }
+
+            grabbableObject.parentObject = null;
+            grabbableObject.heldByPlayerOnServer = false;
+            grabbableObject.playerHeldBy = null;
+
+            player.isHoldingObject = false;
+            player.currentlyHeldObjectServer = null;
+            player.twoHanded = false;
+            player.twoHandedAnimation = false;
+            player.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
+
+            // Intern grab item
+            GrabItem(grabbableObject);
         }
 
         #endregion
