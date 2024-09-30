@@ -2088,7 +2088,6 @@ namespace LethalInternship.AI
             GrabbableObject grabbableObject = this.HeldItem;
             Vector3 targetFloorPosition = grabbableObject.GetItemFloorPosition();
 
-            grabbableObject.playerHeldBy = null;
             grabbableObject.parentObject = null;
             grabbableObject.transform.SetParent(StartOfRound.Instance.propsContainer, true);
             grabbableObject.EnablePhysics(true);
@@ -2099,11 +2098,15 @@ namespace LethalInternship.AI
             grabbableObject.DiscardItemFromEnemy();
             grabbableObject.isHeld = false;
             grabbableObject.isPocketed = false;
+            grabbableObject.DiscardItem();
+            if (this.IsClientOwnerOfIntern())
+            {
+                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
+            }
             this.SetSpecialGrabAnimationBool(false, grabbableObject);
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
             NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
-            Plugin.LogDebug($"intern dropped {grabbableObject}");
             DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
             this.HeldItem = null;
             NpcController.Npc.isHoldingObject = false;
@@ -2112,6 +2115,8 @@ namespace LethalInternship.AI
             NpcController.Npc.twoHandedAnimation = false;
             NpcController.Npc.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
             NpcController.GrabbedObjectValidated = false;
+
+            Plugin.LogDebug($"intern dropped {grabbableObject}");
         }
 
         #endregion
@@ -2170,11 +2175,6 @@ namespace LethalInternship.AI
                 HUDManager.Instance.itemSlotIcons[player.currentItemSlot].enabled = false;
                 HUDManager.Instance.holdingTwoHandedItem.enabled = false;
                 HUDManager.Instance.ClearControlTips();
-                if (grabbableObject.playerHeldBy != null)
-                {
-                    grabbableObject.playerHeldBy.IsInspectingItem = false;
-                    grabbableObject.playerHeldBy.activatingItem = false;
-                }
             }
 
             if (grabbableObject.IsOwner)
@@ -2182,9 +2182,17 @@ namespace LethalInternship.AI
                 grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
             }
 
+            for (int i = 0; i < player.ItemSlots.Length; i++)
+            {
+                if (player.ItemSlots[i] == grabbableObject)
+                {
+                    player.ItemSlots[i] = null;
+                }
+            }
+
             grabbableObject.parentObject = null;
             grabbableObject.heldByPlayerOnServer = false;
-            grabbableObject.playerHeldBy = null;
+            grabbableObject.DiscardItem();
 
             player.isHoldingObject = false;
             player.currentlyHeldObjectServer = null;

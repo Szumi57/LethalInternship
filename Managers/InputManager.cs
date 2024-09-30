@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Patches.NpcPatches;
 using UnityEngine;
@@ -154,6 +155,9 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
+                // To cut Discard_performed from triggering after this input
+                AccessTools.Field(typeof(PlayerControllerB), "timeSinceSwitchingSlots").SetValue(localPlayer, 0f);
+
                 if (!intern.AreHandsFree())
                 {
                     // Intern drop item
@@ -161,9 +165,6 @@ namespace LethalInternship.Managers
                 }
                 else if (localPlayer.currentlyHeldObjectServer != null)
                 {
-                    // To cut Discard_performed from triggering after this input
-                    localPlayer.isHoldingObject = false;
-
                     // Intern take item from player hands
                     GrabbableObject grabbableObject = localPlayer.currentlyHeldObjectServer;
                     intern.GiveItemToInternServerRpc(localPlayer.playerClientId, grabbableObject.NetworkObject);
