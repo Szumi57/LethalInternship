@@ -223,7 +223,6 @@ namespace LethalInternship.AI
             else if (NpcController.Npc.isPlayerDead)
             {
                 base.KillEnemyOnOwnerClient(false);
-                NpcController.Npc.gameObject.SetActive(false);
                 return;
             }
 

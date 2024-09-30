@@ -773,7 +773,7 @@ namespace LethalInternship.Patches.NpcPatches
                 {
                     Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 2");
                 }
-
+                
                 return codes.AsEnumerable();
             }
 

@@ -12,7 +12,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
     {
         [HarmonyPatch("LateUpdate")]
         [HarmonyPrefix]
-        static bool LateUpdate_Prefix(BodyReplacementBase __instance, GameObject ___replacementDeadBody)
+        static bool LateUpdate_Prefix(BodyReplacementBase __instance, ref GameObject ___replacementDeadBody)
         {
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.controller.playerClientId);
             if (internAI == null)
@@ -22,6 +22,13 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
             if (!internAI.RagdollInternBody.IsRagdollBodyHeld())
             {
+                if (___replacementDeadBody && __instance.controller.deadBody == null)
+                {
+                    __instance.cosmeticAvatar = __instance.avatar;
+                    UnityEngine.Object.Destroy(___replacementDeadBody);
+                    ___replacementDeadBody = null!;
+                }
+
                 return true;
             }
 
