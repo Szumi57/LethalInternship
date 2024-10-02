@@ -124,7 +124,7 @@ namespace LethalInternship.AI
             Npc.thisPlayerModel.enabled = true;
             Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             Npc.thisPlayerModelArms.enabled = false;
-            
+
             this.IsCameraDisabled = true;
             Npc.sprintMeter = 1f;
             Npc.ItemSlots = new GrabbableObject[1];
@@ -1656,15 +1656,8 @@ namespace LethalInternship.AI
         /// <param name="positionToLookAt"></param>
         public void OrderToLookAtPosition(Vector3 positionToLookAt)
         {
-            if (!Physics.Linecast(Npc.gameplayCamera.transform.position, positionToLookAt, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
-            {
-                this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
-                this.positionToLookAt = positionToLookAt;
-            }
-            else
-            {
-                OrderToLookForward();
-            }
+            this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
+            this.positionToLookAt = positionToLookAt;
         }
         /// <summary>
         /// Update the head of the intern to look at what he is set to

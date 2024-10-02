@@ -1059,6 +1059,54 @@ namespace LethalInternship.Managers
             }
         }
 
+        public bool IsLocalPlayerNextToChillInterns()
+        {
+            foreach (var internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId 
+                    && internAI.State.GetAIState() == EnumAIStates.ChillWithPlayer)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool IsLocalPlayerHoldingInterns()
+        {
+            foreach (var internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                if (internAI.RagdollInternBody != null
+                    && internAI.RagdollInternBody.IsRagdollBodyHeldByPlayer((int)GameNetworkManager.Instance.localPlayerController.playerClientId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         #region SyncEndOfRoundInterns
 
         /// <summary>
