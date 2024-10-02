@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using BetterEmote.AssetScripts;
+using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System;
@@ -10,6 +12,15 @@ namespace LethalInternship.Patches.ModPatches.BetterEmotes
 {
     internal class BetterEmotesPatch
     {
+        public static bool StartPostfix_Prefix(PlayerControllerB __0)
+        {
+            if (__0.gameObject.GetComponent<CustomAnimationObjects>() != null)
+            {
+                return false;
+            }
+            return true;
+        }
+
         public static void UpdatePrefix_Prefix(ref bool[] ___playersPerformingEmotes)
         {
             int allEntitiesCount = InternManager.Instance.AllEntitiesCount;

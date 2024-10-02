@@ -1,7 +1,9 @@
-﻿using HarmonyLib;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using MoreEmotes.Patch;
+using MoreEmotes.Scripts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +14,17 @@ namespace LethalInternship.Patches.ModPatches.MoreEmotes
     [HarmonyPatch(typeof(EmotePatch))]
     internal class MoreEmotesPatch
     {
+        [HarmonyPatch("StartPostfix")]
+        [HarmonyPrefix]
+        public static bool StartPostfix_Prefix(PlayerControllerB __0)
+        {
+            if (__0.gameObject.GetComponent<CustomAnimationObjects>() != null)
+            {
+                return false;
+            }
+            return true;
+        }
+
         [HarmonyPatch("UpdatePrefix")]
         [HarmonyPrefix]
         static void UpdatePrefix_Prefix(ref bool[] ___s_wasPerformingEmote)

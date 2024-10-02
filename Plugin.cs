@@ -232,6 +232,8 @@ namespace LethalInternship
             }
             if (isModBetterEmotesLoaded)
             {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "StartPostfix"),
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.StartPostfix_Prefix)));
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "UpdatePrefix"),
                                new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.UpdatePrefix_Prefix)));
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "UpdatePostfix"),
@@ -247,13 +249,10 @@ namespace LethalInternship
             {
                 _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
             }
-            if (IsModModelReplacementAPILoaded && isModMoreCompanyLoaded)
-            {
-                _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
-            }
             if (IsModModelReplacementAPILoaded)
             {
                 _harmony.PatchAll(typeof(BodyReplacementBasePatch));
+                _harmony.PatchAll(typeof(ModelReplacementPlayerControllerBPatchPatch));
             }
             if (isModLethalPhonesLoaded)
             {
