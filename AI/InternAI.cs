@@ -1381,6 +1381,13 @@ namespace LethalInternship.AI
                 return true;
             }
 
+            // Wheelbarrow
+            if (!Plugin.Config.GrabWheelbarrow.Value
+                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
+            {
+                return true;
+            }
+
             return false;
         }
 

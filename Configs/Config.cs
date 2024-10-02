@@ -40,6 +40,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
         [SyncedEntryField] public SyncedEntry<bool> GrabManeaterBaby;
+        [SyncedEntryField] public SyncedEntry<bool> GrabWheelbarrow;
 
         // Teleporters
         [SyncedEntryField] public SyncedEntry<bool> InverseTeleportInternsAtRandomPos;
@@ -140,6 +141,11 @@ namespace LethalInternship.Configs
                                       "Grab the baby maneater",
                                       defaultVal: false,
                                       "Should the intern try to grab the baby maneater ?");
+
+            GrabWheelbarrow = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                      "Grab the wheelbarrow",
+                                      defaultVal: false,
+                                      "Should the intern try to grab the wheelbarrow (mod) ?");
 
             // Teleporters
             InverseTeleportInternsAtRandomPos = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
