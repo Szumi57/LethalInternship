@@ -77,7 +77,6 @@ namespace LethalInternship.Managers
                     line.text += "\n";
                 }
                 line.text += string.Format(textToAdd, keyAction);
-                Plugin.LogDebug($"========================= adds {textToAdd}");
             }
         }
 
