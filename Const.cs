@@ -49,7 +49,7 @@ namespace LethalInternship
         public static readonly int MAX_INTERN_MAX_HEALTH = 200;
 
         public static readonly float DEFAULT_SIZE_SCALE_INTERN = 0.85f;
-        public static readonly float MIN_SIZE_SCALE_INTERN = 0.85f;
+        public static readonly float MIN_SIZE_SCALE_INTERN = 0.3f;
         public static readonly float MAX_SIZE_SCALE_INTERN = 1f;
 
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE = "INTERNSHIP PROGRAM";
