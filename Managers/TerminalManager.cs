@@ -96,6 +96,18 @@ namespace LethalInternship.Managers
             }
         }
 
+        public Enums.EnumTerminalStates GetTerminalPage()
+        {
+            if (terminalParser == null)
+            {
+                return Enums.EnumTerminalStates.WaitForMainCommand;
+            }
+            else
+            {
+                return terminalParser.TerminalState.GetTerminalState();
+            }
+        }
+
         #region Sync UpdatePurchaseAndCredits
 
         /// <summary>

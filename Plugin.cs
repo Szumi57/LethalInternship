@@ -16,6 +16,7 @@ using LethalInternship.Patches.ModPatches.LethalProgression;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
+using LethalInternship.Patches.ModPatches.QuickBuy;
 using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
@@ -54,6 +55,7 @@ namespace LethalInternship
     [BepInDependency(Const.SHOWCAPACITY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.RESERVEDITEMSLOTCORE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALPROGRESSION_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.QUICKBUYMENU_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -210,6 +212,7 @@ namespace LethalInternship
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
             bool isModReservedItemSlotCoreLoaded = IsModLoaded(Const.RESERVEDITEMSLOTCORE_GUID);
             bool isModLethalProgressionLoaded = IsModLoaded(Const.LETHALPROGRESSION_GUID);
+            bool isModQuickBuyLoaded = IsModLoaded(Const.QUICKBUYMENU_GUID);
 
             // -------------------
             // Read the preloaders
@@ -282,7 +285,7 @@ namespace LethalInternship
                                null,
                                new HarmonyMethod(typeof(ReviveCompanyPlayerControllerBPatchPatch), nameof(ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler)));
             }
-            if(isModReservedItemSlotCoreLoaded)
+            if (isModReservedItemSlotCoreLoaded)
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ReservedItemSlotCore.Patches.PlayerPatcher"), "InitializePlayerControllerLate"),
                                new HarmonyMethod(typeof(PlayerPatcherPatch), nameof(PlayerPatcherPatch.InitializePlayerControllerLate_Prefix)));
@@ -302,6 +305,11 @@ namespace LethalInternship
                                new HarmonyMethod(typeof(OxygenPatch), nameof(OxygenPatch.ShouldDrown_Prefix)));
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LethalProgression.Skills.Oxygen"), "OxygenUpdate"),
                                new HarmonyMethod(typeof(OxygenPatch), nameof(OxygenPatch.OxygenUpdate_Prefix)));
+            }
+            if (isModQuickBuyLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("QuickBuyMenu.Plugin"), "RunQuickBuy"),
+                               new HarmonyMethod(typeof(QuickBuyMenuPatch), nameof(QuickBuyMenuPatch.RunQuickBuy_Prefix)));
             }
         }
 
