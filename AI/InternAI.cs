@@ -2105,10 +2105,7 @@ namespace LethalInternship.AI
             grabbableObject.isHeld = false;
             grabbableObject.isPocketed = false;
             grabbableObject.DiscardItem();
-            if (this.IsClientOwnerOfIntern())
-            {
-                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
-            }
+            
             this.SetSpecialGrabAnimationBool(false, grabbableObject);
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
             NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
@@ -2122,6 +2119,10 @@ namespace LethalInternship.AI
             NpcController.Npc.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
             NpcController.GrabbedObjectValidated = false;
 
+            if (grabbableObject.IsOwner)
+            {
+                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
+            }
             Plugin.LogDebug($"intern dropped {grabbableObject}");
         }
 
@@ -2183,11 +2184,6 @@ namespace LethalInternship.AI
                 HUDManager.Instance.ClearControlTips();
             }
 
-            if (grabbableObject.IsOwner)
-            {
-                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
-            }
-
             for (int i = 0; i < player.ItemSlots.Length; i++)
             {
                 if (player.ItemSlots[i] == grabbableObject)
@@ -2205,6 +2201,11 @@ namespace LethalInternship.AI
             player.twoHanded = false;
             player.twoHandedAnimation = false;
             player.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
+
+            if (grabbableObject.IsOwner)
+            {
+                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
+            }
 
             // Intern grab item
             GrabItem(grabbableObject);
