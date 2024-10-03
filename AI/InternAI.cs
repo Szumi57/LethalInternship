@@ -2332,6 +2332,8 @@ namespace LethalInternship.AI
                 }
             }
 
+            grabbableObject.EnablePhysics(true);
+            grabbableObject.EnableItemMeshes(true);
             grabbableObject.parentObject = null;
             grabbableObject.heldByPlayerOnServer = false;
             grabbableObject.DiscardItem();
