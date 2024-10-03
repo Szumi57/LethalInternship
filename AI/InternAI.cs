@@ -2084,7 +2084,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void DropItem()
         {
-            Plugin.LogInfo($"Try to drop item on client #{NetworkManager.LocalClientId}");
+            Plugin.LogDebug($"Try to drop item on client #{NetworkManager.LocalClientId}");
             if (this.HeldItem == null)
             {
                 Plugin.LogError($"Try to drop not held item on client #{NetworkManager.LocalClientId}");
@@ -2092,20 +2092,84 @@ namespace LethalInternship.AI
             }
 
             GrabbableObject grabbableObject = this.HeldItem;
-            Vector3 targetFloorPosition = grabbableObject.GetItemFloorPosition();
+            bool placeObject = false;
+            Vector3 placePosition = default;
+            NetworkObject parentObjectTo = null!;
+            bool matchRotationOfParent = true;
+            Vector3 vector;
+            NetworkObject physicsRegionOfDroppedObject = grabbableObject.GetPhysicsRegionOfDroppedObject(NpcController.Npc, out vector);
+            if (physicsRegionOfDroppedObject != null)
+            {
+                placePosition = vector;
+                parentObjectTo = physicsRegionOfDroppedObject;
+                placeObject = true;
+                matchRotationOfParent = false;
+            }
 
-            grabbableObject.parentObject = null;
-            grabbableObject.transform.SetParent(StartOfRound.Instance.propsContainer, true);
-            grabbableObject.EnablePhysics(true);
-            grabbableObject.fallTime = 0f;
-            grabbableObject.startFallingPosition = grabbableObject.transform.parent.InverseTransformPoint(grabbableObject.transform.position);
-            grabbableObject.targetFloorPosition = grabbableObject.transform.parent.InverseTransformPoint(targetFloorPosition);
-            grabbableObject.floorYRot = -1;
-            grabbableObject.DiscardItemFromEnemy();
-            grabbableObject.isHeld = false;
-            grabbableObject.isPocketed = false;
+            if (placeObject)
+            {
+                if (parentObjectTo == null)
+                {
+                    if (NpcController.Npc.isInElevator)
+                    {
+                        placePosition = StartOfRound.Instance.elevatorTransform.InverseTransformPoint(placePosition);
+                    }
+                    else
+                    {
+                        placePosition = StartOfRound.Instance.propsContainer.InverseTransformPoint(placePosition);
+                    }
+                    int floorYRot2 = (int)base.transform.localEulerAngles.y;
+                    SetObjectAsNoLongerHeld(grabbableObject, NpcController.Npc.isInElevator, NpcController.Npc.isInHangarShipRoom, placePosition, floorYRot2);
+                }
+                else
+                {
+                    PlaceGrabbableObject(grabbableObject, parentObjectTo.transform, placePosition, matchRotationOfParent);
+                }
+            }
+            else
+            {
+                bool droppedInElevator = NpcController.Npc.isInElevator;
+                Vector3 targetFloorPosition;
+                if (!NpcController.Npc.isInElevator)
+                {
+                    Vector3 vector2;
+                    if (grabbableObject.itemProperties.allowDroppingAheadOfPlayer)
+                    {
+                        vector2 = DropItemAheadOfPlayer(grabbableObject, NpcController.Npc);
+                    }
+                    else
+                    {
+                        vector2 = grabbableObject.GetItemFloorPosition(default(Vector3));
+                    }
+                    if (!NpcController.Npc.playersManager.shipBounds.bounds.Contains(vector2))
+                    {
+                        targetFloorPosition = NpcController.Npc.playersManager.propsContainer.InverseTransformPoint(vector2);
+                    }
+                    else
+                    {
+                        droppedInElevator = true;
+                        targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
+                    }
+                }
+                else
+                {
+                    Vector3 vector2 = grabbableObject.GetItemFloorPosition(default(Vector3));
+                    if (!NpcController.Npc.playersManager.shipBounds.bounds.Contains(vector2))
+                    {
+                        droppedInElevator = false;
+                        targetFloorPosition = NpcController.Npc.playersManager.propsContainer.InverseTransformPoint(vector2);
+                    }
+                    else
+                    {
+                        targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
+                    }
+                }
+                int floorYRot = (int)base.transform.localEulerAngles.y;
+                SetObjectAsNoLongerHeld(grabbableObject, droppedInElevator, NpcController.Npc.isInHangarShipRoom, targetFloorPosition, floorYRot);
+            }
+
             grabbableObject.DiscardItem();
-            
+
             this.SetSpecialGrabAnimationBool(false, grabbableObject);
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
             NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
@@ -2116,14 +2180,90 @@ namespace LethalInternship.AI
             NpcController.Npc.currentlyHeldObjectServer = null;
             NpcController.Npc.twoHanded = false;
             NpcController.Npc.twoHandedAnimation = false;
-            NpcController.Npc.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
             NpcController.GrabbedObjectValidated = false;
+
+            float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
+            NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
 
             if (grabbableObject.IsOwner)
             {
                 grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
             }
             Plugin.LogDebug($"intern dropped {grabbableObject}");
+        }
+
+        private Vector3 DropItemAheadOfPlayer(GrabbableObject grabbableObject, PlayerControllerB player)
+        {
+            Vector3 vector;
+            Ray ray = new Ray(base.transform.position + Vector3.up * 0.4f, player.gameplayCamera.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hit, 1.7f, 268438273, QueryTriggerInteraction.Ignore))
+            {
+                vector = ray.GetPoint(Mathf.Clamp(hit.distance - 0.3f, 0.01f, 2f));
+            }
+            else
+            {
+                vector = ray.GetPoint(1.7f);
+            }
+            Vector3 itemFloorPosition = grabbableObject.GetItemFloorPosition(vector);
+            if (itemFloorPosition == vector)
+            {
+                itemFloorPosition = grabbableObject.GetItemFloorPosition(default(Vector3));
+            }
+            return itemFloorPosition;
+        }
+
+        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject, bool droppedInElevator, bool droppedInShipRoom, Vector3 targetFloorPosition, int floorYRot = -1)
+        {
+            grabbableObject.heldByPlayerOnServer = false;
+            grabbableObject.parentObject = null;
+            if (droppedInElevator)
+            {
+                grabbableObject.transform.SetParent(NpcController.Npc.playersManager.elevatorTransform, true);
+            }
+            else
+            {
+                grabbableObject.transform.SetParent(NpcController.Npc.playersManager.propsContainer, true);
+            }
+            NpcController.Npc.SetItemInElevator(droppedInShipRoom, droppedInElevator, grabbableObject);
+            grabbableObject.EnablePhysics(true);
+            grabbableObject.EnableItemMeshes(true);
+            grabbableObject.isHeld = false;
+            grabbableObject.isPocketed = false;
+            grabbableObject.fallTime = 0f;
+            grabbableObject.startFallingPosition = grabbableObject.transform.parent.InverseTransformPoint(grabbableObject.transform.position);
+            grabbableObject.targetFloorPosition = targetFloorPosition;
+            grabbableObject.floorYRot = floorYRot;
+        }
+
+        private void PlaceGrabbableObject(GrabbableObject placeObject, Transform parentObject, Vector3 positionOffset, bool matchRotationOfParent)
+        {
+            PlayerPhysicsRegion componentInChildren = parentObject.GetComponentInChildren<PlayerPhysicsRegion>();
+            if (componentInChildren != null && componentInChildren.allowDroppingItems)
+            {
+                parentObject = componentInChildren.physicsTransform;
+            }
+            placeObject.EnablePhysics(true);
+            placeObject.EnableItemMeshes(true);
+            placeObject.isHeld = false;
+            placeObject.isPocketed = false;
+            placeObject.heldByPlayerOnServer = false;
+            NpcController.Npc.SetItemInElevator(NpcController.Npc.isInHangarShipRoom, NpcController.Npc.isInElevator, placeObject);
+            placeObject.parentObject = null;
+            placeObject.transform.SetParent(parentObject, true);
+            placeObject.startFallingPosition = placeObject.transform.localPosition;
+            placeObject.transform.localScale = placeObject.originalScale;
+            placeObject.transform.localPosition = positionOffset;
+            placeObject.targetFloorPosition = positionOffset;
+            if (!matchRotationOfParent)
+            {
+                placeObject.fallTime = 0f;
+            }
+            else
+            {
+                placeObject.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
+                placeObject.fallTime = 1.1f;
+            }
+            placeObject.OnPlaceObject();
         }
 
         #endregion
@@ -2200,7 +2340,9 @@ namespace LethalInternship.AI
             player.currentlyHeldObjectServer = null;
             player.twoHanded = false;
             player.twoHandedAnimation = false;
-            player.carryWeight -= Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
+
+            float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
+            player.carryWeight = Mathf.Clamp(player.carryWeight - weightToLose, 1f, 10f);
 
             if (grabbableObject.IsOwner)
             {
