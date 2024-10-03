@@ -1388,6 +1388,13 @@ namespace LethalInternship.AI
                 return true;
             }
 
+            // ShoppingCart
+            if (!Plugin.Config.GrabShoppingCart.Value
+                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
+            {
+                return true;
+            }
+
             return false;
         }
 
