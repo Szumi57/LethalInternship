@@ -16,13 +16,28 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
+            AddEventHandlers();
+        }
 
+        private void AddEventHandlers()
+        {
             Plugin.InputActionsInstance.LeadIntern.performed += LeadIntern_performed;
             Plugin.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
             Plugin.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
             Plugin.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
             Plugin.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
         }
+
+        public void RemoveEventHandlers()
+        {
+            Plugin.InputActionsInstance.LeadIntern.performed -= LeadIntern_performed;
+            Plugin.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
+            Plugin.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
+            Plugin.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
+            Plugin.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
+        }
+
+        #region Tips display
 
         public string GetKeyAction(InputAction inputAction)
         {
@@ -111,6 +126,9 @@ namespace LethalInternship.Managers
             HUDManager.Instance.ChangeControlTipMultiple(currentControlTipLines);
         }
 
+        #endregion
+
+        #region Event handlers
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)
         {
@@ -347,5 +365,7 @@ namespace LethalInternship.Managers
                 return;
             }
         }
+
+        #endregion
     }
 }

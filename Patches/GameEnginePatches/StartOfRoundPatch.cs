@@ -419,6 +419,16 @@ namespace LethalInternship.Patches.GameEnginePatches
                 InternManager.Instance.SetInternsInElevatorLateUpdate(__instance);
             }
         }
+
+        /// <summary>
+        /// Removes dupcation of event triggering when quitting to main menu and coming back
+        /// </summary>
+        [HarmonyPatch("OnDisable")]
+        [HarmonyPostfix]
+        static void OnDisable_Postfix()
+        {
+            InputManager.Instance.RemoveEventHandlers();
+        }
     }
 
     //[HarmonyPatch(typeof(EnemyAICollisionDetect))] // make sure Harmony inspects the class
