@@ -552,6 +552,12 @@ namespace LethalInternship.Managers
                 internController.deadBody = null;
             }
 
+            // Show model replacement
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                HideShowModelReplacement(internController, show: true);
+            }
+
             internAI.Init();
         }
 
@@ -1188,7 +1194,7 @@ namespace LethalInternship.Managers
 
                     if (Plugin.IsModModelReplacementAPILoaded)
                     {
-                        HideModelReplacement(internController);
+                        HideShowModelReplacement(internController, show: false);
                     }
 
                     instance.allPlayerObjects[i].SetActive(false);
@@ -1200,11 +1206,11 @@ namespace LethalInternship.Managers
             return alive + NbInternsToDropShip;
         }
 
-        private void HideModelReplacement(PlayerControllerB playerController)
+        private void HideShowModelReplacement(PlayerControllerB playerController, bool show)
         {
             playerController.gameObject
                 .GetComponent<ModelReplacement.BodyReplacementBase>()?
-                .SetAvatarRenderers(false);
+                .SetAvatarRenderers(show);
         }
 
         #endregion
