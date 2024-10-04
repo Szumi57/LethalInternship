@@ -1182,6 +1182,9 @@ namespace LethalInternship.Managers
                 if (!internController.isPlayerDead && internController.isPlayerControlled)
                 {
                     internController.isPlayerControlled = false;
+                    internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
+                    DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
+                    internController.transform.position = internController.playersManager.notSpawnedPosition.position;
                     instance.allPlayerObjects[i].SetActive(false);
                     alive++;
                 }

@@ -2821,7 +2821,7 @@ namespace LethalInternship.AI
             NpcController.Npc.isPlayerControlled = false;
             NpcController.Npc.thisPlayerModelArms.enabled = false;
             NpcController.Npc.localVisor.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
-            NpcController.Npc.DisablePlayerModel(NpcController.Npc.gameObject, enable: false, disableLocalArms: false);
+            InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: false, disableLocalArms: false);
             NpcController.Npc.isInsideFactory = false;
             NpcController.Npc.IsInspectingItem = false;
             NpcController.Npc.inTerminalMenu = false;
