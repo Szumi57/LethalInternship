@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.18.0 [Alpha] - 2024-10-04
+### Added
+- Compatibility with Model replacement API , More suits, change the suits of interns with X (default, configurable).
+- Added a config to automatically change suits of intern when they get affected to you, default to false.
+- Compatibility with TooManyEmotes, BetterEmotes (MoreEmotes too but mod deprecated).
+- Interns mimic the emote you are doing when they are in a chill state (next to you not moving)
+- Added a new order : use C (default, configurable) to make the interns look at what you are looking. Example of use with betterEmotes: You and the interns are applauding, and everyone is looking at a specific player.
+- Added config for ignoring Wheelbarrow item (mod), ShoppingCart item (mod), default to true.
+### Changed
+- The minimum size of interns configurable is now 0.3 (from 0.85).
+### Fixed
+- Fix interns holding a item weirdly, now the item position should follow the hand accurately.
+- Rework the code for giving item to interns, interns grabbing item, interns dropping item. Should work better when dropping items in ship.
+- Fix input duplication when leaving the game to main menu and returning.
+- Fix compatibility with QuickBuyMenu mod, thanks @Tye-wynd on Discord.
+- Fix other player not owning interns unable to damage intern.
+
 ## 0.17.0 [Alpha] - 2024-09-05
 ### Added
 - Lethal Company v64
