@@ -2192,10 +2192,7 @@ namespace LethalInternship.AI
             float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
             NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
 
-            if (grabbableObject.IsOwner)
-            {
-                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
-            }
+            SyncBatteryInternServerRpc(grabbableObject.NetworkObject, (int)(grabbableObject.insertedBattery.charge * 100f));
             Plugin.LogDebug($"intern dropped {grabbableObject}");
         }
 
@@ -2271,6 +2268,33 @@ namespace LethalInternship.AI
                 placeObject.fallTime = 1.1f;
             }
             placeObject.OnPlaceObject();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncBatteryInternServerRpc(NetworkObjectReference networkObjectReferenceGrabbableObject, int charge)
+        {
+            SyncBatteryInternClientRpc(networkObjectReferenceGrabbableObject, charge);
+        }
+
+        [ClientRpc]
+        private void SyncBatteryInternClientRpc(NetworkObjectReference networkObjectReferenceGrabbableObject, int charge)
+        {
+            if (!networkObjectReferenceGrabbableObject.TryGet(out NetworkObject networkObject))
+            {
+                Plugin.LogError($"SyncBatteryInternClientRpc : Failed to get network object from network object reference (Grab item RPC)");
+                return;
+            }
+
+            GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                Plugin.LogError($"SyncBatteryInternClientRpc : Failed to get GrabbableObject component from network object (Grab item RPC)");
+                return;
+            }
+
+            float num = (float)charge / 100f;
+            grabbableObject.insertedBattery = new Battery(num <= 0f, num);
+            grabbableObject.ChargeBatteries();
         }
 
         #endregion
@@ -2353,10 +2377,7 @@ namespace LethalInternship.AI
             float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
             player.carryWeight = Mathf.Clamp(player.carryWeight - weightToLose, 1f, 10f);
 
-            if (grabbableObject.IsOwner)
-            {
-                grabbableObject.SyncBatteryServerRpc((int)(grabbableObject.insertedBattery.charge * 100f));
-            }
+            SyncBatteryInternServerRpc(grabbableObject.NetworkObject, (int)(grabbableObject.insertedBattery.charge * 100f));
 
             // Intern grab item
             GrabItem(grabbableObject);
