@@ -1073,7 +1073,7 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
-                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId 
+                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
                     && internAI.State.GetAIState() == EnumAIStates.ChillWithPlayer)
                 {
                     return true;
@@ -1185,6 +1185,12 @@ namespace LethalInternship.Managers
                     internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
                     DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
                     internController.transform.position = internController.playersManager.notSpawnedPosition.position;
+
+                    if (Plugin.IsModModelReplacementAPILoaded)
+                    {
+                        HideModelReplacement(internController);
+                    }
+
                     instance.allPlayerObjects[i].SetActive(false);
                     alive++;
                 }
@@ -1192,6 +1198,13 @@ namespace LethalInternship.Managers
 
             // Alive and not landed interns
             return alive + NbInternsToDropShip;
+        }
+
+        private void HideModelReplacement(PlayerControllerB playerController)
+        {
+            playerController.gameObject
+                .GetComponent<ModelReplacement.BodyReplacementBase>()?
+                .SetAvatarRenderers(false);
         }
 
         #endregion
