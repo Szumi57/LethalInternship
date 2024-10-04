@@ -180,7 +180,7 @@ namespace LethalInternship.Patches.NpcPatches
         static bool DamagePlayerFromOtherClientServerRpc_PreFix(PlayerControllerB __instance,
                                                                 int damageAmount, Vector3 hitDirection, int playerWhoHit)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
                 Plugin.LogDebug($"SyncDamageInternFromOtherClient called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
