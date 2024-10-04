@@ -3114,7 +3114,7 @@ namespace LethalInternship.AI
         /// <summary>
         /// Server side, call clients to update the intern doing a jump
         /// </summary>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void JumpServerRpc()
         {
             JumpClientRpc();
@@ -3157,7 +3157,7 @@ namespace LethalInternship.AI
         /// Server side, call clients to update the action of intern land from jump
         /// </summary>
         /// <param name="fallHard"></param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void JumpLandFromServerRpc(bool fallHard)
         {
             JumpLandFromClientRpc(fallHard);
