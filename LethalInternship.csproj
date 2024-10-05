@@ -98,6 +98,9 @@
     <Reference Include="com.sigurd.csync">
       <HintPath>lib\mods\com.sigurd.csync.dll</HintPath>
     </Reference>
+    <Reference Include="CustomItemBehaviourLibrary">
+      <HintPath>lib\mods\CustomItemBehaviourLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="FasterItemDropship">
       <HintPath>lib\mods\FasterItemDropship.dll</HintPath>
     </Reference>

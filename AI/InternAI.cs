@@ -1237,41 +1237,50 @@ namespace LethalInternship.AI
                 GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
                 if (grabbableObject == null)
                 {
-                    return null;
+                    continue;
+                }
+
+                // Object in a container mod of some sort ?
+                if (Plugin.IsModCustomItemBehaviourLibraryLoaded)
+                {
+                    if (IsGrabbableObjectInContainerMod(grabbableObject))
+                    {
+                        continue;
+                    }
+                }
+
+                // Grabbable object ?
+                if (!IsGrabbableObjectGrabbable(grabbableObject))
+                {
+                    continue;
                 }
 
                 // Object close to awareness distance ?
                 if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
                 {
-                    if (!IsGrabbableObjectGrabbable(grabbableObject))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        Plugin.LogDebug($"awareness {grabbableObject.name}");
-                        return grabbableObject;
-                    }
+                    Plugin.LogDebug($"awareness {grabbableObject.name}");
                 }
-
                 // Object visible ?
-                if (!Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                else if (!Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
                 {
                     Vector3 to = gameObjectPosition - eye.position;
                     if (Vector3.Angle(eye.forward, to) < Const.INTERN_FOV)
                     {
                         // Object in FOV
-                        if (!IsGrabbableObjectGrabbable(grabbableObject))
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            Plugin.LogDebug($"LOS {grabbableObject.name}");
-                            return grabbableObject;
-                        }
+                        Plugin.LogDebug($"LOS {grabbableObject.name}");
+                    }
+                    else
+                    {
+                        continue;
                     }
                 }
+                else
+                {
+                    // Object not in line of sight
+                    continue;
+                }
+
+                return grabbableObject;
             }
 
             return null;
@@ -1396,6 +1405,11 @@ namespace LethalInternship.AI
             }
 
             return false;
+        }
+
+        private bool IsGrabbableObjectInContainerMod(GrabbableObject grabbableObject)
+        {
+            return CustomItemBehaviourLibrary.AbstractItems.ContainerBehaviour.CheckIfItemInContainer(grabbableObject);
         }
 
         #region TeleportIntern RPC

@@ -71,6 +71,7 @@ namespace LethalInternship
         internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
+        internal static bool IsModCustomItemBehaviourLibraryLoaded = false;
 
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
@@ -204,6 +205,7 @@ namespace LethalInternship
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
             IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+            IsModCustomItemBehaviourLibraryLoaded = IsModLoaded(Const.CUSTOMITEMBEHAVIOURLIBRARY_GUID);
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
             bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
