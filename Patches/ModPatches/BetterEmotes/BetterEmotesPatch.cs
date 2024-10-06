@@ -33,20 +33,28 @@ namespace LethalInternship.Patches.ModPatches.BetterEmotes
 
         public static IEnumerable<CodeInstruction> UpdatePostfix_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = 0;
+            // ldarg.0 NULL after if (__instance == null)
+            var startIndex = 7;
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            Label labelToJumpTo = generator.DefineLabel();
-            codes[startIndex + 32].labels.Add(labelToJumpTo);
+            Label labelToJumpToInternOwnedLocal = generator.DefineLabel();
+            // ldarg.0 NULL after set_runtimeAnimatorController playerBodyAnimator others
+            codes[startIndex + 25].labels.Add(labelToJumpToInternOwnedLocal);
+
+            Label labelToJumpToInternNotOwnedLocal = generator.DefineLabel();
+            // ldarg.0 NULL before set_runtimeAnimatorController playerBodyAnimator others
+            codes[startIndex + 20].labels.Add(labelToJumpToInternNotOwnedLocal);
 
             // Use runtimeAnimatorController local for interns owned by player local
             List<CodeInstruction> codesToAdd = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_0),
-                // BetterEmotes mod need method kust is intern but not BetterEmotes mod, I don't know why
+                new CodeInstruction(OpCodes.Call, PatchesUtil.IsPlayerInternOwnerLocalMethod),
+                new CodeInstruction(OpCodes.Brtrue, labelToJumpToInternOwnedLocal),
+                new CodeInstruction(OpCodes.Ldarg_0),
                 new CodeInstruction(OpCodes.Call, PatchesUtil.IsPlayerInternMethod),
-                new CodeInstruction(OpCodes.Brtrue, labelToJumpTo),
+                new CodeInstruction(OpCodes.Brtrue, labelToJumpToInternNotOwnedLocal),
             };
             codes.InsertRange(startIndex, codesToAdd);
 

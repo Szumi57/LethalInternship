@@ -52,7 +52,6 @@ namespace LethalInternship.Patches.ModPatches.MoreEmotes
             List<CodeInstruction> codesToAdd = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_0),
-                // MoreEmotes mod need method is intern with owner local but not BetterEmotes mod, I don't know why
                 new CodeInstruction(OpCodes.Call, PatchesUtil.IsPlayerInternOwnerLocalMethod),
                 new CodeInstruction(OpCodes.Brtrue, labelToJumpTo),
             };
