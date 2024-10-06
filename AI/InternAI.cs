@@ -200,6 +200,13 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Update()
         {
+            if (!NpcController.Npc.gameObject.activeSelf
+                || !NpcController.Npc.isPlayerControlled)
+            {
+                // Not controlled we do nothing
+                return;
+            }
+
             // Not owner we stop calculating AI
             if (!IsOwner)
             {
@@ -218,7 +225,7 @@ namespace LethalInternship.AI
             if (isEnemyDead)
             {
                 SetClientCalculatingAI(enable: false);
-                this.enabled = false;
+                return;
             }
             else if (NpcController.Npc.isPlayerDead)
             {
@@ -955,7 +962,7 @@ namespace LethalInternship.AI
         /// Is the target player in the vehicle cruiser
         /// </summary>
         /// <returns></returns>
-        public VehicleController? IsTargetPlayerInCruiserVehicle()
+        public VehicleController? GetVehicleCruiserTargetPlayerIsIn()
         {
             if (targetPlayer == null
                 || targetPlayer.isPlayerDead)
@@ -969,7 +976,7 @@ namespace LethalInternship.AI
                 return null;
             }
 
-            if (this.targetPlayer.physicsParent != null && this.targetPlayer.physicsParent == vehicleController.transform)
+            if (this.targetPlayer.inVehicleAnimation)
             {
                 return vehicleController;
             }

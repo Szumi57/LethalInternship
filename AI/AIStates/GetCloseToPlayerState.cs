@@ -76,7 +76,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            VehicleController? vehicleController = ai.IsTargetPlayerInCruiserVehicle();
+            VehicleController? vehicleController = ai.GetVehicleCruiserTargetPlayerIsIn();
             if (vehicleController != null)
             {
                 ai.State = new PlayerInCruiserState(this, vehicleController);

@@ -33,11 +33,17 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public override void DoAI()
         {
+            if (vehicleController == null)
+            {
+                ai.State = new GetCloseToPlayerState(this);
+                return;
+            }
+
             Vector3 entryPointInternCruiser = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomEntryPosCruiser();
 
             if (npcController.InternAIInCruiser)
             {
-                if (!ai.IsTargetPlayerInCruiserVehicle())
+                if (ai.GetVehicleCruiserTargetPlayerIsIn() == null)
                 {
                     // Exit vehicle cruiser
                     ai.SyncTeleportInternVehicle(entryPointInternCruiser, enteringVehicle: false, vehicleController);
@@ -45,6 +51,7 @@ namespace LethalInternship.AI.AIStates
 
                     npcController.Npc.thisController.enabled = true;
                     ai.State = new GetCloseToPlayerState(this);
+                    return;
                 }
 
                 // Stay in vehicle with target player
@@ -70,37 +77,29 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            // Enter vehicle cruiser
-            if ((ai.destination - npcController.Npc.transform.position).sqrMagnitude < npcController.Npc.grabDistance * npcController.Npc.grabDistance)
+            // Teleport to cruiser and enter vehicle
+            npcController.Npc.thisController.enabled = false;
+            vehicleController.SetVehicleCollisionForPlayer(false, npcController.Npc);
+
+            // Place intern in random spot
+            Vector3 internPassengerPos = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomInCruiserPos();
+            ai.SyncTeleportInternVehicle(internPassengerPos, enteringVehicle: true, vehicleController);
+
+            // random rotation
+            float angleRandom = Random.Range(-180f, 180f);
+            npcController.UpdateNowTurnBodyTowardsDirection(Quaternion.Euler(0, angleRandom, 0) * npcController.Npc.thisController.transform.forward);
+
+            // Crouch or not
+            float crouchRancom = Random.Range(0f, 1f);
+            if (crouchRancom > 0.5f
+                && !npcController.Npc.isCrouching)
             {
-                npcController.Npc.thisController.enabled = false;
-                vehicleController.SetVehicleCollisionForPlayer(false, npcController.Npc);
-
-                // Place intern in random spot
-                Vector3 internPassengerPos = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomInCruiserPos();
-                ai.SyncTeleportInternVehicle(internPassengerPos, enteringVehicle: true, vehicleController);
-
-                // random rotation
-                float angleRandom = Random.Range(-180f, 180f);
-                npcController.UpdateNowTurnBodyTowardsDirection(Quaternion.Euler(0, angleRandom, 0) * npcController.Npc.thisController.transform.forward);
-
-                // Crouch or not
-                float crouchRancom = Random.Range(0f, 1f);
-                if (crouchRancom > 0.5f
-                    && !npcController.Npc.isCrouching)
-                {
-                    npcController.OrderToToggleCrouch();
-                }
-
-                // Chill
-                npcController.OrderToStopMoving();
-                return;
+                npcController.OrderToToggleCrouch();
             }
 
-            // Go to the cruiser
-            ai.SetDestinationToPositionInternAI(entryPointInternCruiser);
-            npcController.OrderToSprint();
-            ai.OrderMoveToDestination();
+            // Chill
+            npcController.OrderToStopMoving();
+            return;
         }
 
         private Vector3 GetNextRandomInCruiserPos()

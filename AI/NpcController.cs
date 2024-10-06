@@ -1223,7 +1223,10 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
+                    if (!InternAIInCruiser)
+                    {
+                        ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
+                    }
                 }
             }
 
@@ -1332,21 +1335,21 @@ namespace LethalInternship.AI
 
         public void ReParentNotSpawnedTransform(Transform newParent)
         {
-            foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = false;
-            }
-
             if (Npc.transform.parent != newParent)
             {
+                foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
+                {
+                    networkObject.AutoObjectParentSync = false;
+                }
+
                 Plugin.LogDebug($"npcController.Npc.transform.parent before {Npc.transform.parent}");
                 Npc.transform.parent = newParent;
                 Plugin.LogDebug($"npcController.Npc.transform.parent after {Npc.transform.parent}");
-            }
 
-            foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = true;
+                foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
+                {
+                    networkObject.AutoObjectParentSync = true;
+                }
             }
         }
 
