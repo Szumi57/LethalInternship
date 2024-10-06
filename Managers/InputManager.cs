@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Patches.NpcPatches;
 using System.Linq;
 using TMPro;
@@ -204,7 +205,7 @@ namespace LethalInternship.Managers
                 {
                     intern.SyncAssignTargetAndSetMovingTo(localPlayer);
 
-                    if (Plugin.Config.AutoChangeSuit.Value)
+                    if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionInternSuitChange.AutomaticSameAsPlayer)
                     {
                         intern.ChangeSuitInternServerRpc(player.playerClientId, localPlayer.currentSuitID);
                     }

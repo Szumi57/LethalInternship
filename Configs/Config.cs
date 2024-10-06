@@ -22,7 +22,6 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> InternPrice;
         [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
         [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
-        [SyncedEntryField] public SyncedEntry<bool> AutoChangeSuit;
 
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
@@ -35,6 +34,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> UseCustomNamesRandomly;
                            
         // Behaviour       
+        [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
         [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
@@ -79,11 +79,6 @@ namespace LethalInternship.Configs
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
 
-            AutoChangeSuit = cfg.BindSyncedEntry(Const.ConfigSectionMain,
-                                               "Automatical changing suits of owned interns",
-                                               defaultVal: false,
-                                               "Should the intern change suit when the player get ownership of him ?");
-
             CanSpectateInterns = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                                      "Spectate interns",
                                                      defaultVal: false,
@@ -118,6 +113,13 @@ namespace LethalInternship.Configs
                                               "Use the list of custom names randomly ?");
 
             // Behaviour
+            ChangeSuitBehaviour = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                               "Options for changing interns suits",
+                                               defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
+                                               new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
+                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Min(),
+                                                                                             Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Max())));
+            
             TeleportWhenUsingLadders = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
                                                "Teleport when using ladders",
                                                defaultVal: false,
