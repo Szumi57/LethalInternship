@@ -29,6 +29,7 @@ namespace LethalInternship
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
+        public static readonly ulong INTERN_ACTUAL_ID_OFFSET = 100000ul;
 
         // Config
         public static readonly string ConfigSectionMain = "1. Internship program";

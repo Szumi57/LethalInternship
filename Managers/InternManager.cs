@@ -196,7 +196,7 @@ namespace LethalInternship.Managers
         {
             Plugin.LogDebug($"Attempt to populate pool of interns. irlPlayersCount {irlPlayersCount}");
             StartOfRound instance = StartOfRound.Instance;
-            GameObject internObjectParent = instance.allPlayerObjects[3].gameObject;
+            GameObject internObjectParent = instance.allPlayerObjects[3];
 
             optionInternNames = Plugin.Config.GetOptionInternNames();
             arrayOfUserCustomNames = Plugin.Config.GetArrayOfUserCustomNames();
@@ -225,11 +225,16 @@ namespace LethalInternship.Managers
                 internController.isPlayerControlled = false;
                 internController.transform.localScale = new Vector3(Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value);
                 internController.thisController.radius *= Plugin.Config.InternSizeScale.Value;
-                internController.actualClientId = internController.playerClientId;
+                internController.actualClientId = internController.playerClientId + Const.INTERN_ACTUAL_ID_OFFSET;
                 internController.playerUsername = string.Format(Const.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
-                if (internController.currentSuitID > 0)
+                UnlockableSuit.SwitchSuitForPlayer(internController, 0, false);
+                if (Plugin.IsModModelReplacementAPILoaded)
                 {
-                    UnlockableSuit.SwitchSuitForPlayer(internController, 0, false);
+                    RemovePlayerModelReplacement(internController);
+                }
+                if (Plugin.IsModMoreCompanyLoaded)
+                {
+                    RemoveCosmetics(internController);
                 }
 
                 instance.allPlayerObjects[indexPlusIrlPlayersCount] = internObject;
@@ -244,6 +249,22 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogInfo("Pool of interns populated.");
+        }
+
+        private void RemovePlayerModelReplacement(PlayerControllerB internController)
+        {
+            ModelReplacement.ModelReplacementAPI.RemovePlayerModelReplacement(internController);
+        }
+
+        private void RemoveCosmetics(PlayerControllerB internController)
+        {
+            MoreCompany.Cosmetics.CosmeticApplication componentInChildren = internController.gameObject.GetComponentInChildren<MoreCompany.Cosmetics.CosmeticApplication>();
+            if (componentInChildren != null)
+            {
+                Plugin.LogDebug("clear cosmetics");
+                componentInChildren.RefreshAllCosmeticPositions();
+                componentInChildren.ClearCosmetics();
+            }
         }
 
         #region Spawn Intern

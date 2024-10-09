@@ -48,8 +48,6 @@ namespace LethalInternship.AI.AIStates
             {
                 ai.StopSearch(searchForPlayers, true);
             }
-
-            ai.agent.enabled = false;
         }
 
         /// <summary>

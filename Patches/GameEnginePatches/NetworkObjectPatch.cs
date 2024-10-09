@@ -26,12 +26,16 @@ namespace LethalInternship.Patches.GameEnginePatches
         static bool ChangeOwnership_PreFix(ref ulong newOwnerClientId)
         {
             Plugin.LogDebug($"Try network object ChangeOwnership newOwnerClientId : {(int)newOwnerClientId}");
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)newOwnerClientId);
-            if (internAI != null)
+            if(newOwnerClientId > Const.INTERN_ACTUAL_ID_OFFSET)
             {
-                Plugin.LogDebug($"network ChangeOwnership not on intern but on intern owner : {internAI.OwnerClientId}");
-                newOwnerClientId = internAI.OwnerClientId;
+                InternAI? internAI = InternManager.Instance.GetInternAI((int)(newOwnerClientId - Const.INTERN_ACTUAL_ID_OFFSET));
+                if (internAI != null)
+                {
+                    Plugin.LogDebug($"network ChangeOwnership not on intern but on intern owner : {internAI.OwnerClientId}");
+                    newOwnerClientId = internAI.OwnerClientId;
+                }
             }
+            
             return true;
         }
 

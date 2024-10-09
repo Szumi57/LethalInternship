@@ -79,6 +79,7 @@ namespace LethalInternship.AI
         private float timeSinceStuck;
         private float updateDestinationIntervalInternAI;
         private float timerCheckDoor;
+        private float healthRegenerateTimerMax;
 
         public LineRendererUtil LineRendererUtil = null!;
 
@@ -92,9 +93,6 @@ namespace LethalInternship.AI
                 enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
             }
             currentBehaviourStateIndex = -1;
-
-            // Max health
-            MaxHealth = Plugin.Config.InternMaxHealth.Value;
         }
 
         /// <summary>
@@ -163,26 +161,26 @@ namespace LethalInternship.AI
             // Grabbableobject
             HoarderBugAI.RefreshGrabbableObjectsInMapList();
 
+            // Health
+            MaxHealth = Plugin.Config.InternMaxHealth.Value;
+            NpcController.Npc.health = MaxHealth;
+            healthRegenerateTimerMax = 100f / (float)MaxHealth;
+            NpcController.Npc.healthRegenerateTimer = healthRegenerateTimerMax;
+
             // AI init
             this.ventAnimationFinished = true;
             this.transform.position = NpcController.Npc.transform.position;
             if (agent != null)
             {
                 agent.Warp(NpcController.Npc.transform.position);
-                agent.enabled = true;
                 agent.speed = Const.AGENT_SPEED;
+                agent.enabled = false;
             }
             this.serverPosition = transform.position;
             this.isEnemyDead = false;
             this.enabled = true;
 
             addPlayerVelocityToDestination = 3f;
-
-            // Position
-            if (!IsOwner && agent != null)
-            {
-                SetClientCalculatingAI(false);
-            }
 
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
@@ -200,14 +198,7 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Update()
         {
-            if (!NpcController.Npc.gameObject.activeSelf
-                || !NpcController.Npc.isPlayerControlled)
-            {
-                // Not controlled we do nothing
-                return;
-            }
-
-            // Not owner we stop calculating AI
+            // Not owner no AI
             if (!IsOwner)
             {
                 if (currentSearch.inProgress)
@@ -215,33 +206,30 @@ namespace LethalInternship.AI
                     StopSearch(currentSearch);
                 }
 
-                SetClientCalculatingAI(enable: false);
-                timeSinceSpawn += Time.deltaTime;
+                SetAgent(enabled: false);
                 return;
             }
 
-            // AI dead or body dead, we kill the AI or the body,
-            // whichever one is not dead yet
-            if (isEnemyDead)
+            if (!NpcController.Npc.gameObject.activeSelf
+                || !NpcController.Npc.isPlayerControlled)
             {
-                SetClientCalculatingAI(enable: false);
-                return;
-            }
-            else if (NpcController.Npc.isPlayerDead)
-            {
-                base.KillEnemyOnOwnerClient(false);
+                // Not controlled we do nothing
+                SetAgent(enabled: false);
                 return;
             }
 
-            // Set that this client calculate the AI
-            if (!inSpecialAnimation)
+            // Intern dead
+            if (isEnemyDead
+                || NpcController.Npc.isPlayerDead)
             {
-                SetClientCalculatingAI(enable: true);
+                SetAgent(enabled: false);
+                return;
             }
 
             // No AI calculation if in special animation
             if (inSpecialAnimation)
             {
+                SetAgent(enabled: false);
                 return;
             }
 
@@ -249,6 +237,7 @@ namespace LethalInternship.AI
             if (!NpcController.Npc.isClimbingLadder
                 && (NpcController.Npc.inSpecialInteractAnimation || NpcController.Npc.enteringSpecialAnimation))
             {
+                SetAgent(enabled: false);
                 return;
             }
 
@@ -290,6 +279,8 @@ namespace LethalInternship.AI
             }
             else
             {
+                SetAgent(enabled: true);
+
                 // Do the actual AI calculation
                 DoAIInterval();
                 updateDestinationIntervalInternAI = AIIntervalTime;
@@ -319,6 +310,14 @@ namespace LethalInternship.AI
 
             // Check if the body is stuck somehow, and try to unstuck it in various ways
             CheckIfStuck();
+        }
+
+        private void SetAgent(bool enabled)
+        {
+            if (agent != null)
+            {
+                agent.enabled = enabled;
+            }
         }
 
         /// <summary>
@@ -2575,9 +2574,10 @@ namespace LethalInternship.AI
             // Apply damage, if not killed, set the minimum health to 5
             if (NpcController.Npc.health - damageNumber <= 0
                 && !NpcController.Npc.criticallyInjured
-                && damageNumber < MaxHealthPercent(50))
+                && damageNumber < MaxHealthPercent(50)
+                && MaxHealthPercent(10) != MaxHealthPercent(20))
             {
-                NpcController.Npc.health = MaxHealthPercent(5);
+                NpcController.Npc.health = 1;
             }
             else
             {
@@ -2599,7 +2599,7 @@ namespace LethalInternship.AI
             else
             {
                 // Critically injured
-                if (NpcController.Npc.health < MaxHealthPercent(10)
+                if ((NpcController.Npc.health < MaxHealthPercent(10) || NpcController.Npc.health == 1)
                     && !NpcController.Npc.criticallyInjured)
                 {
                     // Client side only, since we are already in an rpc send to all clients
@@ -2628,52 +2628,26 @@ namespace LethalInternship.AI
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
         }
 
-        /// <summary>
-        /// Sync the state of critically injured of beginning to heal, between server and clients
-        /// </summary>
-        /// <param name="enable">true: make the intern critically injured, false: make him heal</param>
-        public void SyncMakeCriticallyInjured(bool enable)
+        public void HealthRegen()
         {
-            if (enable)
+            if (NpcController.Npc.health < MaxHealthPercent(20)
+                || NpcController.Npc.health == 1)
             {
-                if (IsServer)
+                if (NpcController.Npc.healthRegenerateTimer <= 0f)
                 {
-                    MakeCriticallyInjuredClientRpc();
+                    NpcController.Npc.healthRegenerateTimer = healthRegenerateTimerMax;
+                    NpcController.Npc.health = NpcController.Npc.health + 1 > MaxHealth ? MaxHealth : NpcController.Npc.health + 1;
+                    if (NpcController.Npc.criticallyInjured &&
+                        (NpcController.Npc.health >= MaxHealthPercent(20) || MaxHealth == 1))
+                    {
+                        Heal();
+                    }
                 }
                 else
                 {
-                    MakeCriticallyInjuredServerRpc();
+                    NpcController.Npc.healthRegenerateTimer -= Time.deltaTime;
                 }
             }
-            else
-            {
-                if (IsServer)
-                {
-                    HealClientRpc();
-                }
-                else
-                {
-                    HealServerRpc();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Server side, call clients to update the state of critically injured
-        /// </summary>
-        [ServerRpc]
-        private void MakeCriticallyInjuredServerRpc()
-        {
-            MakeCriticallyInjuredClientRpc();
-        }
-
-        /// <summary>
-        /// Client side update the state of critically injured
-        /// </summary>
-        [ClientRpc]
-        private void MakeCriticallyInjuredClientRpc()
-        {
-            MakeCriticallyInjured();
         }
 
         /// <summary>
@@ -2684,24 +2658,7 @@ namespace LethalInternship.AI
             NpcController.Npc.bleedingHeavily = true;
             NpcController.Npc.criticallyInjured = true;
             NpcController.Npc.hasBeenCriticallyInjured = true;
-        }
-
-        /// <summary>
-        /// Server side, call clients to heal the intern
-        /// </summary>
-        [ServerRpc]
-        private void HealServerRpc()
-        {
-            HealClientRpc();
-        }
-
-        /// <summary>
-        /// Client side, heal the intern
-        /// </summary>
-        [ClientRpc]
-        private void HealClientRpc()
-        {
-            Heal();
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_LIMP, true);
         }
 
         /// <summary>
@@ -2711,6 +2668,7 @@ namespace LethalInternship.AI
         {
             NpcController.Npc.bleedingHeavily = false;
             NpcController.Npc.criticallyInjured = false;
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_LIMP, false);
         }
 
         #endregion
@@ -2901,6 +2859,12 @@ namespace LethalInternship.AI
                 this.DropItem();
             }
             NpcController.Npc.DisableJetpackControlsLocally();
+            this.isEnemyDead = true;
+            if (this.agent != null
+                && this.agent.isActiveAndEnabled)
+            {
+                this.agent.enabled = false;
+            }
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
 
             // Compat with revive company mod

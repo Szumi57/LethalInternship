@@ -62,7 +62,7 @@ namespace LethalInternship.AI
         private int movementHinderedPrev;
         private float sprintMultiplier = 1f;
         private float slopeModifier;
-        private float limpMultiplier = 0.2f;
+        private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
         private bool isFallingNoJump;
         private float slideFriction;
@@ -1230,6 +1230,9 @@ namespace LethalInternship.AI
                 }
             }
 
+            // Health regen
+            InternAIController.HealthRegen();
+
             if (InternAIController.IsClientOwnerOfIntern())
             {
                 this.InternRotationAndLookUpdate();
@@ -1301,27 +1304,6 @@ namespace LethalInternship.AI
                         if (Npc.isExhausted && Npc.sprintMeter > 0.2f)
                         {
                             Npc.isExhausted = false;
-                        }
-                    }
-
-                    if (this.limpMultiplier > 0f)
-                    {
-                        this.limpMultiplier -= Time.deltaTime / 1.8f;
-                    }
-                    if (Npc.health < InternAIController.MaxHealthPercent(20))
-                    {
-                        if (Npc.healthRegenerateTimer <= 0f)
-                        {
-                            Npc.healthRegenerateTimer = 1f;
-                            Npc.health++;
-                            if (Npc.health >= InternAIController.MaxHealthPercent(20))
-                            {
-                                InternAIController.SyncMakeCriticallyInjured(false);
-                            }
-                        }
-                        else
-                        {
-                            Npc.healthRegenerateTimer -= Time.deltaTime;
                         }
                     }
                 }

@@ -72,7 +72,8 @@ namespace LethalInternship
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
         internal static bool IsModCustomItemBehaviourLibraryLoaded = false;
-
+        internal static bool IsModMoreCompanyLoaded = false;
+        
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -206,9 +207,9 @@ namespace LethalInternship
             IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
             IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             IsModCustomItemBehaviourLibraryLoaded = IsModLoaded(Const.CUSTOMITEMBEHAVIOURLIBRARY_GUID);
+            IsModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
-            bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
@@ -247,7 +248,7 @@ namespace LethalInternship
                                null,
                                new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.PerformEmotePrefix_Transpiler)));
             }
-            if (isModMoreCompanyLoaded)
+            if (IsModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
             }
