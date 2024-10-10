@@ -362,11 +362,6 @@ namespace LethalInternship.Patches.GameEnginePatches
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
 
-            for (int i = 0; i < codes.Count; i++)
-            {
-                Plugin.LogDebug($"{i} {codes[i]}");
-            }
-
             if (Const.TEST_MORE_THAN_X_PLAYER_BYPASS)
             {
                 // ----------------------------------------------------------------------
