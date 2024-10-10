@@ -20,6 +20,7 @@ using LethalInternship.Patches.ModPatches.QuickBuy;
 using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
+using LethalInternship.Patches.ModPatches.TooManyEmotes;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
@@ -48,6 +49,7 @@ namespace LethalInternship
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BETTEREMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.TOOMANYEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MORECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MODELREPLACEMENT_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALPHONES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -247,6 +249,11 @@ namespace LethalInternship
                                null,
                                null,
                                new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.PerformEmotePrefix_Transpiler)));
+            }
+            if (IsModTooManyEmotesLoaded)
+            {
+                _harmony.PatchAll(typeof(EmoteControllerPlayerPatch));
+                _harmony.PatchAll(typeof(ThirdPersonEmoteControllerPatch));
             }
             if (IsModMoreCompanyLoaded)
             {
