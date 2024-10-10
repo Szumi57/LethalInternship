@@ -498,10 +498,19 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateEmoteStateForOwner()
         {
-            if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
+            if (Npc.performingEmote)
             {
-                Npc.performingEmote = false;
-                this.InternAIController.SyncStopPerformingEmote();
+                if (this.Npc.inSpecialInteractAnimation
+                    || this.Npc.isPlayerDead
+                    || this.Npc.isCrouching
+                    || this.Npc.isClimbingLadder
+                    || this.Npc.isGrabbingObjectAnimation
+                    || this.Npc.inTerminalMenu
+                    || this.Npc.isTypingChat)
+                {
+                    Npc.performingEmote = false;
+                    this.InternAIController.SyncStopPerformingEmote();
+                }
             }
         }
 
@@ -1339,9 +1348,7 @@ namespace LethalInternship.AI
 
         public void MimicEmotes(PlayerControllerB playerToMimic)
         {
-            if (!HasToMove
-                && Npc.thisController.velocity == Vector3.zero
-                && playerToMimic.performingEmote)
+            if (playerToMimic.performingEmote)
             {
                 if (Plugin.IsModTooManyEmotesLoaded)
                 {
