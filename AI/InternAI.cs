@@ -54,7 +54,9 @@ namespace LethalInternship.AI
 
         public string InternId = "Not initialized";
         public bool AlreadyNamed = false;
-        public int MaxHealth = 100;
+        public int SuitID = 0;
+        public bool AlreadySuited = false;
+        public int MaxHealth = Const.DEFAULT_INTERN_MAX_HEALTH;
 
         /// <summary>
         /// Currently held item by intern

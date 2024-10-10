@@ -82,6 +82,7 @@ namespace LethalInternship
                                                                                          "Uriel Lucky",
                                                                                          "Zoltan Pepper"};
 
+        public static EnumOptionInternSuitChange DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE = EnumOptionInternSuitChange.Manual;
 
 
         // Interns

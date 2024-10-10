@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -336,6 +337,15 @@ namespace LethalInternship.Managers
                 internAI.AlreadyNamed = true;
             }
 
+            // Get a suit
+            int suitID = internAI.SuitID;
+            if (!internAI.AlreadySuited 
+                && Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionInternSuitChange.Random)
+            {
+                suitID = GetRandomSuitID();
+                internAI.AlreadySuited = true;
+            }
+
             // Spawn ragdoll dead bodies of intern
             NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)internController.playerClientId);
 
@@ -343,6 +353,7 @@ namespace LethalInternship.Managers
             SpawnInternClientRpc(networkObject, networkObjectRagdollBody,
                                  indexNextIntern, indexNextPlayerObject,
                                  internName,
+                                 suitID,
                                  spawnPosition, yRot, isOutside);
         }
 
@@ -410,7 +421,7 @@ namespace LethalInternship.Managers
             if (Plugin.Config.UseCustomNamesRandomly.Value)
             {
                 Random randomInstance = new Random();
-                index = randomInstance.Next(0, listOfNames.Count - 1);
+                index = randomInstance.Next(0, listOfNames.Count);
             }
             else
             {
@@ -420,6 +431,34 @@ namespace LethalInternship.Managers
             name = listOfNames[index] + iterationString;
             listOfNames.RemoveAt(index);
             return name;
+        }
+
+        private int GetRandomSuitID()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            UnlockableItem unlockableItem;
+            List<int> indexesSpawnedUnlockables = new List<int>();
+            foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
+            {
+                if (unlockable.Value == null)
+                {
+                    continue;
+                }
+
+                unlockableItem = instanceSOR.unlockablesList.unlockables[unlockable.Key];
+                if (unlockableItem != null
+                    && unlockableItem.unlockableType == 0)
+                {
+                    // Suits
+                    indexesSpawnedUnlockables.Add(unlockable.Key);
+                    Plugin.LogDebug($"unlockable index {unlockable.Key}");
+                }
+            }
+
+            Random randomInstance = new Random();
+            int randomIndex = randomInstance.Next(0, indexesSpawnedUnlockables.Count);
+            Plugin.LogDebug($"randomIndex {randomIndex}, random suit id {indexesSpawnedUnlockables[randomIndex]}");
+            return indexesSpawnedUnlockables[randomIndex];
         }
 
         private NetworkObject SpawnRagdollBodies(int playerClientId)
@@ -449,6 +488,7 @@ namespace LethalInternship.Managers
             return networkObjectRagdoll;
         }
 
+
         /// <summary>
         /// Client side, when receiving <c>NetworkObjectReference</c> for the <c>InternAI</c> spawned on server,
         /// adds it to its corresponding arrays
@@ -464,6 +504,7 @@ namespace LethalInternship.Managers
                                           NetworkObjectReference networkObjectReferenceRagdollInternBody,
                                           int indexNextIntern, int indexNextPlayerObject,
                                           string internName,
+                                          int suitID,
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
             Plugin.LogInfo($"Client receive RPC to spawn intern... position : {spawnPosition}, yRot: {yRot}");
@@ -484,7 +525,11 @@ namespace LethalInternship.Managers
             RagdollGrabbableObject ragdollBody = networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>();
 
             internAI.SetEnemyOutside(isOutside);
-            InitInternSpawning(internAI, ragdollBody, indexNextPlayerObject, internName, spawnPosition, yRot, isOutside);
+            InitInternSpawning(internAI, ragdollBody,
+                               indexNextPlayerObject,
+                               internName,
+                               suitID,
+                               spawnPosition, yRot, isOutside);
         }
 
         /// <summary>
@@ -499,6 +544,7 @@ namespace LethalInternship.Managers
         private void InitInternSpawning(InternAI internAI, RagdollGrabbableObject ragdollBody,
                                         int indexNextPlayerObject,
                                         string internName,
+                                        int suitID,
                                         Vector3 spawnPosition, float yRot, bool isOutside)
         {
             StartOfRound instance = StartOfRound.Instance;
@@ -512,7 +558,7 @@ namespace LethalInternship.Managers
             internController.isPlayerControlled = true;
             internController.playerActions = new PlayerActions();
             internController.health = Plugin.Config.InternMaxHealth.Value;
-            DisableInternControllerModel(objectParent, internController, true, true);
+            DisableInternControllerModel(objectParent, internController, enable: true, disableLocalArms: true);
             internController.isInsideFactory = !isOutside;
             internController.isMovementHindered = 0;
             internController.hinderedMultiplier = 1f;
@@ -572,6 +618,10 @@ namespace LethalInternship.Managers
                 UnityEngine.Object.Destroy(internController.deadBody.gameObject);
                 internController.deadBody = null;
             }
+
+            // Switch suit
+            UnlockableSuit.SwitchSuitForPlayer(internController, suitID, false);
+            internAI.SuitID = suitID;
 
             // Show model replacement
             if (Plugin.IsModModelReplacementAPILoaded)
