@@ -773,7 +773,7 @@ namespace LethalInternship.Patches.NpcPatches
                 {
                     Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch could not use own update animation rpc method 2");
                 }
-                
+
                 return codes.AsEnumerable();
             }
 
@@ -984,6 +984,45 @@ namespace LethalInternship.Patches.NpcPatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("ConnectClientToPlayerObject")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ConnectClientToPlayerObject_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 3; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL")
+                    && codes[i + 1].ToString() == "ldfld StartOfRound GameNetcodeStuff.PlayerControllerB::playersManager"
+                    && codes[i + 2].ToString() == "ldfld UnityEngine.GameObject[] StartOfRound::allPlayerObjects"
+                    && codes[i + 3].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Nop;
+                codes[startIndex + 2].operand = null;
+                codes[startIndex + 3].opcode = OpCodes.Call;
+                codes[startIndex + 3].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ConnectClientToPlayerObject_Transpiler could not limit teleport to only not interns.");
+            }
+
+            return codes.AsEnumerable();
+        }
+
         #endregion
 
         #region Postfixes
@@ -1099,7 +1138,7 @@ namespace LethalInternship.Patches.NpcPatches
                     .AppendLine();
 
                 // Change suit intern
-                if (__instance.currentSuitID != 0 
+                if (__instance.currentSuitID != 0
                     || internController.currentSuitID != __instance.currentSuitID)
                 {
                     sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.ChangeSuitIntern)));
