@@ -418,6 +418,19 @@ namespace LethalInternship.Patches.NpcPatches
             return false;
         }
 
+        [HarmonyPatch("ConnectClientToPlayerObject")]
+        [HarmonyPrefix]
+        static bool ConnectClientToPlayerObject_PreFix(PlayerControllerB __instance)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region Reverse patches

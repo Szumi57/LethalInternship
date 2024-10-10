@@ -298,9 +298,6 @@ namespace LethalInternship.AI
             // Do the AI calculation behaviour for the current state
             State.DoAI();
 
-            RayUtil.RayCastAndDrawFromPointWithColor(LineRendererUtil.GetLineRenderer(), NpcController.Npc.transform.position, this.transform.position + new Vector3(0, 0.3f, 0), Color.green);
-            RayUtil.RayCastAndDrawFromPointWithColor(LineRendererUtil.GetLineRenderer(), NpcController.Npc.transform.position, this.agent.destination + new Vector3(0, 0.3f, 0), Color.blue);
-
             // Check if the body is stuck somehow, and try to unstuck it in various ways
             CheckIfStuck();
         }
