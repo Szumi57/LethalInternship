@@ -105,25 +105,13 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Start()
         {
-            this.NpcController.Awake();
-
             // AIIntervalTime
-            if (AIIntervalTime == 0f)
-            {
-                AIIntervalTime = 0.3f;
-            }
+            AIIntervalTime = 0.3f;
 
             try
             {
                 agent = gameObject.GetComponentInChildren<NavMeshAgent>();
-                agent.Warp(NpcController.Npc.transform.position);
-                agent.enabled = true;
-                agent.speed = Const.AGENT_SPEED;
-                if (!IsOwner)
-                {
-                    SetClientCalculatingAI(false);
-                }
-
+                agent.enabled = false;
                 skinnedMeshRenderers = gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
                 meshRenderers = gameObject.GetComponentsInChildren<MeshRenderer>();
                 if (creatureAnimator == null)
@@ -138,9 +126,8 @@ namespace LethalInternship.AI
             {
                 Plugin.LogError(string.Format("Error when initializing intern variables for {0} : {1}", gameObject.name, arg));
             }
-            //this.lerpTarget.SetParent(RoundManager.Instance.mapPropsContainer.transform);
 
-            Plugin.LogDebug("Intern Spawned");
+            Plugin.LogDebug("InternAI started");
         }
 
         /// <summary>
@@ -162,6 +149,9 @@ namespace LethalInternship.AI
 
             // Grabbableobject
             HoarderBugAI.RefreshGrabbableObjectsInMapList();
+
+            // Init controller
+            this.NpcController.Awake();
 
             // Health
             MaxHealth = Plugin.Config.InternMaxHealth.Value;
@@ -212,7 +202,8 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (!NpcController.Npc.gameObject.activeSelf
+            if (NpcController == null
+                || !NpcController.Npc.gameObject.activeSelf
                 || !NpcController.Npc.isPlayerControlled)
             {
                 // Not controlled we do nothing
