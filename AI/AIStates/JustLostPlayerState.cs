@@ -10,12 +10,6 @@ namespace LethalInternship.AI.AIStates
     /// </summary>
     internal class JustLostPlayerState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.JustLostPlayer;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         private float lookingAroundTimer;
         private Coroutine lookingAroundCoroutine = null!;
 
@@ -24,6 +18,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public JustLostPlayerState(AIState state) : base(state)
         {
+            CurrentState = EnumAIStates.JustLostPlayer;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);

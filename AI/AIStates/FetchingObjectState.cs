@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Enums;
+using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
 {
@@ -7,17 +8,13 @@ namespace LethalInternship.AI.AIStates
     /// </summary>
     internal class FetchingObjectState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.FetchingObject;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
         public FetchingObjectState(AIState state, GrabbableObject targetItem) : base(state)
         {
+            CurrentState = EnumAIStates.FetchingObject;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);
@@ -66,7 +63,16 @@ namespace LethalInternship.AI.AIStates
 
             // Else get close to item
             ai.SetDestinationToPositionInternAI(this.targetItem.transform.position);
-            npcController.OrderToLookAtPosition(this.targetItem.transform.position);
+
+            // Look at item or not if hidden by stuff
+            if (!Physics.Linecast(npcController.Npc.gameplayCamera.transform.position, this.targetItem.transform.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+            {
+                npcController.OrderToLookAtPosition(this.targetItem.transform.position);
+            }
+            else
+            {
+                npcController.OrderToLookForward();
+            }
 
             // Sprint if far enough from the item
             if (sqrMagDistanceItem > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING)

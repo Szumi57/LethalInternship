@@ -180,7 +180,7 @@ namespace LethalInternship.Patches.NpcPatches
         static bool DamagePlayerFromOtherClientServerRpc_PreFix(PlayerControllerB __instance,
                                                                 int damageAmount, Vector3 hitDirection, int playerWhoHit)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)__instance.playerClientId);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
                 Plugin.LogDebug($"SyncDamageInternFromOtherClient called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
@@ -367,6 +367,60 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPatch("JumpToFearLevel")]
         [HarmonyPrefix]
         static bool JumpToFearLevel_PreFix(PlayerControllerB __instance)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPatch("PerformEmote")]
+        [HarmonyPrefix]
+        static bool PerformEmote_PreFix(PlayerControllerB __instance, int emoteID)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            if (!CheckConditionsForEmote_ReversePatch(__instance))
+            {
+                return false;
+            }
+
+            __instance.performingEmote = true;
+            __instance.playerBodyAnimator.SetInteger("emoteNumber", emoteID);
+            internAI.StartPerformingEmoteInternServerRpc(emoteID);
+
+            return false;
+        }
+
+        /// <summary>
+        /// Prefix for using the intern server rpc for emotes, for the ownership false
+        /// </summary>
+        /// <remarks>Calls from MoreEmotes mod typically</remarks>
+        /// <returns></returns>
+        [HarmonyPatch("StartPerformingEmoteServerRpc")]
+        [HarmonyPrefix]
+        static bool StartPerformingEmoteServerRpc_PreFix(PlayerControllerB __instance)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            internAI.StartPerformingEmoteInternServerRpc(__instance.playerBodyAnimator.GetInteger("emoteNumber"));
+            return false;
+        }
+
+        [HarmonyPatch("ConnectClientToPlayerObject")]
+        [HarmonyPrefix]
+        static bool ConnectClientToPlayerObject_PreFix(PlayerControllerB __instance)
         {
             InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
@@ -870,6 +924,10 @@ namespace LethalInternship.Patches.NpcPatches
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
+        [HarmonyPatch("SetSpecialGrabAnimationBool")]
+        [HarmonyReversePatch]
+        public static void SetSpecialGrabAnimationBool_ReversePatch(object instance, bool setTrue, GrabbableObject currentItem) => throw new NotImplementedException("Stub LethalInternship.Patches.NpcPatches.SetSpecialGrabAnimationBool_ReversePatch");
+
         #endregion
 
         #region Transpilers
@@ -934,6 +992,45 @@ namespace LethalInternship.Patches.NpcPatches
                 {
                     Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.SpectateNextPlayer_Transpiler could not use irl number of player.");
                 }
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("ConnectClientToPlayerObject")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ConnectClientToPlayerObject_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 3; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL")
+                    && codes[i + 1].ToString() == "ldfld StartOfRound GameNetcodeStuff.PlayerControllerB::playersManager"
+                    && codes[i + 2].ToString() == "ldfld UnityEngine.GameObject[] StartOfRound::allPlayerObjects"
+                    && codes[i + 3].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Nop;
+                codes[startIndex + 2].operand = null;
+                codes[startIndex + 3].opcode = OpCodes.Call;
+                codes[startIndex + 3].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ConnectClientToPlayerObject_Transpiler could not limit teleport to only not interns.");
             }
 
             return codes.AsEnumerable();
@@ -1014,13 +1111,13 @@ namespace LethalInternship.Patches.NpcPatches
                     continue;
                 }
 
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
+                PlayerControllerB internController = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (internController == null)
                 {
                     continue;
                 }
 
-                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
+                InternAI? intern = InternManager.Instance.GetInternAI((int)internController.playerClientId);
                 if (intern == null)
                 {
                     continue;
@@ -1050,7 +1147,15 @@ namespace LethalInternship.Patches.NpcPatches
                 }
 
                 // Grab intern
-                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GrabIntern)));
+                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.GrabIntern)))
+                    .AppendLine();
+
+                // Change suit intern
+                if (__instance.currentSuitID != 0
+                    || internController.currentSuitID != __instance.currentSuitID)
+                {
+                    sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.ChangeSuitIntern)));
+                }
 
                 __instance.cursorTip.text = sb.ToString();
 

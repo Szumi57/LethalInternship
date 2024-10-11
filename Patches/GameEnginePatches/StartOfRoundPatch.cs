@@ -383,8 +383,34 @@ namespace LethalInternship.Patches.GameEnginePatches
                 }
                 else
                 {
-                    Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.OnClientConnect_Transpiler could not test with making the 2nd player the 4th");
+                    Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.OnClientConnect_Transpiler could not test with making the 2nd player the nth");
                 }
+            }
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].ToString() == "ldarg.0 NULL"
+                    && codes[i + 1].ToString() == "ldfld UnityEngine.GameObject[] StartOfRound::allPlayerObjects"
+                    && codes[i + 2].ToString() == "ldlen NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.OnClientConnect_Transpiler could not limit init of list2");
             }
 
             return codes.AsEnumerable();
@@ -418,6 +444,16 @@ namespace LethalInternship.Patches.GameEnginePatches
             {
                 InternManager.Instance.SetInternsInElevatorLateUpdate(__instance);
             }
+        }
+
+        /// <summary>
+        /// Removes dupcation of event triggering when quitting to main menu and coming back
+        /// </summary>
+        [HarmonyPatch("OnDisable")]
+        [HarmonyPostfix]
+        static void OnDisable_Postfix()
+        {
+            InputManager.Instance.RemoveEventHandlers();
         }
     }
 

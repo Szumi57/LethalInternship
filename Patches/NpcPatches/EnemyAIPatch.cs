@@ -27,12 +27,16 @@ namespace LethalInternship.Patches.NpcPatches
         static bool ChangeOwnershipOfEnemy_PreFix(ref ulong newOwnerClientId)
         {
             Plugin.LogDebug($"Try ChangeOwnershipOfEnemy newOwnerClientId : {(int)newOwnerClientId}");
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)newOwnerClientId);
-            if (internAI != null)
+            if (newOwnerClientId > Const.INTERN_ACTUAL_ID_OFFSET)
             {
-                Plugin.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
-                newOwnerClientId = internAI.OwnerClientId;
+                InternAI? internAI = InternManager.Instance.GetInternAI((int)(newOwnerClientId - Const.INTERN_ACTUAL_ID_OFFSET));
+                if (internAI != null)
+                {
+                    Plugin.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
+                    newOwnerClientId = internAI.OwnerClientId;
+                }
             }
+
             return true;
         }
 

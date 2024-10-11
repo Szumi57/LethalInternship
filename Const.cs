@@ -13,16 +13,23 @@ namespace LethalInternship
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
         public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
         public const string MOREEMOTES_GUID = "MoreEmotes";
+        public const string BETTEREMOTES_GUID = "BetterEmotes";
         public const string MODELREPLACEMENT_GUID = "meow.ModelReplacementAPI";
         public const string LETHALPHONES_GUID = "LethalPhones";
         public const string FASTERITEMDROPSHIP_GUID = "FlipMods.FasterItemDropship";
         public const string SHOWCAPACITY_GUID = "Piggy.ShowCapacity";
         public const string REVIVECOMPANY_GUID = "OpJosMod.ReviveCompany";
+        public const string TOOMANYEMOTES_GUID = "FlipMods.TooManyEmotes";
+        public const string RESERVEDITEMSLOTCORE_GUID = "FlipMods.ReservedItemSlotCore";
+        public const string LETHALPROGRESSION_GUID = "Stoneman.LethalProgression";
+        public const string QUICKBUYMENU_GUID = "QuickBuyMenu";
+        public const string CUSTOMITEMBEHAVIOURLIBRARY_GUID = "com.github.WhiteSpike.CustomItemBehaviourLibrary";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
+        public static readonly ulong INTERN_ACTUAL_ID_OFFSET = 100000ul;
 
         // Config
         public static readonly string ConfigSectionMain = "1. Internship program";
@@ -44,7 +51,7 @@ namespace LethalInternship
         public static readonly int MAX_INTERN_MAX_HEALTH = 200;
 
         public static readonly float DEFAULT_SIZE_SCALE_INTERN = 0.85f;
-        public static readonly float MIN_SIZE_SCALE_INTERN = 0.85f;
+        public static readonly float MIN_SIZE_SCALE_INTERN = 0.3f;
         public static readonly float MAX_SIZE_SCALE_INTERN = 1f;
 
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE = "INTERNSHIP PROGRAM";
@@ -75,6 +82,7 @@ namespace LethalInternship
                                                                                          "Uriel Lucky",
                                                                                          "Zoltan Pepper"};
 
+        public static EnumOptionInternSuitChange DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE = EnumOptionInternSuitChange.Manual;
 
 
         // Interns
@@ -103,7 +111,7 @@ namespace LethalInternship
 
         // Debug
         public static readonly bool DRAW_LINES = false;
-        public static readonly bool SHOW_LOG_DEBUG = true;
+        public static readonly bool SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED = false;
         public static readonly bool SPAWN_INTERN_WITH_EMOTE = false;
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = false;
@@ -148,7 +156,7 @@ namespace LethalInternship
         // GetCloseToPlayerState
         public static readonly float DISTANCE_START_RUNNING = 8f;
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
-        public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 6f;
+        public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 5f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
         public static readonly float DISTANCE_AWARENESS_HOR = 25f;
         public static readonly float DISTANCE_AWARENESS_VER = 50f;
@@ -190,6 +198,8 @@ namespace LethalInternship
         public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
         public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
         public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
+        public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
+        public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
         public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
 
         // Terminal

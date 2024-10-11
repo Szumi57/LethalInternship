@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
@@ -18,6 +19,23 @@ namespace LethalInternship.Patches.ObjectsPatches
         static bool SetControlTipsForItem_PreFix(GrabbableObject __instance)
         {
             return InternManager.Instance.IsAnInternAiOwnerOfObject(__instance);
+        }
+
+        [HarmonyPatch("DiscardItem")]
+        [HarmonyPrefix]
+        static bool DiscardItem_PreFix(GrabbableObject __instance)
+        {
+            PlayerControllerB? internController = __instance.playerHeldBy;
+            if (internController == null
+                || !InternManager.Instance.IsPlayerIntern(internController))
+            {
+                return true;
+            }
+
+            __instance.playerHeldBy.IsInspectingItem = false;
+            __instance.playerHeldBy.activatingItem = false;
+            __instance.playerHeldBy = null;
+            return false;
         }
 
         /// <summary>

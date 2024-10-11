@@ -12,17 +12,13 @@ namespace LethalInternship.AI.AIStates
     /// </summary>
     internal class PlayerInShipState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.PlayerInShip;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
         public PlayerInShipState(AIState state) : base(state)
         {
+            CurrentState = EnumAIStates.PlayerInShip;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);

@@ -3,8 +3,10 @@ using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
+using ModelReplacement;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -60,7 +62,7 @@ namespace LethalInternship.AI
         private int movementHinderedPrev;
         private float sprintMultiplier = 1f;
         private float slopeModifier;
-        private float limpMultiplier = 0.2f;
+        private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
         private bool isFallingNoJump;
         private float slideFriction;
@@ -98,6 +100,7 @@ namespace LethalInternship.AI
         public NpcController(PlayerControllerB npc)
         {
             this.Npc = npc;
+            Init();
         }
 
         /// <summary>
@@ -106,6 +109,14 @@ namespace LethalInternship.AI
         public void Awake()
         {
             Plugin.LogDebug("Awake intern controller.");
+            Init();
+
+            PatchesUtil.FieldInfoPreviousAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
+            PatchesUtil.FieldInfoCurrentAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
+        }
+
+        private void Init()
+        {
             Npc.isHostPlayerObject = false;
             Npc.serverPlayerPosition = Npc.transform.position;
             Npc.gameplayCamera.enabled = false;
@@ -113,8 +124,7 @@ namespace LethalInternship.AI
             Npc.thisPlayerModel.enabled = true;
             Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             Npc.thisPlayerModelArms.enabled = false;
-            PatchesUtil.FieldInfoPreviousAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
-            PatchesUtil.FieldInfoCurrentAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
+
             this.IsCameraDisabled = true;
             Npc.sprintMeter = 1f;
             Npc.ItemSlots = new GrabbableObject[1];
@@ -488,13 +498,20 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateEmoteStateForOwner()
         {
-            if (Npc.performingEmote && !PlayerControllerBPatch.CheckConditionsForEmote_ReversePatch(this.Npc))
+            if (Npc.performingEmote)
             {
-                Npc.performingEmote = false;
-                this.InternAIController.SyncStopPerformingEmote();
-                Npc.timeSinceStartingEmote = 0f;
+                if (this.Npc.inSpecialInteractAnimation
+                    || this.Npc.isPlayerDead
+                    || this.Npc.isCrouching
+                    || this.Npc.isClimbingLadder
+                    || this.Npc.isGrabbingObjectAnimation
+                    || this.Npc.inTerminalMenu
+                    || this.Npc.isTypingChat)
+                {
+                    Npc.performingEmote = false;
+                    this.InternAIController.SyncStopPerformingEmote();
+                }
             }
-            Npc.timeSinceStartingEmote += Time.deltaTime;
         }
 
         /// <summary>
@@ -1215,9 +1232,15 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
+                    if (!InternAIInCruiser)
+                    {
+                        ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
+                    }
                 }
             }
+
+            // Health regen
+            InternAIController.HealthRegen();
 
             if (InternAIController.IsClientOwnerOfIntern())
             {
@@ -1292,27 +1315,6 @@ namespace LethalInternship.AI
                             Npc.isExhausted = false;
                         }
                     }
-
-                    if (this.limpMultiplier > 0f)
-                    {
-                        this.limpMultiplier -= Time.deltaTime / 1.8f;
-                    }
-                    if (Npc.health < InternAIController.MaxHealthPercent(20))
-                    {
-                        if (Npc.healthRegenerateTimer <= 0f)
-                        {
-                            Npc.healthRegenerateTimer = 1f;
-                            Npc.health++;
-                            if (Npc.health >= InternAIController.MaxHealthPercent(20))
-                            {
-                                InternAIController.SyncMakeCriticallyInjured(false);
-                            }
-                        }
-                        else
-                        {
-                            Npc.healthRegenerateTimer -= Time.deltaTime;
-                        }
-                    }
                 }
             }
             if (!Npc.inSpecialInteractAnimation && Npc.localArmsMatchCamera)
@@ -1324,23 +1326,135 @@ namespace LethalInternship.AI
 
         public void ReParentNotSpawnedTransform(Transform newParent)
         {
-            foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = false;
-            }
-
             if (Npc.transform.parent != newParent)
             {
+                foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
+                {
+                    networkObject.AutoObjectParentSync = false;
+                }
+
                 Plugin.LogDebug($"npcController.Npc.transform.parent before {Npc.transform.parent}");
                 Npc.transform.parent = newParent;
                 Plugin.LogDebug($"npcController.Npc.transform.parent after {Npc.transform.parent}");
-            }
 
-            foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
-            {
-                networkObject.AutoObjectParentSync = true;
+                foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
+                {
+                    networkObject.AutoObjectParentSync = true;
+                }
             }
         }
+
+        #region Emotes
+
+        public void MimicEmotes(PlayerControllerB playerToMimic)
+        {
+            if (playerToMimic.performingEmote)
+            {
+                if (Plugin.IsModTooManyEmotesLoaded)
+                {
+                    CheckAndPerformTooManyEmote(playerToMimic);
+                }
+                else
+                {
+                    PerformDefaultEmote(playerToMimic.playerBodyAnimator.GetInteger("emoteNumber"));
+                }
+            }
+            else
+            {
+                if (Npc.performingEmote)
+                {
+                    Npc.performingEmote = false;
+                    Npc.playerBodyAnimator.SetInteger("emoteNumber", 0);
+                    this.InternAIController.SyncStopPerformingEmote();
+                    if (Plugin.IsModTooManyEmotesLoaded)
+                    {
+                        StopPerformingTooManyEmote();
+                    }
+                }
+            }
+        }
+
+        private void CheckAndPerformTooManyEmote(PlayerControllerB playerToMimic)
+        {
+            TooManyEmotes.EmoteControllerPlayer emoteControllerPlayerOfplayerToMimic = playerToMimic.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerPlayerOfplayerToMimic == null)
+            {
+                return;
+            }
+            TooManyEmotes.EmoteControllerPlayer emoteControllerIntern = Npc.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerIntern == null)
+            {
+                return;
+            }
+
+            // Player performing emote but not tooManyEmote so default
+            if (!emoteControllerPlayerOfplayerToMimic.isPerformingEmote)
+            {
+                if (emoteControllerIntern.isPerformingEmote)
+                {
+                    emoteControllerIntern.StopPerformingEmote();
+                    InternAIController.StopPerformTooManyEmoteInternServerRpc();
+                }
+
+                // Default emote
+                PerformDefaultEmote(playerToMimic.playerBodyAnimator.GetInteger("emoteNumber"));
+                return;
+            }
+
+            // TooMany emotes
+            if (emoteControllerPlayerOfplayerToMimic.performingEmote == null)
+            {
+                return;
+            }
+
+            if (emoteControllerIntern.isPerformingEmote
+                && emoteControllerPlayerOfplayerToMimic.performingEmote.emoteId == emoteControllerIntern.performingEmote?.emoteId)
+            {
+                return;
+            }
+
+            // PerformEmote TooMany emote
+            InternAIController.PerformTooManyEmoteInternServerRpc(emoteControllerPlayerOfplayerToMimic.performingEmote.emoteId);
+        }
+
+        private void PerformDefaultEmote(int emoteNumberToMimic)
+        {
+            int emoteNumberIntern = Npc.playerBodyAnimator.GetInteger("emoteNumber");
+            if (!Npc.performingEmote
+                || emoteNumberIntern != emoteNumberToMimic)
+            {
+                Npc.performingEmote = true;
+                Npc.PerformEmote(new UnityEngine.InputSystem.InputAction.CallbackContext(), emoteNumberToMimic);
+            }
+        }
+
+        public void PerformTooManyEmote(int tooManyEmoteID)
+        {
+            TooManyEmotes.EmoteControllerPlayer emoteControllerIntern = Npc.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerIntern == null)
+            {
+                return;
+            }
+
+            if (emoteControllerIntern.isPerformingEmote)
+            {
+                emoteControllerIntern.StopPerformingEmote();
+            }
+
+            TooManyEmotes.UnlockableEmote unlockableEmote = TooManyEmotes.EmotesManager.allUnlockableEmotes[tooManyEmoteID];
+            emoteControllerIntern.PerformEmote(unlockableEmote);
+        }
+
+        public void StopPerformingTooManyEmote()
+        {
+            TooManyEmotes.EmoteControllerPlayer emoteControllerInternController = Npc.gameObject.GetComponent<TooManyEmotes.EmoteControllerPlayer>();
+            if (emoteControllerInternController != null)
+            {
+                emoteControllerInternController.StopPerformingEmote();
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Sync the rotation and the look at target to all clients
@@ -1534,15 +1648,8 @@ namespace LethalInternship.AI
         /// <param name="positionToLookAt"></param>
         public void OrderToLookAtPosition(Vector3 positionToLookAt)
         {
-            if (!Physics.Linecast(Npc.gameplayCamera.transform.position, positionToLookAt, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
-            {
-                this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
-                this.positionToLookAt = positionToLookAt;
-            }
-            else
-            {
-                OrderToLookForward();
-            }
+            this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
+            this.positionToLookAt = positionToLookAt;
         }
         /// <summary>
         /// Update the head of the intern to look at what he is set to
@@ -1722,6 +1829,60 @@ namespace LethalInternship.AI
                 Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
                 this.drowningTimer = Mathf.Clamp(this.drowningTimer + Time.deltaTime, 0.1f, 1f);
             }
+        }
+
+        /// <summary>
+        /// Unused for now, can't find the true size of models...
+        /// </summary>
+        public void RefreshBillBoardPosition()
+        {
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                Npc.usernameCanvas.transform.position = GetBillBoardPositionModelReplacementAPI(Npc.usernameCanvas.transform.position);
+            }
+            else
+            {
+                Npc.usernameCanvas.transform.position = GetBillBoardPosition(Npc.gameObject, Npc.usernameCanvas.transform.position);
+            }
+        }
+
+        private Vector3 GetBillBoardPosition(GameObject bodyModel, Vector3 lastPosition)
+        {
+            // Code from mod ModelReplacementAPI.BodyReplacementBase.GetBounds
+            IEnumerable<Bounds> source = from r in bodyModel.GetComponentsInChildren<SkinnedMeshRenderer>()
+                                         select r.bounds;
+            float yMax = (from x in source
+                          orderby x.size.y descending
+                          select x).First<Bounds>().size.y;
+
+            Plugin.LogDebug($"skinned y {yMax}");
+
+            foreach (var s in source)
+            {
+                Plugin.LogDebug($"skinned size {s.size}");
+
+            }
+
+            return new Vector3(lastPosition.x,
+                               bodyModel.transform.position.y + yMax,
+                               lastPosition.z);
+        }
+
+        private Vector3 GetBillBoardPositionModelReplacementAPI(Vector3 lastPosition)
+        {
+            BodyReplacementBase? bodyReplacement = Npc.gameObject.GetComponent<BodyReplacementBase>();
+            if (bodyReplacement == null)
+            {
+                return GetBillBoardPosition(Npc.gameObject, lastPosition);
+            }
+
+            GameObject? model = bodyReplacement.replacementModel;
+            if (model == null)
+            {
+                return GetBillBoardPosition(Npc.gameObject, lastPosition);
+            }
+
+            return GetBillBoardPosition(model, Npc.usernameCanvas.transform.position);
         }
     }
 }

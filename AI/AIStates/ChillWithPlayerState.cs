@@ -13,12 +13,6 @@ namespace LethalInternship.AI.AIStates
     /// </remarks>
     internal class ChillWithPlayerState : AIState
     {
-        private static readonly EnumAIStates STATE = EnumAIStates.ChillWithPlayer;
-        /// <summary>
-        /// <inheritdoc cref="AIState.GetAIState"/>
-        /// </summary>
-        public override EnumAIStates GetAIState() { return STATE; }
-
         /// <summary>
         /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the target player (owner of intern), 
         /// only on axis x and z, y at 0, and squared
@@ -48,12 +42,12 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public ChillWithPlayerState(AIState state) : base(state)
         {
+            CurrentState = EnumAIStates.ChillWithPlayer;
+
             if (searchForPlayers.inProgress)
             {
                 ai.StopSearch(searchForPlayers, true);
             }
-
-            ai.agent.enabled = false;
         }
 
         /// <summary>
@@ -87,7 +81,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            VehicleController? vehicleController = ai.IsTargetPlayerInCruiserVehicle();
+            VehicleController? vehicleController = ai.GetVehicleCruiserTargetPlayerIsIn();
             if (vehicleController != null)
             {
                 ai.State = new PlayerInCruiserState(this, vehicleController);
@@ -95,8 +89,8 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Update target last known position
-            PlayerControllerB? player = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (player != null)
+            PlayerControllerB? playerTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (playerTarget != null)
             {
                 targetLastKnownPosition = ai.targetPlayer.transform.position;
             }
@@ -112,24 +106,79 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            // Looking at player or forward
-            PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (playerToLook != null)
-            {
-                npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
-            }
-            else
-            {
-                npcController.OrderToLookForward();
-            }
+            // Set where the intern should look
+            SetInternLookTarget();
 
             // Chill
             ai.StopMoving();
+
+            // Emotes
+            npcController.MimicEmotes(ai.targetPlayer);
         }
 
-        public override string GetBillboardStateIndicator()
+        private void SetInternLookTarget()
         {
-            return string.Empty;
+            if (Plugin.InputActionsInstance.MakeInternLookAtPosition.IsPressed())
+            {
+                // Look where the target player is looking
+                Ray interactRay = new Ray(ai.targetPlayer.gameplayCamera.transform.position, ai.targetPlayer.gameplayCamera.transform.forward);
+                RaycastHit[] raycastHits = Physics.RaycastAll(interactRay);
+                if (raycastHits.Length == 0)
+                {
+                    npcController.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
+                    npcController.OrderToLookForward();
+                }
+                else
+                {
+                    // Check if looking at a player/intern
+                    foreach (var hit in raycastHits)
+                    {
+                        PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                        if (player != null
+                            && player.playerClientId != StartOfRound.Instance.localPlayerController.playerClientId)
+                        {
+                            npcController.OrderToLookAtPosition(hit.point);
+                            npcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
+                            return;
+                        }
+                    }
+
+                    // Check if looking too far in the distance or at a valid position
+                    foreach (var hit in raycastHits)
+                    {
+                        if (hit.distance < 0.1f)
+                        {
+                            npcController.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
+                            npcController.OrderToLookForward();
+                            return;
+                        }
+
+                        PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                        if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
+                        {
+                            continue;
+                        }
+
+                        // Look at position
+                        npcController.OrderToLookAtPosition(hit.point);
+                        npcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Looking at player or forward
+                PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                if (playerToLook != null)
+                {
+                    npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
+                }
+                else
+                {
+                    npcController.OrderToLookForward();
+                }
+            }
         }
     }
 }

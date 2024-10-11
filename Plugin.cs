@@ -9,12 +9,18 @@ using LethalInternship.Patches.GameEnginePatches;
 using LethalInternship.Patches.MapHazardsPatches;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
+using LethalInternship.Patches.ModPatches.BetterEmotes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
 using LethalInternship.Patches.ModPatches.LethalPhones;
+using LethalInternship.Patches.ModPatches.LethalProgression;
+using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
+using LethalInternship.Patches.ModPatches.QuickBuy;
+using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
+using LethalInternship.Patches.ModPatches.TooManyEmotes;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
@@ -42,11 +48,16 @@ namespace LethalInternship
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.BETTEREMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.TOOMANYEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MORECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MODELREPLACEMENT_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALPHONES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.FASTERITEMDROPSHIP_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.SHOWCAPACITY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.RESERVEDITEMSLOTCORE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.LETHALPROGRESSION_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.QUICKBUYMENU_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -60,7 +71,11 @@ namespace LethalInternship
         internal static LethalInternshipInputs InputActionsInstance = null!;
 
         internal static bool IsModReviveCompanyLoaded = false;
-
+        internal static bool IsModTooManyEmotesLoaded = false;
+        internal static bool IsModModelReplacementAPILoaded = false;
+        internal static bool IsModCustomItemBehaviourLibraryLoaded = false;
+        internal static bool IsModMoreCompanyLoaded = false;
+        
         private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -191,12 +206,18 @@ namespace LethalInternship
             // -----------------------
             // Are these mods loaded ?
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
-            bool isModMoreEmoteLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
-            bool isModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
-            bool isModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+            IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
+            IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
+            IsModCustomItemBehaviourLibraryLoaded = IsModLoaded(Const.CUSTOMITEMBEHAVIOURLIBRARY_GUID);
+            IsModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
+            bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
+            bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
             bool isModFasterItemDropshipLoaded = IsModLoaded(Const.FASTERITEMDROPSHIP_GUID);
             bool isModShowCapacityLoaded = IsModLoaded(Const.SHOWCAPACITY_GUID);
+            bool isModReservedItemSlotCoreLoaded = IsModLoaded(Const.RESERVEDITEMSLOTCORE_GUID);
+            bool isModLethalProgressionLoaded = IsModLoaded(Const.LETHALPROGRESSION_GUID);
+            bool isModQuickBuyLoaded = IsModLoaded(Const.QUICKBUYMENU_GUID);
 
             // -------------------
             // Read the preloaders
@@ -210,17 +231,39 @@ namespace LethalInternship
 
             // -----------------------------
             // Compatibility with other mods
-            if (isModMoreEmoteLoaded)
+            if (isModMoreEmotesLoaded)
             {
                 _harmony.PatchAll(typeof(MoreEmotesPatch));
             }
-            if (isModMoreCompanyLoaded)
+            if (isModBetterEmotesLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "StartPostfix"),
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.StartPostfix_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "UpdatePrefix"),
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.UpdatePrefix_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "UpdatePostfix"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.UpdatePostfix_Transpiler)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("BetterEmote.Patches.EmotePatch"), "PerformEmotePrefix"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(BetterEmotesPatch), nameof(BetterEmotesPatch.PerformEmotePrefix_Transpiler)));
+            }
+            if (IsModTooManyEmotesLoaded)
+            {
+                _harmony.PatchAll(typeof(EmoteControllerPlayerPatch));
+                _harmony.PatchAll(typeof(ThirdPersonEmoteControllerPatch));
+            }
+            if (IsModMoreCompanyLoaded)
             {
                 _harmony.PatchAll(typeof(LookForPlayersForestGiantPatchPatch));
             }
-            if (isModModelReplacementAPILoaded && isModMoreCompanyLoaded)
+            if (IsModModelReplacementAPILoaded)
             {
-                _harmony.PatchAll(typeof(MoreCompanyCosmeticManagerPatch));
+                _harmony.PatchAll(typeof(BodyReplacementBasePatch));
+                _harmony.PatchAll(typeof(ModelReplacementPlayerControllerBPatchPatch));
+                _harmony.PatchAll(typeof(ModelReplacementAPIPatch));
             }
             if (isModLethalPhonesLoaded)
             {
@@ -251,6 +294,32 @@ namespace LethalInternship
                                null,
                                null,
                                new HarmonyMethod(typeof(ReviveCompanyPlayerControllerBPatchPatch), nameof(ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler)));
+            }
+            if (isModReservedItemSlotCoreLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ReservedItemSlotCore.Patches.PlayerPatcher"), "InitializePlayerControllerLate"),
+                               new HarmonyMethod(typeof(PlayerPatcherPatch), nameof(PlayerPatcherPatch.InitializePlayerControllerLate_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ReservedItemSlotCore.Patches.PlayerPatcher"), "CheckForChangedInventorySize"),
+                               new HarmonyMethod(typeof(PlayerPatcherPatch), nameof(PlayerPatcherPatch.CheckForChangedInventorySize_Prefix)));
+            }
+            if (isModLethalProgressionLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LethalProgression.Skills.HPRegen"), "HPRegenUpdate"),
+                               new HarmonyMethod(typeof(HPRegenPatch), nameof(HPRegenPatch.HPRegenUpdate_Prefix)));
+
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LethalProgression.Skills.Oxygen"), "EnteredWater"),
+                               new HarmonyMethod(typeof(OxygenPatch), nameof(OxygenPatch.EnteredWater_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LethalProgression.Skills.Oxygen"), "LeftWater"),
+                               new HarmonyMethod(typeof(OxygenPatch), nameof(OxygenPatch.LeftWater_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LethalProgression.Skills.Oxygen"), "ShouldDrown"),
+                               new HarmonyMethod(typeof(OxygenPatch), nameof(OxygenPatch.ShouldDrown_Prefix)));
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LethalProgression.Skills.Oxygen"), "OxygenUpdate"),
+                               new HarmonyMethod(typeof(OxygenPatch), nameof(OxygenPatch.OxygenUpdate_Prefix)));
+            }
+            if (isModQuickBuyLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("QuickBuyMenu.Plugin"), "RunQuickBuy"),
+                               new HarmonyMethod(typeof(QuickBuyMenuPatch), nameof(QuickBuyMenuPatch.RunQuickBuy_Prefix)));
             }
         }
 
@@ -285,11 +354,15 @@ namespace LethalInternship
                 var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
                 foreach (var method in methods)
                 {
-                    var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
-                    if (attributes.Length > 0)
+                    try
                     {
-                        method.Invoke(null, null);
+                        var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                        if (attributes.Length > 0)
+                        {
+                            method.Invoke(null, null);
+                        }
                     }
+                    catch { }
                 }
             }
         }

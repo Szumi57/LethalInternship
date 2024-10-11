@@ -34,11 +34,14 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> UseCustomNamesRandomly;
                            
         // Behaviour       
+        [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
         [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
         [SyncedEntryField] public SyncedEntry<bool> GrabManeaterBaby;
+        [SyncedEntryField] public SyncedEntry<bool> GrabWheelbarrow;
+        [SyncedEntryField] public SyncedEntry<bool> GrabShoppingCart;
 
         // Teleporters
         [SyncedEntryField] public SyncedEntry<bool> InverseTeleportInternsAtRandomPos;
@@ -110,6 +113,13 @@ namespace LethalInternship.Configs
                                               "Use the list of custom names randomly ?");
 
             // Behaviour
+            ChangeSuitBehaviour = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                               "Options for changing interns suits",
+                                               defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
+                                               new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
+                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Min(),
+                                                                                             Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Max())));
+            
             TeleportWhenUsingLadders = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
                                                "Teleport when using ladders",
                                                defaultVal: false,
@@ -134,6 +144,16 @@ namespace LethalInternship.Configs
                                       "Grab the baby maneater",
                                       defaultVal: false,
                                       "Should the intern try to grab the baby maneater ?");
+
+            GrabWheelbarrow = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                      "Grab the wheelbarrow",
+                                      defaultVal: false,
+                                      "Should the intern try to grab the wheelbarrow (mod) ?");
+
+            GrabShoppingCart = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                      "Grab the shppping cart",
+                                      defaultVal: false,
+                                      "Should the intern try to grab the shopping cart (mod) ?");
 
             // Teleporters
             InverseTeleportInternsAtRandomPos = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,

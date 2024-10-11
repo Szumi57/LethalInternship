@@ -222,5 +222,26 @@ namespace LethalInternship.Patches.GameEnginePatches
                 statsUIElements.playerStates[i] = gameObjectSymbol.GetComponent<Image>();
             }
         }
+
+        [HarmonyPatch("ChangeControlTipMultiple")]
+        [HarmonyPostfix]
+        public static void ChangeControlTipMultiple_Postfix(HUDManager __instance)
+        {
+            InputManager.Instance.AddInternsControlTip(__instance);
+        }
+
+        [HarmonyPatch("ClearControlTips")]
+        [HarmonyPostfix]
+        public static void ClearControlTips_Postfix(HUDManager __instance)
+        {
+            InputManager.Instance.AddInternsControlTip(__instance);
+        }
+
+        [HarmonyPatch("ChangeControlTip")]
+        [HarmonyPostfix]
+        public static void ChangeControlTip_Postfix(HUDManager __instance)
+        {
+            InputManager.Instance.AddInternsControlTip(__instance);
+        }
     }
 }
