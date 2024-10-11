@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.1 [Alpha] - 2024-10-11
+### Added
+- Added config to make interns use random suits when spawning. Changed the config to be 3 choices : 0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn.
+### Changed
+- Interns can emote while moving (if player moves while emoting with TooManyEmotes option)
+### Fixed
+- Fix item to be not grabbable when in shopping cart/wheelbarrow, thanks @AdamHarney on Github, (issue [#46](https://github.com/Szumi57/LethalInternship/issues/46)).
+- Fix interns not being able to enter cruiser, thanks @jakeisloud on Discord.
+- Small fixes for health and critical state calculation on interns.
+- Fix Model replacement on interns not working with late joining mods (Late company, lobby control), thanks @AdamHarney on Github and @Wizardpie on Discord.
+- Lot of small speculative fixes for 5th player bug losing control of camera when an intern spawn. Sorry I can not reproduce it, I will keep trying, so do not hesitate do send me logOuput AND modpack code, it helps a lot.
+
 ## 0.18.0 [Alpha] - 2024-10-04
 ### Added
 - Compatibility with Model replacement API , More suits, change the suits of interns with X (default, configurable).
@@ -16,6 +28,7 @@
 - Fix input duplication when leaving the game to main menu and returning.
 - Fix compatibility with QuickBuyMenu mod, thanks @Tye-wynd on Discord.
 - Fix other player not owning interns unable to damage intern.
+- Fix better compatibility with reserved item slot when giving/taking items from interns.
 
 ## 0.17.0 [Alpha] - 2024-09-05
 ### Added
