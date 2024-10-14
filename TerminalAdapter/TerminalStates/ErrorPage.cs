@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.TerminalAdapter.TerminalStates
@@ -62,6 +63,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                     terminalNode.displayText = Const.TEXT_ERROR_DEFAULT;
                     break;
             }
+
+            // Play sound
+            TerminalManager.Instance.GetTerminal()
+                .terminalAudio.PlayOneShot(TerminalManager.Instance.GetTerminal()
+                                            .syncedAudios[Const.INDEX_AUDIO_ERROR]);
 
             return terminalNode;
         }

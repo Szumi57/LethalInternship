@@ -205,6 +205,8 @@ namespace LethalInternship
         // Terminal
         public static readonly int INDEX_HELP_TERMINALNODE = 13;
         public static readonly string STRING_OTHER_HELP = ">OTHER";
+        public static readonly int INDEX_AUDIO_BOUGHT_ITEM = 0;
+        public static readonly int INDEX_AUDIO_ERROR = 1;
 
         public static readonly string STRING_BUY_COMMAND = "buy";
         public static readonly string STRING_LAND_COMMAND = "land";
