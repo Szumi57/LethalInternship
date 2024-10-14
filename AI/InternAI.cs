@@ -1525,6 +1525,12 @@ namespace LethalInternship.AI
                 this.transform.position = navMeshPosition;
             }
 
+            // For CullFactory mod
+            if (HeldItem != null)
+            {
+                HeldItem.EnableItemMeshes(true);
+            }
+
         }
 
         public void SyncTeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
@@ -2907,7 +2913,7 @@ namespace LethalInternship.AI
 
             if (HeldItem != null)
             {
-                HeldItem.gameObject.SetActive(false);
+                HeldItem.EnableItemMeshes(enable: false);
             }
 
             // Hide intern
@@ -3052,7 +3058,7 @@ namespace LethalInternship.AI
 
             if (HeldItem != null)
             {
-                HeldItem.gameObject.SetActive(true);
+                HeldItem.EnableItemMeshes(enable: true);
             }
 
             RagdollInternBody.SetReleased();
