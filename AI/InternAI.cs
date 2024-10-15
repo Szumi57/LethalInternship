@@ -441,40 +441,10 @@ namespace LethalInternship.AI
             }
 
             // If stuck only teleport if no player can see the intern
+            // And the destination of the intern
             if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
             {
-                bool isAPlayerSeeingIntern = false;
-                StartOfRound instanceSOR = StartOfRound.Instance;
-                Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
-                PlayerControllerB player;
-                Vector3 vectorPlayerToIntern;
-                for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
-                {
-                    player = instanceSOR.allPlayerScripts[i];
-                    if (player.isPlayerDead
-                        || !player.isPlayerControlled)
-                    {
-                        continue;
-                    }
-
-                    if (Physics.Linecast(player.gameplayCamera.transform.position, thisInternCamera.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
-                    {
-                        continue;
-                    }
-
-                    vectorPlayerToIntern = thisInternCamera.position - player.gameplayCamera.transform.position;
-                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
-                    {
-                        isAPlayerSeeingIntern = true;
-                        break;
-                    }
-                }
-
-                if (!isAPlayerSeeingIntern)
-                {
-                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * 0.5f));
-                    timeSinceStuck = 0f;
-                }
+                CheckAndBringCloserTeleportIntern();
             }
         }
 
@@ -545,6 +515,53 @@ namespace LethalInternship.AI
         {
             int healthPercent = (int)(((double)percentage / (double)100) * (double)MaxHealth);
             return healthPercent < 1 ? 1 : healthPercent;
+        }
+
+        public void CheckAndBringCloserTeleportIntern()
+        {
+            bool isAPlayerSeeingIntern = false;
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
+            PlayerControllerB player;
+            Vector3 vectorPlayerToIntern;
+            Vector3 internDestination = NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * 0.8f);
+            Vector3 internBodyDestination = internDestination + new Vector3(0, 1f, 0);
+            for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+            {
+                player = instanceSOR.allPlayerScripts[i];
+                if (player.isPlayerDead
+                    || !player.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                // No obsruction
+                if (!Physics.Linecast(player.gameplayCamera.transform.position, thisInternCamera.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                {
+                    vectorPlayerToIntern = thisInternCamera.position - player.gameplayCamera.transform.position;
+                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
+                    {
+                        isAPlayerSeeingIntern = true;
+                        break;
+                    }
+                }
+
+                if (!Physics.Linecast(player.gameplayCamera.transform.position, internBodyDestination, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                {
+                    vectorPlayerToIntern = internBodyDestination - player.gameplayCamera.transform.position;
+                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
+                    {
+                        isAPlayerSeeingIntern = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isAPlayerSeeingIntern)
+            {
+                TeleportAgentAndBody(internDestination);
+                timeSinceStuck = 0f;
+            }
         }
 
         /// <summary>

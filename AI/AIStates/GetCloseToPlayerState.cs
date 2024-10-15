@@ -106,7 +106,7 @@ namespace LethalInternship.AI.AIStates
             else
             {
                 // Target outside of awareness range, if ai does not see target, then the target is lost
-                Plugin.LogDebug($"{ai.NpcController.Npc.playerUsername} no see target, still in range ? too far {sqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {sqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
+                //Plugin.LogDebug($"{ai.NpcController.Npc.playerUsername} no see target, still in range ? too far {sqrHorizontalDistanceWithTarget > Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR}, too high/low {sqrVerticalDistanceWithTarget > Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER}");
                 PlayerControllerB? checkTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
                 if (checkTarget == null)
                 {
@@ -115,8 +115,12 @@ namespace LethalInternship.AI.AIStates
                 }
                 else
                 {
+                    // Target still visible
                     targetLastKnownPosition = ai.targetPlayer.transform.position;
                     ai.SyncAssignTargetAndSetMovingTo(ai.targetPlayer);
+
+                    // Bring closer with teleport if possible
+                    ai.CheckAndBringCloserTeleportIntern();
                 }
             }
 
