@@ -772,7 +772,7 @@ namespace LethalInternship.Managers
 
                 // Teleport intern
                 ShipTeleporterPatch.SetPlayerTeleporterId_ReversePatch(teleporter, internAI.NpcController.Npc, 2);
-                internAI.InitStateToSearching();
+                internAI.InitStateToSearchingNoTarget();
                 internAI.TeleportIntern(teleportPos, setOutside: false, isUsingEntrance: false);
                 internAI.NpcController.Npc.beamOutParticle.Play();
                 teleporter.shipTeleporterAudio.PlayOneShot(teleporter.teleporterBeamUpSFX);

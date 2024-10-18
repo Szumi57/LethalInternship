@@ -178,7 +178,7 @@ namespace LethalInternship.AI
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
             // Init state
-            InitStateToSearching();
+            InitStateToSearchingNoTarget();
         }
 
         /// <summary>
@@ -433,18 +433,19 @@ namespace LethalInternship.AI
             {
                 Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
                 timeSinceStuck += AIIntervalTime;
+
+                // If stuck only teleport if no player can see the intern
+                // And the destination of the intern
+                if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
+                {
+                    timeSinceStuck = 0f;
+                    CheckAndBringCloserTeleportIntern();
+                }
             }
             else if (!NpcController.IsJumping)
             {
                 // Not stuck
                 timeSinceStuck = 0f;
-            }
-
-            // If stuck only teleport if no player can see the intern
-            // And the destination of the intern
-            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
-            {
-                CheckAndBringCloserTeleportIntern();
             }
         }
 
@@ -506,9 +507,10 @@ namespace LethalInternship.AI
             return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
-        public void InitStateToSearching()
+        public void InitStateToSearchingNoTarget()
         {
             State = new SearchingForPlayerState(this);
+            this.targetPlayer = null;
         }
 
         public int MaxHealthPercent(int percentage)
@@ -1547,7 +1549,6 @@ namespace LethalInternship.AI
             {
                 HeldItem.EnableItemMeshes(true);
             }
-
         }
 
         public void SyncTeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)

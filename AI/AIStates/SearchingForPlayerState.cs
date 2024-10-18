@@ -81,7 +81,7 @@ namespace LethalInternship.AI.AIStates
             if (!searchForPlayers.inProgress)
             {
                 // Start the coroutine from base game to search for players
-                ai.StartSearch(ai.transform.position, searchForPlayers);
+                ai.StartSearch(ai.NpcController.Npc.transform.position, searchForPlayers);
             }
         }
 
