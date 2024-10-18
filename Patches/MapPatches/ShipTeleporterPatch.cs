@@ -1,7 +1,7 @@
-﻿using HarmonyLib;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
 using LethalInternship.Managers;
 using System;
-using UnityEngine;
 using Random = System.Random;
 
 namespace LethalInternship.Patches.MapPatches
@@ -19,14 +19,16 @@ namespace LethalInternship.Patches.MapPatches
             ___playersBeingTeleported = array;
         }
 
-        [HarmonyPatch("TeleportPlayerOutWithInverseTeleporter")]
+        [HarmonyPatch("beamOutPlayer")]
         [HarmonyPostfix]
-        static void TeleportPlayerOutWithInverseTeleporter_PostFix(ShipTeleporter __instance, 
-                                                                   int playerObj,
-                                                                   Vector3 teleportPos,
-                                                                   Random ___shipTeleporterSeed)
+        static void beamOutPlayer_PostFix(ShipTeleporter __instance,
+                                          Random ___shipTeleporterSeed)
         {
-            InternManager.Instance.TeleportOutInterns(__instance, playerObj, teleportPos, ___shipTeleporterSeed);
+            InternManager.Instance.TeleportOutInterns(__instance, ___shipTeleporterSeed);
         }
+
+        [HarmonyPatch("SetPlayerTeleporterId")]
+        [HarmonyReversePatch]
+        public static void SetPlayerTeleporterId_ReversePatch(object instance, PlayerControllerB playerScript, int teleporterId) => throw new NotImplementedException("Stub LethalInternship.Patches.MapPatches.ShipTeleporterPatch.SetPlayerTeleporterId_ReversePatch");
     }
 }
