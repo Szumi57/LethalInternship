@@ -489,7 +489,7 @@ namespace LethalInternship.AI
             if (NpcController.HasToMove)
             {
                 NpcController.OrderToStopMoving();
-                TeleportAgentAndBody(NpcController.Npc.thisController.transform.position);
+                TeleportIntern(NpcController.Npc.thisController.transform.position);
             }
         }
 
@@ -556,7 +556,7 @@ namespace LethalInternship.AI
 
             if (!isAPlayerSeeingIntern)
             {
-                TeleportAgentAndBody(internDestination);
+                TeleportIntern(internDestination);
             }
         }
 
@@ -1471,15 +1471,25 @@ namespace LethalInternship.AI
         /// <param name="pos">Position destination</param>
         /// <param name="setOutside">Is the teleport destination outside of the facility</param>
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
-        public void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
+        public void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false)
         {
-            TeleportAgentAndBody(pos, setOutside);
+            if (!setOutside.HasValue)
+            {
+                setOutside = pos.y >= -80f;
+                NpcController.Npc.isInsideFactory = !setOutside.Value;
+                if (this.isOutside != setOutside.Value)
+                {
+                    this.SetEnemyOutside(setOutside.Value);
+                }
+            }
+
+            TeleportAgentAndBody(pos);
 
             if (isUsingEntrance)
             {
                 NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
                 TimeSinceTeleporting = Time.timeSinceLevelLoad;
-                EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside);
+                EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside.Value);
                 if (entranceTeleport.doorAudios != null && entranceTeleport.doorAudios.Length != 0)
                 {
                     entranceTeleport.entrancePointAudio.PlayOneShot(entranceTeleport.doorAudios[0]);
@@ -1491,33 +1501,8 @@ namespace LethalInternship.AI
         /// Teleport the brain and body of intern
         /// </summary>
         /// <param name="pos"></param>
-        private void TeleportAgentAndBody(Vector3 pos, bool? setOutside = null)
+        private void TeleportAgentAndBody(Vector3 pos)
         {
-            // Only teleport when necessary
-            if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
-            {
-                return;
-            }
-
-            if (setOutside.HasValue)
-            {
-                NpcController.Npc.isInsideFactory = !setOutside.Value;
-                SetEnemyOutside(setOutside.Value);
-            }
-            else
-            {
-                if (this.isOutside && pos.y < -80f)
-                {
-                    NpcController.Npc.isInsideFactory = true;
-                    this.SetEnemyOutside(false);
-                }
-                else if (!this.isOutside && pos.y > -80f)
-                {
-                    NpcController.Npc.isInsideFactory = false;
-                    this.SetEnemyOutside(true);
-                }
-            }
-
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);
             serverPosition = navMeshPosition;
             // Teleport body
@@ -1572,7 +1557,7 @@ namespace LethalInternship.AI
 
         private void TeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
         {
-            TeleportAgentAndBody(pos);
+            TeleportIntern(pos);
 
             NpcController.InternAIInCruiser = enteringVehicle;
 

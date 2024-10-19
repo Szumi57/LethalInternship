@@ -431,6 +431,21 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
+        [HarmonyPatch("TeleportPlayer")]
+        [HarmonyPrefix]
+        static bool TeleportPlayer_PreFix(PlayerControllerB __instance,
+                                          Vector3 pos)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
+            {
+                internAI.TeleportIntern(pos);
+                return false;
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region Reverse patches
