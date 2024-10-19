@@ -427,25 +427,20 @@ namespace LethalInternship.AI
                 }
             }
 
+            // If stuck only teleport if no player can see the intern
+            // And the destination of the intern
+            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
+            {
+                timeSinceStuck = 0f;
+                CheckAndBringCloserTeleportIntern(1f);
+            }
+
             // Controller stuck in world ?
             if (NpcController.Npc.isMovementHindered == 0
                 && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
                 timeSinceStuck += AIIntervalTime;
-
-                // If stuck only teleport if no player can see the intern
-                // And the destination of the intern
-                if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
-                {
-                    timeSinceStuck = 0f;
-                    CheckAndBringCloserTeleportIntern();
-                }
-            }
-            else if (!NpcController.IsJumping)
-            {
-                // Not stuck
-                timeSinceStuck = 0f;
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
             }
         }
 
@@ -519,14 +514,14 @@ namespace LethalInternship.AI
             return healthPercent < 1 ? 1 : healthPercent;
         }
 
-        public void CheckAndBringCloserTeleportIntern()
+        public void CheckAndBringCloserTeleportIntern(float percentageOfDestination)
         {
             bool isAPlayerSeeingIntern = false;
             StartOfRound instanceSOR = StartOfRound.Instance;
             Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
             PlayerControllerB player;
             Vector3 vectorPlayerToIntern;
-            Vector3 internDestination = NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * 0.8f);
+            Vector3 internDestination = NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * percentageOfDestination);
             Vector3 internBodyDestination = internDestination + new Vector3(0, 1f, 0);
             for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
             {
@@ -562,7 +557,6 @@ namespace LethalInternship.AI
             if (!isAPlayerSeeingIntern)
             {
                 TeleportAgentAndBody(internDestination);
-                timeSinceStuck = 0f;
             }
         }
 

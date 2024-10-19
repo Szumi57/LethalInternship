@@ -120,7 +120,7 @@ namespace LethalInternship.AI.AIStates
                     ai.SyncAssignTargetAndSetMovingTo(ai.targetPlayer);
 
                     // Bring closer with teleport if possible
-                    ai.CheckAndBringCloserTeleportIntern();
+                    ai.CheckAndBringCloserTeleportIntern(0.8f);
                 }
             }
 
