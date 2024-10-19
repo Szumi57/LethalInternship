@@ -1476,11 +1476,12 @@ namespace LethalInternship.AI
             if (!setOutside.HasValue)
             {
                 setOutside = pos.y >= -80f;
-                NpcController.Npc.isInsideFactory = !setOutside.Value;
-                if (this.isOutside != setOutside.Value)
-                {
-                    this.SetEnemyOutside(setOutside.Value);
-                }
+            }
+
+            NpcController.Npc.isInsideFactory = !setOutside.Value;
+            if (this.isOutside != setOutside.Value)
+            {
+                this.SetEnemyOutside(setOutside.Value);
             }
 
             TeleportAgentAndBody(pos);
