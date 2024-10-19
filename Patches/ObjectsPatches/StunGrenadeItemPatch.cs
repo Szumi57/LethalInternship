@@ -1,8 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.Patches.ObjectsPatches
@@ -10,6 +8,18 @@ namespace LethalInternship.Patches.ObjectsPatches
     [HarmonyPatch(typeof(StunGrenadeItem))]
     internal class StunGrenadeItemPatch
     {
+        [HarmonyPatch("SetControlTipForGrenade")]
+        [HarmonyPrefix]
+        static bool SetControlTipForGrenade_PreFix(StunGrenadeItem __instance)
+        {
+            if (InternManager.Instance.IsAnInternAiOwnerOfObject((GrabbableObject)__instance))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         [HarmonyPatch("StunExplosion")]
         [HarmonyPostfix]
         static void StunExplosion_PostFix(Vector3 explosionPosition, 
