@@ -634,6 +634,17 @@ namespace LethalInternship.Managers
                 HideShowModelReplacement(internController, show: true);
             }
 
+            // Radar name update
+            foreach (var radarTarget in instance.mapScreen.radarTargets)
+            {
+                if (radarTarget != null
+                    && radarTarget.transform == internController.transform)
+                {
+                    radarTarget.name = internController.playerUsername;
+                    break;
+                }
+            }
+
             internAI.Init();
         }
 
