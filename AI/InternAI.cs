@@ -442,6 +442,13 @@ namespace LethalInternship.AI
                 timeSinceStuck += AIIntervalTime;
                 Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
             }
+            else
+            {
+                if (timeSinceStuck - AIIntervalTime >= 0f)
+                {
+                    timeSinceStuck = timeSinceStuck - AIIntervalTime;
+                }
+            }
         }
 
         /// <summary>
