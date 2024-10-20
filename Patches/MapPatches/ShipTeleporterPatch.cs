@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Managers;
 using System;
 using Random = System.Random;
@@ -9,6 +10,25 @@ namespace LethalInternship.Patches.MapPatches
     [HarmonyPatch(typeof(ShipTeleporter))]
     internal class ShipTeleporterPatch
     {
+        [HarmonyPatch("SetPlayerTeleporterId")]
+        [HarmonyPrefix]
+        static void SetPlayerTeleporterId_PreFix(PlayerControllerB playerScript,
+                                                 int teleporterId)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)playerScript.playerClientId);
+            if (internAI == null)
+            {
+                return;
+            }
+
+            if (playerScript.shipTeleporterId == 1
+                && teleporterId == -1)
+            {
+                // The intern is being teleported to the ship
+                internAI.InitStateToSearchingNoTarget();
+            }
+        }
+
         [HarmonyPatch("Awake")]
         [HarmonyAfter(Const.MORECOMPANY_GUID)]
         [HarmonyPostfix]

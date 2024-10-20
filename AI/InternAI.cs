@@ -1480,6 +1480,10 @@ namespace LethalInternship.AI
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         public void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false)
         {
+            // teleport body
+            TeleportAgentAndBody(pos);
+
+            // Set AI outside or inside dungeon
             if (!setOutside.HasValue)
             {
                 setOutside = pos.y >= -80f;
@@ -1491,8 +1495,7 @@ namespace LethalInternship.AI
                 this.SetEnemyOutside(setOutside.Value);
             }
 
-            TeleportAgentAndBody(pos);
-
+            // Using main entrance or fire exits ?
             if (isUsingEntrance)
             {
                 NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
