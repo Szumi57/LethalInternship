@@ -446,7 +446,7 @@ namespace LethalInternship.AI
             {
                 if (timeSinceStuck - AIIntervalTime >= 0f)
                 {
-                    timeSinceStuck = timeSinceStuck - AIIntervalTime;
+                    timeSinceStuck -= AIIntervalTime;
                 }
             }
         }
