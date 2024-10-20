@@ -27,6 +27,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
 
         [SyncedEntryField] public SyncedEntry<bool> CanSpectateInterns;
+        [SyncedEntryField] public SyncedEntry<bool> RadarEnabled;
 
         // Interns names   
         [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
@@ -44,7 +45,6 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> GrabShoppingCart;
 
         // Teleporters
-        [SyncedEntryField] public SyncedEntry<bool> InverseTeleportInternsAtRandomPos;
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
         // Debug
@@ -84,6 +84,11 @@ namespace LethalInternship.Configs
                                                      defaultVal: false,
                                                      "Can a dead player spectate interns ?");
 
+            RadarEnabled = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+                                              "Radar view enabled for interns",
+                                              defaultVal: false,
+                                              "Can you view the intern on the ship radar computer screen ?");
+
             TitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                        "Title visible in help menu in the terminal",
                                        defaultVal: Const.DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE,
@@ -119,7 +124,7 @@ namespace LethalInternship.Configs
                                                new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
                                                                new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Min(),
                                                                                              Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Max())));
-            
+
             TeleportWhenUsingLadders = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
                                                "Teleport when using ladders",
                                                defaultVal: false,
@@ -156,11 +161,6 @@ namespace LethalInternship.Configs
                                       "Should the intern try to grab the shopping cart (mod) ?");
 
             // Teleporters
-            InverseTeleportInternsAtRandomPos = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
-                                                                  "Inverse teleported intern random position (not if the intern is grabbed by player)",
-                                                                  defaultVal: true,
-                                                                  "Should the intern be inverse teleported at a random position (not next to player) ?");
-
             TeleportedInternDropItems = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
                                                             "Teleported intern drop item (not if the intern is grabbed by player)",
                                                             defaultVal: true,

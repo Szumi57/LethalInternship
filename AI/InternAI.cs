@@ -178,7 +178,7 @@ namespace LethalInternship.AI
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
             // Init state
-            InitStateToSearching();
+            InitStateToSearchingNoTarget();
         }
 
         /// <summary>
@@ -427,53 +427,26 @@ namespace LethalInternship.AI
                 }
             }
 
+            // If stuck only teleport if no player can see the intern
+            // And the destination of the intern
+            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
+            {
+                timeSinceStuck = 0f;
+                CheckAndBringCloserTeleportIntern(1f);
+            }
+
             // Controller stuck in world ?
             if (NpcController.Npc.isMovementHindered == 0
                 && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
             {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
                 timeSinceStuck += AIIntervalTime;
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
             }
-            else if (!NpcController.IsJumping)
+            else
             {
-                // Not stuck
-                timeSinceStuck = 0f;
-            }
-
-            // If stuck only teleport if no player can see the intern
-            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
-            {
-                bool isAPlayerSeeingIntern = false;
-                StartOfRound instanceSOR = StartOfRound.Instance;
-                Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
-                PlayerControllerB player;
-                Vector3 vectorPlayerToIntern;
-                for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+                if (timeSinceStuck - AIIntervalTime >= 0f)
                 {
-                    player = instanceSOR.allPlayerScripts[i];
-                    if (player.isPlayerDead
-                        || !player.isPlayerControlled)
-                    {
-                        continue;
-                    }
-
-                    if (Physics.Linecast(player.gameplayCamera.transform.position, thisInternCamera.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
-                    {
-                        continue;
-                    }
-
-                    vectorPlayerToIntern = thisInternCamera.position - player.gameplayCamera.transform.position;
-                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
-                    {
-                        isAPlayerSeeingIntern = true;
-                        break;
-                    }
-                }
-
-                if (!isAPlayerSeeingIntern)
-                {
-                    TeleportAgentAndBody(NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * 0.5f));
-                    timeSinceStuck = 0f;
+                    timeSinceStuck -= AIIntervalTime;
                 }
             }
         }
@@ -523,7 +496,7 @@ namespace LethalInternship.AI
             if (NpcController.HasToMove)
             {
                 NpcController.OrderToStopMoving();
-                TeleportAgentAndBody(NpcController.Npc.thisController.transform.position);
+                TeleportIntern(NpcController.Npc.thisController.transform.position);
             }
         }
 
@@ -536,15 +509,62 @@ namespace LethalInternship.AI
             return this.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
-        public void InitStateToSearching()
+        public void InitStateToSearchingNoTarget()
         {
             State = new SearchingForPlayerState(this);
+            this.targetPlayer = null;
         }
 
         public int MaxHealthPercent(int percentage)
         {
             int healthPercent = (int)(((double)percentage / (double)100) * (double)MaxHealth);
             return healthPercent < 1 ? 1 : healthPercent;
+        }
+
+        public void CheckAndBringCloserTeleportIntern(float percentageOfDestination)
+        {
+            bool isAPlayerSeeingIntern = false;
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            Transform thisInternCamera = this.NpcController.Npc.gameplayCamera.transform;
+            PlayerControllerB player;
+            Vector3 vectorPlayerToIntern;
+            Vector3 internDestination = NpcController.Npc.thisPlayerBody.transform.position + ((this.destination - NpcController.Npc.transform.position) * percentageOfDestination);
+            Vector3 internBodyDestination = internDestination + new Vector3(0, 1f, 0);
+            for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+            {
+                player = instanceSOR.allPlayerScripts[i];
+                if (player.isPlayerDead
+                    || !player.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                // No obsruction
+                if (!Physics.Linecast(player.gameplayCamera.transform.position, thisInternCamera.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                {
+                    vectorPlayerToIntern = thisInternCamera.position - player.gameplayCamera.transform.position;
+                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
+                    {
+                        isAPlayerSeeingIntern = true;
+                        break;
+                    }
+                }
+
+                if (!Physics.Linecast(player.gameplayCamera.transform.position, internBodyDestination, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                {
+                    vectorPlayerToIntern = internBodyDestination - player.gameplayCamera.transform.position;
+                    if (Vector3.Angle(player.gameplayCamera.transform.forward, vectorPlayerToIntern) < player.gameplayCamera.fieldOfView)
+                    {
+                        isAPlayerSeeingIntern = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isAPlayerSeeingIntern)
+            {
+                TeleportIntern(internDestination);
+            }
         }
 
         /// <summary>
@@ -1458,15 +1478,29 @@ namespace LethalInternship.AI
         /// <param name="pos">Position destination</param>
         /// <param name="setOutside">Is the teleport destination outside of the facility</param>
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
-        public void TeleportIntern(Vector3 pos, bool setOutside, bool isUsingEntrance)
+        public void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false)
         {
-            TeleportAgentAndBody(pos, setOutside);
+            // teleport body
+            TeleportAgentAndBody(pos);
 
+            // Set AI outside or inside dungeon
+            if (!setOutside.HasValue)
+            {
+                setOutside = pos.y >= -80f;
+            }
+
+            NpcController.Npc.isInsideFactory = !setOutside.Value;
+            if (this.isOutside != setOutside.Value)
+            {
+                this.SetEnemyOutside(setOutside.Value);
+            }
+
+            // Using main entrance or fire exits ?
             if (isUsingEntrance)
             {
                 NpcController.Npc.thisPlayerBody.RotateAround(((Component)NpcController.Npc.thisPlayerBody).transform.position, Vector3.up, 180f);
                 TimeSinceTeleporting = Time.timeSinceLevelLoad;
-                EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside);
+                EntranceTeleport entranceTeleport = RoundManager.FindMainEntranceScript(setOutside.Value);
                 if (entranceTeleport.doorAudios != null && entranceTeleport.doorAudios.Length != 0)
                 {
                     entranceTeleport.entrancePointAudio.PlayOneShot(entranceTeleport.doorAudios[0]);
@@ -1478,33 +1512,8 @@ namespace LethalInternship.AI
         /// Teleport the brain and body of intern
         /// </summary>
         /// <param name="pos"></param>
-        private void TeleportAgentAndBody(Vector3 pos, bool? setOutside = null)
+        private void TeleportAgentAndBody(Vector3 pos)
         {
-            // Only teleport when necessary
-            if ((this.transform.position - pos).sqrMagnitude < 1f * 1f)
-            {
-                return;
-            }
-
-            if (setOutside.HasValue)
-            {
-                NpcController.Npc.isInsideFactory = !setOutside.Value;
-                SetEnemyOutside(setOutside.Value);
-            }
-            else
-            {
-                if (this.isOutside && pos.y < -80f)
-                {
-                    NpcController.Npc.isInsideFactory = true;
-                    this.SetEnemyOutside(false);
-                }
-                else if (!this.isOutside && pos.y > -80f)
-                {
-                    NpcController.Npc.isInsideFactory = false;
-                    this.SetEnemyOutside(true);
-                }
-            }
-
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);
             serverPosition = navMeshPosition;
             // Teleport body
@@ -1525,6 +1534,11 @@ namespace LethalInternship.AI
                 this.transform.position = navMeshPosition;
             }
 
+            // For CullFactory mod
+            if (HeldItem != null)
+            {
+                HeldItem.EnableItemMeshes(true);
+            }
         }
 
         public void SyncTeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
@@ -1554,7 +1568,7 @@ namespace LethalInternship.AI
 
         private void TeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
         {
-            TeleportAgentAndBody(pos);
+            TeleportIntern(pos);
 
             NpcController.InternAIInCruiser = enteringVehicle;
 
@@ -2907,7 +2921,7 @@ namespace LethalInternship.AI
 
             if (HeldItem != null)
             {
-                HeldItem.gameObject.SetActive(false);
+                HeldItem.EnableItemMeshes(enable: false);
             }
 
             // Hide intern
@@ -3052,7 +3066,7 @@ namespace LethalInternship.AI
 
             if (HeldItem != null)
             {
-                HeldItem.gameObject.SetActive(true);
+                HeldItem.EnableItemMeshes(enable: true);
             }
 
             RagdollInternBody.SetReleased();

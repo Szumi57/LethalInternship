@@ -151,7 +151,7 @@ namespace LethalInternship
 
         // SearchingForPlayerState 
         public static readonly float MIN_TIME_SPRINT_SEARCH_WANDER = 1f;
-        public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 5f;
+        public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 3f;
 
         // GetCloseToPlayerState
         public static readonly float DISTANCE_START_RUNNING = 8f;
@@ -169,9 +169,8 @@ namespace LethalInternship
         public static readonly float MIN_TIME_FREEZE_LOOKING_AROUND = 0.5f;
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
         
-        // StuckState
-        public static readonly float TIMER_STUCK_TOO_MUCH = 1.5f;
-        public static readonly float TIMER_STUCK_WAY_TOO_MUCH = 5f;
+        // Stuck
+        public static readonly float TIMER_STUCK_TOO_MUCH = 2f;
 
         // Player in ShipState
         public static readonly float DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT = 1f;
@@ -205,6 +204,8 @@ namespace LethalInternship
         // Terminal
         public static readonly int INDEX_HELP_TERMINALNODE = 13;
         public static readonly string STRING_OTHER_HELP = ">OTHER";
+        public static readonly int INDEX_AUDIO_BOUGHT_ITEM = 0;
+        public static readonly int INDEX_AUDIO_ERROR = 1;
 
         public static readonly string STRING_BUY_COMMAND = "buy";
         public static readonly string STRING_LAND_COMMAND = "land";

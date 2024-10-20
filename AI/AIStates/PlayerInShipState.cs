@@ -41,7 +41,7 @@ namespace LethalInternship.AI.AIStates
             // No target player, search for one
             // Or Target is not available anymore
             if (ai.targetPlayer == null
-                || !ai.PlayerIsTargetable(ai.targetPlayer))
+                || !IsPlayerTargetableWithoutCheckShip(ai.targetPlayer))
             {
                 ai.State = new SearchingForPlayerState(this);
                 return;
@@ -108,6 +108,18 @@ namespace LethalInternship.AI.AIStates
         public override string GetBillboardStateIndicator()
         {
             return "...";
+        }
+
+        private bool IsPlayerTargetableWithoutCheckShip(PlayerControllerB targetPlayer)
+        {
+            if (targetPlayer.isPlayerControlled 
+                && !targetPlayer.isPlayerDead 
+                && targetPlayer.inAnimationWithEnemy == null 
+                && targetPlayer.sinkingValue < 0.73f)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

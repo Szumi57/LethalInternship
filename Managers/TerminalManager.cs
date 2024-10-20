@@ -144,6 +144,7 @@ namespace LethalInternship.Managers
         {
             InternManager.Instance.UpdateInternsOrdered(nbInternsOwned, nbInternToDropShip);
             GetTerminal().groupCredits = newCredits;
+            GetTerminal().terminalAudio.PlayOneShot(GetTerminal().syncedAudios[Const.INDEX_AUDIO_BOUGHT_ITEM]);
         }
 
         #endregion

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.18.2 [Alpha] - 2024-10-20
+### Added
+- Play sound when buying, or error page in the terminal for the internship program.
+### Changed
+- Interns teleport more to try to follow player. They teleport if they see the player, are too far from him and no players can see
+the intern teleporting or the destination where the intern will teleport.
+- Rework the teleporters, the interns will be inverse teleported randomly like players (unless they are grabbed by a player)
+(issues [#39](https://github.com/Szumi57/LethalInternship/issues/39) and [#44](https://github.com/Szumi57/LethalInternship/issues/44)).
+- Removed the config for making the interns follow or not the inverse teleported player. See above point.
+- Added config for monitoring interns on the radar ship computer, default value to false. Can now teleport interns to the ship like players.
+### Fixed
+- Fix items invisible in interns hands after entering/leaving dungeon with Cullfactory.
+- Fix interns not being able to see the player in ship if doors are closed.
+- Fix tooltip for grenade like items showing to the player if an intern grab one.
+
 ## 0.18.1 [Alpha] - 2024-10-11
 ### Added
 - Added config to make interns use random suits when spawning. Changed the config to be 3 choices : 0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn.
@@ -34,9 +49,9 @@
 ### Added
 - Lethal Company v64
 - InputUtils, change the keybinds for interacting with interns how you want.
-- Added config option for intern to grab or not the maneater as a baby, default to false, thanks @ShadowWolf90 on GitHub, issue 40 ([#40](https://github.com/Szumi57/LethalInternship/issues/40)).
+- Added config option for intern to grab or not the maneater as a baby, default to false, thanks @ShadowWolf90 on GitHub, (issue [#40](https://github.com/Szumi57/LethalInternship/issues/40)).
 - Added config option to spectate or not interns.
-- Inverse teleporters works with interns, if they are close to the teleporters or grabbed by player, request from @AtomicJuno on GitHub, issue 39 ([#39](https://github.com/Szumi57/LethalInternship/issues/39)).
+- Inverse teleporters works with interns, if they are close to the teleporters or grabbed by player, request from @AtomicJuno on GitHub, (issue [#39](https://github.com/Szumi57/LethalInternship/issues/39)).
 - Same with regular teleporters, only the grabbed interns will be bring back to the ship with the player.
 ### Changed
 - Grab and release intern keybinds are now separate, default 'Q' for grab, 'R' for release.
@@ -45,11 +60,11 @@
 - Fix hard and soft dependencies completely forgotten in the plugin setup... hope compatibility fixes gets better for people now.
 - Attempt to fix the 4th player or 5th player (with moreCompany) bug with intern taking control and all that. Really not sure it's fixed, need further testing.
 - Fix some more movements for interns, they only teleport when no one is looking at them now.
-- Complete rewrite of the behaviour of grabbable intern body, should work better, fixes issue 42, thanks @ShadowWolf90 on GitHub ([#42](https://github.com/Szumi57/LethalInternship/issues/42))
+- Complete rewrite of the behaviour of grabbable intern body, should work better, fixes issue 42, thanks @ShadowWolf90 on GitHub (issue [#42](https://github.com/Szumi57/LethalInternship/issues/42))
 - Fix size of intern bodies when dead or grabbed by player.
 - Fix dead interns appearing on the dead player spectator UI.
 - Fix some more bug with lethalPhones et ReviveCompany.
-- Fix picking up and release intern if their weight gets set to 0 with other mods, thanks @ShadowWolf90 on GitHub, issue 41 ([#41](https://github.com/Szumi57/LethalInternship/issues/41))
+- Fix picking up and release intern if their weight gets set to 0 with other mods, thanks @ShadowWolf90 on GitHub, (issue [#41](https://github.com/Szumi57/LethalInternship/issues/41))
 
 ## 0.16.0 [Alpha] - 2024-08-30
 ### Added
@@ -62,7 +77,7 @@
 - Fix some movements and behaviours, the state of looking for players should be working, and the intern should less teleport when losing player.
 - Fix some more conflicts with lethalphones, especially when an intern dies
 - Fix major bug when a 4th player join lobby (taking control and other weird things), thanks @Dyz89 on Discord
-- Fix menu "Lethal Internship" duplicating in the terminal help menu, thanks @Ryyye on GitHub, issue 29 ([#29](https://github.com/Szumi57/LethalInternship/issues/29))
+- Fix menu "Lethal Internship" duplicating in the terminal help menu, thanks @Ryyye on GitHub, (issue [#29](https://github.com/Szumi57/LethalInternship/issues/29))
 - Fix compatibility with ReviveCompany, you can revive intern now with this mod
 - Fix interns keeping items in hand for next round at the end of round, if items are not in the ship
 
@@ -72,7 +87,7 @@
 ### Changed
 - Some strings in the terminal, suggestion from @Ryyye on GitHub
 ### Fixed
-- Fix doors not working, looked like a v62 compil problem with the mod, thanks @jakeisloud on Discord, @Ryyye on GitHub, issue 24 ([#24](https://github.com/Szumi57/LethalInternship/issues/24))
+- Fix doors not working, looked like a v62 compil problem with the mod, thanks @jakeisloud on Discord, @Ryyye on GitHub, (issue [#24](https://github.com/Szumi57/LethalInternship/issues/24))
 
 ## 0.15.1 [Alpha] - 2024-08-20
 ### Fixed
@@ -102,11 +117,11 @@
 - Spawning from the dropship should be smoother
 ### Fixed
 - SpringManAI patch not working (v60 compatibility)
-- Forest giant not targeting players, was actually a conflict with more company, thanks @jakeisloud discord, @doubletime32 on Github issue 17 ([#17](https://github.com/Szumi57/LethalInternship/issues/17))
+- Forest giant not targeting players, was actually a conflict with more company, thanks @jakeisloud discord, @doubletime32 on Github (issue [#17](https://github.com/Szumi57/LethalInternship/issues/17))
 
 ## 0.14.8 [Alpha] - 2024-08-10
 ### Fixed
-- Turret not damaging players. Thanks @Kimiko on Discord, Imiquel on Github, issue 21 ([#21](https://github.com/Szumi57/LethalInternship/issues/21))
+- Turret not damaging players. Thanks @Kimiko on Discord, Imiquel on Github, (issue [#21](https://github.com/Szumi57/LethalInternship/issues/21))
 - Conflicts with AdditionalNetworking and ShowCapacity, thanks @wwww on Discord
 
 ## 0.14.7 [Alpha] - 2024-08-09
@@ -114,7 +129,7 @@
 - Interns ignore bee nest and dead bodies, configurable on next update.
 ### Fixed
 - Attempt to fix compatibility error type of "[Error  : Unity Log] NetworkPrefab ('prefabName') has a duplicate GlobalObjectIdHash source entry value of: 'value'!", thanks @Adrian on discord.
-- Fix for Jester and ForestGiant (can not reproduce for ForestGiant) not targetting player, thanks @Adrian on discord. thanks @doubletime32 on Github, issue 17 ([#17](https://github.com/Szumi57/LethalInternship/issues/17))
+- Fix for Jester and ForestGiant (can not reproduce for ForestGiant) not targetting player, thanks @Adrian on discord. thanks @doubletime32 on Github, (issue [#17](https://github.com/Szumi57/LethalInternship/issues/17))
 - Fix for compatibility with mod FasterItemDropship, thanks me.
 - Fix for old bird missiles pushing interns, also errors between old bird and interns (CheckSightForThreat stuff), thanks @Autumnis the Everchanging on Discord
 
@@ -126,7 +141,7 @@
 - Fix compatibility with LethalPhones, thanks @crump_laude on discord. Fixed but not functionnal for interns, no change (I hope) for the players. 
 - Fix Masked unable to grab interns, thanks @Autumnis the Everchanging on discord.
 - Fix bracken unable to grab interns, thanks @random_axolotl on discord.
-- Fix terminal commands from base game pages, able to type 'c' to confirm, issue 12 ([#12](https://github.com/Szumi57/LethalInternship/issues/12))
+- Fix terminal commands from base game pages, able to type 'c' to confirm, (issue [#12](https://github.com/Szumi57/LethalInternship/issues/12))
 
 ## 0.14.5 [Alpha] - 2024-08-03
 ### Hotfix
@@ -138,15 +153,15 @@
 
 ## 0.14.3 [Alpha] - 2024-08-01
 ### Hotfix
-- Fix for giving item to intern and it floats, issue 2 ([#4](https://github.com/Szumi57/LethalInternship/issues/4))
+- Fix for giving item to intern and it floats, (issue [#4](https://github.com/Szumi57/LethalInternship/issues/4))
 
 ## 0.14.2 [Alpha] - 2024-08-01
 ### Hotfix
-- Possible fix for compatibility with BepInExFasterLoadAssetBundlesPatcher ([#5](https://github.com/Szumi57/LethalInternship/issues/5))
+- Possible fix for compatibility with BepInExFasterLoadAssetBundlesPatcher (issue [#5](https://github.com/Szumi57/LethalInternship/issues/5))
 
 ## 0.14.1 [Alpha] - 2024-08-01
 ### Hotfix
-- Fix compatibility with BetterEXP ([#2](https://github.com/Szumi57/LethalInternship/issues/2))
+- Fix compatibility with BetterEXP (issue [#2](https://github.com/Szumi57/LethalInternship/issues/2))
 
 ## 0.14.0 [Alpha] - 2024-07-31
 - Initial release

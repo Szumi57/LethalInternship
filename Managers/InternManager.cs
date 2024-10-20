@@ -3,6 +3,7 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Configs;
 using LethalInternship.Enums;
+using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using System;
 using System.Collections;
@@ -78,17 +79,17 @@ namespace LethalInternship.Managers
         public bool LandingStatusAllowed;
 
         public VehicleController? VehicleController;
+        public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
         private InternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
-        public RagdollGrabbableObject[] RagdollInternBodies = null!;
-
         private List<string> listOfNames = new List<string>();
         private EnumOptionInternNames optionInternNames;
         private string[] arrayOfUserCustomNames = null!;
         private int indexIterationName = 0;
+        private Coroutine BeamOutInternsCoroutine = null!;
 
         /// <summary>
         /// Initialize instance,
@@ -227,6 +228,11 @@ namespace LethalInternship.Managers
                 internController.thisController.radius *= Plugin.Config.InternSizeScale.Value;
                 internController.actualClientId = internController.playerClientId + Const.INTERN_ACTUAL_ID_OFFSET;
                 internController.playerUsername = string.Format(Const.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
+                
+                // Radar
+                instance.mapScreen.radarTargets.Add(new TransformAndName(internController.transform, internController.playerUsername, false));
+
+                // Skins
                 UnlockableSuit.SwitchSuitForPlayer(internController, 0, false);
                 if (Plugin.IsModModelReplacementAPILoaded)
                 {
@@ -338,7 +344,7 @@ namespace LethalInternship.Managers
 
             // Get a suit
             int suitID = internAI.SuitID;
-            if (!internAI.AlreadySuited 
+            if (!internAI.AlreadySuited
                 && Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionInternSuitChange.Random)
             {
                 suitID = GetRandomSuitID();
@@ -628,6 +634,17 @@ namespace LethalInternship.Managers
                 HideShowModelReplacement(internController, show: true);
             }
 
+            // Radar name update
+            foreach (var radarTarget in instance.mapScreen.radarTargets)
+            {
+                if (radarTarget != null
+                    && radarTarget.transform == internController.transform)
+                {
+                    radarTarget.name = internController.playerUsername;
+                    break;
+                }
+            }
+
             internAI.Init();
         }
 
@@ -707,20 +724,30 @@ namespace LethalInternship.Managers
 
         #endregion
 
-        #region
+        #region Teleporters
 
-        /// <summary>
-        /// Teleport intern close to the teleporter
-        /// </summary>
-        /// <remarks>
-        /// We are coming from a client rpc method, so already client side, we have to only use client side methods, no sync
-        /// </remarks>
-        /// <param name="teleporter"></param>
-        /// <param name="teleportPos"></param>
         public void TeleportOutInterns(ShipTeleporter teleporter,
-                                       int playerClientid,
-                                       Vector3 teleportPos, Random shipTeleporterSeed)
+                                       Random shipTeleporterSeed)
         {
+            if (this.BeamOutInternsCoroutine != null)
+            {
+                base.StopCoroutine(this.BeamOutInternsCoroutine);
+            }
+            this.BeamOutInternsCoroutine = base.StartCoroutine(this.BeamOutInterns(teleporter, shipTeleporterSeed));
+        }
+
+        private IEnumerator BeamOutInterns(ShipTeleporter teleporter,
+                                           Random shipTeleporterSeed)
+        {
+            yield return new WaitForSeconds(5f);
+
+            if (StartOfRound.Instance.inShipPhase)
+            {
+                yield break;
+            }
+
+            Vector3 positionIntern;
+            Vector3 teleportPos;
             foreach (InternAI internAI in AllInternAIs)
             {
                 if (internAI == null
@@ -728,53 +755,35 @@ namespace LethalInternship.Managers
                     || internAI.isEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
-                    || !internAI.NpcController.Npc.isPlayerControlled)
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.RagdollInternBody.IsRagdollBodyHeld())
                 {
                     continue;
                 }
 
-                if ((internAI.NpcController.Npc.transform.position - teleporter.teleportOutPosition.position).sqrMagnitude > 2f * 2f)
+                positionIntern = internAI.NpcController.Npc.transform.position;
+                if (internAI.NpcController.Npc.deadBody != null)
+                {
+                    positionIntern = internAI.NpcController.Npc.deadBody.bodyParts[5].transform.position;
+                }
+
+                if ((positionIntern - teleporter.teleportOutPosition.position).sqrMagnitude > 2f * 2f)
                 {
                     continue;
                 }
 
-                // Dropping or not items
-                if (Plugin.Config.TeleportedInternDropItems.Value
-                    && !internAI.AreHandsFree())
+                if (RoundManager.Instance.insideAINodes.Length == 0)
                 {
-                    internAI.DropItem();
+                    continue;
                 }
 
-                // Random pos or not
-                if (Plugin.Config.InverseTeleportInternsAtRandomPos.Value)
-                {
-                    // Random pos
-                    Vector3 vector = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
-                    teleportPos = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(vector, 10f, default(NavMeshHit), shipTeleporterSeed, -1);
-                }
-                else
-                {
-                    // Follow owner of intern
-                    if (internAI.OwnerClientId != StartOfRound.Instance.allPlayerScripts[playerClientid].actualClientId)
-                    {
-                        // The player teleported is not owner of this intern
-                        // Check if another player is in this teleporter and is owner of intern
-                        // If so, we end the method and wait for the patch to come back here with owner player
-                        PlayerControllerB playerNearTeleporter;
-                        for (int i = 0; i < IndexBeginOfInterns; i++)
-                        {
-                            playerNearTeleporter = StartOfRound.Instance.allPlayerScripts[i];
-                            if ((playerNearTeleporter.transform.position - teleporter.teleportOutPosition.position).sqrMagnitude < 2f * 2f
-                                && internAI.OwnerClientId == playerNearTeleporter.actualClientId)
-                            {
-                                // We follow this owner
-                                return;
-                            }
-                        }
-                    }
-                }
+                // Random pos
+                teleportPos = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
+                teleportPos = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(teleportPos, 10f, default(NavMeshHit), shipTeleporterSeed, -1);
 
-                internAI.InitStateToSearching();
+                // Teleport intern
+                ShipTeleporterPatch.SetPlayerTeleporterId_ReversePatch(teleporter, internAI.NpcController.Npc, 2);
+                internAI.InitStateToSearchingNoTarget();
                 internAI.TeleportIntern(teleportPos, setOutside: false, isUsingEntrance: false);
                 internAI.NpcController.Npc.beamOutParticle.Play();
                 teleporter.shipTeleporterAudio.PlayOneShot(teleporter.teleporterBeamUpSFX);
