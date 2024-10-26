@@ -25,7 +25,14 @@ namespace LethalInternship.Patches.MapPatches
             InternAI? internAI;
             for (int i = 0; i < __instance.radarTargets.Count; i++)
             {
-                internAI = InternManager.Instance.GetInternAI((int)__instance.radarTargets[__result].transform.gameObject.GetComponent<PlayerControllerB>().playerClientId);
+                // radar target can have radar booster in it
+                PlayerControllerB controller = __instance.radarTargets[__result].transform.gameObject.GetComponent<PlayerControllerB>();
+                if (controller == null)
+                {
+                    continue;
+                }
+
+                internAI = InternManager.Instance.GetInternAI((int)controller.playerClientId);
                 if (internAI != null)
                 {
                     if (!Plugin.Config.RadarEnabled.Value

@@ -104,6 +104,44 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("SyncShipUnlockablesServerRpc")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SyncShipUnlockablesServerRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 23; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 277
+                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
+                    && codes[i + 2].ToString() == "ldlen NULL"
+                    && codes[i + 23].ToString().StartsWith("call void StartOfRound::SyncShipUnlockablesClientRpc")) // 300
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes[startIndex].operand = null;
+                codes[startIndex + 1].opcode = OpCodes.Nop;
+                codes[startIndex + 1].operand = null;
+                codes[startIndex + 2].opcode = OpCodes.Call;
+                codes[startIndex + 2].operand = PatchesUtil.IndexBeginOfInternsMethod;
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogError($"LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.SyncShipUnlockablesServerRpc_Transpiler could not use irl number of player in list.");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+
         /// <summary>
         /// Patch for sync the ship unlockable only for irl players not interns
         /// </summary>

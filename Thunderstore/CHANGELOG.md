@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.3 [Alpha] - 2024-10-27
+### Hotfixed
+- Fix v66 joining bug "... while syncing objects! The file may be corrupted.", thanks @Timofey1337png on Github, (issue [#52](https://github.com/Szumi57/LethalInternship/issues/52)).
+- Fix radar view on computer while a radar booster is active, thanks @Zeta on Discord.
+
 ## 0.18.2 [Alpha] - 2024-10-20
 ### Added
 - Play sound when buying, or error page in the terminal for the internship program.
