@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="lib\mods\" />
+    <Folder Include="lib\LCv64\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
