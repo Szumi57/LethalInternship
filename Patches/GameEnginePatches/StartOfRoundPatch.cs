@@ -26,6 +26,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             Plugin.LogDebug("Initialize managers...");
 
+            // NetworkBehaviours
             GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
@@ -44,8 +45,15 @@ namespace LethalInternship.Patches.GameEnginePatches
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
 
+            // MonoBehaviours
             objectManager = new GameObject("InputManager");
             objectManager.AddComponent<InputManager>();
+
+            objectManager = new GameObject("AudioManager");
+            objectManager.AddComponent<AudioManager>();
+
+            objectManager = new GameObject("IdentityManager");
+            objectManager.AddComponent<IdentityManager>();
 
             Plugin.LogDebug("... Managers started");
         }

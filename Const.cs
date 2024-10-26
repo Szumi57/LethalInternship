@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.Configs;
+using LethalInternship.Enums;
 using UnityEngine;
 
 namespace LethalInternship
@@ -36,7 +37,8 @@ namespace LethalInternship
         public static readonly string ConfigSectionNames = "2. Intern names";
         public static readonly string ConfigSectionBehaviour = "3. Behaviour";
         public static readonly string ConfigSectionTeleporters = "4. Teleporters";
-        public static readonly string ConfigSectionDebug = "5. Debug";
+        public static readonly string ConfigSectionVoices = "5. Voices";
+        public static readonly string ConfigSectionDebug = "6. Debug";
 
         public static readonly int DEFAULT_MAX_INTERNS_AVAILABLE = 16;
         public static readonly int MIN_INTERNS_AVAILABLE = 1;
@@ -57,7 +59,7 @@ namespace LethalInternship
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE = "INTERNSHIP PROGRAM";
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE = "Need some help ? Try our new workforce, ready to assist you and gain experience";
 
-        public static EnumOptionInternNames DEFAULT_CONFIG_ENUM_INTERN_NAMES = EnumOptionInternNames.DefaultCustomList;
+        public static EnumOptionNames DEFAULT_CONFIG_ENUM_INTERN_NAMES = EnumOptionNames.DefaultCustomList;
         public static readonly string DEFAULT_INTERN_NAME = "Intern #{0}";
         public static readonly string[] DEFAULT_LIST_CUSTOM_INTERN_NAMES = new string[] {"Amy Stake",
                                                                                          "Claire Annette",
@@ -82,8 +84,17 @@ namespace LethalInternship
                                                                                          "Uriel Lucky",
                                                                                          "Zoltan Pepper"};
 
-        public static EnumOptionInternSuitChange DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE = EnumOptionInternSuitChange.Manual;
+        public static EnumOptionSuitChange DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE = EnumOptionSuitChange.Manual;
 
+        public static readonly string FILE_NAME_CONFIG_IDENTITIES_DEFAULT = "ConfigIdentitiesDefault.json";
+        public static readonly string FILE_NAME_CONFIG_IDENTITIES_USER = "ConfigIdentitiesUser.json";
+        public static readonly ConfigIdentity DEFAULT_CONFIG_IDENTITY = new ConfigIdentity()
+        {
+            name = DEFAULT_INTERN_NAME,
+            suitConfigOption = (int)EnumOptionSuitConfig.AutomaticSameAsPlayer,
+            suitID = 0,
+            voiceFolder = "RandomMale1"
+        };
 
         // Interns
         public static readonly float INTERN_FOV = 90f;
@@ -112,7 +123,7 @@ namespace LethalInternship
         // Debug
         public static readonly bool DRAW_LINES = false;
         public static readonly bool SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED = false;
-        public static readonly bool SPAWN_INTERN_WITH_EMOTE = false;
+        public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
         public static readonly bool INVULNERABILITY = false;
         public static readonly bool INVINCIBILITY = false;
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
@@ -190,6 +201,11 @@ namespace LethalInternship
         public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
+
+        // Voices
+        public static readonly int MIN_COOLDOWN_PLAYVOICE = 1;
+        public static readonly int MAX_COOLDOWN_PLAYVOICE = 10;
+        public static readonly float DISTANCE_HEAR_OTHER_INTERNS = 20f;
 
         // Tips
         public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";

@@ -82,13 +82,10 @@ namespace LethalInternship.Managers
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
         private InternAI[] AllInternAIs = null!;
+        private InternIdentity[] InternIdentities = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
-        private List<string> listOfNames = new List<string>();
-        private EnumOptionInternNames optionInternNames;
-        private string[] arrayOfUserCustomNames = null!;
-        private int indexIterationName = 0;
         private Coroutine BeamOutInternsCoroutine = null!;
 
         /// <summary>
@@ -147,6 +144,7 @@ namespace LethalInternship.Managers
             if (AllPlayerObjectsBackUp == null)
             {
                 AllInternAIs = new InternAI[maxInternsAvailable];
+                InternIdentities = new InternIdentity[maxInternsAvailable];
                 AllPlayerObjectsBackUp = new GameObject[maxInternsAvailable];
                 AllPlayerScriptsBackUp = new PlayerControllerB[maxInternsAvailable];
 
@@ -155,6 +153,7 @@ namespace LethalInternship.Managers
             else if (AllPlayerObjectsBackUp.Length != maxInternsAvailable)
             {
                 Array.Resize(ref AllInternAIs, maxInternsAvailable);
+                Array.Resize(ref InternIdentities, maxInternsAvailable);
                 Array.Resize(ref AllPlayerObjectsBackUp, maxInternsAvailable);
                 Array.Resize(ref AllPlayerScriptsBackUp, maxInternsAvailable);
 
@@ -199,10 +198,6 @@ namespace LethalInternship.Managers
             StartOfRound instance = StartOfRound.Instance;
             GameObject internObjectParent = instance.allPlayerObjects[3];
 
-            optionInternNames = Plugin.Config.GetOptionInternNames();
-            arrayOfUserCustomNames = Plugin.Config.GetArrayOfUserCustomNames();
-            indexIterationName = 0;
-
             // Using back up if available,
             // If the size of array has been modified by morecompany for example when loading scene or the game, at some point
             for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
@@ -220,6 +215,7 @@ namespace LethalInternship.Managers
 
                 GameObject internObject = Object.Instantiate<GameObject>(internObjectParent, internObjectParent.transform.parent);
 
+                // Body
                 PlayerControllerB internController = internObject.GetComponentInChildren<PlayerControllerB>();
                 internController.playerClientId = (ulong)(indexPlusIrlPlayersCount);
                 internController.isPlayerDead = false;
@@ -228,7 +224,7 @@ namespace LethalInternship.Managers
                 internController.thisController.radius *= Plugin.Config.InternSizeScale.Value;
                 internController.actualClientId = internController.playerClientId + Const.INTERN_ACTUAL_ID_OFFSET;
                 internController.playerUsername = string.Format(Const.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
-                
+
                 // Radar
                 instance.mapScreen.radarTargets.Add(new TransformAndName(internController.transform, internController.playerUsername, false));
 
@@ -250,6 +246,9 @@ namespace LethalInternship.Managers
 
                 AllPlayerObjectsBackUp[i] = internObject;
                 AllPlayerScriptsBackUp[i] = internController;
+
+                // Identities
+                InternIdentities[i] = IdentityManager.Instance.InitNewIdentity(i);
 
                 internObject.SetActive(false);
             }
@@ -333,32 +332,16 @@ namespace LethalInternship.Managers
                 networkObject.Spawn(true);
             }
 
-            // Get a name for the intern
-            PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject];
-            string internName = internController.playerUsername;
-            if (!internAI.AlreadyNamed)
-            {
-                internName = GetNameForIntern(internName, optionInternNames, arrayOfUserCustomNames);
-                internAI.AlreadyNamed = true;
-            }
-
-            // Get a suit
-            int suitID = internAI.SuitID;
-            if (!internAI.AlreadySuited
-                && Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionInternSuitChange.Random)
-            {
-                suitID = GetRandomSuitID();
-                internAI.AlreadySuited = true;
-            }
+            // Get an identity for the intern
+            internAI.InternIdentity = InternIdentities[indexNextIntern];
 
             // Spawn ragdoll dead bodies of intern
-            NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)internController.playerClientId);
+            NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject].playerClientId);
 
             // Send to client to spawn intern
             SpawnInternClientRpc(networkObject, networkObjectRagdollBody,
                                  indexNextIntern, indexNextPlayerObject,
-                                 internName,
-                                 suitID,
+                                 internAI.InternIdentity.IdIdentity,
                                  spawnPosition, yRot, isOutside);
         }
 
@@ -377,93 +360,6 @@ namespace LethalInternship.Managers
                 }
             }
             return -1;
-        }
-
-        private string GetNameForIntern(string defaultName, EnumOptionInternNames optionInternNames, string[] arrayOfUserCustomNames)
-        {
-            switch (optionInternNames)
-            {
-                case EnumOptionInternNames.Default:
-                    return defaultName;
-
-                case EnumOptionInternNames.DefaultCustomList:
-                    return GetRandomNameFromArray(Const.DEFAULT_LIST_CUSTOM_INTERN_NAMES);
-
-                case EnumOptionInternNames.UserCustomList:
-                    return GetRandomNameFromArray(arrayOfUserCustomNames);
-
-                default:
-                    Plugin.LogWarning($"Option for intern names invalid: {optionInternNames}");
-                    return defaultName;
-            }
-        }
-
-        private string GetRandomNameFromArray(string[] originalArrayOfNames)
-        {
-            if (listOfNames.Count == 0)
-            {
-                listOfNames.AddRange(originalArrayOfNames);
-            }
-
-            if (listOfNames.Count == 0)
-            {
-                return "List of names empty !";
-            }
-
-            string name;
-            string iterationString = indexIterationName == 0 ? string.Empty : $" ({indexIterationName})";
-
-            if (listOfNames.Count == 1)
-            {
-                name = listOfNames[0] + iterationString;
-                listOfNames.RemoveAt(0);
-                listOfNames.AddRange(originalArrayOfNames);
-                indexIterationName++;
-                return name;
-            }
-
-            int index;
-            if (Plugin.Config.UseCustomNamesRandomly.Value)
-            {
-                Random randomInstance = new Random();
-                index = randomInstance.Next(0, listOfNames.Count);
-            }
-            else
-            {
-                index = 0;
-            }
-
-            name = listOfNames[index] + iterationString;
-            listOfNames.RemoveAt(index);
-            return name;
-        }
-
-        private int GetRandomSuitID()
-        {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            UnlockableItem unlockableItem;
-            List<int> indexesSpawnedUnlockables = new List<int>();
-            foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
-            {
-                if (unlockable.Value == null)
-                {
-                    continue;
-                }
-
-                unlockableItem = instanceSOR.unlockablesList.unlockables[unlockable.Key];
-                if (unlockableItem != null
-                    && unlockableItem.unlockableType == 0)
-                {
-                    // Suits
-                    indexesSpawnedUnlockables.Add(unlockable.Key);
-                    Plugin.LogDebug($"unlockable index {unlockable.Key}");
-                }
-            }
-
-            Random randomInstance = new Random();
-            int randomIndex = randomInstance.Next(0, indexesSpawnedUnlockables.Count);
-            Plugin.LogDebug($"randomIndex {randomIndex}, random suit id {indexesSpawnedUnlockables[randomIndex]}");
-            return indexesSpawnedUnlockables[randomIndex];
         }
 
         private NetworkObject SpawnRagdollBodies(int playerClientId)
@@ -508,8 +404,7 @@ namespace LethalInternship.Managers
         private void SpawnInternClientRpc(NetworkObjectReference networkObjectReferenceInternAI,
                                           NetworkObjectReference networkObjectReferenceRagdollInternBody,
                                           int indexNextIntern, int indexNextPlayerObject,
-                                          string internName,
-                                          int suitID,
+                                          int internIdentityID,
                                           Vector3 spawnPosition, float yRot, bool isOutside)
         {
             Plugin.LogInfo($"Client receive RPC to spawn intern... position : {spawnPosition}, yRot: {yRot}");
@@ -532,8 +427,7 @@ namespace LethalInternship.Managers
             internAI.SetEnemyOutside(isOutside);
             InitInternSpawning(internAI, ragdollBody,
                                indexNextPlayerObject,
-                               internName,
-                               suitID,
+                               internIdentityID,
                                spawnPosition, yRot, isOutside);
         }
 
@@ -548,17 +442,17 @@ namespace LethalInternship.Managers
         /// <param name="isOutside">Spawning outside or inside the facility (used for initializing AI Nodes)</param>
         private void InitInternSpawning(InternAI internAI, RagdollGrabbableObject ragdollBody,
                                         int indexNextPlayerObject,
-                                        string internName,
-                                        int suitID,
+                                        int internIdentityID,
                                         Vector3 spawnPosition, float yRot, bool isOutside)
         {
             StartOfRound instance = StartOfRound.Instance;
+            InternIdentity internIdentity = InternIdentities[internIdentityID];
             GameObject objectParent = instance.allPlayerObjects[indexNextPlayerObject];
             objectParent.transform.position = spawnPosition;
             objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
 
             PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
-            internController.playerUsername = internName;
+            internController.playerUsername = internIdentity.Name;
             internController.isPlayerDead = false;
             internController.isPlayerControlled = true;
             internController.playerActions = new PlayerActions();
@@ -600,6 +494,7 @@ namespace LethalInternship.Managers
             internAI.creatureAnimator = internController.playerBodyAnimator;
             internAI.NpcController = new NpcController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
+            internAI.InternIdentity = internIdentity;
 
             // Attach ragdoll body
             internAI.RagdollInternBody = new RagdollInternBody(ragdollBody);
@@ -625,8 +520,7 @@ namespace LethalInternship.Managers
             }
 
             // Switch suit
-            UnlockableSuit.SwitchSuitForPlayer(internController, suitID, false);
-            internAI.SuitID = suitID;
+            UnlockableSuit.SwitchSuitForPlayer(internController, internIdentity.SuitID, false);
 
             // Show model replacement
             if (Plugin.IsModModelReplacementAPILoaded)
@@ -1304,6 +1198,40 @@ namespace LethalInternship.Managers
         {
             VehicleController = Object.FindObjectOfType<VehicleController>();
             Plugin.LogDebug($"Vehicle has landed : {VehicleController}");
+        }
+
+        #endregion
+
+        #region Voices
+
+        public bool NoInternThatJustTalkedClose(InternAI internTryingToTalk)
+        {
+            foreach (var internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                if (internAI == internTryingToTalk)
+                {
+                    continue;
+                }
+
+                if (internAI.CooldownPlayAudio > 0f
+                    && (internAI.NpcController.Npc.transform.position - internTryingToTalk.NpcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_HEAR_OTHER_INTERNS)
+                {
+                    Plugin.LogDebug("intern that just talked too close");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         #endregion

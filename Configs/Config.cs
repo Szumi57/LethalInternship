@@ -2,10 +2,13 @@
 using CSync.Extensions;
 using CSync.Lib;
 using LethalInternship.Enums;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace LethalInternship.Configs
 {
@@ -33,7 +36,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
         [SyncedEntryField] public SyncedEntry<string> ListUserCustomNames;
         [SyncedEntryField] public SyncedEntry<bool> UseCustomNamesRandomly;
-                           
+
         // Behaviour       
         [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
         [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
@@ -47,8 +50,14 @@ namespace LethalInternship.Configs
         // Teleporters
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
+        // Voices
+        [SyncedEntryField] public SyncedEntry<string> VoicesLanguageFolder;
+
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
+
+        // Config identities
+        public ConfigIdentities ConfigIdentities = null!;
 
         public Config(ConfigFile cfg) : base(PluginInfo.PLUGIN_GUID)
         {
@@ -104,8 +113,8 @@ namespace LethalInternship.Configs
                                          "Option for custom names",
                                          defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_NAMES,
                                          new ConfigDescription("0: default names \"Intern #(number)\" | 1: default custom names list used by the mod | 2: user defined custom names list",
-                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionInternNames)).Cast<int>().Min(),
-                                                                                             Enum.GetValues(typeof(EnumOptionInternNames)).Cast<int>().Max())));
+                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionNames)).Cast<int>().Min(),
+                                                                                             Enum.GetValues(typeof(EnumOptionNames)).Cast<int>().Max())));
 
             ListUserCustomNames = cfg.BindSyncedEntry(Const.ConfigSectionNames,
                                        "List of user custom names for interns, to use with option 2 : user defined custom names list",
@@ -122,8 +131,8 @@ namespace LethalInternship.Configs
                                                "Options for changing interns suits",
                                                defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
                                                new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
-                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Min(),
-                                                                                             Enum.GetValues(typeof(EnumOptionInternSuitChange)).Cast<int>().Max())));
+                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Min(),
+                                                                                             Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Max())));
 
             TeleportWhenUsingLadders = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
                                                "Teleport when using ladders",
@@ -166,6 +175,12 @@ namespace LethalInternship.Configs
                                                             defaultVal: true,
                                                             "Should the intern his held item before teleporting ?");
 
+            // Voices
+            VoicesLanguageFolder = cfg.BindSyncedEntry(Const.ConfigSectionVoices,
+                                       "Language voices folder",
+                                       defaultVal: "en",
+                                       "Folder where to get the voices audio, default 'en' (english)");
+
             // Debug
             EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
                                       "EnableDebugLog",
@@ -176,33 +191,20 @@ namespace LethalInternship.Configs
             cfg.SaveOnConfigSet = true;
 
             ConfigManager.Register(this);
+
+            CopyDefaultConfigIdentitiesJson();
+            ReadAndLoadConfigIdentitiesFromUser();
         }
 
-        public EnumOptionInternNames GetOptionInternNames()
+        public EnumOptionNames GetOptionInternNames()
         {
-            if (!Enum.IsDefined(typeof(EnumOptionInternNames), OptionInternNames.Value))
+            if (!Enum.IsDefined(typeof(EnumOptionNames), OptionInternNames.Value))
             {
                 Plugin.LogWarning($"Could not get option for intern names in config, value {OptionInternNames.Value}");
-                return EnumOptionInternNames.Default;
+                return EnumOptionNames.Default;
             }
 
-            return (EnumOptionInternNames)OptionInternNames.Value;
-        }
-
-        public string[] GetArrayOfUserCustomNames()
-        {
-            if (string.IsNullOrWhiteSpace(ListUserCustomNames.Value))
-            {
-                return new string[] { };
-            }
-
-            string[] arrayOfNames = ListUserCustomNames.Value.Split(new[] { ',', ';' });
-            for (int i = 0; i < arrayOfNames.Length; i++)
-            {
-                arrayOfNames[i] = arrayOfNames[i].Trim();
-            }
-
-            return arrayOfNames;
+            return (EnumOptionNames)OptionInternNames.Value;
         }
 
         public string GetTitleInternshipProgram()
@@ -217,6 +219,47 @@ namespace LethalInternship.Configs
             var orphanedEntries = (Dictionary<ConfigDefinition, string>)orphanedEntriesProp.GetValue(cfg, null);
             orphanedEntries.Clear(); // Clear orphaned entries (Unbinded/Abandoned entries)
             cfg.Save(); // Save the config file to save these changes
+        }
+
+        private void CopyDefaultConfigIdentitiesJson()
+        {
+            string json;
+            using (StreamReader r = new StreamReader("ConfigIdentities.json"))
+            {
+                json = r.ReadToEnd();
+            }
+
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(Plugin.DirectoryName, Const.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
+            {
+                outputFile.WriteLine(json);
+            }
+        }
+
+        private void ReadAndLoadConfigIdentitiesFromUser()
+        {
+            string json;
+
+            // Try to read user config file
+            string path = Path.Combine(Plugin.DirectoryName, Const.FILE_NAME_CONFIG_IDENTITIES_USER);
+            if (File.Exists(path))
+            {
+                using (StreamReader r = new StreamReader(path))
+                {
+                    json = r.ReadToEnd();
+                }
+
+                ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
+            }
+            else
+            {
+                path = Path.Combine(Plugin.DirectoryName, Const.FILE_NAME_CONFIG_IDENTITIES_DEFAULT);
+                using (StreamReader r = new StreamReader(path))
+                {
+                    json = r.ReadToEnd();
+                }
+
+                ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
+            }
         }
     }
 }

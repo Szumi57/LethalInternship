@@ -1,0 +1,142 @@
+﻿{
+  "configIdentities": [
+    {
+      "name": "Mathew Kelly",
+      "suitID": 0,
+      "suitConfigOption": 1,
+      "voiceFolder": "Mathew Kelly"
+    },
+    {
+      "name": "Amy Stake",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Claire Annette",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Clare Voyant",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Ella Font",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Felix Cited",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Gerry Atrick",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Harry Legg",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Justin Case",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Lee King",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Luke Atmey",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Manuel Labour",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Mia Moore",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Ophelia Pane",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Paige Turner",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Paul Atishon",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Polly Esther",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomFemale1"
+    },
+    {
+      "name": "Robyn Banks",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Terry Aki",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Tim Burr",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Toby Lerone",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Uriel Lucky",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    },
+    {
+      "name": "Zoltan Pepper",
+      "suitID": 0,
+      "suitConfigOption": 2,
+      "voiceFolder": "RandomMale1"
+    }
+  ]
+}

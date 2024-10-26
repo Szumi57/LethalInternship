@@ -1,4 +1,4 @@
-﻿using LethalInternship.Managers.SaveInfos;
+﻿using LethalInternship.SaveAdapter;
 using Newtonsoft.Json;
 using System;
 using Unity.Netcode;
