@@ -53,3 +53,6 @@ UpgradeLog.htm
 # Exclude stuff
 !/dlls/LethalLib.dll
 !/Thunderstore/Packages/*.txt
+
+# Audio
+*.ogg

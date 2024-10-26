@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
+using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
@@ -51,13 +52,10 @@ namespace LethalInternship.AI
         /// </summary>
         public NpcController NpcController = null!;
         public RagdollInternBody RagdollInternBody = null!;
+        public InternIdentity InternIdentity = null!;
 
         public string InternId = "Not initialized";
-        public bool AlreadyNamed = false;
-        public int SuitID = 0;
-        public bool AlreadySuited = false;
         public int MaxHealth = Const.DEFAULT_INTERN_MAX_HEALTH;
-
         /// <summary>
         /// Currently held item by intern
         /// </summary>
@@ -66,6 +64,7 @@ namespace LethalInternship.AI
         /// Used for not teleporting too much
         /// </summary>
         public float TimeSinceTeleporting { get; set; }
+        public float CooldownPlayAudio = 0f;
 
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -174,11 +173,40 @@ namespace LethalInternship.AI
 
             addPlayerVelocityToDestination = 3f;
 
+            // Intern voice
+            InitInternVoiceComponent();
+
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
             // Init state
             InitStateToSearchingNoTarget();
+        }
+
+        private void InitInternVoiceComponent()
+        {
+            if (this.creatureVoice == null)
+            {
+                foreach (var component in this.gameObject.GetComponentsInChildren<AudioSource>())
+                {
+                    Plugin.LogDebug($"component {component.name}");
+                    if (component.name == "CreatureVoice")
+                    {
+                        this.creatureVoice = component;
+                        break;
+                    }
+                }
+            }
+            if (this.creatureVoice == null)
+            {
+                Plugin.LogWarning($"Could not initialize intern {this.InternId} {NpcController.Npc.playerUsername} voice !");
+            }
+            else
+            {
+                this.creatureVoice.enabled = true;
+                Plugin.LogDebug($"ai.creatureVoice {this.creatureVoice}");
+                Plugin.LogDebug($"ai.creatureVoice.enabled {this.creatureVoice.enabled}");
+            }
         }
 
         /// <summary>
@@ -217,6 +245,16 @@ namespace LethalInternship.AI
             {
                 SetAgent(enabled: false);
                 return;
+            }
+
+            // CooldownPlayAudio
+            if (CooldownPlayAudio > 0f)
+            {
+                CooldownPlayAudio -= Time.deltaTime;
+            }
+            if (CooldownPlayAudio < 0f)
+            {
+                CooldownPlayAudio = 0f;
             }
 
             // No AI calculation if in special animation
@@ -300,6 +338,9 @@ namespace LethalInternship.AI
 
             // Check if the body is stuck somehow, and try to unstuck it in various ways
             CheckIfStuck();
+
+            // Voice
+            PlayVoiceAudio();
         }
 
         private void SetAgent(bool enabled)
@@ -447,6 +488,23 @@ namespace LethalInternship.AI
                 if (timeSinceStuck - AIIntervalTime >= 0f)
                 {
                     timeSinceStuck -= AIIntervalTime;
+                }
+            }
+        }
+
+        public void PlayVoiceAudio()
+        {
+            if (CooldownPlayAudio == 0f
+                && InternManager.Instance.NoInternThatJustTalkedClose(this))
+            {
+                AudioClip? audioClip = InternIdentity.GetRandomAudioClipByState(this.State.GetAIState());
+                if (audioClip != null)
+                {
+                    Random randomInstance = new Random();
+                    CooldownPlayAudio = audioClip.length + (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
+
+                    Plugin.LogDebug($"intern {this.NpcController.Npc.playerUsername} play state {this.State.GetAIState()} random audio : length {audioClip.length}");
+                    this.creatureVoice.PlayOneShot(audioClip);
                 }
             }
         }
@@ -1953,14 +2011,14 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -1985,14 +2043,14 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -2330,14 +2388,14 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -2494,7 +2552,7 @@ namespace LethalInternship.AI
                                      bool fallDamage = false,
                                      Vector3 force = default)
         {
-            Plugin.LogDebug($"SyncDamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug($"SyncDamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -2564,7 +2622,7 @@ namespace LethalInternship.AI
                                   bool fallDamage,
                                   Vector3 force)
         {
-            Plugin.LogDebug(@$"DamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId},
+            Plugin.LogDebug(@$"DamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername},
                             damageNumber {damageNumber}, causeOfDeath {causeOfDeath}, deathAnimation {deathAnimation}, fallDamage {fallDamage}, force {force}");
             if (NpcController.Npc.isPlayerDead)
             {
@@ -2692,7 +2750,7 @@ namespace LethalInternship.AI
                                    int deathAnimation = 0,
                                    Vector3 positionOffset = default(Vector3))
         {
-            Plugin.LogDebug($"SyncKillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug($"SyncKillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -2800,7 +2858,7 @@ namespace LethalInternship.AI
                                 int deathAnimation,
                                 Vector3 positionOffset)
         {
-            Plugin.LogDebug(@$"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}
+            Plugin.LogDebug(@$"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}
                             bodyVelocity {bodyVelocity}, spawnBody {spawnBody}, causeOfDeath {causeOfDeath}, deathAnimation {deathAnimation}, positionOffset {positionOffset}");
             if (NpcController.Npc.isPlayerDead)
             {
@@ -2869,7 +2927,7 @@ namespace LethalInternship.AI
             {
                 this.agent.enabled = false;
             }
-            Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
 
             // Compat with revive company mod
             if (Plugin.IsModReviveCompanyLoaded)

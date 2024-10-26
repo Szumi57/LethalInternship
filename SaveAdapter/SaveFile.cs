@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LethalInternship.Managers.SaveInfos
+namespace LethalInternship.SaveAdapter
 {
     /// <summary>
     /// Represents the date serializable, to be saved on disk, necessay for LethalInternship (not much obviously)

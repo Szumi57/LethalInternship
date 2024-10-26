@@ -63,6 +63,7 @@ namespace LethalInternship
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
         public static AssetBundle ModAssets = null!;
+        public static string DirectoryName = null!;
 
         internal static EnemyType InternNPCPrefab = null!;
         internal static int PluginIrlPlayersCount = 0;
@@ -81,6 +82,9 @@ namespace LethalInternship
 
         private void Awake()
         {
+            var bundleName = "internnpcmodassets";
+            DirectoryName = Path.GetDirectoryName(Info.Location);
+
             Logger = base.Logger;
 
             Config = new Configs.Config(base.Config);
@@ -88,9 +92,9 @@ namespace LethalInternship
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
-
-            var bundleName = "internnpcmodassets";
-            ModAssets = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Info.Location), bundleName));
+            
+            // Load mod assets from unity
+            ModAssets = AssetBundle.LoadFromFile(Path.Combine(DirectoryName, bundleName));
             if (ModAssets == null)
             {
                 Logger.LogError($"Failed to load custom assets.");
