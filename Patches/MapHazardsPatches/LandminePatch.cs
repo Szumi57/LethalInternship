@@ -123,7 +123,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             List<ulong> internsAlreadyExploded = new List<ulong>();
             for (int i = 0; i < array.Length; i++)
             {
-                Plugin.LogDebug($"array {i} {array[i].name}");
+                Plugin.LogDebug($"SpawnExplosion OverlapSphere array {i} {array[i].name}");
                 float distanceFromExplosion = Vector3.Distance(explosionPosition, array[i].transform.position);
                 if (distanceFromExplosion > 4f
                     && Physics.Linecast(explosionPosition, array[i].transform.position + Vector3.up * 0.3f, out _, 256, QueryTriggerInteraction.Ignore))

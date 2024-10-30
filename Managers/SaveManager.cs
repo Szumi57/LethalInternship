@@ -113,33 +113,33 @@ namespace LethalInternship.Managers
                 TargetClientIds = new ulong[] { clientId }
             };
 
-            SyncLoadedSaveInfosClientRpc(InternManager.Instance.NbInternsOwned, 
-                                         InternManager.Instance.NbInternsToDropShip, 
-                                         InternManager.Instance.LandingStatusAllowed,
-                                         ClientRpcParams);
+            SyncLoadedSaveInfosClientRpc(
+                new SaveNetworkSerializable()
+                {
+                    LandingAllowed = InternManager.Instance.LandingStatusAllowed,
+                    NbInternsOwned = InternManager.Instance.NbInternsOwned,
+                    NbInternsToDropShip = InternManager.Instance.NbInternsToDropShip
+                },
+                ClientRpcParams);
         }
 
         /// <summary>
         /// Client side, sync the save data send by the server/host
         /// </summary>
-        /// <param name="nbInternsOwned"></param>
-        /// <param name="NbInternsToDropShip"></param>
         /// <param name="clientRpcParams"></param>
         [ClientRpc]
-        private void SyncLoadedSaveInfosClientRpc(int nbInternsOwned, 
-                                                 int NbInternsToDropShip,
-                                                 bool landingAllowed,
-                                                 ClientRpcParams clientRpcParams = default)
+        private void SyncLoadedSaveInfosClientRpc(SaveNetworkSerializable saveNetworkSerializable,
+                                                  ClientRpcParams clientRpcParams = default)
         {
             if (IsOwner)
             {
                 return;
             }
 
-            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync interns alive and ready to {nbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}, landingAllowed {landingAllowed}, client execute...");
-            InternManager.Instance.NbInternsOwned = nbInternsOwned;
-            InternManager.Instance.NbInternsToDropShip = NbInternsToDropShip;
-            InternManager.Instance.LandingStatusAllowed = landingAllowed;
+            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync interns alive and ready to {saveNetworkSerializable.NbInternsOwned}, NbInternsToDropShip {saveNetworkSerializable.NbInternsToDropShip}, landingAllowed {saveNetworkSerializable.LandingAllowed}");
+            InternManager.Instance.NbInternsOwned = saveNetworkSerializable.NbInternsOwned;
+            InternManager.Instance.NbInternsToDropShip = saveNetworkSerializable.NbInternsToDropShip;
+            InternManager.Instance.LandingStatusAllowed = saveNetworkSerializable.LandingAllowed;
         }
 
         #endregion

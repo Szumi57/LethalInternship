@@ -477,6 +477,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             {
                 ulong clientId = __instance.NetworkManager.LocalClientId;
                 SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
+                InternManager.Instance.SyncLoadedJsonIdentitiesServerRpc(clientId);
             }
         }
 

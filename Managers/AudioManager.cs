@@ -44,7 +44,7 @@ namespace LethalInternship.Managers
 
                     if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
                     {
-                        Plugin.LogError("Error while loading audio file : " + www.error);
+                        Plugin.LogError($"Error while loading audio file at {uri} : {www.error}");
                     }
                     else
                     {

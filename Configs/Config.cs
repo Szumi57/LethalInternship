@@ -1,8 +1,8 @@
-﻿using BepInEx.Configuration;
+﻿using BepInEx;
+using BepInEx.Configuration;
 using CSync.Extensions;
 using CSync.Lib;
 using LethalInternship.Enums;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,7 +57,7 @@ namespace LethalInternship.Configs
         public ConfigEntry<bool> EnableDebugLog;
 
         // Config identities
-        public ConfigIdentities ConfigIdentities = null!;
+        public ConfigIdentities ConfigIdentities;
 
         public Config(ConfigFile cfg) : base(PluginInfo.PLUGIN_GUID)
         {
@@ -190,21 +190,20 @@ namespace LethalInternship.Configs
             ClearUnusedEntries(cfg);
             cfg.SaveOnConfigSet = true;
 
-            ConfigManager.Register(this);
-
+            // Config identities
             CopyDefaultConfigIdentitiesJson();
             ReadAndLoadConfigIdentitiesFromUser();
+
+            ConfigManager.Register(this);
         }
 
-        public EnumOptionNames GetOptionInternNames()
+        private void LogDebugInConfig(string debugLog)
         {
-            if (!Enum.IsDefined(typeof(EnumOptionNames), OptionInternNames.Value))
+            if (!EnableDebugLog.Value)
             {
-                Plugin.LogWarning($"Could not get option for intern names in config, value {OptionInternNames.Value}");
-                return EnumOptionNames.Default;
+                return;
             }
-
-            return (EnumOptionNames)OptionInternNames.Value;
+            Plugin.Logger.LogDebug(debugLog);
         }
 
         public string GetTitleInternshipProgram()
@@ -223,15 +222,26 @@ namespace LethalInternship.Configs
 
         private void CopyDefaultConfigIdentitiesJson()
         {
-            string json;
-            using (StreamReader r = new StreamReader("ConfigIdentities.json"))
-            {
-                json = r.ReadToEnd();
-            }
+            string directoryPath = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID);
+            Directory.CreateDirectory(directoryPath);
 
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(Plugin.DirectoryName, Const.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
+            string json = ReadJsonResource("LethalInternship.Configs.ConfigIdentities.json");
+            using (StreamWriter outputFile = new StreamWriter(Utility.CombinePaths(directoryPath, Const.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
             {
                 outputFile.WriteLine(json);
+            }
+        }
+
+        private string ReadJsonResource(string resourceName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    return reader.ReadToEnd();
+                }
             }
         }
 
@@ -240,25 +250,26 @@ namespace LethalInternship.Configs
             string json;
 
             // Try to read user config file
-            string path = Path.Combine(Plugin.DirectoryName, Const.FILE_NAME_CONFIG_IDENTITIES_USER);
+            string path = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, Const.FILE_NAME_CONFIG_IDENTITIES_USER);
             if (File.Exists(path))
             {
                 using (StreamReader r = new StreamReader(path))
                 {
                     json = r.ReadToEnd();
                 }
-
-                ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
             }
             else
             {
-                path = Path.Combine(Plugin.DirectoryName, Const.FILE_NAME_CONFIG_IDENTITIES_DEFAULT);
-                using (StreamReader r = new StreamReader(path))
-                {
-                    json = r.ReadToEnd();
-                }
+                path = "LethalInternship.Configs.ConfigIdentities.json";
+                json = ReadJsonResource(path);
+            }
 
-                ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
+            ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
+
+            LogDebugInConfig($"Loaded {ConfigIdentities.configIdentities.Length} identities from file : {path}");
+            foreach (ConfigIdentity configIdentity in ConfigIdentities.configIdentities)
+            {
+                LogDebugInConfig($"{configIdentity.ToString()}");
             }
         }
     }

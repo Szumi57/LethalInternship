@@ -107,7 +107,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Set where the intern should look
-            SetInternLookTarget();
+            SetInternLookAt();
 
             // Chill
             ai.StopMoving();
@@ -116,67 +116,85 @@ namespace LethalInternship.AI.AIStates
             npcController.MimicEmotes(ai.targetPlayer);
         }
 
-        private void SetInternLookTarget()
+        public override void PlayerHeard(Vector3 noisePosition)
+        {
+            // Look at origin of sound
+            SetInternLookAt(noisePosition);
+        }
+
+        private void SetInternLookAt(Vector3? position = null)
         {
             if (Plugin.InputActionsInstance.MakeInternLookAtPosition.IsPressed())
             {
-                // Look where the target player is looking
-                Ray interactRay = new Ray(ai.targetPlayer.gameplayCamera.transform.position, ai.targetPlayer.gameplayCamera.transform.forward);
-                RaycastHit[] raycastHits = Physics.RaycastAll(interactRay);
-                if (raycastHits.Length == 0)
-                {
-                    npcController.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
-                    npcController.OrderToLookForward();
-                }
-                else
-                {
-                    // Check if looking at a player/intern
-                    foreach (var hit in raycastHits)
-                    {
-                        PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                        if (player != null
-                            && player.playerClientId != StartOfRound.Instance.localPlayerController.playerClientId)
-                        {
-                            npcController.OrderToLookAtPosition(hit.point);
-                            npcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
-                            return;
-                        }
-                    }
-
-                    // Check if looking too far in the distance or at a valid position
-                    foreach (var hit in raycastHits)
-                    {
-                        if (hit.distance < 0.1f)
-                        {
-                            npcController.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
-                            npcController.OrderToLookForward();
-                            return;
-                        }
-
-                        PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                        if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
-                        {
-                            continue;
-                        }
-
-                        // Look at position
-                        npcController.OrderToLookAtPosition(hit.point);
-                        npcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
-                        break;
-                    }
-                }
+                LookAtWhatPlayerPointingAt();
             }
             else
             {
-                // Looking at player or forward
-                PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                if (playerToLook != null)
+                if (position.HasValue)
                 {
-                    npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
+                    npcController.OrderToLookAtPlayer(position.Value);
                 }
                 else
                 {
-                    npcController.OrderToLookForward();
+                    // Looking at player or forward
+                    PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                    if (playerToLook != null)
+                    {
+                        npcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
+                    }
+                    else
+                    {
+                        npcController.OrderToLookForward();
+                    }
+                }
+            }
+        }
+
+        private void LookAtWhatPlayerPointingAt()
+        {
+            // Look where the target player is looking
+            Ray interactRay = new Ray(ai.targetPlayer.gameplayCamera.transform.position, ai.targetPlayer.gameplayCamera.transform.forward);
+            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay);
+            if (raycastHits.Length == 0)
+            {
+                npcController.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
+                npcController.OrderToLookForward();
+            }
+            else
+            {
+                // Check if looking at a player/intern
+                foreach (var hit in raycastHits)
+                {
+                    PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                    if (player != null
+                        && player.playerClientId != StartOfRound.Instance.localPlayerController.playerClientId)
+                    {
+                        npcController.OrderToLookAtPosition(hit.point);
+                        npcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
+                        return;
+                    }
+                }
+
+                // Check if looking too far in the distance or at a valid position
+                foreach (var hit in raycastHits)
+                {
+                    if (hit.distance < 0.1f)
+                    {
+                        npcController.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
+                        npcController.OrderToLookForward();
+                        return;
+                    }
+
+                    PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                    if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
+                    {
+                        continue;
+                    }
+
+                    // Look at position
+                    npcController.OrderToLookAtPosition(hit.point);
+                    npcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
+                    break;
                 }
             }
         }

@@ -63,11 +63,12 @@ namespace LethalInternship
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
         public static AssetBundle ModAssets = null!;
-        public static string DirectoryName = null!;
+        internal static string DirectoryName = null!;
 
         internal static EnemyType InternNPCPrefab = null!;
         internal static int PluginIrlPlayersCount = 0;
 
+        internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
         internal static LethalInternshipInputs InputActionsInstance = null!;
 
@@ -77,7 +78,6 @@ namespace LethalInternship
         internal static bool IsModCustomItemBehaviourLibraryLoaded = false;
         internal static bool IsModMoreCompanyLoaded = false;
         
-        private static new ManualLogSource Logger = null!;
         private readonly Harmony _harmony = new(ModGUID);
 
         private void Awake()
@@ -112,7 +112,7 @@ namespace LethalInternship
                                                                .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
                                                                                             //&& x.name != "ScanNode"
                                                                                             //&& x.name != "MapDot"
-                                                                                            //&& x.name != "Collision"
+                                                                                            && x.name != "Collision"
                                                                                             && x.name != "TurnCompass"
                                                                                             && x.name != "CreatureSFX"
                                                                                             && x.name != "CreatureVoice"

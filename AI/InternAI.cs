@@ -14,7 +14,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
-using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
@@ -64,7 +63,6 @@ namespace LethalInternship.AI
         /// Used for not teleporting too much
         /// </summary>
         public float TimeSinceTeleporting { get; set; }
-        public float CooldownPlayAudio = 0f;
 
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -247,16 +245,6 @@ namespace LethalInternship.AI
                 return;
             }
 
-            // CooldownPlayAudio
-            if (CooldownPlayAudio > 0f)
-            {
-                CooldownPlayAudio -= Time.deltaTime;
-            }
-            if (CooldownPlayAudio < 0f)
-            {
-                CooldownPlayAudio = 0f;
-            }
-
             // No AI calculation if in special animation
             if (inSpecialAnimation)
             {
@@ -340,7 +328,59 @@ namespace LethalInternship.AI
             CheckIfStuck();
 
             // Voice
-            PlayVoiceAudio();
+            TryPlayVoiceAudio();
+        }
+
+        public override void OnCollideWithPlayer(Collider other)
+        {
+            //Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} collided with body {other.gameObject.GetComponent<PlayerControllerB>()?.playerUsername}");
+        }
+
+        public override void OnCollideWithEnemy(Collider other, EnemyAI collidedEnemy)
+        {
+            if (other?.name != "Collision")
+            {
+                Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} collided with enemy {other?.gameObject.name}");
+            }
+        }
+
+        public override void DetectNoise(Vector3 noisePosition, float noiseLoudness, int timesPlayedInOneSpot = 0, int noiseID = 0)
+        {
+            if (NpcController == null
+                || !NpcController.Npc.gameObject.activeSelf
+                || !NpcController.Npc.isPlayerControlled
+                || isEnemyDead
+                || NpcController.Npc.isPlayerDead)
+            {
+                return;
+            }
+
+            //if (noiseID == 7)
+            //{
+            //    return;
+            //}
+            //if (noiseID == 546)
+            //{
+            //    return;
+            //}
+
+            // Player voice = 75 ?
+            if (noiseID != 75)
+            {
+                return;
+            }
+
+            // Make the intern stop talking for some time
+            StopTalking();
+            if (IsOwner)
+            {
+                InternIdentity.Voice.AddRandomCooldownAudio();
+            }
+
+            // Detect noise
+
+
+            Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} detected noise noisePosition {noisePosition}, noiseLoudness {noiseLoudness}, timesPlayedInOneSpot {timesPlayedInOneSpot}, noiseID {noiseID}");
         }
 
         private void SetAgent(bool enabled)
@@ -488,23 +528,6 @@ namespace LethalInternship.AI
                 if (timeSinceStuck - AIIntervalTime >= 0f)
                 {
                     timeSinceStuck -= AIIntervalTime;
-                }
-            }
-        }
-
-        public void PlayVoiceAudio()
-        {
-            if (CooldownPlayAudio == 0f
-                && InternManager.Instance.NoInternThatJustTalkedClose(this))
-            {
-                AudioClip? audioClip = InternIdentity.GetRandomAudioClipByState(this.State.GetAIState());
-                if (audioClip != null)
-                {
-                    Random randomInstance = new Random();
-                    CooldownPlayAudio = audioClip.length + (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
-
-                    Plugin.LogDebug($"intern {this.NpcController.Npc.playerUsername} play state {this.State.GetAIState()} random audio : length {audioClip.length}");
-                    this.creatureVoice.PlayOneShot(audioClip);
                 }
             }
         }
@@ -1485,6 +1508,56 @@ namespace LethalInternship.AI
         {
             return CustomItemBehaviourLibrary.AbstractItems.ContainerBehaviour.CheckIfItemInContainer(grabbableObject);
         }
+
+        #region Voices
+
+        public void TryPlayVoiceAudio()
+        {
+            EnumAIStates currentAIState = this.State.GetAIState();
+            switch (currentAIState)
+            {
+                case EnumAIStates.FetchingObject:
+                    // Talk if no one is talking close
+                    if (!InternManager.Instance.DidAnInternJustTalkedClose(this))
+                    {
+                        StopTalking();
+                        InternIdentity.Voice.PlayRandomVoiceAudio(this.creatureVoice, currentAIState);
+                    }
+                    break;
+
+                case EnumAIStates.Panik:
+                    // Priority state
+                    // Stop talking and voice new state
+                    StopTalking();
+                    InternIdentity.Voice.PlayRandomVoiceAudio(this.creatureVoice, currentAIState);
+                    break;
+
+                case EnumAIStates.BrainDead:
+                    StopTalking();
+                    break;
+
+                default:
+                    // Default states, wait for cooldown and if no one is talking close
+                    if (!InternIdentity.Voice.CanPlayAudio()
+                        || InternManager.Instance.DidAnInternJustTalkedClose(this))
+                    {
+                        return;
+                    }
+
+                    InternIdentity.Voice.PlayRandomVoiceAudio(this.creatureVoice, currentAIState);
+                    break;
+            }
+        }
+
+        public void StopTalking()
+        {
+            if (this.creatureVoice.isPlaying)
+            {
+                this.creatureVoice.Stop();
+            }
+        }
+
+        #endregion
 
         #region TeleportIntern RPC
 

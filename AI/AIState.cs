@@ -73,6 +73,8 @@ namespace LethalInternship.AI
         /// </summary>
         public abstract void DoAI();
 
+        public virtual void PlayerHeard(Vector3 noisePosition) { }
+
         /// <summary>
         /// Get the <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see> of current State
         /// </summary>

@@ -85,6 +85,13 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        public override void PlayerHeard(Vector3 noisePosition)
+        {
+            // Go towards the sound heard
+            this.targetLastKnownPosition = noisePosition;
+            ai.State = new JustLostPlayerState(this);
+        }
+
         public override string GetBillboardStateIndicator()
         {
             return "?";

@@ -58,7 +58,7 @@ namespace LethalInternship.AI.AIStates
 
                 StartLookingAroundCoroutine();
 
-                CheckLOSForTarget();
+                CheckLOSForTargetAndGetClose();
 
                 return;
             }
@@ -111,7 +111,8 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Check if we see the target player
-            CheckLOSForTarget();
+            // Or a new target player if target player is null
+            CheckLOSForTargetOrClosestPlayer();
 
             // Go to the last known position
             ai.SetDestinationToPositionInternAI(targetLastKnownPosition.Value);
@@ -133,13 +134,13 @@ namespace LethalInternship.AI.AIStates
 
         public override string GetBillboardStateIndicator()
         {
-            return "!";
+            return "!?";
         }
 
         /// <summary>
         /// Check if the target player is in line of sight
         /// </summary>
-        private void CheckLOSForTarget()
+        private void CheckLOSForTargetAndGetClose()
         {
             PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (target != null)
@@ -149,6 +150,27 @@ namespace LethalInternship.AI.AIStates
                 targetLastKnownPosition = target.transform.position;
                 ai.State = new GetCloseToPlayerState(this);
                 return;
+            }
+        }
+
+        private void CheckLOSForTargetOrClosestPlayer()
+        {
+            if (ai.targetPlayer == null)
+            {
+                PlayerControllerB? newTarget = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                if (newTarget != null)
+                {
+                    // new target
+                    ai.SyncAssignTargetAndSetMovingTo(newTarget);
+                    if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionSuitChange.AutomaticSameAsPlayer)
+                    {
+                        ai.ChangeSuitInternServerRpc(npcController.Npc.playerClientId, newTarget.currentSuitID);
+                    }
+                }
+            }
+            else
+            {
+                CheckLOSForTargetAndGetClose();
             }
         }
 

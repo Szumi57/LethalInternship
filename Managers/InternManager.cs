@@ -82,11 +82,11 @@ namespace LethalInternship.Managers
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
         private InternAI[] AllInternAIs = null!;
-        private InternIdentity[] InternIdentities = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
         private Coroutine BeamOutInternsCoroutine = null!;
+        private ClientRpcParams ClientRpcParams = new ClientRpcParams();
 
         /// <summary>
         /// Initialize instance,
@@ -144,7 +144,6 @@ namespace LethalInternship.Managers
             if (AllPlayerObjectsBackUp == null)
             {
                 AllInternAIs = new InternAI[maxInternsAvailable];
-                InternIdentities = new InternIdentity[maxInternsAvailable];
                 AllPlayerObjectsBackUp = new GameObject[maxInternsAvailable];
                 AllPlayerScriptsBackUp = new PlayerControllerB[maxInternsAvailable];
 
@@ -153,13 +152,16 @@ namespace LethalInternship.Managers
             else if (AllPlayerObjectsBackUp.Length != maxInternsAvailable)
             {
                 Array.Resize(ref AllInternAIs, maxInternsAvailable);
-                Array.Resize(ref InternIdentities, maxInternsAvailable);
                 Array.Resize(ref AllPlayerObjectsBackUp, maxInternsAvailable);
                 Array.Resize(ref AllPlayerScriptsBackUp, maxInternsAvailable);
 
                 Array.Resize(ref RagdollInternBodies, irlPlayersAndInternsCount);
             }
 
+            // Identities
+            IdentityManager.Instance.CreateIdentities(maxInternsAvailable, Plugin.Config.ConfigIdentities.configIdentities);
+
+            // Need to populate pool of interns ?
             AllEntitiesCount = irlPlayersAndInternsCount;
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
@@ -202,6 +204,7 @@ namespace LethalInternship.Managers
             // If the size of array has been modified by morecompany for example when loading scene or the game, at some point
             for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
             {
+                // Back ups ?
                 int indexPlusIrlPlayersCount = i + irlPlayersCount;
                 if (AllPlayerObjectsBackUp[i] != null)
                 {
@@ -246,9 +249,6 @@ namespace LethalInternship.Managers
 
                 AllPlayerObjectsBackUp[i] = internObject;
                 AllPlayerScriptsBackUp[i] = internController;
-
-                // Identities
-                InternIdentities[i] = IdentityManager.Instance.InitNewIdentity(i);
 
                 internObject.SetActive(false);
             }
@@ -333,7 +333,7 @@ namespace LethalInternship.Managers
             }
 
             // Get an identity for the intern
-            internAI.InternIdentity = InternIdentities[indexNextIntern];
+            internAI.InternIdentity = IdentityManager.Instance.InternIdentities[indexNextIntern];
 
             // Spawn ragdoll dead bodies of intern
             NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject].playerClientId);
@@ -446,7 +446,8 @@ namespace LethalInternship.Managers
                                         Vector3 spawnPosition, float yRot, bool isOutside)
         {
             StartOfRound instance = StartOfRound.Instance;
-            InternIdentity internIdentity = InternIdentities[internIdentityID];
+            InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[internIdentityID];
+
             GameObject objectParent = instance.allPlayerObjects[indexNextPlayerObject];
             objectParent.transform.position = spawnPosition;
             objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
@@ -1202,9 +1203,50 @@ namespace LethalInternship.Managers
 
         #endregion
 
+        #region Config RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncLoadedJsonIdentitiesServerRpc(ulong clientId)
+        {
+            Plugin.LogDebug($"Client {clientId} ask server/host {NetworkManager.LocalClientId} to SyncLoadedJsonIdentities");
+            ClientRpcParams.Send = new ClientRpcSendParams()
+            {
+                TargetClientIds = new ulong[] { clientId }
+            };
+
+            SyncLoadedJsonIdentitiesClientRpc(
+                new ConfigIdentityNetworkSerializable()
+                {
+                    ConfigIdentities = Plugin.Config.ConfigIdentities.configIdentities
+                },
+                ClientRpcParams);
+        }
+
+        [ClientRpc]
+        private void SyncLoadedJsonIdentitiesClientRpc(ConfigIdentityNetworkSerializable configIdentityNetworkSerializable,
+                                                       ClientRpcParams clientRpcParams = default)
+        {
+            if (IsOwner)
+            {
+                return;
+            }
+
+            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync interns identities");
+            Plugin.LogDebug($"Loaded {configIdentityNetworkSerializable.ConfigIdentities.Length} identities from server");
+            foreach (ConfigIdentity configIdentity in configIdentityNetworkSerializable.ConfigIdentities)
+            {
+                Plugin.LogDebug($"{configIdentity.ToString()}");
+            }
+
+            Plugin.LogDebug($"Recreate identities for {Plugin.Config.MaxInternsAvailable.Value} interns");
+            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxInternsAvailable.Value, configIdentityNetworkSerializable.ConfigIdentities);
+        }
+
+        #endregion
+
         #region Voices
 
-        public bool NoInternThatJustTalkedClose(InternAI internTryingToTalk)
+        public bool DidAnInternJustTalkedClose(InternAI internTryingToTalk)
         {
             foreach (var internAI in AllInternAIs)
             {
@@ -1223,15 +1265,15 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
-                if (internAI.CooldownPlayAudio > 0f
+                if (internAI.creatureVoice.isPlaying
                     && (internAI.NpcController.Npc.transform.position - internTryingToTalk.NpcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_HEAR_OTHER_INTERNS)
                 {
-                    Plugin.LogDebug("intern that just talked too close");
-                    return false;
+                    //Plugin.LogDebug($"internTryingToTalk {internTryingToTalk.NpcController.Npc.playerUsername} cannot because intern {internAI.NpcController.Npc.playerUsername} just talked too close");
+                    return true;
                 }
             }
 
-            return true;
+            return false;
         }
 
         #endregion
