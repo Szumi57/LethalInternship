@@ -13,5 +13,11 @@ namespace LethalInternship.AI.AIStates
         {
             ai.StopMoving();
         }
+
+        public override void TryPlayVoiceAudio()
+        {
+            ai.StopTalking();
+            lastVoiceState = EnumVoicesState.None;
+        }
     }
 }

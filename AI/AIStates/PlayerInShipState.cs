@@ -105,6 +105,11 @@ namespace LethalInternship.AI.AIStates
             //ShipBoundClosestPointFromIntern = ai.destination;
         }
 
+        public override void TryPlayVoiceAudio() 
+        { 
+            lastVoiceState = EnumVoicesState.None;
+        }
+
         public override string GetBillboardStateIndicator()
         {
             return "...";

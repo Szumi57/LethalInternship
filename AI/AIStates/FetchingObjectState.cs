@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -81,6 +82,19 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Talk if no one is talking close
+            EnumVoicesState voiceState = EnumVoicesState.FoundObject;
+            if (lastVoiceState != voiceState  
+                && !InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                ai.StopTalking();
+                ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, voiceState);
+                lastVoiceState = voiceState;
+            }
         }
 
         public override string GetBillboardStateIndicator()

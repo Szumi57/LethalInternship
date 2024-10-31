@@ -328,7 +328,7 @@ namespace LethalInternship.AI
             CheckIfStuck();
 
             // Voice
-            TryPlayVoiceAudio();
+            State.TryPlayVoiceAudio();
         }
 
         public override void OnCollideWithPlayer(Collider other)
@@ -377,10 +377,9 @@ namespace LethalInternship.AI
                 InternIdentity.Voice.AddRandomCooldownAudio();
             }
 
-            // Detect noise
-
-
             Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} detected noise noisePosition {noisePosition}, noiseLoudness {noiseLoudness}, timesPlayedInOneSpot {timesPlayedInOneSpot}, noiseID {noiseID}");
+            // Player heard
+            State.PlayerHeard(noisePosition);
         }
 
         private void SetAgent(bool enabled)
@@ -1510,44 +1509,6 @@ namespace LethalInternship.AI
         }
 
         #region Voices
-
-        public void TryPlayVoiceAudio()
-        {
-            EnumAIStates currentAIState = this.State.GetAIState();
-            switch (currentAIState)
-            {
-                case EnumAIStates.FetchingObject:
-                    // Talk if no one is talking close
-                    if (!InternManager.Instance.DidAnInternJustTalkedClose(this))
-                    {
-                        StopTalking();
-                        InternIdentity.Voice.PlayRandomVoiceAudio(this.creatureVoice, currentAIState);
-                    }
-                    break;
-
-                case EnumAIStates.Panik:
-                    // Priority state
-                    // Stop talking and voice new state
-                    StopTalking();
-                    InternIdentity.Voice.PlayRandomVoiceAudio(this.creatureVoice, currentAIState);
-                    break;
-
-                case EnumAIStates.BrainDead:
-                    StopTalking();
-                    break;
-
-                default:
-                    // Default states, wait for cooldown and if no one is talking close
-                    if (!InternIdentity.Voice.CanPlayAudio()
-                        || InternManager.Instance.DidAnInternJustTalkedClose(this))
-                    {
-                        return;
-                    }
-
-                    InternIdentity.Voice.PlayRandomVoiceAudio(this.creatureVoice, currentAIState);
-                    break;
-            }
-        }
 
         public void StopTalking()
         {

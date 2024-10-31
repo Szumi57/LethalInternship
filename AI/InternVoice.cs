@@ -11,12 +11,24 @@ namespace LethalInternship.AI
     {
         public string IdentityName { get; set; }
 
-        private Dictionary<EnumAIStates, List<AudioClip>> dictAvailableAudioClipsByState = new Dictionary<EnumAIStates, List<AudioClip>>();
+        private Dictionary<EnumVoicesState, List<string>> dictAvailableAudioClipPathsByState = new Dictionary<EnumVoicesState, List<string>>();
+        private Dictionary<EnumVoicesState, List<string>> availableAudioClipPaths = new Dictionary<EnumVoicesState, List<string>>();
         private float cooldownPlayAudio = 0f;
 
         public InternVoice(string identityName)
         {
             IdentityName = identityName;
+        }
+
+        public void AddCooldownAudio(float cooldown)
+        {
+            cooldownPlayAudio = cooldown;
+        }
+
+        public void AddRandomCooldownAudio()
+        {
+            Random randomInstance = new Random();
+            cooldownPlayAudio = (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
         }
 
         public void ReduceCooldown(float time)
@@ -37,106 +49,59 @@ namespace LethalInternship.AI
             return cooldownPlayAudio == 0f;
         }
 
-        public void PlayRandomVoiceAudio(AudioSource audioSource, EnumAIStates enumAIState)
+        public void PlayRandomVoiceAudio(AudioSource audioSource, EnumVoicesState enumVoicesState)
         {
-            AudioClip? audioClip = GetRandomAudioClipByState(enumAIState);
-            if (audioClip != null)
+            string audioClipPath = GetRandomAudioClipByState(enumVoicesState);
+            if (!string.IsNullOrWhiteSpace(audioClipPath))
             {
-                Random randomInstance = new Random();
-                cooldownPlayAudio = audioClip.length + (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
-
-                Plugin.LogDebug($"intern with identity {IdentityName} play state {enumAIState} random audio : length {audioClip.length}");
-                audioSource.clip = audioClip;
-                audioSource.Play();
+                Plugin.LogDebug($"intern with identity {IdentityName} play state {enumVoicesState} random audio");
+                AudioManager.Instance.PlayAudio(audioSource, audioClipPath, this);
             }
         }
 
-        public void AddRandomCooldownAudio()
+        private string GetRandomAudioClipByState(EnumVoicesState enumVoicesState)
         {
+            if (!dictAvailableAudioClipPathsByState.ContainsKey(enumVoicesState))
+            {
+                dictAvailableAudioClipPathsByState.Add(enumVoicesState, LoadAudioClipPathsByState(enumVoicesState).ToList());
+            }
+
+            if (!availableAudioClipPaths.ContainsKey(enumVoicesState))
+            {
+                availableAudioClipPaths.Add(enumVoicesState, dictAvailableAudioClipPathsByState[enumVoicesState].ToList());
+            }
+
+            if (availableAudioClipPaths[enumVoicesState].Count == 0)
+            {
+                availableAudioClipPaths[enumVoicesState] = dictAvailableAudioClipPathsByState[enumVoicesState].ToList();
+            }
+
+            List<string> audioClipPaths = availableAudioClipPaths[enumVoicesState];
+            if (audioClipPaths.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            string audioClipPath;
             Random randomInstance = new Random();
-            cooldownPlayAudio = (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
+            int index = randomInstance.Next(0, audioClipPaths.Count);
+
+            audioClipPath = audioClipPaths[index];
+            audioClipPaths.RemoveAt(index);
+            Plugin.LogDebug($"======== enumVoicesState {enumVoicesState} audioClipPaths {audioClipPaths.Count}, dictAvailableAudioClipPathsByState {dictAvailableAudioClipPathsByState[enumVoicesState].Count}");
+            return audioClipPath;
         }
 
-        private AudioClip? GetRandomAudioClipByState(EnumAIStates enumAIState)
+        private string[] LoadAudioClipPathsByState(EnumVoicesState enumVoicesState)
         {
-            List<AudioClip> availableAudioClips;
-            if (!dictAvailableAudioClipsByState.ContainsKey(enumAIState))
-            {
-                dictAvailableAudioClipsByState.Add(enumAIState, LoadAudioClipsByState(enumAIState).ToList());
-            }
-            availableAudioClips = dictAvailableAudioClipsByState[enumAIState];
+            string path = IdentityName + "\\" + enumVoicesState.ToString();
 
-            if (availableAudioClips.Count == 0)
-            {
-                availableAudioClips.AddRange(LoadAudioClipsByState(enumAIState));
-            }
-
-            if (availableAudioClips.Count == 0)
-            {
-                return null;
-            }
-
-            AudioClip audioClip;
-            if (availableAudioClips.Count == 1)
-            {
-                audioClip = availableAudioClips[0];
-                availableAudioClips.RemoveAt(0);
-                availableAudioClips.AddRange(LoadAudioClipsByState(enumAIState));
-                return audioClip;
-            }
-
-            Random randomInstance = new Random();
-            int index = randomInstance.Next(0, availableAudioClips.Count);
-
-            audioClip = availableAudioClips[index];
-            availableAudioClips.RemoveAt(index);
-            return audioClip;
-        }
-
-        private AudioClip[] LoadAudioClipsByState(EnumAIStates enumAIState)
-        {
-            string path = IdentityName;
-            string stateFolder;
-            switch (enumAIState)
-            {
-                case EnumAIStates.SearchingForPlayer:
-                    stateFolder = "SearchingPlayer";
-                    break;
-                case EnumAIStates.GetCloseToPlayer:
-                    stateFolder = "GetCloseToPlayer";
-                    break;
-                case EnumAIStates.JustLostPlayer:
-                    stateFolder = "JustLostPlayer";
-                    break;
-                case EnumAIStates.ChillWithPlayer:
-                    stateFolder = "Chill";
-                    break;
-                case EnumAIStates.FetchingObject:
-                    stateFolder = "FetchingObject";
-                    break;
-                case EnumAIStates.PlayerInCruiser:
-                    stateFolder = "InCruiser";
-                    break;
-                case EnumAIStates.Panik:
-                    stateFolder = "Panik";
-                    break;
-                default:
-                    Plugin.LogWarning($"No audio loaded for state {enumAIState} for identity name {IdentityName}.");
-                    return new AudioClip[0];
-            }
-
-            path += "\\" + stateFolder;
-
-            Plugin.LogDebug($"path to search {path}");
-            foreach (var a in AudioManager.Instance.DictAudioClipsByPath
-                       .Where(x => x.Key.Contains(path)))
-            {
-                Plugin.LogDebug($"path to search {a.ToString()}");
-            }
+            Plugin.LogDebug($"Loaded {AudioManager.Instance.DictAudioClipsByPath
+                                        .Where(x => x.Key.Contains(path)).Select(y => y.Key).Count()} path containing {path}");
 
             return AudioManager.Instance.DictAudioClipsByPath
                        .Where(x => x.Key.Contains(path))
-                       .Select(y => y.Value)
+                       .Select(y => y.Key).Take(1)
                        .ToArray();
         }
     }

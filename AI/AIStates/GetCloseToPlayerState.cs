@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -144,6 +145,19 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            if (!ai.InternIdentity.Voice.CanPlayAudio()
+                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                return;
+            }
+
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.GetCloseToPlayer);
+            lastVoiceState = EnumVoicesState.GetCloseToPlayer;
         }
     }
 }

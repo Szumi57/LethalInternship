@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.AI
@@ -34,6 +35,8 @@ namespace LethalInternship.AI
 
         protected Coroutine? panikCoroutine;
         protected Transform? enemyTransform;
+
+        protected EnumVoicesState lastVoiceState;
 
         /// <summary>
         /// Constructor from another state
@@ -72,6 +75,8 @@ namespace LethalInternship.AI
         /// Apply the behaviour according to the type of state <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see>.<br/>
         /// </summary>
         public abstract void DoAI();
+
+        public abstract void TryPlayVoiceAudio();
 
         public virtual void PlayerHeard(Vector3 noisePosition) { }
 

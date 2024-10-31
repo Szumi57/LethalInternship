@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -114,6 +115,19 @@ namespace LethalInternship.AI.AIStates
 
             // Emotes
             npcController.MimicEmotes(ai.targetPlayer);
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            if (!ai.InternIdentity.Voice.CanPlayAudio()
+                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                return;
+            }
+
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.Chill);
+            lastVoiceState = EnumVoicesState.Chill;
         }
 
         public override void PlayerHeard(Vector3 noisePosition)

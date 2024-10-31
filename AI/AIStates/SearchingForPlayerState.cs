@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
 using System.Collections;
 using UnityEngine;
 
@@ -83,6 +84,19 @@ namespace LethalInternship.AI.AIStates
                 // Start the coroutine from base game to search for players
                 ai.StartSearch(ai.NpcController.Npc.transform.position, searchForPlayers);
             }
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            if (!ai.InternIdentity.Voice.CanPlayAudio()
+                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                return;
+            }
+
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.LookingForPlayer);
+            lastVoiceState = EnumVoicesState.LookingForPlayer;
         }
 
         public override void PlayerHeard(Vector3 noisePosition)

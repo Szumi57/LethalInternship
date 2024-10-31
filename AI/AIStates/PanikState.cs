@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -55,7 +56,7 @@ namespace LethalInternship.AI.AIStates
             {
                 this.enemyTransform = enemyAI.transform;
             }
-            
+
             // Check to see if the intern can see the enemy, or enemy has line of sight to intern
             float sqrDistanceToEnemy = (npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude;
             if (Physics.Linecast(enemyTransform.position, npcController.Npc.gameplayCamera.transform.position,
@@ -90,6 +91,19 @@ namespace LethalInternship.AI.AIStates
             // Sprint of course
             npcController.OrderToSprint();
             ai.OrderMoveToDestination();
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Priority state
+            // Stop talking and voice new state
+            EnumVoicesState voiceState = EnumVoicesState.Panik;
+            if (lastVoiceState != voiceState)
+            {
+                ai.StopTalking();
+                ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, voiceState);
+                lastVoiceState = voiceState;
+            }
         }
 
         public override string GetBillboardStateIndicator()

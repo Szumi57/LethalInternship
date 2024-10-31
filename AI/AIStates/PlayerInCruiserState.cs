@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Managers;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -100,6 +101,19 @@ namespace LethalInternship.AI.AIStates
             // Chill
             npcController.OrderToStopMoving();
             return;
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            if (!ai.InternIdentity.Voice.CanPlayAudio()
+                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                return;
+            }
+
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.InCruiser);
+            lastVoiceState = EnumVoicesState.InCruiser;
         }
 
         private Vector3 GetNextRandomInCruiserPos()

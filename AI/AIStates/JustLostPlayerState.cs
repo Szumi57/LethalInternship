@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
 using System.Collections;
 using UnityEngine;
 
@@ -130,6 +131,19 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
             // Destination after path checking might be not the same now
             targetLastKnownPosition = ai.destination;
+        }
+
+        public override void TryPlayVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            if (!ai.InternIdentity.Voice.CanPlayAudio()
+                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                return;
+            }
+
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.JustLostPlayer);
+            lastVoiceState = EnumVoicesState.JustLostPlayer;
         }
 
         public override string GetBillboardStateIndicator()
