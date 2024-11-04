@@ -1,8 +1,10 @@
 ﻿using LethalInternship.AI;
-using LethalInternship.Configs;
 using LethalInternship.Enums;
+using LethalInternship.NetworkSerializers;
 using System;
+using System.Linq;
 using UnityEngine;
+using Random = System.Random;
 
 namespace LethalInternship.Managers
 {
@@ -92,10 +94,22 @@ namespace LethalInternship.Managers
             }
 
             // Voice
-            InternVoice voice = new InternVoice(name);
+            InternVoice voice = new InternVoice(configIdentity.voiceFolder,
+                                                configIdentity.voicePitch);
 
             // InternIdentity
             return new InternIdentity(indexIntern, name, suitID, voice);
+        }
+
+        public int GetRandomIdentityIndex(InternIdentity[] usedIdentities)
+        {
+            InternIdentity[] allIdentities = new InternIdentity[InternIdentities.Length];
+            InternIdentities.CopyTo(allIdentities, 0);
+            InternIdentity[] remainingIdentities = allIdentities.Except(usedIdentities).ToArray();
+
+            Random randomInstance = new Random();
+            int randomIndex = randomInstance.Next(0, remainingIdentities.Length);
+            return remainingIdentities[randomIndex].IdIdentity;
         }
     }
 }

@@ -28,10 +28,6 @@ source = "../../UnityProject/AssetBundles/StandaloneWindows/internnpcmodassets"
 target = "plugins/Szumi57-LethalInternship/"
 
 [[build.copy]]
-source = "../Assets"
-target = "plugins/Szumi57-LethalInternship/"
-
-[[build.copy]]
 source = "./CHANGELOG.md"
 target = "/"
 

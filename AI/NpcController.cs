@@ -38,6 +38,11 @@ namespace LethalInternship.AI
         public float PreviousFrameDeltaTime;
         public float CameraUp;
 
+        //Audio
+        public OccludeAudio OccludeAudioComponent = null!;
+        public AudioLowPassFilter AudioLowPassFilterComponent = null!;
+        public AudioHighPassFilter AudioHighPassFilterComponent = null!;
+
         public bool UpdatePositionForNewlyJoinedClient;
         public bool GrabbedObjectValidated;
         public float UpdatePlayerLookInterval;
@@ -1056,12 +1061,13 @@ namespace LethalInternship.AI
                 if (!this.wasUnderwaterLastFrame)
                 {
                     this.wasUnderwaterLastFrame = true;
-                    if (!InternAIController.IsClientOwnerOfIntern())
-                    {
-                        Npc.waterBubblesAudio.Play();
-                    }
+                    Npc.waterBubblesAudio.Play();
                 }
                 Npc.voiceMuffledByEnemy = true;
+                Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 0f, 4f * Time.deltaTime);
+                OccludeAudioComponent.overridingLowPass = true;
+                OccludeAudioComponent.lowPassOverride = 600f;
+                Npc.waterBubblesAudio.volume = Mathf.Clamp(Npc.currentVoiceChatAudioSource.volume, 0f, 1f);
             }
             else if (this.wasUnderwaterLastFrame)
             {
@@ -1077,24 +1083,24 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateActiveAudioReverbFilter()
         {
-            GameNetworkManager instanceGNM = GameNetworkManager.Instance;
-            StartOfRound instanceSOR = StartOfRound.Instance;
+            //GameNetworkManager instanceGNM = GameNetworkManager.Instance;
+            //StartOfRound instanceSOR = StartOfRound.Instance;
 
-            if (Npc.activeAudioReverbFilter == null)
-            {
-                Npc.activeAudioReverbFilter = Npc.activeAudioListener.GetComponent<AudioReverbFilter>();
-                Npc.activeAudioReverbFilter.enabled = true;
-            }
-            if (Npc.reverbPreset != null && instanceGNM != null && instanceGNM.localPlayerController != null
-                && ((instanceGNM.localPlayerController == this.Npc
-                && (!Npc.isPlayerDead || instanceSOR.overrideSpectateCamera)) || (instanceGNM.localPlayerController.spectatedPlayerScript == this.Npc && !instanceSOR.overrideSpectateCamera)))
-            {
-                Npc.activeAudioReverbFilter.dryLevel = Mathf.Lerp(Npc.activeAudioReverbFilter.dryLevel, Npc.reverbPreset.dryLevel, 15f * Time.deltaTime);
-                Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomLF, Npc.reverbPreset.lowFreq, 15f * Time.deltaTime);
-                Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomHF, Npc.reverbPreset.highFreq, 15f * Time.deltaTime);
-                Npc.activeAudioReverbFilter.decayTime = Mathf.Lerp(Npc.activeAudioReverbFilter.decayTime, Npc.reverbPreset.decayTime, 15f * Time.deltaTime);
-                Npc.activeAudioReverbFilter.room = Mathf.Lerp(Npc.activeAudioReverbFilter.room, Npc.reverbPreset.room, 15f * Time.deltaTime);
-            }
+            //if (Npc.activeAudioReverbFilter == null)
+            //{
+            //    Npc.activeAudioReverbFilter = Npc.activeAudioListener.GetComponent<AudioReverbFilter>();
+            //    Npc.activeAudioReverbFilter.enabled = true;
+            //}
+            //if (Npc.reverbPreset != null && instanceGNM != null && instanceGNM.localPlayerController != null
+            //    && ((instanceGNM.localPlayerController == this.Npc
+            //    && (!Npc.isPlayerDead || instanceSOR.overrideSpectateCamera)) || (instanceGNM.localPlayerController.spectatedPlayerScript == this.Npc && !instanceSOR.overrideSpectateCamera)))
+            //{
+            //    Npc.activeAudioReverbFilter.dryLevel = Mathf.Lerp(Npc.activeAudioReverbFilter.dryLevel, Npc.reverbPreset.dryLevel, 15f * Time.deltaTime);
+            //    Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomLF, Npc.reverbPreset.lowFreq, 15f * Time.deltaTime);
+            //    Npc.activeAudioReverbFilter.roomLF = Mathf.Lerp(Npc.activeAudioReverbFilter.roomHF, Npc.reverbPreset.highFreq, 15f * Time.deltaTime);
+            //    Npc.activeAudioReverbFilter.decayTime = Mathf.Lerp(Npc.activeAudioReverbFilter.decayTime, Npc.reverbPreset.decayTime, 15f * Time.deltaTime);
+            //    Npc.activeAudioReverbFilter.room = Mathf.Lerp(Npc.activeAudioReverbFilter.room, Npc.reverbPreset.room, 15f * Time.deltaTime);
+            //}
         }
         /// <summary>
         /// Update animations when holding items and exhausion

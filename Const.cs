@@ -1,5 +1,5 @@
-﻿using LethalInternship.Configs;
-using LethalInternship.Enums;
+﻿using LethalInternship.Enums;
+using LethalInternship.NetworkSerializers;
 using UnityEngine;
 
 namespace LethalInternship
@@ -34,7 +34,7 @@ namespace LethalInternship
 
         // Config
         public static readonly string ConfigSectionMain = "1. Internship program";
-        public static readonly string ConfigSectionNames = "2. Intern names";
+        public static readonly string ConfigSectionIdentities = "2. Intern identities";
         public static readonly string ConfigSectionBehaviour = "3. Behaviour";
         public static readonly string ConfigSectionTeleporters = "4. Teleporters";
         public static readonly string ConfigSectionVoices = "5. Voices";
@@ -120,6 +120,15 @@ namespace LethalInternship
         public static readonly int COMPANY_BUILDING_MOON_ID = 3;
         public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 10f;
 
+        // Voices
+        public static readonly float VOLUME_INTERNS = 0.5f;
+        public static readonly int MIN_COOLDOWN_PLAYVOICE = 5;
+        public static readonly int MAX_COOLDOWN_PLAYVOICE = 20;
+        public static readonly float DISTANCE_HEAR_OTHER_INTERNS = 10f;
+        public static readonly float FADE_IN_TIME = 0.1f;
+        public static readonly float FADE_OUT_TIME = 0.2f;
+        public static readonly string SWEAR_KEYWORD = "_cuss";
+
         // Debug
         public static readonly bool DRAW_LINES = false;
         public static readonly bool SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED = false;
@@ -201,11 +210,6 @@ namespace LethalInternship
         public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
-
-        // Voices
-        public static readonly int MIN_COOLDOWN_PLAYVOICE = 1;
-        public static readonly int MAX_COOLDOWN_PLAYVOICE = 10;
-        public static readonly float DISTANCE_HEAR_OTHER_INTERNS = 20f;
 
         // Tips
         public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";

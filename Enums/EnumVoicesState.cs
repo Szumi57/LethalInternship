@@ -3,12 +3,13 @@
     public enum EnumVoicesState
     {
         None = 0,
-        LookingForPlayer,
-        GetCloseToPlayer,
-        JustLostPlayer,
-        Chill,
-        FoundObject,
-        InCruiser,
-        Panik
+        Chilling,
+        EnteringCruiser,
+        FollowingPlayer,
+        FoundLoot,
+        LosingPlayer,
+        Lost,
+        LostAndFound,
+        RunningFromMonster
     }
 }

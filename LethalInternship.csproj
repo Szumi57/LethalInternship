@@ -61,9 +61,11 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\Audio\Voices\DefaultVoices.zip" />
     <None Remove="Configs\ConfigIdentities.json" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\Audio\Voices\DefaultVoices.zip" />
     <EmbeddedResource Include="Configs\ConfigIdentities.json" />
   </ItemGroup>
 
@@ -89,12 +91,6 @@
     <PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Assets\Audio\Voices\en\Chill\" />
-    <Folder Include="Assets\Audio\Voices\en\FetchingObject\" />
-    <Folder Include="Assets\Audio\Voices\en\GetCloseToPlayer\" />
-    <Folder Include="Assets\Audio\Voices\en\JustLostPlayer\" />
-    <Folder Include="Assets\Audio\Voices\en\InCruiser\" />
-    <Folder Include="Assets\Audio\Voices\en\Panik\" />
     <Folder Include="lib\mods\" />
     <Folder Include="lib\LCv64\" />
   </ItemGroup>

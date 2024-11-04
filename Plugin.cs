@@ -145,6 +145,7 @@ namespace LethalInternship
         private void PatchBaseGame()
         {
             // Game engine
+            _harmony.PatchAll(typeof(AudioMixerPatch));
             _harmony.PatchAll(typeof(DebugPatch));
             _harmony.PatchAll(typeof(GameNetworkManagerPatch));
             _harmony.PatchAll(typeof(HUDManagerPatch));

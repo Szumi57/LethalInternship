@@ -1,10 +1,14 @@
-﻿using LethalInternship.AI;
+﻿using BepInEx;
+using LethalInternship.AI;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
-using Random = System.Random;
 
 namespace LethalInternship.Managers
 {
@@ -13,26 +17,58 @@ namespace LethalInternship.Managers
         public static AudioManager Instance { get; private set; } = null!;
 
         public Dictionary<string, AudioClip?> DictAudioClipsByPath = new Dictionary<string, AudioClip?>();
-        public string LanguageDirectory = null!;
+
+        private readonly string voicesPath = "Audio\\Voices\\";
 
         private void Awake()
         {
             Instance = this;
             Plugin.LogDebug("=============== awake audio manager =====================");
-            LoadAllVoiceLanguageAudioAssets();
+
+            try
+            {
+                LoadAllVoiceLanguageAudioAssets();
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogError($"Error while loading voice audios, error : {ex.Message}");
+            }
         }
 
         private void LoadAllVoiceLanguageAudioAssets()
         {
-            LanguageDirectory = Path.Combine(Plugin.DirectoryName, "Audio\\Voices\\" + Plugin.Config.VoicesLanguageFolder.Value);
-            if (!Directory.Exists(LanguageDirectory))
+            // Try to load user custom voices
+            string folderPath = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, voicesPath);
+            if (Directory.Exists(folderPath))
             {
-                Plugin.LogError("No voices loaded, no directory found at : " + LanguageDirectory);
+                // Load all paths
+                foreach (string filePath in Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories))
+                {
+                    AddPath("file://" + filePath);
+                }
+
                 return;
             }
 
+            // Try to load decompress default voices
+            folderPath = Path.Combine(Plugin.DirectoryName, voicesPath);
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+
+                // Load zip and extract it
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                using (Stream resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".Assets.Audio.Voices.DefaultVoices.zip"))
+                {
+                    using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
+                    {
+                        archive.ExtractToDirectory(folderPath);
+                    }
+                }
+            }
+
             // Load all paths
-            foreach (string filePath in Directory.GetFiles(LanguageDirectory, "*.ogg", SearchOption.AllDirectories))
+            foreach (string filePath in Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories))
             {
                 AddPath("file://" + filePath);
             }
@@ -51,24 +87,49 @@ namespace LethalInternship.Managers
             }
             else
             {
+
                 DictAudioClipsByPath.Add(path, null);
             }
         }
 
-        public void PlayAudio(AudioSource audioSource, string path, InternVoice internVoice)
+        public void SyncPlayAudio(string path, int internID)
         {
-            AudioClip? audioClip = DictAudioClipsByPath[path];
+            string smallPath = string.Empty;
+
+            try
+            {
+                int indexOfSmallPath = path.IndexOf(voicesPath);
+                smallPath = path.Substring(indexOfSmallPath);
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogError($"Error while loading voice audios, error : {ex.Message}");
+            }
+
+            if (string.IsNullOrWhiteSpace(smallPath))
+            {
+                Plugin.LogError($"Problem occured while getting the small path of audio clip, original path : {path}");
+                return;
+            }
+
+            InternManager.Instance.SyncPlayAudioIntern(internID, smallPath);
+        }
+
+        public void PlayAudio(string smallPathAudioClip, InternVoice internVoice)
+        {
+            var audioClipByPath = DictAudioClipsByPath.FirstOrDefault(x => x.Key.Contains(smallPathAudioClip));
+            AudioClip? audioClip = audioClipByPath.Value;
             if (audioClip == null)
             {
-                StartCoroutine(LoadAudioAndPlay(audioSource, path, internVoice));
+                StartCoroutine(LoadAudioAndPlay(audioClipByPath.Key, internVoice));
             }
             else
             {
-                PlayAudioOnInternVoice(audioSource, audioClip, internVoice);
+                internVoice.PlayAudioClip(audioClip);
             }
         }
 
-        private IEnumerator LoadAudioAndPlay(AudioSource audioSource, string uri, InternVoice internVoice)
+        private IEnumerator LoadAudioAndPlay(string uri, InternVoice internVoice)
         {
             using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(uri, AudioType.OGGVORBIS))
             {
@@ -84,17 +145,9 @@ namespace LethalInternship.Managers
                     Plugin.LogDebug($"New audioClip loaded {audioClip.length}");
                     AddAudioClip(uri, audioClip);
 
-                    PlayAudioOnInternVoice(audioSource, audioClip, internVoice);
+                    internVoice.PlayAudioClip(audioClip);
                 }
             }
-        }
-
-        private void PlayAudioOnInternVoice(AudioSource audioSource, AudioClip audioClip, InternVoice internVoice)
-        {
-            audioSource.clip = audioClip;
-            audioSource.Play();
-            Random randomInstance = new Random();
-            internVoice.AddCooldownAudio(audioClip.length + (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE));
         }
 
         private void AddAudioClip(string path, AudioClip audioClip)
@@ -112,6 +165,49 @@ namespace LethalInternship.Managers
             {
                 DictAudioClipsByPath.Add(path, audioClip);
             }
+        }
+
+        public void FadeInAudio(AudioSource audioSource, float fadeTime, float volumeMax)
+        {
+            StartCoroutine(FadeInAudioCoroutine(audioSource, fadeTime, volumeMax));
+        }
+
+        private IEnumerator FadeInAudioCoroutine(AudioSource audioSource, float fadeTime, float volumeMax)
+        {
+            // https://discussions.unity.com/t/fade-out-audio-source/585912/6
+            float startVolume = 0.2f;
+            audioSource.volume = 0;
+            audioSource.Play();
+
+            while (audioSource.volume < volumeMax)
+            {
+                audioSource.volume += startVolume * Time.deltaTime / fadeTime;
+
+                yield return null;
+            }
+
+            audioSource.volume = volumeMax;
+        }
+
+        public void FadeOutAndStopAudio(AudioSource audioSource, float fadeTime)
+        {
+            StartCoroutine(FadeOutAndStopAudioCoroutine(audioSource, fadeTime));
+        }
+
+        private IEnumerator FadeOutAndStopAudioCoroutine(AudioSource audioSource, float fadeTime)
+        {
+            // https://discussions.unity.com/t/fade-out-audio-source/585912/6
+            float startVolume = audioSource.volume;
+
+            while (audioSource.volume > 0)
+            {
+                audioSource.volume -= startVolume * Time.deltaTime / fadeTime;
+
+                yield return null;
+            }
+
+            audioSource.Stop();
+            audioSource.volume = startVolume;
         }
     }
 }

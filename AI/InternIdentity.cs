@@ -8,39 +8,22 @@ namespace LethalInternship.AI
         public int IdIdentity { get; }
         public string Name { get; set; }
         public InternVoice Voice { get; set; }
-
-        private int? _suitID;
-        public int SuitID
-        {
-            get
-            {
-                if (_suitID.HasValue)
-                {
-                    return _suitID.Value;
-                }
-                else
-                {
-                    _suitID = GetRandomSuitID();
-                    return _suitID.Value;
-                }
-            }
-        }
-
+        public int? SuitID { get; set; }
 
         public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
         {
             IdIdentity = idIdentity;
             Name = name;
-            _suitID = suitID;
+            SuitID = suitID;
             Voice = voice;
         }
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {_suitID}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {SuitID}, Voice : {{{Voice.ToString()}}}";
         }
 
-        private int GetRandomSuitID()
+        public int GetRandomSuitID()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
             UnlockableItem unlockableItem;

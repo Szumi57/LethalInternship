@@ -87,12 +87,12 @@ namespace LethalInternship.AI.AIStates
         public override void TryPlayVoiceAudio()
         {
             // Talk if no one is talking close
-            EnumVoicesState voiceState = EnumVoicesState.FoundObject;
+            EnumVoicesState voiceState = EnumVoicesState.FoundLoot;
             if (lastVoiceState != voiceState  
                 && !InternManager.Instance.DidAnInternJustTalkedClose(ai))
             {
                 ai.StopTalking();
-                ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, voiceState);
+                ai.InternIdentity.Voice.PlayRandomVoiceAudio(voiceState);
                 lastVoiceState = voiceState;
             }
         }

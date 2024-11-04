@@ -53,8 +53,9 @@ namespace LethalInternship.AI
         public RagdollInternBody RagdollInternBody = null!;
         public InternIdentity InternIdentity = null!;
 
-        public string InternId = "Not initialized";
+        public int InternId = -1;
         public int MaxHealth = Const.DEFAULT_INTERN_MAX_HEALTH;
+        public AudioSource InternVoice = null!;
         /// <summary>
         /// Currently held item by intern
         /// </summary>
@@ -173,6 +174,7 @@ namespace LethalInternship.AI
 
             // Intern voice
             InitInternVoiceComponent();
+            UpdateInternVoiceEffects();
 
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
@@ -187,7 +189,6 @@ namespace LethalInternship.AI
             {
                 foreach (var component in this.gameObject.GetComponentsInChildren<AudioSource>())
                 {
-                    Plugin.LogDebug($"component {component.name}");
                     if (component.name == "CreatureVoice")
                     {
                         this.creatureVoice = component;
@@ -198,13 +199,36 @@ namespace LethalInternship.AI
             if (this.creatureVoice == null)
             {
                 Plugin.LogWarning($"Could not initialize intern {this.InternId} {NpcController.Npc.playerUsername} voice !");
+                return;
             }
-            else
+
+            NpcController.Npc.currentVoiceChatAudioSource = this.creatureVoice;
+            this.InternVoice = NpcController.Npc.currentVoiceChatAudioSource;
+            this.InternVoice.enabled = true;
+            InternIdentity.Voice.InternID = this.InternId;
+            InternIdentity.Voice.CurrentAudioSource = this.InternVoice;
+
+            // OccludeAudio
+            NpcController.OccludeAudioComponent = creatureVoice.GetComponent<OccludeAudio>();
+
+            // AudioLowPassFilter
+            AudioLowPassFilter? audioLowPassFilter = creatureVoice.GetComponent<AudioLowPassFilter>();
+            if (audioLowPassFilter == null)
             {
-                this.creatureVoice.enabled = true;
-                Plugin.LogDebug($"ai.creatureVoice {this.creatureVoice}");
-                Plugin.LogDebug($"ai.creatureVoice.enabled {this.creatureVoice.enabled}");
+                audioLowPassFilter = creatureVoice.gameObject.AddComponent<AudioLowPassFilter>();
             }
+            NpcController.AudioLowPassFilterComponent = audioLowPassFilter;
+
+            // AudioHighPassFilter
+            AudioHighPassFilter? audioHighPassFilter = creatureVoice.GetComponent<AudioHighPassFilter>();
+            if (audioHighPassFilter == null)
+            {
+                audioHighPassFilter = creatureVoice.gameObject.AddComponent<AudioHighPassFilter>();
+            }
+            NpcController.AudioHighPassFilterComponent = audioHighPassFilter;
+
+            // AudioMixerGroup
+            this.InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
         }
 
         /// <summary>
@@ -355,15 +379,6 @@ namespace LethalInternship.AI
                 return;
             }
 
-            //if (noiseID == 7)
-            //{
-            //    return;
-            //}
-            //if (noiseID == 546)
-            //{
-            //    return;
-            //}
-
             // Player voice = 75 ?
             if (noiseID != 75)
             {
@@ -371,10 +386,10 @@ namespace LethalInternship.AI
             }
 
             // Make the intern stop talking for some time
-            StopTalking();
+            StopAudioFadeOut();
             if (IsOwner)
             {
-                InternIdentity.Voice.AddRandomCooldownAudio();
+                InternIdentity.Voice.SetNewRandomCooldownAudio();
             }
 
             Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} detected noise noisePosition {noisePosition}, noiseLoudness {noiseLoudness}, timesPlayedInOneSpot {timesPlayedInOneSpot}, noiseID {noiseID}");
@@ -1512,10 +1527,92 @@ namespace LethalInternship.AI
 
         public void StopTalking()
         {
-            if (this.creatureVoice.isPlaying)
+            if (this.InternVoice.isPlaying)
             {
-                this.creatureVoice.Stop();
+                this.InternVoice.Stop();
             }
+        }
+
+        public void StopAudioFadeOut()
+        {
+            if (this.InternVoice.isPlaying)
+            {
+                this.InternIdentity.Voice.StopAudioFadeOut();
+            }
+        }
+
+        public void UpdateInternVoiceEffects()
+        {
+            PlayerControllerB internController = this.NpcController.Npc;
+            int internPlayerClientID = (int)internController.playerClientId;
+            PlayerControllerB spectatedPlayerScript;
+            if (GameNetworkManager.Instance.localPlayerController.isPlayerDead && GameNetworkManager.Instance.localPlayerController.spectatedPlayerScript != null)
+            {
+                spectatedPlayerScript = GameNetworkManager.Instance.localPlayerController.spectatedPlayerScript;
+            }
+            else
+            {
+                spectatedPlayerScript = GameNetworkManager.Instance.localPlayerController;
+            }
+
+            bool walkieTalkie = internController.speakingToWalkieTalkie
+                                && spectatedPlayerScript.holdingWalkieTalkie
+                                && internController != spectatedPlayerScript;
+
+            AudioLowPassFilter audioLowPassFilter = this.NpcController.AudioLowPassFilterComponent;
+            OccludeAudio occludeAudio = this.NpcController.OccludeAudioComponent;
+            audioLowPassFilter.enabled = true;
+            occludeAudio.overridingLowPass = (walkieTalkie || internController.voiceMuffledByEnemy);
+            this.NpcController.AudioHighPassFilterComponent.enabled = walkieTalkie;
+            if (!walkieTalkie)
+            {
+                this.creatureVoice.spatialBlend = 1f;
+                this.creatureVoice.bypassListenerEffects = false;
+                this.creatureVoice.bypassEffects = false;
+                this.creatureVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[internPlayerClientID];
+                audioLowPassFilter.lowpassResonanceQ = 1f;
+            }
+            else
+            {
+                this.creatureVoice.spatialBlend = 0f;
+                if (GameNetworkManager.Instance.localPlayerController.isPlayerDead)
+                {
+                    this.creatureVoice.panStereo = 0f;
+                    this.creatureVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[internPlayerClientID];
+                    this.creatureVoice.bypassListenerEffects = false;
+                    this.creatureVoice.bypassEffects = false;
+                }
+                else
+                {
+                    this.creatureVoice.panStereo = 0.4f;
+                    this.creatureVoice.bypassListenerEffects = false;
+                    this.creatureVoice.bypassEffects = false;
+                    this.creatureVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[internPlayerClientID];
+                }
+                occludeAudio.lowPassOverride = 4000f;
+                audioLowPassFilter.lowpassResonanceQ = 3f;
+            }
+
+            if (GameNetworkManager.Instance.localPlayerController.isPlayerDead)
+            {
+                this.creatureVoice.volume = 0.8f;
+            }
+            else
+            {
+                this.creatureVoice.volume = 1f;
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void PlayAudioServerRpc(string smallPathAudioClip)
+        {
+            PlayAudioClientRpc(smallPathAudioClip);
+        }
+
+        [ClientRpc]
+        private void PlayAudioClientRpc(string smallPathAudioClip)
+        {
+            AudioManager.Instance.PlayAudio(smallPathAudioClip, InternIdentity.Voice);
         }
 
         #endregion
@@ -3021,6 +3118,8 @@ namespace LethalInternship.AI
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: false, disableLocalArms: false);
             NpcController.Npc.transform.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
 
+            StopSinkingState();
+
             // Set intern to brain dead
             State = new BrainDeadState(State);
         }
@@ -3311,9 +3410,17 @@ namespace LethalInternship.AI
             }
             else
             {
+                StopSinkingState();
+            }
+        }
+
+        private void StopSinkingState()
+        {
+            if (NpcController.Npc.isSinking)
+            {
                 NpcController.Npc.statusEffectAudio.Stop();
-                NpcController.Npc.isSinking = false;
                 NpcController.Npc.voiceMuffledByEnemy = false;
+                NpcController.Npc.sourcesCausingSinking = 0;
             }
         }
 

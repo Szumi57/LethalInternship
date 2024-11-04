@@ -502,6 +502,13 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InputManager.Instance.RemoveEventHandlers();
         }
+
+        [HarmonyPatch("UpdatePlayerVoiceEffects")]
+        [HarmonyPostfix]
+        static void UpdatePlayerVoiceEffects_PostFix()
+        {
+            InternManager.Instance.UpdateAllInternsVoiceEffects();
+        }
     }
 
     //[HarmonyPatch(typeof(EnemyAICollisionDetect))] // make sure Harmony inspects the class

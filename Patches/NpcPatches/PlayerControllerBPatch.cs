@@ -1080,7 +1080,12 @@ namespace LethalInternship.Patches.NpcPatches
                 return;
             }
 
-            InternManager.Instance.SpawnInternServerRpc(__instance.transform.position, __instance.transform.eulerAngles.y, !__instance.isInsideFactory);
+            InternManager.Instance.SpawnInternServerRpc(new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
+                                                        {
+                                                            SpawnPosition = __instance.transform.position,
+                                                            YRot = __instance.transform.eulerAngles.y,
+                                                            IsOutside = !__instance.isInsideFactory
+                                                        });
         }
 
         /// <summary>

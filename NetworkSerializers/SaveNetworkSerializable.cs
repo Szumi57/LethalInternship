@@ -1,8 +1,8 @@
 ﻿using Unity.Netcode;
 
-namespace LethalInternship.SaveAdapter
+namespace LethalInternship.NetworkSerializers
 {
-    internal struct SaveNetworkSerializable : INetworkSerializable
+    public struct SaveNetworkSerializable : INetworkSerializable
     {
         public int NbInternsOwned;
         public int NbInternsToDropShip;

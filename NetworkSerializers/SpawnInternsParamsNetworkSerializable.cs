@@ -1,0 +1,28 @@
+﻿using Unity.Netcode;
+using UnityEngine;
+
+namespace LethalInternship.NetworkSerializers
+{
+    public struct SpawnInternsParamsNetworkSerializable : INetworkSerializable
+    {
+        public int IndexNextIntern;
+        public int IndexNextPlayerObject;
+        public int InternIdentityID;
+        public int SuitID;
+        public Vector3 SpawnPosition;
+        public float YRot;
+        public bool IsOutside;
+
+        // INetworkSerializable
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref IndexNextIntern);
+            serializer.SerializeValue(ref IndexNextPlayerObject);
+            serializer.SerializeValue(ref InternIdentityID);
+            serializer.SerializeValue(ref SuitID);
+            serializer.SerializeValue(ref SpawnPosition);
+            serializer.SerializeValue(ref YRot);
+            serializer.SerializeValue(ref IsOutside);
+        }
+    }
+}

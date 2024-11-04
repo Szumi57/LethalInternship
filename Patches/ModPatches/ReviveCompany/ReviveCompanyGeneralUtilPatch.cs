@@ -53,7 +53,14 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             }
 
             // Respawn intern
-            InternManager.Instance.SpawnThisInternServerRpc((int)internAI.NpcController.Npc.playerClientId, revivePos, yRot, !isInsideFactory);
+            InternManager.Instance.SpawnThisInternServerRpc(new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
+                                                                {
+                                                                    IndexNextPlayerObject = (int)internAI.NpcController.Npc.playerClientId,
+                                                                    InternIdentityID = internAI.InternIdentity.IdIdentity,
+                                                                    SpawnPosition = revivePos,
+                                                                    YRot = yRot,
+                                                                    IsOutside = !isInsideFactory
+                                                                });
 
             return false;
         }
@@ -62,7 +69,7 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
         [HarmonyPostfix]
         static void GetClosestDeadBody_PostFix(ref RagdollGrabbableObject __result)
         {
-            if(__result != null && __result.ragdoll == null)
+            if (__result != null && __result.ragdoll == null)
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 __result = null;

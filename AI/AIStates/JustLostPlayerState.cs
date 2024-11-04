@@ -135,15 +135,25 @@ namespace LethalInternship.AI.AIStates
 
         public override void TryPlayVoiceAudio()
         {
+            TryPlayVoiceAudioSpecificState(EnumVoicesState.LosingPlayer);
+        }
+
+        private void TryPlayVoiceAudioSpecificState(EnumVoicesState enumVoicesState)
+        {
             // Default states, wait for cooldown and if no one is talking close
-            if (!ai.InternIdentity.Voice.CanPlayAudio()
-                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            if (InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                ai.InternIdentity.Voice.SetNewRandomCooldownAudio();
+                return;
+            }
+
+            if (!ai.InternIdentity.Voice.CanPlayAudio())
             {
                 return;
             }
 
-            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.JustLostPlayer);
-            lastVoiceState = EnumVoicesState.JustLostPlayer;
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(enumVoicesState);
+            lastVoiceState = enumVoicesState;
         }
 
         public override string GetBillboardStateIndicator()
@@ -162,6 +172,10 @@ namespace LethalInternship.AI.AIStates
                 // Target found
                 StopLookingAroundCoroutine();
                 targetLastKnownPosition = target.transform.position;
+
+                // Voice
+                TryPlayVoiceAudioSpecificState(EnumVoicesState.LostAndFound);
+
                 ai.State = new GetCloseToPlayerState(this);
                 return;
             }

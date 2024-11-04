@@ -97,11 +97,11 @@ namespace LethalInternship.AI.AIStates
         {
             // Priority state
             // Stop talking and voice new state
-            EnumVoicesState voiceState = EnumVoicesState.Panik;
+            EnumVoicesState voiceState = EnumVoicesState.RunningFromMonster;
             if (lastVoiceState != voiceState)
             {
                 ai.StopTalking();
-                ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, voiceState);
+                ai.InternIdentity.Voice.PlayRandomVoiceAudio(voiceState);
                 lastVoiceState = voiceState;
             }
         }

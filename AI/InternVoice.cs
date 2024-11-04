@@ -9,23 +9,34 @@ namespace LethalInternship.AI
 {
     internal class InternVoice
     {
-        public string IdentityName { get; set; }
+        public int InternID { get; set; }
+        public string VoiceFolder { get; set; }
+        public float VoicePitch { get; set; }
+        public AudioSource CurrentAudioSource { get; set; } = null!;
+
+        private float cooldownPlayAudio = 0f;
+        private bool aboutToTalk;
 
         private Dictionary<EnumVoicesState, List<string>> dictAvailableAudioClipPathsByState = new Dictionary<EnumVoicesState, List<string>>();
         private Dictionary<EnumVoicesState, List<string>> availableAudioClipPaths = new Dictionary<EnumVoicesState, List<string>>();
-        private float cooldownPlayAudio = 0f;
 
-        public InternVoice(string identityName)
+        public InternVoice(string voiceFolder, float voicePitch)
         {
-            IdentityName = identityName;
+            this.VoiceFolder = voiceFolder;
+            this.VoicePitch = voicePitch;
         }
 
-        public void AddCooldownAudio(float cooldown)
+        public override string ToString()
+        {
+            return $"InternID: {InternID}, VoiceFolder: {VoiceFolder}, VoicePitch {VoicePitch}, CurrentAudioSource : {CurrentAudioSource?.name}";
+        }
+
+        public void SetCooldownAudio(float cooldown)
         {
             cooldownPlayAudio = cooldown;
         }
 
-        public void AddRandomCooldownAudio()
+        public void SetNewRandomCooldownAudio()
         {
             Random randomInstance = new Random();
             cooldownPlayAudio = (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
@@ -49,14 +60,34 @@ namespace LethalInternship.AI
             return cooldownPlayAudio == 0f;
         }
 
-        public void PlayRandomVoiceAudio(AudioSource audioSource, EnumVoicesState enumVoicesState)
+        public bool IsTalking()
         {
+            return CurrentAudioSource.isPlaying || aboutToTalk;
+        }
+
+        public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState)
+        {
+            aboutToTalk = false;
             string audioClipPath = GetRandomAudioClipByState(enumVoicesState);
             if (!string.IsNullOrWhiteSpace(audioClipPath))
             {
-                Plugin.LogDebug($"intern with identity {IdentityName} play state {enumVoicesState} random audio");
-                AudioManager.Instance.PlayAudio(audioSource, audioClipPath, this);
+                // Can take time, coroutine stuff
+                AudioManager.Instance.SyncPlayAudio(audioClipPath, InternID);
+                aboutToTalk = true;
             }
+        }
+
+        public void PlayAudioClip(AudioClip audioClip)
+        {
+            CurrentAudioSource.volume = Const.VOLUME_INTERNS;
+            CurrentAudioSource.pitch = VoicePitch;
+
+            CurrentAudioSource.clip = audioClip;
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, Const.FADE_IN_TIME, Const.VOLUME_INTERNS);
+            Random randomInstance = new Random();
+            SetCooldownAudio(audioClip.length + (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE));
+
+            aboutToTalk = false;
         }
 
         private string GetRandomAudioClipByState(EnumVoicesState enumVoicesState)
@@ -88,21 +119,34 @@ namespace LethalInternship.AI
 
             audioClipPath = audioClipPaths[index];
             audioClipPaths.RemoveAt(index);
-            Plugin.LogDebug($"======== enumVoicesState {enumVoicesState} audioClipPaths {audioClipPaths.Count}, dictAvailableAudioClipPathsByState {dictAvailableAudioClipPathsByState[enumVoicesState].Count}");
             return audioClipPath;
         }
 
         private string[] LoadAudioClipPathsByState(EnumVoicesState enumVoicesState)
         {
-            string path = IdentityName + "\\" + enumVoicesState.ToString();
+            string path = VoiceFolder + "\\" + enumVoicesState.ToString();
 
-            Plugin.LogDebug($"Loaded {AudioManager.Instance.DictAudioClipsByPath
-                                        .Where(x => x.Key.Contains(path)).Select(y => y.Key).Count()} path containing {path}");
+            var audioClipPaths = AudioManager.Instance.DictAudioClipsByPath
+                                    .Where(x => x.Key.Contains(path));
 
-            return AudioManager.Instance.DictAudioClipsByPath
-                       .Where(x => x.Key.Contains(path))
-                       .Select(y => y.Key).Take(1)
-                       .ToArray();
+            if (!Plugin.Config.AllowSwearing.Value)
+            {
+                audioClipPaths = audioClipPaths.Where(x => !x.Key.Contains(Const.SWEAR_KEYWORD));
+            }
+
+            Plugin.LogDebug($"Loaded {audioClipPaths.Count()} path containing {path}");
+            return audioClipPaths.Select(y => y.Key).ToArray();
+        }
+
+        public void ResetAvailableAudioPaths()
+        {
+            dictAvailableAudioClipPathsByState.Clear();
+            availableAudioClipPaths.Clear();
+        }
+
+        public void StopAudioFadeOut()
+        {
+            AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, Const.FADE_OUT_TIME);
         }
     }
 }

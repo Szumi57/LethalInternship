@@ -150,14 +150,19 @@ namespace LethalInternship.AI.AIStates
         public override void TryPlayVoiceAudio()
         {
             // Default states, wait for cooldown and if no one is talking close
-            if (!ai.InternIdentity.Voice.CanPlayAudio()
-                || InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            if (InternManager.Instance.DidAnInternJustTalkedClose(ai))
+            {
+                ai.InternIdentity.Voice.SetNewRandomCooldownAudio();
+                return;
+            }
+
+            if (!ai.InternIdentity.Voice.CanPlayAudio())
             {
                 return;
             }
 
-            ai.InternIdentity.Voice.PlayRandomVoiceAudio(ai.creatureVoice, EnumVoicesState.GetCloseToPlayer);
-            lastVoiceState = EnumVoicesState.GetCloseToPlayer;
+            ai.InternIdentity.Voice.PlayRandomVoiceAudio(EnumVoicesState.FollowingPlayer);
+            lastVoiceState = EnumVoicesState.FollowingPlayer;
         }
     }
 }

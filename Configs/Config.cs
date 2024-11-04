@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using CSync.Extensions;
 using CSync.Lib;
 using LethalInternship.Enums;
+using LethalInternship.NetworkSerializers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,9 +34,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> RadarEnabled;
 
         // Interns names   
-        [SyncedEntryField] public SyncedEntry<int> OptionInternNames;
-        [SyncedEntryField] public SyncedEntry<string> ListUserCustomNames;
-        [SyncedEntryField] public SyncedEntry<bool> UseCustomNamesRandomly;
+        [SyncedEntryField] public SyncedEntry<bool> SpawnIdentitiesRandomly;
 
         // Behaviour       
         [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
@@ -51,7 +50,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
         // Voices
-        [SyncedEntryField] public SyncedEntry<string> VoicesLanguageFolder;
+        [SyncedEntryField] public SyncedEntry<bool> AllowSwearing;
 
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
@@ -109,22 +108,10 @@ namespace LethalInternship.Configs
                                        "");
 
             // Names
-            OptionInternNames = cfg.BindSyncedEntry(Const.ConfigSectionNames,
-                                         "Option for custom names",
-                                         defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_NAMES,
-                                         new ConfigDescription("0: default names \"Intern #(number)\" | 1: default custom names list used by the mod | 2: user defined custom names list",
-                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionNames)).Cast<int>().Min(),
-                                                                                             Enum.GetValues(typeof(EnumOptionNames)).Cast<int>().Max())));
-
-            ListUserCustomNames = cfg.BindSyncedEntry(Const.ConfigSectionNames,
-                                       "List of user custom names for interns, to use with option 2 : user defined custom names list",
-                                       defaultVal: String.Join(", ", Const.DEFAULT_LIST_CUSTOM_INTERN_NAMES),
-                                       "Write your own list of names like : name surname, name surname, etc... (needs option 2 : user defined custom names list)");
-
-            UseCustomNamesRandomly = cfg.BindSyncedEntry(Const.ConfigSectionNames,
-                                              "Randomness of custom names",
+            SpawnIdentitiesRandomly = cfg.BindSyncedEntry(Const.ConfigSectionIdentities,
+                                              "Randomness of identities",
                                               defaultVal: true,
-                                              "Use the list of custom names randomly ?");
+                                              "Spawn the interns with random identities ?");
 
             // Behaviour
             ChangeSuitBehaviour = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
@@ -176,10 +163,10 @@ namespace LethalInternship.Configs
                                                             "Should the intern his held item before teleporting ?");
 
             // Voices
-            VoicesLanguageFolder = cfg.BindSyncedEntry(Const.ConfigSectionVoices,
-                                       "Language voices folder",
-                                       defaultVal: "en",
-                                       "Folder where to get the voices audio, default 'en' (english)");
+            AllowSwearing = cfg.BindSyncedEntry(Const.ConfigSectionVoices,
+                                                "Swear words",
+                                                defaultVal: false,
+                                                "Allow the use of swear words in interns voice lines ?");
 
             // Debug
             EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
