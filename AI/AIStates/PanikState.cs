@@ -82,7 +82,6 @@ namespace LethalInternship.AI.AIStates
                 if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
                 {
                     ai.State = new GetCloseToPlayerState(this);
-                    Plugin.LogDebug("StopPanikCoroutine If line of sight broke");
                     StopPanikCoroutine();
                     return;
                 }
@@ -93,7 +92,6 @@ namespace LethalInternship.AI.AIStates
             if (sqrDistanceToEnemy > fearRange * fearRange)
             {
                 ai.State = new GetCloseToPlayerState(this);
-                Plugin.LogDebug("StopPanikCoroutine Far enough from enemy");
                 StopPanikCoroutine();
                 return;
             }
