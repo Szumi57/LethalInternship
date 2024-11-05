@@ -69,6 +69,7 @@ namespace LethalInternship.AI
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
+        private Collider internCollider = null!;
 
         private DeadBodyInfo ragdollBodyDeadBodyInfo = null!;
 
@@ -172,6 +173,9 @@ namespace LethalInternship.AI
             this.enabled = true;
 
             addPlayerVelocityToDestination = 3f;
+
+            // Body collider
+            internCollider = NpcController.Npc.GetComponentInChildren<Collider>();
 
             // Intern voice
             InitInternVoiceComponent();
@@ -387,10 +391,18 @@ namespace LethalInternship.AI
 
         public override void OnCollideWithEnemy(Collider other, EnemyAI collidedEnemy)
         {
-            if (other?.name != "Collision")
+            if (!IsOwner)
             {
-                Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} collided with enemy {other?.gameObject.name}");
+                return;
             }
+
+            if (collidedEnemy == null
+                || collidedEnemy.enemyType.enemyName == "InternNPC")
+            {
+                return;
+            }
+
+            collidedEnemy.OnCollideWithPlayer(internCollider);
         }
 
         public override void DetectNoise(Vector3 noisePosition, float noiseLoudness, int timesPlayedInOneSpot = 0, int noiseID = 0)
@@ -515,7 +527,7 @@ namespace LethalInternship.AI
             {
                 FollowCrouchStateIfCan();
             }
-            
+
             // Check for hole
             if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
             {
@@ -550,7 +562,7 @@ namespace LethalInternship.AI
                 timeSinceStuck = 0f;
                 CheckAndBringCloserTeleportIntern(1f);
             }
-            
+
             // Controller stuck in world ?
             if (NpcController.Npc.isMovementHindered == 0
                 && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
@@ -903,19 +915,6 @@ namespace LethalInternship.AI
                     continue;
                 }
 
-                // Force collision with enemy if close enough
-                // todo : see why collision of intern so big, it prevents normal collision with enemies
-                // todo : make the distance different for some enemies ?
-                if (sqrDistanceToEnemy < Const.COLLISION_RANGE * Const.COLLISION_RANGE)
-                {
-                    Collider internCollider = NpcController.Npc.GetComponentInChildren<Collider>();
-                    if (internCollider != null)
-                    {
-                        spawnedEnemy.OnCollideWithPlayer(internCollider);
-                        break;
-                    }
-                }
-
                 // Obstructed
                 if (Physics.Linecast(thisInternCamera.position, positionEnemy, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
@@ -955,18 +954,17 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="enemy">Enemy to check</param>
         /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
-        private float? GetFearRangeForEnemies(EnemyAI enemy)
+        public float? GetFearRangeForEnemies(EnemyAI enemy)
         {
             //Plugin.LogDebug($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
             switch (enemy.enemyType.enemyName)
             {
                 case "Crawler":
                 case "Bunker Spider":
-                case "Spring":
                 case "MouthDog":
                 case "ForestGiant":
                 case "Butler Bees":
-                    return 30f;
+                    return 20f;
 
                 case "Nutcracker":
                 case "Red Locust Bees":
@@ -984,6 +982,17 @@ namespace LethalInternship.AI
 
                 case "Centipede":
                     return 0.3f;
+
+                case "Spring":
+                    if (enemy.currentBehaviourStateIndex > 0)
+                    {
+                        // Mad
+                        return 20f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
 
                 case "Butler":
                     if (enemy.currentBehaviourStateIndex == 2)
@@ -3255,15 +3264,15 @@ namespace LethalInternship.AI
             if (IsServer)
             {
                 ReleaseInternClientRpc(playerGrabberController.playerClientId,
-                                       randomPos, 
-                                       !playerGrabberController.isInsideFactory, 
+                                       randomPos,
+                                       !playerGrabberController.isInsideFactory,
                                        isUsingEntrance: false);
             }
             else
             {
                 ReleaseInternServerRpc(playerGrabberController.playerClientId,
-                                       randomPos, 
-                                       !playerGrabberController.isInsideFactory, 
+                                       randomPos,
+                                       !playerGrabberController.isInsideFactory,
                                        isUsingEntrance: false);
             }
         }

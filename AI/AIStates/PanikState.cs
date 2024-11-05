@@ -1,6 +1,4 @@
-﻿using GameNetcodeStuff;
-using LethalInternship.Enums;
-using LethalInternship.Managers;
+﻿using LethalInternship.Enums;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -28,8 +26,16 @@ namespace LethalInternship.AI.AIStates
             }
 
             Plugin.LogDebug($"{npcController.Npc.playerUsername} enemy seen {enemyAI.enemyType.enemyName}");
-            this.enemyTransform = enemyAI.transform;
-            StartPanikCoroutine(this.enemyTransform);
+            this.currentEnemy = enemyAI;
+            float? fearRange = ai.GetFearRangeForEnemies(this.currentEnemy);
+            if (fearRange.HasValue)
+            {
+                StartPanikCoroutine(this.currentEnemy.transform, fearRange.Value);
+            }
+            else
+            {
+                ai.State = new GetCloseToPlayerState(this);
+            }
         }
 
         /// <summary>
@@ -37,7 +43,15 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public override void DoAI()
         {
-            if (enemyTransform == null)
+            if (currentEnemy == null)
+            {
+                ai.State = new GetCloseToPlayerState(this);
+                StopPanikCoroutine();
+                return;
+            }
+
+            float? fearRange = ai.GetFearRangeForEnemies(this.currentEnemy);
+            if (!fearRange.HasValue)
             {
                 ai.State = new GetCloseToPlayerState(this);
                 StopPanikCoroutine();
@@ -45,21 +59,22 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Check if another enemy is closer
-            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (enemyAI == null)
+            EnemyAI? newEnemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            if (newEnemyAI != null)
             {
-                ai.State = new GetCloseToPlayerState(this);
-                StopPanikCoroutine();
-                return;
-            }
-            else
-            {
-                this.enemyTransform = enemyAI.transform;
+                float? newFearRange = ai.GetFearRangeForEnemies(newEnemyAI);
+                if (newFearRange.HasValue)
+                {
+                    this.currentEnemy = newEnemyAI;
+                    fearRange = newFearRange.Value;
+                    RestartPanikCoroutine(this.currentEnemy, fearRange.Value);
+                }
+                // else no fear range, ignore this enemy, already ignored by CheckLOSForEnemy but hey better be safe
             }
 
             // Check to see if the intern can see the enemy, or enemy has line of sight to intern
-            float sqrDistanceToEnemy = (npcController.Npc.transform.position - enemyTransform.position).sqrMagnitude;
-            if (Physics.Linecast(enemyTransform.position, npcController.Npc.gameplayCamera.transform.position,
+            float sqrDistanceToEnemy = (npcController.Npc.transform.position - currentEnemy.transform.position).sqrMagnitude;
+            if (Physics.Linecast(currentEnemy.transform.position, npcController.Npc.gameplayCamera.transform.position,
                                  StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore))
             {
                 // If line of sight broke
@@ -67,6 +82,7 @@ namespace LethalInternship.AI.AIStates
                 if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
                 {
                     ai.State = new GetCloseToPlayerState(this);
+                    Plugin.LogDebug("StopPanikCoroutine If line of sight broke");
                     StopPanikCoroutine();
                     return;
                 }
@@ -74,9 +90,10 @@ namespace LethalInternship.AI.AIStates
             // Enemy still has line of sight of intern
 
             // Far enough from enemy
-            if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING * Const.DISTANCE_FLEEING)
+            if (sqrDistanceToEnemy > fearRange * fearRange)
             {
                 ai.State = new GetCloseToPlayerState(this);
+                Plugin.LogDebug("StopPanikCoroutine Far enough from enemy");
                 StopPanikCoroutine();
                 return;
             }
@@ -85,7 +102,7 @@ namespace LethalInternship.AI.AIStates
             // If enemy still too close, and destination reached, restart the panic routine
             if ((ai.destination - npcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
-                RestartPanikCoroutine(this.enemyTransform);
+                RestartPanikCoroutine(this.currentEnemy, fearRange.Value);
             }
 
             // Sprint of course
@@ -112,13 +129,13 @@ namespace LethalInternship.AI.AIStates
         }
 
         /// <summary>
-        /// Coroutine to find the closest node after some distance (<see cref="Const.DISTANCE_FLEEING"><c>Const.DISTANCE_FLEEING</c></see>).
+        /// Coroutine to find the closest node after some distance (see: <see cref="InternAI.GetFearRangeForEnemies"><c>InternAI.GetFearRangeForEnemies</c></see>).
         /// In other word, find a path node to flee from the enemy.
         /// </summary>
         /// <remarks>Or should I say an attempt to code it.</remarks>
         /// <param name="enemyTransform">Position of the enemy</param>
         /// <returns></returns>
-        private IEnumerator ChooseFleeingNodeFromPosition(Transform enemyTransform)
+        private IEnumerator ChooseFleeingNodeFromPosition(Transform enemyTransform, float fearRange)
         {
             var nodes = ai.allAINodes.OrderBy(node => (node.transform.position - this.ai.transform.position).sqrMagnitude)
                                      .ToArray();
@@ -129,7 +146,7 @@ namespace LethalInternship.AI.AIStates
             {
                 Transform nodeTransform = nodes[i].transform;
 
-                if ((nodeTransform.position - enemyTransform.position).sqrMagnitude < Const.DISTANCE_FLEEING * Const.DISTANCE_FLEEING)
+                if ((nodeTransform.position - enemyTransform.position).sqrMagnitude < fearRange * fearRange)
                 {
                     continue;
                 }
@@ -145,15 +162,15 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
-        private void StartPanikCoroutine(Transform enemyTransform)
+        private void StartPanikCoroutine(Transform enemyTransform, float fearRange)
         {
-            panikCoroutine = ai.StartCoroutine(ChooseFleeingNodeFromPosition(enemyTransform));
+            panikCoroutine = ai.StartCoroutine(ChooseFleeingNodeFromPosition(enemyTransform, fearRange));
         }
 
-        private void RestartPanikCoroutine(Transform enemyTransform)
+        private void RestartPanikCoroutine(EnemyAI currentEnemy, float fearRange)
         {
             StopPanikCoroutine();
-            StartPanikCoroutine(enemyTransform);
+            StartPanikCoroutine(currentEnemy.transform, fearRange);
         }
 
         private void StopPanikCoroutine()

@@ -34,7 +34,7 @@ namespace LethalInternship.AI
         protected GrabbableObject? targetItem;
 
         protected Coroutine? panikCoroutine;
-        protected Transform? enemyTransform;
+        protected EnemyAI? currentEnemy;
 
         protected EnumVoicesState lastVoiceState;
 
@@ -48,7 +48,7 @@ namespace LethalInternship.AI
             this.targetItem = oldState.targetItem;
 
             this.panikCoroutine = oldState.panikCoroutine;
-            this.enemyTransform = oldState.enemyTransform;
+            this.currentEnemy = oldState.currentEnemy;
         }
 
         /// <summary>
