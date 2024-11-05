@@ -32,10 +32,9 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return;
             }
 
-            if (__instance.isWater && !internController.isUnderwater)
+            if (__instance.isWater && internController.underwaterCollider == null)
             {
                 internController.underwaterCollider = __instance.gameObject.GetComponent<Collider>();
-                internController.isUnderwater = true;
             }
             internController.statusEffectAudioIndex = __instance.audioClipIndex;
             if (internController.isSinking)
@@ -58,7 +57,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                StopSinkingIntern(internController, __instance.movementHinderance, __instance.isWater);
+                StopSinkingIntern(internController, __instance.movementHinderance);
             }
         }
 
@@ -82,7 +81,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return;
             }
 
-            StopSinkingIntern(internController, __instance.movementHinderance, __instance.isWater);
+            StopSinkingIntern(internController, __instance.movementHinderance);
         }
 
         /// <summary>
@@ -100,19 +99,16 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return true;
             }
 
-            StopSinkingIntern(playerScript, __instance.movementHinderance, __instance.isWater);
+            StopSinkingIntern(playerScript, __instance.movementHinderance);
             return false;
         }
 
-        private static void StopSinkingIntern(PlayerControllerB internController, float movementHinderance, bool isWater)
+        private static void StopSinkingIntern(PlayerControllerB internController, float movementHinderance)
         {
             internController.sourcesCausingSinking = Mathf.Clamp(internController.sourcesCausingSinking - 100, 0, 100);
             internController.isMovementHindered = Mathf.Clamp(internController.isMovementHindered - 100, 0, 100);
             internController.hinderedMultiplier = Mathf.Clamp(internController.hinderedMultiplier / movementHinderance, 1f, 100f);
-            if (internController.isMovementHindered == 0 && isWater)
-            {
-                internController.isUnderwater = false;
-            }
+            internController.underwaterCollider = null;
 
             Plugin.LogDebug($"playerScript {internController.playerClientId} --playerScript.isMovementHindered {internController.isMovementHindered}");
         }

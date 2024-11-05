@@ -91,7 +91,7 @@ namespace LethalInternship.AI.AIStates
             if (lastVoiceState != voiceState  
                 && !InternManager.Instance.DidAnInternJustTalkedClose(ai))
             {
-                ai.StopTalking();
+                ai.StopAudioFadeOut();
                 ai.InternIdentity.Voice.PlayRandomVoiceAudio(voiceState);
                 lastVoiceState = voiceState;
             }

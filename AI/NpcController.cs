@@ -77,10 +77,12 @@ namespace LethalInternship.AI
 
         private float upperBodyAnimationsWeight;
         private float exhaustionEffectLerp;
+        private bool disabledJetpackControlsThisFrame;
 
         private bool wasUnderwaterLastFrame;
         private float drowningTimer = 1f;
-        private bool disabledJetpackControlsThisFrame;
+        private bool setFaceUnderwater;
+        private float syncUnderwaterInterval;
 
         private EnumObjectsLookingAt enumObjectsLookingAt;
 
@@ -194,7 +196,8 @@ namespace LethalInternship.AI
                 UpdateTurnBodyTowardsDirection();
 
                 // If inShockingMinigame, turn towards the target of the shocking
-                Npc.ForceTurnTowardsTarget();
+                // todo 
+                //Npc.ForceTurnTowardsTarget();
 
                 // Manage the drowning state of the intern
                 SetFaceUnderwaterFilters();
@@ -421,7 +424,10 @@ namespace LethalInternship.AI
                     Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
                     Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
                 }
-                else if (floatSprint > 0.3f && movementHinderedPrev <= 0 && !Npc.criticallyInjured && Npc.sprintMeter > 0.1f)
+                else if (floatSprint > 0.3f
+                            && movementHinderedPrev <= 0
+                            && !Npc.criticallyInjured
+                            && Npc.sprintMeter > 0.1f)
                 {
                     if (!Npc.isSprinting && Npc.sprintMeter < 0.3f)
                     {
@@ -432,12 +438,16 @@ namespace LethalInternship.AI
                     }
                     else
                     {
-                        if (Npc.isCrouching)
+                        if (Npc.isCrouching && !Plugin.Config.FollowCrouchWithPlayer)
                         {
                             Npc.Crouch(false);
                         }
-                        Npc.isSprinting = true;
-                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, true);
+
+                        if (!Npc.isCrouching)
+                        {
+                            Npc.isSprinting = true;
+                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, true);
+                        }
                     }
                 }
                 else
@@ -449,6 +459,7 @@ namespace LethalInternship.AI
                     }
                     Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
                 }
+
                 if (Npc.isSprinting)
                 {
                     sprintMultiplier = Mathf.Lerp(sprintMultiplier, 2.25f, Time.deltaTime * 1f);
@@ -1072,6 +1083,8 @@ namespace LethalInternship.AI
             else if (this.wasUnderwaterLastFrame)
             {
                 Npc.waterBubblesAudio.Stop();
+                this.wasUnderwaterLastFrame = false;
+                Npc.voiceMuffledByEnemy = false;
             }
             else
             {
@@ -1817,10 +1830,10 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            if (Npc.isUnderwater
-                && Npc.underwaterCollider != null
+            if (Npc.underwaterCollider != null
                 && Npc.underwaterCollider.bounds.Contains(Npc.gameplayCamera.transform.position))
             {
+                setFaceUnderwater = true;
                 Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 0f, 4f * Time.deltaTime);
                 this.drowningTimer -= Time.deltaTime / 10f;
                 if (this.drowningTimer < 0f)
@@ -1832,8 +1845,27 @@ namespace LethalInternship.AI
             }
             else
             {
+                setFaceUnderwater = false;
                 Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
                 this.drowningTimer = Mathf.Clamp(this.drowningTimer + Time.deltaTime, 0.1f, 1f);
+            }
+
+            this.syncUnderwaterInterval -= Time.deltaTime;
+            if (this.syncUnderwaterInterval <= 0f)
+            {
+                this.syncUnderwaterInterval = 0.5f;
+                if (setFaceUnderwater && !Npc.isUnderwater)
+                {
+                    Npc.isUnderwater = true;
+                    InternAIController.SyncSetFaceUnderwaterServerRpc(Npc.isUnderwater);
+                    return;
+                }
+                else if (!setFaceUnderwater && Npc.isUnderwater)
+                {
+                    Npc.isUnderwater = false;
+                    InternAIController.SyncSetFaceUnderwaterServerRpc(Npc.isUnderwater);
+                    return;
+                }
             }
         }
 

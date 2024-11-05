@@ -15,6 +15,7 @@ using UnityEngine.AI;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
 using Vector3 = UnityEngine.Vector3;
+using Random = System.Random;
 
 namespace LethalInternship.AI
 {
@@ -315,6 +316,9 @@ namespace LethalInternship.AI
                 this.transform.position = NpcController.Npc.thisController.transform.position;
             }
 
+            // Update voice position
+            InternVoice.transform.position = NpcController.Npc.gameplayCamera.transform.position;
+
             // Update interval timer for AI calculation
             if (updateDestinationIntervalInternAI >= 0f)
             {
@@ -351,8 +355,29 @@ namespace LethalInternship.AI
             // Check if the body is stuck somehow, and try to unstuck it in various ways
             CheckIfStuck();
 
+            // Copy movement
+            FollowCrouchStateIfCan();
+
             // Voice
             State.TryPlayVoiceAudio();
+        }
+
+        private void FollowCrouchStateIfCan()
+        {
+            if (Plugin.Config.FollowCrouchWithPlayer
+                && targetPlayer != null)
+            {
+                if (targetPlayer.isCrouching
+                    && !NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+                else if (!targetPlayer.isCrouching
+                        && NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+            }
         }
 
         public override void OnCollideWithPlayer(Collider other)
@@ -466,7 +491,7 @@ namespace LethalInternship.AI
                                                                             0.5f);
                 if (canMoveCheckWhileJump)
                 {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} !legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
+                    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} !legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
                     PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
                 }
             }
@@ -480,7 +505,7 @@ namespace LethalInternship.AI
                                                                                   0.5f);
                     if (canMoveCheckWhileCrouch)
                     {
-                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
+                        //Plugin.LogDebug($"{NpcController.Npc.playerUsername} legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
                         NpcController.OrderToStopSprint();
                         NpcController.OrderToToggleCrouch();
                     }
@@ -488,13 +513,9 @@ namespace LethalInternship.AI
             }
             else if (legsFreeCheck && headFreeCheck)
             {
-                if (NpcController.Npc.isCrouching)
-                {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} uncrouch");
-                    NpcController.OrderToToggleCrouch();
-                }
+                FollowCrouchStateIfCan();
             }
-
+            
             // Check for hole
             if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
             {
@@ -529,7 +550,7 @@ namespace LethalInternship.AI
                 timeSinceStuck = 0f;
                 CheckAndBringCloserTeleportIntern(1f);
             }
-
+            
             // Controller stuck in world ?
             if (NpcController.Npc.isMovementHindered == 0
                 && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
@@ -1525,14 +1546,6 @@ namespace LethalInternship.AI
 
         #region Voices
 
-        public void StopTalking()
-        {
-            if (this.InternVoice.isPlaying)
-            {
-                this.InternVoice.Stop();
-            }
-        }
-
         public void StopAudioFadeOut()
         {
             if (this.InternVoice.isPlaying)
@@ -2127,6 +2140,22 @@ namespace LethalInternship.AI
         private void SyncDeadBodyPositionClientRpc(Vector3 newBodyPosition)
         {
             PlayerControllerBPatch.SyncBodyPositionClientRpc_ReversePatch(NpcController.Npc, newBodyPosition);
+        }
+
+        #endregion
+
+        #region SyncFaceUnderwater
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncSetFaceUnderwaterServerRpc(bool isUnderwater)
+        {
+            SyncSetFaceUnderwaterClientRpc(isUnderwater);
+        }
+
+        [ClientRpc]
+        private void SyncSetFaceUnderwaterClientRpc(bool isUnderwater)
+        {
+            NpcController.Npc.isUnderwater = isUnderwater;
         }
 
         #endregion
@@ -3058,6 +3087,7 @@ namespace LethalInternship.AI
             {
                 this.agent.enabled = false;
             }
+            this.StopAudioFadeOut();
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
 
             // Compat with revive company mod
@@ -3216,15 +3246,25 @@ namespace LethalInternship.AI
 
         public void SyncReleaseIntern(PlayerControllerB playerGrabberController)
         {
+            // Make the pos slightly different so the interns separate on teleport
+            Random randomInstance = new Random();
+            Vector3 randomPos = new Vector3(playerGrabberController.transform.position.x + (float)randomInstance.NextDouble() * 0.1f,
+                                            playerGrabberController.transform.position.y,
+                                            playerGrabberController.transform.position.z + (float)randomInstance.NextDouble() * 0.1f);
+
             if (IsServer)
             {
                 ReleaseInternClientRpc(playerGrabberController.playerClientId,
-                                       playerGrabberController.transform.position, !playerGrabberController.isInsideFactory, isUsingEntrance: false);
+                                       randomPos, 
+                                       !playerGrabberController.isInsideFactory, 
+                                       isUsingEntrance: false);
             }
             else
             {
                 ReleaseInternServerRpc(playerGrabberController.playerClientId,
-                                       playerGrabberController.transform.position, !playerGrabberController.isInsideFactory, isUsingEntrance: false);
+                                       randomPos, 
+                                       !playerGrabberController.isInsideFactory, 
+                                       isUsingEntrance: false);
             }
         }
 
@@ -3421,6 +3461,11 @@ namespace LethalInternship.AI
                 NpcController.Npc.statusEffectAudio.Stop();
                 NpcController.Npc.voiceMuffledByEnemy = false;
                 NpcController.Npc.sourcesCausingSinking = 0;
+            }
+            if (NpcController.Npc.isUnderwater)
+            {
+                NpcController.Npc.isUnderwater = false;
+                NpcController.Npc.underwaterCollider = null;
             }
         }
 

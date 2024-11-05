@@ -37,6 +37,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> SpawnIdentitiesRandomly;
 
         // Behaviour       
+        [SyncedEntryField] public SyncedEntry<bool> FollowCrouchWithPlayer;
         [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
         [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
@@ -114,6 +115,11 @@ namespace LethalInternship.Configs
                                               "Spawn the interns with random identities ?");
 
             // Behaviour
+            FollowCrouchWithPlayer = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+                                               "Crouch with player",
+                                               defaultVal: true,
+                                               "Should the intern crouch like the player is crouching ?");
+
             ChangeSuitBehaviour = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
                                                "Options for changing interns suits",
                                                defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,

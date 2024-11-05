@@ -100,7 +100,7 @@ namespace LethalInternship.AI.AIStates
             EnumVoicesState voiceState = EnumVoicesState.RunningFromMonster;
             if (lastVoiceState != voiceState)
             {
-                ai.StopTalking();
+                ai.StopAudioFadeOut();
                 ai.InternIdentity.Voice.PlayRandomVoiceAudio(voiceState);
                 lastVoiceState = voiceState;
             }

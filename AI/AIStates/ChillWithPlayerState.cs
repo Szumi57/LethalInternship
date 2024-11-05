@@ -151,7 +151,7 @@ namespace LethalInternship.AI.AIStates
             {
                 if (position.HasValue)
                 {
-                    npcController.OrderToLookAtPlayer(position.Value);
+                    npcController.OrderToLookAtPlayer(position.Value + new Vector3(0, 2.35f, 0));
                 }
                 else
                 {

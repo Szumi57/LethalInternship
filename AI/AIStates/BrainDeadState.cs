@@ -16,7 +16,7 @@ namespace LethalInternship.AI.AIStates
 
         public override void TryPlayVoiceAudio()
         {
-            ai.StopTalking();
+            ai.StopAudioFadeOut();
             lastVoiceState = EnumVoicesState.None;
         }
     }
