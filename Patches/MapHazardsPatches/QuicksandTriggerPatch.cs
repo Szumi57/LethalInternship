@@ -1,7 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Managers;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches
@@ -27,7 +27,13 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             PlayerControllerB internController = other.gameObject.GetComponent<PlayerControllerB>();
-            if (!InternManager.Instance.IsPlayerInternOwnerLocal(internController))
+            if (internController == null)
+            {
+                return;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)internController.playerClientId);
+            if (internAI == null)
             {
                 return;
             }
@@ -42,7 +48,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return;
             }
 
-            if (internController.CheckConditionsForSinkingInQuicksand())
+            if (internAI.NpcController.CheckConditionsForSinkingInQuicksandIntern())
             {
                 internController.sourcesCausingSinking++;
                 internController.isMovementHindered++;

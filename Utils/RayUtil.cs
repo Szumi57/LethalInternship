@@ -1,5 +1,4 @@
-﻿using LethalInternship.AI;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LethalInternship.Utils
 {
@@ -47,9 +46,9 @@ namespace LethalInternship.Utils
             }
         }
 
-        public static bool RayCastDownAndDraw(LineRenderer? lr, Vector3 origin, Vector3 directionDown, float length)
+        public static bool RayCastDownAndDraw(LineRenderer? lr, Vector3 origin, float length)
         {
-            Ray ray = new Ray(origin, directionDown);
+            Ray ray = new Ray(origin, Vector3.down);
             if (Physics.Raycast(ray, length, StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore))
             {
                 DrawUtil.DrawLine(lr, ray, length, Color.red);

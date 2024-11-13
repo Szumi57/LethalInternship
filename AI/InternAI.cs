@@ -10,12 +10,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
-using Vector3 = UnityEngine.Vector3;
+using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
+using UnityRandom = UnityEngine.Random;
+using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
 {
@@ -69,6 +72,7 @@ namespace LethalInternship.AI
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
+        private Dictionary<string, Component> dictComponentByCollider = null!;
         private Collider internCollider = null!;
 
         private DeadBodyInfo ragdollBodyDeadBodyInfo = null!;
@@ -147,6 +151,9 @@ namespace LethalInternship.AI
             // Doors
             doorLocksArray = Object.FindObjectsOfType<DoorLock>(includeInactive: false);
 
+            // Important colliders
+            InitImportantColliders();
+
             // Grabbableobject
             HoarderBugAI.RefreshGrabbableObjectsInMapList();
 
@@ -161,14 +168,7 @@ namespace LethalInternship.AI
 
             // AI init
             this.ventAnimationFinished = true;
-            this.transform.position = NpcController.Npc.transform.position;
-            if (agent != null)
-            {
-                agent.Warp(NpcController.Npc.transform.position);
-                agent.speed = Const.AGENT_SPEED;
-                agent.enabled = false;
-            }
-            this.serverPosition = transform.position;
+            TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             this.isEnemyDead = false;
             this.enabled = true;
 
@@ -236,6 +236,7 @@ namespace LethalInternship.AI
             this.InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
         }
 
+        bool isReallyFalling;
         /// <summary>
         /// Update unity method.
         /// </summary>
@@ -259,23 +260,19 @@ namespace LethalInternship.AI
 
             if (NpcController == null
                 || !NpcController.Npc.gameObject.activeSelf
-                || !NpcController.Npc.isPlayerControlled)
+                || !NpcController.Npc.isPlayerControlled
+                || isEnemyDead
+                || NpcController.Npc.isPlayerDead)
             {
+                // Intern dead or
                 // Not controlled we do nothing
                 SetAgent(enabled: false);
                 return;
             }
 
-            // Intern dead
-            if (isEnemyDead
-                || NpcController.Npc.isPlayerDead)
-            {
-                SetAgent(enabled: false);
-                return;
-            }
-
             // No AI calculation if in special animation
-            if (inSpecialAnimation)
+            if (inSpecialAnimation
+                || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
             {
                 SetAgent(enabled: false);
                 return;
@@ -289,21 +286,29 @@ namespace LethalInternship.AI
                 return;
             }
 
-            // Update the position of the AI to be the one from the body
-            // The AI always tries to move and the body follows
-            // But the AI still need to go back to the body current position each game loop
-            // Otherwise the AI just do not stop and goes too far
+            // Walking on fallen bridge ?
+            bool isWalkingOnFallenBridge = false;
+            if (NpcController.IsTouchingGround
+                && dictComponentByCollider.TryGetValue(NpcController.GroundHit.collider.name, out Component component))
+            {
+                BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
+                if (bridgeTrigger != null
+                    && bridgeTrigger.fallenBridgeColliders[0].enabled)
+                {
+                    isWalkingOnFallenBridge = true;
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {NpcController.GroundHit.collider.name}");
+                }
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} walking on {component.name} !");
+            }
+            //Plugin.LogDebug($"{NpcController.Npc.playerUsername} walking collide with {NpcController.GroundHit.collider} !");
+            //ComponentUtil.ListAllComponents(NpcController.GroundHit.collider.gameObject);
+
+            //Plugin.LogDebug($"{NpcController.Npc.playerUsername} (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 1 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
             if (NpcController.HasToMove)
             {
-                if (NpcController.Npc.isCrouching
-                    || NpcController.Npc.isMovementHindered > 0)
-                {
-                    agent.speed = Const.AGENT_SPEED_CROUCH;
-                }
-                else
-                {
-                    agent.speed = Const.AGENT_SPEED;
-                }
+                Vector2 vector2 = (new Vector2(NpcController.MoveVector.x, NpcController.MoveVector.z));
+                agent.speed = 1f * vector2.magnitude;
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} agent.speed {agent.speed}, MoveVector {vector2.magnitude}");
 
                 if (!NpcController.Npc.isClimbingLadder
                     && !NpcController.Npc.inSpecialInteractAnimation
@@ -313,15 +318,127 @@ namespace LethalInternship.AI
                     NpcController.SetTurnBodyTowardsDirectionWithPosition(this.transform.position);
                 }
 
-                agent.nextPosition = NpcController.Npc.thisController.transform.position;
+                ////bool aiTouchingGround = RayUtil.RayCastDownAndDraw(LineRendererUtil.GetLineRenderer(),
+                ////                                                   this.transform.position + Vector3.up,
+                ////                                                   1.5f);
+                //bool aiCanPath = agent.enabled && !agent.isPathStale;
+                //if (!aiCanPath)
+                //{
+                //    Plugin.LogDebug($"{NpcController.Npc.playerUsername} agent.enabled {agent.enabled} agent.isPathStale {agent.isPathStale}");
+                //}
+                //if (aiCanPath)
+                //{
+                //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} + ai touching ground (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 1 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+                //    Vector3 aiPosition = this.transform.position;
+                //    NpcController.Npc.transform.position = new Vector3(this.transform.position.x,
+                //                                                       NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : this.transform.position.y,
+                //                                                       this.transform.position.z);
+                //    this.transform.position = aiPosition;
+                //    NpcController.Npc.ResetFallGravity();
+                //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} + ai touching ground (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 2 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+                //}
+                //else if (NpcController.IsTouchingGround && !agent.isPathStale)
+                //{
+                //    Plugin.LogDebug($"{NpcController.Npc.playerUsername} NpcController.JustTouchedGround GroundHit.point {NpcController.GroundHit.point} 1 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+                //    TeleportAgentAIAndBody(NpcController.GroundHit.point);
+                //    Plugin.LogDebug($"{NpcController.Npc.playerUsername} NpcController.JustTouchedGround GroundHit.point {NpcController.GroundHit.point} 2 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+                //    SetAgent(enabled: true);
+                //}
+                //else
+                //{
+                //    SetAgent(enabled: false);
+                //    Plugin.LogDebug($"{NpcController.Npc.playerUsername} - nothing touch ground npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+                //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} IsTouchingGround:{NpcController.IsTouchingGround} distance:{NpcController.GroundHit.distance}");
+                //    NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
+                //    StopMoving();
+                //    return;
+                //}
+
+                //bool aiTouchingGround = RayUtil.RayCastDownAndDraw(LineRendererUtil.GetLineRenderer(),
+                //                                                   this.transform.position + Vector3.up,
+                //                                                   1.5f);
+
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} + ai touching ground (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 1 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+                if (isWalkingOnFallenBridge
+                    || isReallyFalling)
+                {
+                    SetAgent(enabled: false);
+                    isReallyFalling = true;
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} isWalkingOnFallenBrige ! MoveVector {NpcController.MoveVector}");
+                    NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
+                }
+                else
+                {
+                    Vector3 aiPosition = this.transform.position;
+                    NpcController.Npc.transform.position = new Vector3(this.transform.position.x,
+                                                                       NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : this.transform.position.y,
+                                                                       this.transform.position.z);
+                    NpcController.Npc.ResetFallGravity();
+                    this.transform.position = aiPosition;
+                }
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} + ai touching ground (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 2 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
             }
             else
             {
-                this.transform.position = NpcController.Npc.thisController.transform.position;
+                SetAgent(enabled: false);
+                if (isWalkingOnFallenBridge
+                    || isReallyFalling)
+                {
+                    isReallyFalling = true;
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} not moving falling ! MoveVector {NpcController.MoveVector}");
+                    NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
+                }
+                else
+                {
+                    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} not falling");
+                    Vector3 aiPosition = this.transform.position;
+                    float x = Mathf.Lerp(NpcController.Npc.transform.position.x + NpcController.MoveVector.x * Time.deltaTime, aiPosition.x, 0.05f);
+                    float z = Mathf.Lerp(NpcController.Npc.transform.position.z + NpcController.MoveVector.z * Time.deltaTime, aiPosition.z, 0.05f);
+                    NpcController.Npc.transform.position = new Vector3(x,
+                                                                       NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y,
+                                                                       z);
+                    this.transform.position = aiPosition;
+                }
+            }
+            //Plugin.LogDebug($"{NpcController.Npc.playerUsername} (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 2 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+
+            if (isReallyFalling && NpcController.IsTouchingGround && !isWalkingOnFallenBridge)
+            {
+                isReallyFalling = false;
+                TeleportAgentAIAndBody(NpcController.GroundHit.point);
             }
 
-            // Update voice position
-            InternVoice.transform.position = NpcController.Npc.gameplayCamera.transform.position;
+            //bool aiTouchingGround = RayUtil.RayCastDownAndDraw(LineRendererUtil.GetLineRenderer(),
+            //                                                   this.transform.position + Vector3.up,
+            //                                                   1.5f);
+            //if (aiTouchingGround)
+            //{
+            //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} + ai touching ground (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 1 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+            //    Vector3 aiPosition = this.transform.position;
+            //    NpcController.Npc.transform.position = new Vector3(this.transform.position.x,
+            //                                                       NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : this.transform.position.y,
+            //                                                       this.transform.position.z);
+            //    this.transform.position = aiPosition;
+            //    NpcController.Npc.ResetFallGravity();
+            //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} + ai touching ground (NpcController.IsTouchingGround {NpcController.IsTouchingGround}) 2 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+            //}
+            //else if (NpcController.IsTouchingGround)
+            //{
+            //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} NpcController.JustTouchedGround 1 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+            //    TeleportAI(NpcController.Npc.transform.position);
+            //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} NpcController.JustTouchedGround 2 npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+            //}
+            //else
+            //{
+            //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} - nothing touch ground npc:{NpcController.Npc.transform.position} ai:{this.transform.position}");
+            //    //Plugin.LogDebug($"{NpcController.Npc.playerUsername} IsTouchingGround:{NpcController.IsTouchingGround} distance:{NpcController.GroundHit.distance}");
+            //    NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
+            //}
+
+            if (isReallyFalling)
+            {
+                return;
+            }
 
             // Update interval timer for AI calculation
             if (updateDestinationIntervalInternAI >= 0f)
@@ -364,6 +481,28 @@ namespace LethalInternship.AI
 
             // Voice
             State.TryPlayVoiceAudio();
+        }
+
+        public void UpdateController()
+        {
+            if (RagdollInternBody != null
+                && RagdollInternBody.IsRagdollBodyHeld())
+            {
+                return;
+            }
+
+            if (NpcController.InternAIInCruiser)
+            {
+                return;
+            }
+
+            NpcController.Update();
+        }
+
+        private void LateUpdate()
+        {
+            // Update voice position
+            InternVoice.transform.position = NpcController.Npc.gameplayCamera.transform.position;
         }
 
         private void FollowCrouchStateIfCan()
@@ -465,7 +604,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (NpcController.IsJumping || NpcController.IsFallingFromJump)
+            if (!NpcController.IsTouchingGround)
             {
                 return;
             }
@@ -504,7 +643,7 @@ namespace LethalInternship.AI
                 if (canMoveCheckWhileJump)
                 {
                     //Plugin.LogDebug($"{NpcController.Npc.playerUsername} !legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
-                    PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
+                    //PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
                 }
             }
             else if (legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck))
@@ -529,31 +668,31 @@ namespace LethalInternship.AI
             }
 
             // Check for hole
-            if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
-            {
-                // Ladders ?
-                bool isUsingLadder = UseLadderIfNeeded();
+            //if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
+            //{
+            //    // Ladders ?
+            //    bool isUsingLadder = UseLadderIfNeeded();
 
-                if (isUsingLadder)
-                {
-                    timeSinceStuck = 0f;
-                    return;
-                }
+            //    if (isUsingLadder)
+            //    {
+            //        timeSinceStuck = 0f;
+            //        return;
+            //    }
 
-                if (!isOutside)
-                {
-                    if (Time.timeSinceLevelLoad - TimeSinceTeleporting > Const.WAIT_TIME_TO_TELEPORT)
-                    {
-                        TimeSinceTeleporting = Time.timeSinceLevelLoad;
-                        NpcController.Npc.transform.position = this.transform.position;
-                        Plugin.LogDebug($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
-                    }
-                }
-                else
-                {
-                    this.transform.position = NpcController.Npc.thisController.transform.position;
-                }
-            }
+            //    if (!isOutside)
+            //    {
+            //        if (Time.timeSinceLevelLoad - TimeSinceTeleporting > Const.WAIT_TIME_TO_TELEPORT)
+            //        {
+            //            TimeSinceTeleporting = Time.timeSinceLevelLoad;
+            //            NpcController.Npc.transform.position = this.transform.position;
+            //            Plugin.LogDebug($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
+            //        }
+            //    }
+            //    else
+            //    {
+            //        //this.transform.position = NpcController.Npc.thisController.transform.position;
+            //    }
+            //}
 
             // If stuck only teleport if no player can see the intern
             // And the destination of the intern
@@ -567,8 +706,8 @@ namespace LethalInternship.AI
             if (NpcController.Npc.isMovementHindered == 0
                 && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
             {
-                timeSinceStuck += AIIntervalTime;
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
+                //timeSinceStuck += AIIntervalTime;
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
             }
             else
             {
@@ -624,7 +763,6 @@ namespace LethalInternship.AI
             if (NpcController.HasToMove)
             {
                 NpcController.OrderToStopMoving();
-                TeleportIntern(NpcController.Npc.thisController.transform.position);
             }
         }
 
@@ -981,7 +1119,7 @@ namespace LethalInternship.AI
                     return 2f;
 
                 case "Centipede":
-                    return 0.3f;
+                    return 1f;
 
                 case "Spring":
                     if (enemy.currentBehaviourStateIndex > 0)
@@ -998,7 +1136,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -1009,7 +1147,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -1020,7 +1158,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -1054,7 +1192,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -1122,7 +1260,7 @@ namespace LethalInternship.AI
         {
             string indicator;
             int sizePercentage = Math.Clamp((int)(100f + 2.5f * (StartOfRound.Instance.localPlayerController.transform.position - NpcController.Npc.transform.position).sqrMagnitude),
-                                 100, 1000);
+                                 100, 800);
 
             if (IsOwner)
             {
@@ -1553,6 +1691,38 @@ namespace LethalInternship.AI
             return CustomItemBehaviourLibrary.AbstractItems.ContainerBehaviour.CheckIfItemInContainer(grabbableObject);
         }
 
+        private void InitImportantColliders()
+        {
+            if (dictComponentByCollider == null)
+            {
+                dictComponentByCollider = new Dictionary<string, Component>();
+            }
+            else
+            {
+                dictComponentByCollider.Clear();
+            }
+
+            BridgeTrigger[] bridgeTriggers = Object.FindObjectsOfType<BridgeTrigger>(includeInactive: false);
+            for (int i = 0; i < bridgeTriggers.Length; i++)
+            {
+                Component[] bridgePhysicsPartsContainerComponents = bridgeTriggers[i].bridgePhysicsPartsContainer.gameObject.GetComponentsInChildren<Transform>();
+                for (int j = 0; j < bridgePhysicsPartsContainerComponents.Length; j++)
+                {
+                    if (bridgePhysicsPartsContainerComponents[j].name == "Mesh")
+                    {
+                        continue;
+                    }
+                    dictComponentByCollider.Add(bridgePhysicsPartsContainerComponents[j].name, bridgeTriggers[i]);
+                }
+            }
+
+            foreach (var a in dictComponentByCollider)
+            {
+                Plugin.LogDebug($"dictComponentByCollider {a.Key} {a.Value}");
+                //ComponentUtil.ListAllComponents(((BridgeTrigger)a.Value).bridgePhysicsPartsContainer.gameObject);
+            }
+        }
+
         #region Voices
 
         public void StopAudioFadeOut()
@@ -1692,7 +1862,7 @@ namespace LethalInternship.AI
         public void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false)
         {
             // teleport body
-            TeleportAgentAndBody(pos);
+            TeleportAgentAIAndBody(pos);
 
             // Set AI outside or inside dungeon
             if (!setOutside.HasValue)
@@ -1723,26 +1893,21 @@ namespace LethalInternship.AI
         /// Teleport the brain and body of intern
         /// </summary>
         /// <param name="pos"></param>
-        private void TeleportAgentAndBody(Vector3 pos)
+        private void TeleportAgentAIAndBody(Vector3 pos)
         {
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);
             serverPosition = navMeshPosition;
-            // Teleport body
-            NpcController.Npc.transform.position = navMeshPosition;
-
-            if (IsOwner)
+            if (agent == null)
             {
-                // Teleport agent and AI
-                if (!agent.isActiveAndEnabled || !agent.Warp(NpcController.Npc.transform.position))
-                {
-                    agent.enabled = false;
-                    this.transform.position = NpcController.Npc.transform.position;
-                    agent.enabled = true;
-                }
+                NpcController.Npc.transform.position = navMeshPosition;
+                this.transform.position = navMeshPosition;
             }
             else
             {
+                agent.enabled = false;
+                NpcController.Npc.transform.position = navMeshPosition;
                 this.transform.position = navMeshPosition;
+                agent.enabled = true;
             }
 
             // For CullFactory mod
@@ -3063,10 +3228,7 @@ namespace LethalInternship.AI
             NpcController.Npc.fallValue = 0f;
             NpcController.Npc.fallValueUncapped = 0f;
             NpcController.Npc.takingFallDamage = false;
-            NpcController.Npc.isSinking = false;
-            NpcController.Npc.isUnderwater = false;
-            PatchesUtil.FieldInfoWasUnderwaterLastFrame.SetValue(NpcController.Npc, false);
-            NpcController.Npc.sourcesCausingSinking = 0;
+            StopSinkingState();
             NpcController.Npc.sinkingValue = 0f;
             NpcController.Npc.hinderedMultiplier = 1f;
             NpcController.Npc.isMovementHindered = 0;
@@ -3158,6 +3320,8 @@ namespace LethalInternship.AI
             NpcController.Npc.transform.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
 
             StopSinkingState();
+            NpcController.Npc.ResetFallGravity();
+            NpcController.OrderToStopMoving();
 
             // Set intern to brain dead
             State = new BrainDeadState(State);
@@ -3465,17 +3629,13 @@ namespace LethalInternship.AI
 
         private void StopSinkingState()
         {
-            if (NpcController.Npc.isSinking)
-            {
-                NpcController.Npc.statusEffectAudio.Stop();
-                NpcController.Npc.voiceMuffledByEnemy = false;
-                NpcController.Npc.sourcesCausingSinking = 0;
-            }
-            if (NpcController.Npc.isUnderwater)
-            {
-                NpcController.Npc.isUnderwater = false;
-                NpcController.Npc.underwaterCollider = null;
-            }
+            NpcController.Npc.isSinking = false;
+            NpcController.Npc.statusEffectAudio.Stop();
+            NpcController.Npc.voiceMuffledByEnemy = false;
+            NpcController.Npc.sourcesCausingSinking = 0;
+
+            NpcController.Npc.isUnderwater = false;
+            NpcController.Npc.underwaterCollider = null;
         }
 
         #endregion

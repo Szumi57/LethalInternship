@@ -130,7 +130,7 @@ namespace LethalInternship
         public static readonly string SWEAR_KEYWORD = "_cuss";
 
         // Debug
-        public static readonly bool DRAW_LINES = false;
+        public static readonly bool DRAW_LINES = true;
         public static readonly bool SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED = false;
         public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
         public static readonly bool INVULNERABILITY = false;

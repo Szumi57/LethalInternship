@@ -43,10 +43,15 @@ namespace LethalInternship.AI
         public AudioLowPassFilter AudioLowPassFilterComponent = null!;
         public AudioHighPassFilter AudioHighPassFilterComponent = null!;
 
+        public Vector3 MoveVector;
         public bool UpdatePositionForNewlyJoinedClient;
         public bool GrabbedObjectValidated;
         public float UpdatePlayerLookInterval;
         public int PlayerMask;
+        public bool IsTouchingGround;
+        public bool JustTouchedGround;
+        public RaycastHit GroundHit;
+
         private InternAI InternAIController
         {
             get
@@ -69,7 +74,7 @@ namespace LethalInternship.AI
         private float slopeModifier;
         private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
-        private bool isFallingNoJump;
+        public bool IsFallingNoJump;
         private float slideFriction;
 
         private Collider[] nearByPlayers = new Collider[4];
@@ -186,6 +191,7 @@ namespace LethalInternship.AI
                         Npc.thisController.enabled = true;
                     }
                 }
+                Npc.thisController.enabled = false;
 
                 Npc.rightArmProceduralRig.weight = Mathf.Lerp(Npc.rightArmProceduralRig.weight, 0f, 25f * Time.deltaTime);
 
@@ -387,23 +393,23 @@ namespace LethalInternship.AI
         {
             if (this.HasToMove)
             {
-                if (IsJumping || Npc.isCrouching)
-                {
-                    this.lastMoveVector.y = Const.BASE_MAX_SPEED;
-                }
-                else
-                {
-                    // Move and slow down when tight turn
-                    Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
-                    var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
+                //if (IsJumping || Npc.isCrouching)
+                //{
+                //    this.lastMoveVector.y = Const.BASE_MAX_SPEED;
+                //}
+                //else
+                //{
+                //    // Move and slow down when tight turn
+                //    Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
+                //    var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
 
-                    this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
-                    // Stop sprinting if the turn angle is too much
-                    if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
-                    {
-                        floatSprint = 0f;
-                    }
-                }
+                //    this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
+                //    // Stop sprinting if the turn angle is too much
+                //    if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
+                //    {
+                //        floatSprint = 0f;
+                //    }
+                //}
             }
             Npc.moveInputVector.y = this.lastMoveVector.y;
         }
@@ -549,13 +555,13 @@ namespace LethalInternship.AI
                 if (Npc.isSinking)
                 {
                     Npc.GetCurrentMaterialStandingOn();
-                    if (!Npc.CheckConditionsForSinkingInQuicksand())
+                    if (!CheckConditionsForSinkingInQuicksandIntern())
                     {
                         Npc.isSinking = false;
                         this.InternAIController.SyncChangeSinkingState(false);
                     }
                 }
-                else if (!Npc.isSinking && Npc.CheckConditionsForSinkingInQuicksand())
+                else if (!Npc.isSinking && CheckConditionsForSinkingInQuicksandIntern())
                 {
                     Npc.isSinking = true;
                     this.InternAIController.SyncChangeSinkingState(true, Npc.sinkingSpeedMultiplier, Npc.statusEffectAudioIndex);
@@ -601,12 +607,12 @@ namespace LethalInternship.AI
             }
             if (Npc.jetpackControls)
             {
-                if (Npc.disablingJetpackControls && Npc.thisController.isGrounded)
+                if (Npc.disablingJetpackControls && IsTouchingGround)
                 {
                     this.disabledJetpackControlsThisFrame = true;
                     this.InternAIController.SyncDisableJetpackMode();
                 }
-                else if (!Npc.thisController.isGrounded)
+                else if (!IsTouchingGround)
                 {
                     if (!this.StartedJetpackControls)
                     {
@@ -678,11 +684,10 @@ namespace LethalInternship.AI
                 {
                     num3 *= 15f;
                 }
-                // hindered mvt when sinking (water or quicksand) disable because too strong for intern, don't know why
-                //if (movementHinderedPrev > 0)
-                //{
-                //    num3 /= 2f * Npc.hinderedMultiplier;
-                //}
+                if (movementHinderedPrev > 0)
+                {
+                    num3 /= 2f * Npc.hinderedMultiplier;
+                }
                 if (Npc.drunkness > 0f)
                 {
                     num3 *= instanceSOR.drunknessSpeedEffect.Evaluate(Npc.drunkness) / 5f + 1f;
@@ -705,7 +710,7 @@ namespace LethalInternship.AI
                     num3 = Mathf.Max(num3 * 0.8f, num3 + Npc.slopeIntensity * slopeModifier);
                 }
             }
-            if (Npc.isTypingChat || Npc.jetpackControls && !Npc.thisController.isGrounded || instanceSOR.suckingPlayersOutOfShip)
+            if (Npc.isTypingChat || Npc.jetpackControls && !IsTouchingGround || instanceSOR.suckingPlayersOutOfShip)
             {
                 Npc.moveInputVector = Vector2.zero;
             }
@@ -728,7 +733,7 @@ namespace LethalInternship.AI
             }
 
             float num7;
-            if (IsFallingFromJump || isFallingNoJump)
+            if (IsFallingFromJump || IsFallingNoJump)
             {
                 num7 = 1.33f;
             }
@@ -756,7 +761,7 @@ namespace LethalInternship.AI
                 vector2 += Npc.externalForceAutoFade;
                 Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 2f * Time.deltaTime);
             }
-            if (Npc.isPlayerSliding && Npc.thisController.isGrounded)
+            if (Npc.isPlayerSliding && IsTouchingGround)
             {
                 PlayerSlidingTimer += Time.deltaTime;
                 if (slideFriction > Npc.maxSlideFriction)
@@ -772,7 +777,7 @@ namespace LethalInternship.AI
             }
 
             // Move
-            Npc.thisController.Move(vector2 * Time.deltaTime);
+            MoveVector = vector2;
         }
 
         /// <summary>
@@ -780,72 +785,84 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateFallValuesForOwner()
         {
-            if (!Npc.inSpecialInteractAnimation || Npc.inShockingMinigame)
+            JustTouchedGround = false;
+            if (Npc.inSpecialInteractAnimation && !Npc.inShockingMinigame)
             {
-                if (!Npc.thisController.isGrounded)
+                return;
+            }
+
+            //if (!Npc.thisController.isGrounded)
+            //IsTouchingGround = Npc.thisController.isGrounded;
+            IsTouchingGround = Physics.Raycast(new Ray(Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
+                                               out GroundHit,
+                                               1.5f,
+                                               StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore);
+            if (!IsTouchingGround)
+            {
+                if (Npc.jetpackControls && !Npc.disablingJetpackControls)
                 {
-                    if (Npc.jetpackControls && !Npc.disablingJetpackControls)
-                    {
-                        Npc.fallValue = Mathf.MoveTowards(Npc.fallValue, Npc.jetpackCounteractiveForce, 9f * Time.deltaTime);
-                        Npc.fallValueUncapped = -8f;
-                    }
-                    else
-                    {
-                        Npc.fallValue = Mathf.Clamp(Npc.fallValue - 38f * Time.deltaTime, -150f, Npc.jumpForce);
-                        if (Mathf.Abs(Npc.externalForceAutoFade.y) - Mathf.Abs(Npc.fallValue) < 5f)
-                        {
-                            if (Npc.disablingJetpackControls)
-                            {
-                                Npc.fallValueUncapped -= 26f * Time.deltaTime;
-                            }
-                            else
-                            {
-                                Npc.fallValueUncapped -= 38f * Time.deltaTime;
-                            }
-                        }
-                    }
-                    if (!IsJumping && !IsFallingFromJump)
-                    {
-                        if (!isFallingNoJump)
-                        {
-                            isFallingNoJump = true;
-                            Npc.fallValue = -7f;
-                            Npc.fallValueUncapped = -7f;
-                        }
-                        else if (Npc.fallValue < -20f)
-                        {
-                            Npc.isCrouching = false;
-                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CROUCHING, false);
-                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, true);
-                        }
-                    }
-                    if (Npc.fallValueUncapped < -35f)
-                    {
-                        Npc.takingFallDamage = true;
-                    }
+                    Npc.fallValue = Mathf.MoveTowards(Npc.fallValue, Npc.jetpackCounteractiveForce, 9f * Time.deltaTime);
+                    Npc.fallValueUncapped = -8f;
                 }
                 else
                 {
-                    movementHinderedPrev = Npc.isMovementHindered;
-                    if (!IsJumping)
+                    Npc.fallValue = Mathf.Clamp(Npc.fallValue - 38f * Time.deltaTime, -150f, Npc.jumpForce);
+                    if (Mathf.Abs(Npc.externalForceAutoFade.y) - Mathf.Abs(Npc.fallValue) < 5f)
                     {
-                        if (isFallingNoJump)
+                        if (Npc.disablingJetpackControls)
                         {
-                            isFallingNoJump = false;
-                            if (!Npc.isCrouching && Npc.fallValue < -9f)
-                            {
-                                Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
-                            }
-                            PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
+                            Npc.fallValueUncapped -= 26f * Time.deltaTime;
                         }
-                        if (!IsFallingFromJump)
+                        else
                         {
-                            Npc.fallValue = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
-                            Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                            Npc.fallValueUncapped -= 38f * Time.deltaTime;
                         }
                     }
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, false);
                 }
+                if (!IsJumping && !IsFallingFromJump)
+                {
+                    if (!IsFallingNoJump)
+                    {
+                        IsFallingNoJump = true;
+                        Plugin.LogDebug($"{Npc.playerUsername} isFallingNoJump true");
+                        Npc.fallValue = -7f;
+                        Npc.fallValueUncapped = -7f;
+                    }
+                    else if (Npc.fallValue < -20f)
+                    {
+                        Npc.isCrouching = false;
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CROUCHING, false);
+                        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, true);
+                    }
+                }
+                if (Npc.fallValueUncapped < -35f)
+                {
+                    Npc.takingFallDamage = true;
+                }
+            }
+            else
+            {
+                movementHinderedPrev = Npc.isMovementHindered;
+                if (!IsJumping)
+                {
+                    if (IsFallingNoJump)
+                    {
+                        IsFallingNoJump = false;
+                        if (!Npc.isCrouching && Npc.fallValue < -9f)
+                        {
+                            Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
+                        }
+                        Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround {Npc.fallValue}");
+                        PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
+                        JustTouchedGround = true;
+                    }
+                    if (!IsFallingFromJump)
+                    {
+                        Npc.fallValue = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                        Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                    }
+                }
+                Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, false);
             }
         }
 
@@ -1288,7 +1305,7 @@ namespace LethalInternship.AI
                             UpdatePositionForNewlyJoinedClient = false;
                             if (!Npc.playersManager.newGameIsLoading)
                             {
-                                InternAIController.SyncUpdateInternPosition(Npc.thisPlayerBody.localPosition, Npc.isInElevator, Npc.isInHangarShipRoom, Npc.isExhausted, Npc.thisController.isGrounded);
+                                InternAIController.SyncUpdateInternPosition(Npc.thisPlayerBody.localPosition, Npc.isInElevator, Npc.isInHangarShipRoom, Npc.isExhausted, IsTouchingGround);
                                 Npc.serverPlayerPosition = Npc.transform.localPosition;
                                 Npc.oldPlayerPosition = Npc.serverPlayerPosition;
                             }
@@ -1361,6 +1378,44 @@ namespace LethalInternship.AI
                     networkObject.AutoObjectParentSync = true;
                 }
             }
+        }
+
+        public bool CheckConditionsForSinkingInQuicksandIntern()
+        {
+            if (!IsTouchingGround)
+            {
+                return false;
+            }
+
+            if (Npc.inSpecialInteractAnimation || (bool)Npc.inAnimationWithEnemy || Npc.isClimbingLadder)
+            {
+                return false;
+            }
+
+            if (Npc.physicsParent != null)
+            {
+                return false;
+            }
+
+            if (Npc.isInHangarShipRoom)
+            {
+                return false;
+            }
+
+            if (Npc.isInElevator)
+            {
+                return false;
+            }
+
+            if (Npc.currentFootstepSurfaceIndex != 1 
+                && Npc.currentFootstepSurfaceIndex != 4 
+                && Npc.currentFootstepSurfaceIndex != 8 
+                && (!Npc.isInsideFactory || Npc.currentFootstepSurfaceIndex != 5))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         #region Emotes
@@ -1528,10 +1583,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void OrderToMove()
         {
-            if (this.lastMoveVector.y < Const.BASE_MIN_SPEED)
-            {
-                this.lastMoveVector = new Vector2(0f, Const.BASE_MAX_SPEED);
-            }
+            this.lastMoveVector = new Vector2(0f, 1f);
         }
 
         /// <summary>
@@ -1548,7 +1600,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void OrderToSprint()
         {
-            if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
+            if (Npc.inSpecialInteractAnimation || !IsTouchingGround || Npc.isClimbingLadder)
             {
                 return;
             }
@@ -1568,7 +1620,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void OrderToStopSprint()
         {
-            if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
+            if (Npc.inSpecialInteractAnimation || !IsTouchingGround || Npc.isClimbingLadder)
             {
                 return;
             }
@@ -1588,7 +1640,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void OrderToToggleCrouch()
         {
-            if (Npc.inSpecialInteractAnimation || !Npc.thisController.isGrounded || Npc.isClimbingLadder)
+            if (Npc.inSpecialInteractAnimation || !IsTouchingGround || Npc.isClimbingLadder)
             {
                 return;
             }

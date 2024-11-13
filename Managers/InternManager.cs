@@ -1057,7 +1057,7 @@ namespace LethalInternship.Managers
 
                 if (internAI.NpcController.Npc.isInElevator
                     && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                    && internAI.NpcController.Npc.thisController.isGrounded)
+                    && internAI.NpcController.IsTouchingGround)
                 {
                     if (!internAI.AreHandsFree())
                     {
@@ -1068,11 +1068,11 @@ namespace LethalInternship.Managers
                 }
                 else if (!internAI.NpcController.Npc.isInElevator
                     && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                    && internAI.NpcController.Npc.thisController.isGrounded)
+                    && internAI.NpcController.IsTouchingGround)
                 {
                     internAI.NpcController.Npc.isInElevator = true;
                     if (instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                        && internAI.NpcController.Npc.thisController.isGrounded)
+                        && internAI.NpcController.IsTouchingGround)
                     {
                         internAI.NpcController.Npc.isInHangarShipRoom = true;
                     }

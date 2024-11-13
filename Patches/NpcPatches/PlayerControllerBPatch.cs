@@ -74,7 +74,7 @@ namespace LethalInternship.Patches.NpcPatches
             internAI.NpcController.CameraUp = ___cameraUp;
             internAI.NpcController.UpdatePlayerLookInterval = ___updatePlayerLookInterval;
 
-            internAI.NpcController.Update();
+            internAI.UpdateController();
 
             ___isCameraDisabled = internAI.NpcController.IsCameraDisabled;
             ___crouchMeter = internAI.NpcController.CrouchMeter;
