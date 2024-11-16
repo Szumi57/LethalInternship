@@ -1,8 +1,6 @@
 ﻿using HarmonyLib;
-using LethalInternship.Utils;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
+using LethalInternship.AI;
+using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches
 {
@@ -12,118 +10,23 @@ namespace LethalInternship.Patches.MapHazardsPatches
     [HarmonyPatch(typeof(SpikeRoofTrap))]
     internal class SpikeRoofTrapPatch
     {
-        /// <summary>
-        /// Patch for making the spike roof works when an intern enter its collision
-        /// </summary>
-        /// <param name="instructions"></param>
-        /// <param name="generator"></param>
-        /// <returns></returns>
         [HarmonyPatch("OnTriggerStay")]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> OnTriggerStay_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        [HarmonyPostfix]
+        static void OnTriggerStay_PostFix(Collider other)
         {
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 2; i++)
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null 
+                && enemyAICollisionDetect.mainScript != null 
+                && enemyAICollisionDetect.mainScript.IsOwner 
+                && enemyAICollisionDetect.mainScript.enemyType.canDie 
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
-                if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()" //24
-                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB GameNetworkManager::localPlayerController"//25
-                    && codes[i + 2].ToString() == "call static bool UnityEngine.Object::op_Equality(UnityEngine.Object x, UnityEngine.Object y)")//26
+                InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
+                if (internAI != null)
                 {
-                    startIndex = i;
-                    break;
+                    internAI.SyncKillIntern(Vector3.down * 17f, true, CauseOfDeath.Crushing, 0, default(Vector3));
                 }
             }
-            if (startIndex > -1)
-            {
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes[startIndex].operand = null;
-
-                codes[startIndex + 1].opcode = OpCodes.Call;
-                codes[startIndex + 1].operand = PatchesUtil.IsPlayerLocalOrInternOwnerLocalMethod;
-
-                codes[startIndex + 2].opcode = OpCodes.Nop; //op_Equality
-                codes[startIndex + 2].operand = null;
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change check for local player or intern.");
-            }
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 11; i++)
-            {
-                if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()" // 31
-                    && codes[i + 11].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))// 42
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes[startIndex].operand = null;
-
-                codes[startIndex + 1].opcode = OpCodes.Ldloc_0;
-                codes[startIndex + 1].operand = null;
-
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.OnTriggerStay_Transpiler could not change use of component for method kill player.");
-            }
-
-            return codes.AsEnumerable();
-        }
-
-        /// <summary>
-        /// Patch for making the spike roof able to detect an intern passing under it
-        /// </summary>
-        /// <param name="instructions"></param>
-        /// <param name="generator"></param>
-        /// <returns></returns>
-        [HarmonyPatch("Update")]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Update_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 2; i++)
-            {
-                if (codes[i].ToString() == "call static GameNetworkManager GameNetworkManager::get_Instance()" //98
-                    && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB GameNetworkManager::localPlayerController"
-                    && codes[i + 2].ToString() == "call static bool UnityEngine.Object::op_Equality(UnityEngine.Object x, UnityEngine.Object y)")
-                {
-                    startIndex = i;
-                    break;
-                }
-            }
-            if (startIndex > -1)
-            {
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes[startIndex].operand = null;
-
-                codes[startIndex + 1].opcode = OpCodes.Call;
-                codes[startIndex + 1].operand = PatchesUtil.IsPlayerLocalOrInternOwnerLocalMethod;
-
-                codes[startIndex + 2].opcode = OpCodes.Nop; //op_Equality
-                codes[startIndex + 2].operand = null;
-
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.LogError($"LethalInternship.Patches.MapHazardsPatches.SpikeRoofTrapPatch.Update_Transpiler could not change check for local player or intern.");
-            }
-
-            return codes.AsEnumerable();
         }
     }
 }

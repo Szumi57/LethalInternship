@@ -5,6 +5,7 @@
     /// </summary>
     internal enum EnumAIStates
     {
+        BrainDead,
         SearchingForPlayer,
         GetCloseToPlayer,
         JustLostPlayer,
@@ -12,7 +13,6 @@
         FetchingObject,
         PlayerInShip,
         PlayerInCruiser,
-        Panik,
-        BrainDead
+        Panik
     }
 }

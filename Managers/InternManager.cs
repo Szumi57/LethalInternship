@@ -466,7 +466,6 @@ namespace LethalInternship.Managers
             networkObjectReferenceRagdollInternBody.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
             RagdollGrabbableObject ragdollBody = networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>();
 
-            internAI.SetEnemyOutside(spawnParamsNetworkSerializable.IsOutside);
             InitInternSpawning(internAI, ragdollBody,
                                spawnParamsNetworkSerializable);
         }
@@ -535,6 +534,7 @@ namespace LethalInternship.Managers
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             internAI.InternIdentity = internIdentity;
             internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
+            internAI.SetEnemyOutside(spawnParamsNetworkSerializable.IsOutside);
 
             // Attach ragdoll body
             internAI.RagdollInternBody = new RagdollInternBody(ragdollBody);

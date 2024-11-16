@@ -49,8 +49,8 @@ namespace LethalInternship.AI
         public float UpdatePlayerLookInterval;
         public int PlayerMask;
         public bool IsTouchingGround;
-        public bool JustTouchedGround;
         public RaycastHit GroundHit;
+        public EnemyAI? EnemyInAnimationWith;
 
         private InternAI InternAIController
         {
@@ -74,7 +74,7 @@ namespace LethalInternship.AI
         private float slopeModifier;
         private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
-        public bool IsFallingNoJump;
+        private bool isFallingNoJump;
         private float slideFriction;
 
         private Collider[] nearByPlayers = new Collider[4];
@@ -97,7 +97,6 @@ namespace LethalInternship.AI
         private Vector3 oldSentPositionToLookAt;
 
         private Vector3 directionToUpdateTurnBodyTowardsTo;
-        private Vector3 directionToUpdateTurnBodyTowardsToNormalized;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
 
@@ -176,34 +175,16 @@ namespace LethalInternship.AI
                 // Updates the state of the CharacterController and the animator controller
                 UpdateOwnerChanged(true);
 
-                // Disabling controller if in special interaction animation
-                // (fix for a bug: animation of the forest giant eating intern causing weird effect
-                // if controller enabled on the intern)
-                if (Npc.transform.parent == Npc.playersManager.playersContainer)
-                {
-                    if (Npc.inSpecialInteractAnimation
-                        && Npc.inAnimationWithEnemy != null && Npc.inAnimationWithEnemy.enemyType.enemyName == "ForestGiant")
-                    {
-                        Npc.thisController.enabled = false;
-                    }
-                    else
-                    {
-                        Npc.thisController.enabled = true;
-                    }
-                }
-                Npc.thisController.enabled = false;
-
                 Npc.rightArmProceduralRig.weight = Mathf.Lerp(Npc.rightArmProceduralRig.weight, 0f, 25f * Time.deltaTime);
 
                 // Set the move input vector for moving the controller
                 UpdateMoveInputVectorForOwner();
 
+                // Force turn if needed
+                ForceTurnTowardsTarget();
+
                 // Turn the body towards the direction set beforehand
                 UpdateTurnBodyTowardsDirection();
-
-                // If inShockingMinigame, turn towards the target of the shocking
-                // todo 
-                //Npc.ForceTurnTowardsTarget();
 
                 // Manage the drowning state of the intern
                 SetFaceUnderwaterFilters();
@@ -309,7 +290,7 @@ namespace LethalInternship.AI
                     Npc.thisPlayerModelArms.enabled = false;
                     Npc.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                     Npc.mapRadarDirectionIndicator.enabled = false;
-                    Npc.thisController.enabled = true;
+                    Npc.thisController.enabled = false;
                     UpdateRuntimeAnimatorController(isOwner);
                 }
             }
@@ -391,26 +372,6 @@ namespace LethalInternship.AI
         /// </remarks>
         private void UpdateMoveInputVectorForOwner()
         {
-            if (this.HasToMove)
-            {
-                //if (IsJumping || Npc.isCrouching)
-                //{
-                //    this.lastMoveVector.y = Const.BASE_MAX_SPEED;
-                //}
-                //else
-                //{
-                //    // Move and slow down when tight turn
-                //    Vector3 directionHorizontal = new Vector3(directionToUpdateTurnBodyTowardsToNormalized.x, 0f, directionToUpdateTurnBodyTowardsToNormalized.z);
-                //    var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
-
-                //    this.lastMoveVector.y = Mathf.Clamp(Const.BASE_MAX_SPEED * turnSpeed * 2.5f, Const.BASE_MIN_SPEED, Const.BASE_MAX_SPEED);
-                //    // Stop sprinting if the turn angle is too much
-                //    if (turnSpeed < 0.1f || this.lastMoveVector.y < 0.2f)
-                //    {
-                //        floatSprint = 0f;
-                //    }
-                //}
-            }
             Npc.moveInputVector.y = this.lastMoveVector.y;
         }
 
@@ -716,24 +677,41 @@ namespace LethalInternship.AI
             }
 
             // Near other players detection
+            Collider collider;
+            PlayerControllerB componentPlayer;
             Vector3 vector = new Vector3(0f, 0f, 0f);
             int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.95f, nearByPlayers, instanceSOR.playersMask);
             for (int i = 0; i < num5; i++)
             {
-                vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[i].transform.position) * 100f) * 1.2f;
+                collider = nearByPlayers[i];
+                if (collider.CompareTag("Player"))
+                {
+                    componentPlayer = nearByPlayers[i].GetComponent<PlayerControllerB>();
+                    if (componentPlayer != null
+                        && !InternManager.Instance.IsPlayerIntern(componentPlayer))
+                    {
+                        vector += Vector3.Normalize((Npc.transform.position - collider.transform.position) * 100f) * 1.2f;
+                    }
+                }
             }
             int num6 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 1.25f, nearByPlayers, 524288);
+            EnemyAICollisionDetect component;
             for (int j = 0; j < num6; j++)
             {
-                EnemyAICollisionDetect component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
-                if (component != null && component.mainScript != null && !component.mainScript.isEnemyDead && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
+                component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
+                if (component != null
+                    && component.mainScript != null
+                    && component.mainScript.GetType() != typeof(InternAI)
+                    && component.mainScript.GetType() != typeof(FlowerSnakeEnemy)
+                    && !component.mainScript.isEnemyDead
+                    && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
                 {
                     vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
                 }
             }
 
             float num7;
-            if (IsFallingFromJump || IsFallingNoJump)
+            if (IsFallingFromJump || isFallingNoJump)
             {
                 num7 = 1.33f;
             }
@@ -778,6 +756,25 @@ namespace LethalInternship.AI
 
             // Move
             MoveVector = vector2;
+
+            // Update animation
+            //if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING))
+            //{
+            //    Plugin.LogDebug($"{Npc.playerUsername} NpcController.MoveVector.z {MoveVector.z}");
+            //}
+
+            //if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING))
+            //{
+            //    Vector3 directionHorizontal = new Vector3(MoveVector.x, 0f, MoveVector.z);
+            //    var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
+            //    // Stop sprinting if the turn angle is too much
+            //    Plugin.LogDebug($"{Npc.playerUsername} turnSpeedz {turnSpeed}");
+            //    if (turnSpeed < 0.1f)
+            //    {
+            //        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+            //        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
+            //    }
+            //}
         }
 
         /// <summary>
@@ -785,18 +782,15 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateFallValuesForOwner()
         {
-            JustTouchedGround = false;
             if (Npc.inSpecialInteractAnimation && !Npc.inShockingMinigame)
             {
                 return;
             }
 
-            //if (!Npc.thisController.isGrounded)
-            //IsTouchingGround = Npc.thisController.isGrounded;
             IsTouchingGround = Physics.Raycast(new Ray(Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
                                                out GroundHit,
                                                1.5f,
-                                               StartOfRound.Instance.walkableSurfacesMask, QueryTriggerInteraction.Ignore);
+                                               StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
             if (!IsTouchingGround)
             {
                 if (Npc.jetpackControls && !Npc.disablingJetpackControls)
@@ -821,9 +815,9 @@ namespace LethalInternship.AI
                 }
                 if (!IsJumping && !IsFallingFromJump)
                 {
-                    if (!IsFallingNoJump)
+                    if (!isFallingNoJump)
                     {
-                        IsFallingNoJump = true;
+                        isFallingNoJump = true;
                         Plugin.LogDebug($"{Npc.playerUsername} isFallingNoJump true");
                         Npc.fallValue = -7f;
                         Npc.fallValueUncapped = -7f;
@@ -845,16 +839,15 @@ namespace LethalInternship.AI
                 movementHinderedPrev = Npc.isMovementHindered;
                 if (!IsJumping)
                 {
-                    if (IsFallingNoJump)
+                    if (isFallingNoJump)
                     {
-                        IsFallingNoJump = false;
+                        isFallingNoJump = false;
                         if (!Npc.isCrouching && Npc.fallValue < -9f)
                         {
                             Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
                         }
-                        Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround {Npc.fallValue}");
+                        Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround GroundHit.point {GroundHit.point} fallValue {Npc.fallValue}");
                         PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
-                        JustTouchedGround = true;
                     }
                     if (!IsFallingFromJump)
                     {
@@ -1407,9 +1400,9 @@ namespace LethalInternship.AI
                 return false;
             }
 
-            if (Npc.currentFootstepSurfaceIndex != 1 
-                && Npc.currentFootstepSurfaceIndex != 4 
-                && Npc.currentFootstepSurfaceIndex != 8 
+            if (Npc.currentFootstepSurfaceIndex != 1
+                && Npc.currentFootstepSurfaceIndex != 4
+                && Npc.currentFootstepSurfaceIndex != 8
                 && (!Npc.isInsideFactory || Npc.currentFootstepSurfaceIndex != 5))
             {
                 return false;
@@ -1663,7 +1656,6 @@ namespace LethalInternship.AI
         public void SetTurnBodyTowardsDirectionWithPosition(Vector3 positionDirection)
         {
             directionToUpdateTurnBodyTowardsTo = positionDirection - Npc.thisController.transform.position;
-            directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
         }
         /// <summary>
         /// Set the direction the controller should turn towards, using a vector direction
@@ -1672,7 +1664,6 @@ namespace LethalInternship.AI
         public void SetTurnBodyTowardsDirection(Vector3 direction)
         {
             directionToUpdateTurnBodyTowardsTo = direction;
-            directionToUpdateTurnBodyTowardsToNormalized = directionToUpdateTurnBodyTowardsTo.normalized;
         }
 
         /// <summary>
@@ -1727,11 +1718,6 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateLookAt()
         {
-            if (Npc.inSpecialInteractAnimation)
-            {
-                return;
-            }
-
             Vector3 direction;
             switch (enumObjectsLookingAt)
             {
@@ -1775,6 +1761,29 @@ namespace LethalInternship.AI
                         }
                     }
                     break;
+            }
+        }
+
+        private void ForceTurnTowardsTarget()
+        {
+            if (Npc.inSpecialInteractAnimation && Npc.inShockingMinigame && Npc.shockingTarget != null)
+            {
+                OrderToLookAtPosition(Npc.shockingTarget.position);
+            }
+            else if (Npc.inAnimationWithEnemy
+                     && EnemyInAnimationWith != null)
+            {
+                Vector3 pos;
+                if (EnemyInAnimationWith.eye != null)
+                {
+                    pos = EnemyInAnimationWith.eye.position;
+                }
+                else
+                {
+                    pos = EnemyInAnimationWith.transform.position;
+                }
+
+                OrderToLookAtPosition(pos);
             }
         }
 

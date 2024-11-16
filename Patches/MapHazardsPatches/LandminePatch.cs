@@ -38,17 +38,18 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return;
             }
 
-            if (other.CompareTag("Player"))
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null
+                && enemyAICollisionDetect.mainScript != null
+                && enemyAICollisionDetect.mainScript.IsOwner
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
-                PlayerControllerB player = other.gameObject.GetComponent<PlayerControllerB>();
-                if (InternManager.Instance.IsPlayerInternOwnerLocal(player))
+                InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
+                if (internAI != null)
                 {
-                    if (!player.isPlayerDead)
-                    {
-                        ___localPlayerOnMine = true;
-                        ___pressMineDebounceTimer = 0.5f;
-                        __instance.PressMineServerRpc();
-                    }
+                    ___localPlayerOnMine = true;
+                    ___pressMineDebounceTimer = 0.5f;
+                    __instance.PressMineServerRpc();
                 }
             }
         }
@@ -75,16 +76,18 @@ namespace LethalInternship.Patches.MapHazardsPatches
             {
                 return;
             }
-            if (other.CompareTag("Player"))
+
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null
+                && enemyAICollisionDetect.mainScript != null
+                && enemyAICollisionDetect.mainScript.IsOwner
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
-                PlayerControllerB player = other.gameObject.GetComponent<PlayerControllerB>();
-                if (InternManager.Instance.IsPlayerInternOwnerLocal(player))
+                InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
+                if (internAI != null)
                 {
-                    if (!player.isPlayerDead)
-                    {
-                        ___localPlayerOnMine = false;
-                        TriggerMineOnLocalClientByExiting_ReversePatch(__instance);
-                    }
+                    ___localPlayerOnMine = false;
+                    TriggerMineOnLocalClientByExiting_ReversePatch(__instance);
                 }
             }
         }
