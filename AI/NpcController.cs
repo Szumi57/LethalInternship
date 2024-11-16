@@ -787,9 +787,9 @@ namespace LethalInternship.AI
                 return;
             }
 
-            IsTouchingGround = Physics.Raycast(new Ray(Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
+            IsTouchingGround = Physics.Raycast(new Ray(Npc.thisPlayerBody.position + Vector3.up * 2, -Vector3.up),
                                                out GroundHit,
-                                               1.5f,
+                                               2.5f,
                                                StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
             if (!IsTouchingGround)
             {

@@ -70,13 +70,6 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            // Target in ship, wait outside
-            if (ai.IsPlayerInShipBoundsExpanded(ai.targetPlayer))
-            {
-                ai.State = new PlayerInShipState(this);
-                return;
-            }
-
             VehicleController? vehicleController = ai.GetVehicleCruiserTargetPlayerIsIn();
             if (vehicleController != null)
             {

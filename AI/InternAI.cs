@@ -323,7 +323,8 @@ namespace LethalInternship.AI
                 Vector3 aiPosition = this.transform.position;
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} --> y {(NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y)} MoveVector {NpcController.MoveVector}");
                 NpcController.Npc.transform.position = new Vector3(x,
-                                                                   NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y,
+                                                                   !StartOfRound.Instance.localPlayerController.isInElevator && NpcController.IsTouchingGround 
+                                                                    ? NpcController.GroundHit.point.y : aiPosition.y,
                                                                    z);
                 this.transform.position = aiPosition;
                 NpcController.Npc.ResetFallGravity();
@@ -765,19 +766,9 @@ namespace LethalInternship.AI
                 }
 
                 // Nothing in between to break line of sight ?
-                if (IsPlayerInShipBoundsExpanded(instanceSOR.allPlayerScripts[i]))
+                if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
-                    if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMask))
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 Vector3 vectorInternToPlayer = cameraPlayerPosition - thisInternCamera.position;
@@ -1007,20 +998,6 @@ namespace LethalInternship.AI
         public void ReParentIntern(Transform newParent)
         {
             NpcController.ReParentNotSpawnedTransform(newParent);
-        }
-
-        /// <summary>
-        /// Is the target player in the ship or outside but close to the ship ?
-        /// </summary>
-        /// <returns></returns>
-        public bool IsPlayerInShipBoundsExpanded(PlayerControllerB player)
-        {
-            if (player == null)
-            {
-                return false;
-            }
-
-            return player.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(player.transform.position);
         }
 
         /// <summary>
@@ -1312,6 +1289,12 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Object on ship (inside or outside hangar)
+                if (grabbableObject.isInElevator)
+                {
+                    continue;
+                }
+
                 // Object in a container mod of some sort ?
                 if (Plugin.IsModCustomItemBehaviourLibraryLoaded)
                 {
@@ -1386,13 +1369,6 @@ namespace LethalInternship.AI
                 {
                     return false;
                 }
-            }
-
-            // Item dropped to close the the ship
-            if ((grabbableObject.transform.position - InternManager.Instance.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
-                    < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
-            {
-                return false;
             }
 
             // Is item too close to entrance (with config option enabled)

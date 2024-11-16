@@ -1026,26 +1026,6 @@ namespace LethalInternship.Managers
             return results.ToArray();
         }
 
-        /// <summary>
-        /// Get the closest point on the ship expanded (by <c>GetExpandedShipBounds()</c>) bounds from <c>fromPoint</c>
-        /// </summary>
-        /// <param name="fromPoint">Position of reference</param>
-        public Vector3 ShipBoundClosestPoint(Vector3 fromPoint)
-        {
-            return GetExpandedShipBounds().ClosestPoint(fromPoint);
-        }
-
-        /// <summary>
-        /// Get the expanded bounds of the ship by <c>Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE</c> as a struct <c>Bounds</c>
-        /// </summary>
-        /// <returns></returns>
-        public Bounds GetExpandedShipBounds()
-        {
-            Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
-            shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
-            return shipBounds;
-        }
-
         public void SetInternsInElevatorLateUpdate(StartOfRound instanceSOR)
         {
             foreach (InternAI internAI in AllInternAIs)

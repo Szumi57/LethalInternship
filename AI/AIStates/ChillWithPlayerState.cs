@@ -74,12 +74,14 @@ namespace LethalInternship.AI.AIStates
                     return;
                 }
             }
-
-            // Target in ship, wait outside
-            if (ai.IsPlayerInShipBoundsExpanded(ai.targetPlayer))
+            else
             {
-                ai.State = new PlayerInShipState(this);
-                return;
+                // Or drop in ship room
+                if (npcController.Npc.isInHangarShipRoom)
+                {
+                    // Intern drop item
+                    ai.DropItemServerRpc();
+                }
             }
 
             VehicleController? vehicleController = ai.GetVehicleCruiserTargetPlayerIsIn();
@@ -101,7 +103,6 @@ namespace LethalInternship.AI.AIStates
             if (SqrHorizontalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
                 || SqrVerticalDistanceWithTarget > Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {
-                // todo detect sound
                 npcController.OrderToLookForward();
                 ai.State = new GetCloseToPlayerState(this);
                 return;
