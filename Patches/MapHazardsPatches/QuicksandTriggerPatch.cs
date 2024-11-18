@@ -36,6 +36,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return;
             }
 
+            if (internAI.NpcController.IsControllerInCruiser)
+            {
+                return;
+            }
+
             PlayerControllerB internController = internAI.NpcController.Npc;
             if (__instance.isWater && internController.underwaterCollider == null)
             {
@@ -86,6 +91,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             if (internAI == null)
+            {
+                return;
+            }
+
+            if (internAI.NpcController.IsControllerInCruiser)
             {
                 return;
             }

@@ -21,7 +21,7 @@ namespace LethalInternship.AI
         public List<PlayerPhysicsRegion> CurrentInternPhysicsRegions = new List<PlayerPhysicsRegion>();
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
-        public bool InternAIInCruiser;
+        public bool IsControllerInCruiser;
 
         // Public variables to pass to patch
         public bool IsCameraDisabled;
@@ -385,11 +385,7 @@ namespace LethalInternship.AI
                 if (Npc.moveInputVector.sqrMagnitude <= 0.001
                     || (Npc.inSpecialInteractAnimation && !Npc.isClimbingLadder && !Npc.inShockingMinigame))
                 {
-                    IsWalking = false;
-                    Npc.isSprinting = false;
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+                    StopAnimations();
                 }
                 else if (floatSprint > 0.3f
                             && movementHinderedPrev <= 0
@@ -1261,7 +1257,7 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    if (!InternAIInCruiser)
+                    if (!IsControllerInCruiser)
                     {
                         ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
                     }
@@ -1362,9 +1358,9 @@ namespace LethalInternship.AI
                     networkObject.AutoObjectParentSync = false;
                 }
 
-                Plugin.LogDebug($"npcController.Npc.transform.parent before {Npc.transform.parent}");
+                Plugin.LogDebug($"{Npc.playerUsername} ReParent parent before {Npc.transform.parent}");
                 Npc.transform.parent = newParent;
-                Plugin.LogDebug($"npcController.Npc.transform.parent after {Npc.transform.parent}");
+                Plugin.LogDebug($"{Npc.playerUsername} ReParent parent after {Npc.transform.parent}");
 
                 foreach (NetworkObject networkObject in Npc.GetComponentsInChildren<NetworkObject>())
                 {
@@ -1671,7 +1667,7 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateTurnBodyTowardsDirection()
         {
-            if (InternAIInCruiser)
+            if (IsControllerInCruiser)
             {
                 return;
             }
@@ -1762,6 +1758,15 @@ namespace LethalInternship.AI
                     }
                     break;
             }
+        }
+
+        public void StopAnimations()
+        {
+            IsWalking = false;
+            Npc.isSprinting = false;
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
         }
 
         private void ForceTurnTowardsTarget()

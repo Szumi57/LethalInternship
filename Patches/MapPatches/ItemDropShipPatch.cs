@@ -84,12 +84,5 @@ namespace LethalInternship.Patches.MapPatches
 
             InternManager.Instance.SpawnInternsFromDropShip(__instance.itemSpawnPositions);
         }
-
-        [HarmonyPatch("DeliverVehicleOnServer")]
-        [HarmonyPostfix]
-        static void DeliverVehicleOnServer_PostFix()
-        {
-            InternManager.Instance.VehicleHasLandedClientRpc();
-        }
     }
 }

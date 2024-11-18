@@ -34,6 +34,8 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public override void DoAI()
         {
+            ai.SetAgent(enabled:  false);
+
             if (vehicleController == null)
             {
                 ai.State = new GetCloseToPlayerState(this);
@@ -42,7 +44,7 @@ namespace LethalInternship.AI.AIStates
 
             Vector3 entryPointInternCruiser = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomEntryPosCruiser();
 
-            if (npcController.InternAIInCruiser)
+            if (npcController.IsControllerInCruiser)
             {
                 if (ai.GetVehicleCruiserTargetPlayerIsIn() == null)
                 {
@@ -50,7 +52,6 @@ namespace LethalInternship.AI.AIStates
                     ai.SyncTeleportInternVehicle(entryPointInternCruiser, enteringVehicle: false, vehicleController);
                     vehicleController.SetVehicleCollisionForPlayer(true, npcController.Npc);
 
-                    npcController.Npc.thisController.enabled = true;
                     ai.State = new GetCloseToPlayerState(this);
                     return;
                 }
@@ -79,9 +80,6 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Teleport to cruiser and enter vehicle
-            npcController.Npc.thisController.enabled = false;
-            vehicleController.SetVehicleCollisionForPlayer(false, npcController.Npc);
-
             // Place intern in random spot
             Vector3 internPassengerPos = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomInCruiserPos();
             ai.SyncTeleportInternVehicle(internPassengerPos, enteringVehicle: true, vehicleController);
@@ -97,6 +95,9 @@ namespace LethalInternship.AI.AIStates
             {
                 npcController.OrderToToggleCrouch();
             }
+
+            // Stop animations
+            npcController.StopAnimations();
 
             // Chill
             npcController.OrderToStopMoving();

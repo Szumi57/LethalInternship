@@ -1224,11 +1224,7 @@ namespace LethalInternship.Managers
 
         #region Vehicle landing on map RPC
 
-        /// <summary>
-        /// Update the stopping the perfoming of emote
-        /// </summary>
-        [ClientRpc]
-        public void VehicleHasLandedClientRpc()
+        public void VehicleHasLanded()
         {
             VehicleController = Object.FindObjectOfType<VehicleController>();
             Plugin.LogDebug($"Vehicle has landed : {VehicleController}");

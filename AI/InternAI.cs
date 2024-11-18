@@ -65,6 +65,7 @@ namespace LethalInternship.AI
         public int MaxHealth = Const.DEFAULT_INTERN_MAX_HEALTH;
         public float TimeSinceTeleporting = 0f;
 
+        private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
@@ -181,6 +182,8 @@ namespace LethalInternship.AI
 
             // Init state
             InitStateToSearchingNoTarget();
+
+            StateControllerMovement = EnumStateControllerMovement.FollowAgent;
         }
 
         private void InitInternVoiceComponent()
@@ -283,7 +286,6 @@ namespace LethalInternship.AI
             // Walking on fallen bridge ?
             bool shouldFreeMovement = ShouldFreeMovement();
 
-
             // Update movement
             float x;
             float z;
@@ -312,18 +314,18 @@ namespace LethalInternship.AI
 
             // Update position
             if (shouldFreeMovement
-                || isMovementFree)
+                || StateControllerMovement == EnumStateControllerMovement.Free)
             {
-                isMovementFree = true;
+                StateControllerMovement = EnumStateControllerMovement.Free;
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} falling ! NpcController.Npc.transform.position {NpcController.Npc.transform.position} MoveVector {NpcController.MoveVector}");
                 NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
             }
-            else
+            else if (StateControllerMovement == EnumStateControllerMovement.FollowAgent)
             {
                 Vector3 aiPosition = this.transform.position;
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} --> y {(NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y)} MoveVector {NpcController.MoveVector}");
                 NpcController.Npc.transform.position = new Vector3(x,
-                                                                   !StartOfRound.Instance.localPlayerController.isInElevator && NpcController.IsTouchingGround 
+                                                                   !StartOfRound.Instance.localPlayerController.isInElevator && NpcController.IsTouchingGround
                                                                     ? NpcController.GroundHit.point.y : aiPosition.y,
                                                                    z);
                 this.transform.position = aiPosition;
@@ -331,18 +333,18 @@ namespace LethalInternship.AI
             }
 
             // Is still falling ?
-            if (isMovementFree
+            if (StateControllerMovement == EnumStateControllerMovement.Free
                 && NpcController.IsTouchingGround
                 && !shouldFreeMovement)
             {
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= touch ground GroundHit.point {NpcController.GroundHit.point}");
-                isMovementFree = false;
+                StateControllerMovement = EnumStateControllerMovement.FollowAgent;
                 TeleportAgentAIAndBody(NpcController.GroundHit.point);
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= NpcController.Npc.transform.position {NpcController.Npc.transform.position}");
             }
 
             // No AI when falling
-            if (isMovementFree)
+            if (StateControllerMovement == EnumStateControllerMovement.Free)
             {
                 return;
             }
@@ -399,7 +401,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (NpcController.InternAIInCruiser)
+            if (NpcController.IsControllerInCruiser)
             {
                 return;
             }
@@ -504,7 +506,7 @@ namespace LethalInternship.AI
             State.PlayerHeard(noisePosition);
         }
 
-        private void SetAgent(bool enabled)
+        public void SetAgent(bool enabled)
         {
             if (agent != null)
             {
@@ -1295,6 +1297,13 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Object in cruiser vehicle
+                if (grabbableObject.transform.parent != null 
+                    && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
+                {
+                    continue;
+                }
+
                 // Object in a container mod of some sort ?
                 if (Plugin.IsModCustomItemBehaviourLibraryLoaded)
                 {
@@ -1355,7 +1364,6 @@ namespace LethalInternship.AI
             }
 
             if (grabbableObject.isHeld
-                || grabbableObject.isInShipRoom
                 || !grabbableObject.grabbable
                 || grabbableObject.deactivated)
             {
@@ -1714,11 +1722,24 @@ namespace LethalInternship.AI
 
         private void TeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
         {
-            TeleportIntern(pos);
+            if (enteringVehicle)
+            {
+                if (agent != null)
+                {
+                    agent.enabled = false;
+                }
+                NpcController.Npc.transform.position = pos;
+                StateControllerMovement = EnumStateControllerMovement.Fixed;
+            }
+            else
+            {
+                TeleportIntern(pos);
+                StateControllerMovement = EnumStateControllerMovement.FollowAgent;
+            }
 
-            NpcController.InternAIInCruiser = enteringVehicle;
+            NpcController.IsControllerInCruiser = enteringVehicle;
 
-            if (NpcController.InternAIInCruiser)
+            if (NpcController.IsControllerInCruiser)
             {
                 if (networkBehaviourReferenceVehicle.TryGet(out VehicleController vehicleController))
                 {
@@ -1726,6 +1747,8 @@ namespace LethalInternship.AI
                     Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} enters vehicle");
                     this.ReParentIntern(vehicleController.transform);
                 }
+
+                this.StopSinkingState();
             }
             else
             {
@@ -1799,7 +1822,7 @@ namespace LethalInternship.AI
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
 
-            if (NpcController.InternAIInCruiser)
+            if (NpcController.IsControllerInCruiser)
             {
                 this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
             }
@@ -3028,9 +3051,9 @@ namespace LethalInternship.AI
                 this.DropItem();
             }
             NpcController.Npc.DisableJetpackControlsLocally();
+            NpcController.IsControllerInCruiser = false;
             this.isEnemyDead = true;
-            if (this.agent != null
-                && this.agent.isActiveAndEnabled)
+            if (this.agent != null)
             {
                 this.agent.enabled = false;
             }

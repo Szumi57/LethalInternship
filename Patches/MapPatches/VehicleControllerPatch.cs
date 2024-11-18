@@ -12,6 +12,13 @@ namespace LethalInternship.Patches.MapPatches
     [HarmonyPatch(typeof(VehicleController))]
     internal class VehicleControllerPatch
     {
+        [HarmonyPatch("Start")]
+        [HarmonyPostfix]
+        static void Start_PostFix()
+        {
+            InternManager.Instance.VehicleHasLanded();
+        }
+
         /// <summary>
         /// Patch for damaging the interns owned by client in vehicle
         /// </summary>
