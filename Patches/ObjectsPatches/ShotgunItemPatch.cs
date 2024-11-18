@@ -22,19 +22,12 @@ namespace LethalInternship.Patches.ObjectsPatches
                                      Vector3 shotgunPosition,
                                      Vector3 shotgunForward)
         {
-            ulong localPlayerActualId = GameNetworkManager.Instance.localPlayerController.actualClientId;
-
             PlayerControllerB internController;
             InternAI? internAI;
             for (int i = InternManager.Instance.IndexBeginOfInterns; i < InternManager.Instance.AllEntitiesCount; i++)
             {
                 internController = StartOfRound.Instance.allPlayerScripts[i];
                 if (internController.isPlayerDead || !internController.isPlayerControlled)
-                {
-                    continue;
-                }
-
-                if (internController.OwnerClientId != localPlayerActualId)
                 {
                     continue;
                 }

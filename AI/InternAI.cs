@@ -3040,6 +3040,10 @@ namespace LethalInternship.AI
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
                 ResizeRagdoll(NpcController.Npc.deadBody.transform);
+                // Replace body position or else disappear with shotgun or knife (don't know why)
+                NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
+                // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
+                NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
