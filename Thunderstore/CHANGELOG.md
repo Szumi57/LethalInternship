@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.0 [Alpha] - 2024-??-??
+### Added
+- 
+### Changed
+- 
+### Fixed
+-
+
 ## 0.18.3 [Alpha] - 2024-10-27
 ### Hotfixed
 - Fix v66 joining bug "... while syncing objects! The file may be corrupted.", thanks @Timofey1337png on Github, (issue [#52](https://github.com/Szumi57/LethalInternship/issues/52)).
