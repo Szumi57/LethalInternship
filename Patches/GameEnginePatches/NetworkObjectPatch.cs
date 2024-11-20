@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using Unity.Netcode;
 using UnityEngine;
@@ -44,7 +45,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         static bool OnTransformParentChanged_PreFix(NetworkObject __instance,
                                                     Transform ___m_CachedParent)
         {
-            if (!Const.SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED)
+            if (!DebugConst.SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED)
             {
                 return true;
             }

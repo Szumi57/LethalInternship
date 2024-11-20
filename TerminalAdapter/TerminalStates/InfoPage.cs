@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using UnityEngine;
@@ -10,16 +11,13 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// </summary>
     internal class InfoPage : TerminalState
     {
-        private static readonly EnumTerminalStates STATE = EnumTerminalStates.Info;
-        /// <summary>
-        /// <inheritdoc cref="TerminalState.GetTerminalState"/>
-        /// </summary>
-        public override EnumTerminalStates GetTerminalState() { return STATE; }
-
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalState)"/>
         /// </summary>
-        public InfoPage(TerminalState newState) : base(newState) { }
+        public InfoPage(TerminalState newState) : base(newState) 
+        {
+            CurrentState = EnumTerminalStates.Info;
+        }
 
         /// <summary>
         /// <inheritdoc cref="TerminalState.ParseCommandValid"/>
@@ -33,23 +31,29 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
 
             if (terminalParser.IsMatchWord(firstWord, TerminalManager.Instance.CommandIntershipProgram)
-               || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
+               || terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_BACK_COMMAND))
             {
                 // stay on info page
                 return true;
             }
 
             // firstWord Buy
-            if (terminalParser.IsMatchWord(firstWord, Const.STRING_BUY_COMMAND))
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_BUY_COMMAND))
             {
                 return BuyCommandSetNextPage(words);
             }
 
             // firstWord landing status
-            if (terminalParser.IsMatchWord(firstWord, Const.STRING_LAND_COMMAND)
-                || terminalParser.IsMatchWord(firstWord, Const.STRING_ABORT_COMMAND))
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_LAND_COMMAND))
             {
                 return LandingStatusCommand(firstWord);
+            }
+
+            // firstWord status status
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_STATUS_COMMAND))
+            {
+                terminalParser.TerminalState = new StatusPage(this);
+                return true;
             }
 
             return false;
@@ -105,13 +109,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             TerminalManager instanceTM = TerminalManager.Instance;
             InternManager instanceIM = InternManager.Instance;
 
-            if (terminalParser.IsMatchWord(command, Const.STRING_LAND_COMMAND))
+            if (terminalParser.IsMatchWord(command, TerminalConst.STRING_LAND_COMMAND))
             {
-                instanceIM.LandingStatusAllowed = true;
-            }
-            else if (terminalParser.IsMatchWord(command, Const.STRING_ABORT_COMMAND))
-            {
-                instanceIM.LandingStatusAllowed = false;
+                instanceIM.LandingStatusAllowed = !instanceIM.LandingStatusAllowed;
             }
 
             instanceTM.SyncLandingStatusServerRpc(instanceIM.LandingStatusAllowed);
@@ -136,11 +136,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             terminalNode.clearPreviousText = true;
 
             // Landing status
-            string landingStatus = instanceIM.LandingStatusAllowed ? Const.STRING_LANDING_STATUS_ALLOWED : Const.STRING_LANDING_STATUS_ABORTED;
+            string landingStatus = instanceIM.LandingStatusAllowed ? TerminalConst.STRING_LANDING_STATUS_ALLOWED : TerminalConst.STRING_LANDING_STATUS_ABORTED;
             bool isCurrentMoonCompanyBuilding = instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID;
             if (isCurrentMoonCompanyBuilding)
             {
-                landingStatus += Const.STRING_LANDING_STATUS_ABORTED_COMPANY_MOON;
+                landingStatus += TerminalConst.STRING_LANDING_STATUS_ABORTED_COMPANY_MOON;
             }
 
             string textInfoPage;
@@ -150,7 +150,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 || isCurrentMoonCompanyBuilding)
             {
                 // in space or on company building moon
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_IN_SPACE, 
+                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_IN_SPACE, 
                                              instanceIM.NbInternsPurchasable, 
                                              Plugin.Config.InternPrice.Value, 
                                              instanceIM.NbInternsToDropShip,
@@ -165,9 +165,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 if (nbInternsToDropShip > 0
                     && !instanceSOR.shipIsLeaving)
                 {
-                    textNbInternsToDropShip = string.Format(Const.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
+                    textNbInternsToDropShip = string.Format(TerminalConst.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
-                textInfoPage = string.Format(Const.TEXT_INFO_PAGE_ON_MOON, 
+                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_ON_MOON, 
                                              instanceIM.NbInternsPurchasable, 
                                              Plugin.Config.InternPrice.Value, 
                                              textNbInternsToDropShip, 

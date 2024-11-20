@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.Constants;
+using LethalInternship.Enums;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -39,7 +40,7 @@ namespace LethalInternship.AI
         public void SetNewRandomCooldownAudio()
         {
             Random randomInstance = new Random();
-            cooldownPlayAudio = (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE);
+            cooldownPlayAudio = (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE, VoicesConst.MAX_COOLDOWN_PLAYVOICE);
         }
 
         public void ReduceCooldown(float time)
@@ -79,13 +80,13 @@ namespace LethalInternship.AI
 
         public void PlayAudioClip(AudioClip audioClip)
         {
-            CurrentAudioSource.volume = Const.VOLUME_INTERNS;
+            CurrentAudioSource.volume = VoicesConst.VOLUME_INTERNS;
             CurrentAudioSource.pitch = VoicePitch;
 
             CurrentAudioSource.clip = audioClip;
-            AudioManager.Instance.FadeInAudio(CurrentAudioSource, Const.FADE_IN_TIME, Const.VOLUME_INTERNS);
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, VoicesConst.VOLUME_INTERNS);
             Random randomInstance = new Random();
-            SetCooldownAudio(audioClip.length + (float)randomInstance.Next(Const.MIN_COOLDOWN_PLAYVOICE, Const.MAX_COOLDOWN_PLAYVOICE));
+            SetCooldownAudio(audioClip.length + (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE, VoicesConst.MAX_COOLDOWN_PLAYVOICE));
 
             aboutToTalk = false;
         }
@@ -131,7 +132,7 @@ namespace LethalInternship.AI
 
             if (!Plugin.Config.AllowSwearing.Value)
             {
-                audioClipPaths = audioClipPaths.Where(x => !x.Key.Contains(Const.SWEAR_KEYWORD));
+                audioClipPaths = audioClipPaths.Where(x => !x.Key.Contains(VoicesConst.SWEAR_KEYWORD));
             }
 
             Plugin.LogDebug($"Loaded {audioClipPaths.Count()} path containing {path}");
@@ -146,7 +147,7 @@ namespace LethalInternship.AI
 
         public void StopAudioFadeOut()
         {
-            AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, Const.FADE_OUT_TIME);
+            AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, VoicesConst.FADE_OUT_TIME);
         }
     }
 }

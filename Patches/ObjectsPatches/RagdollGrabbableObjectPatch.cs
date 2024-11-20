@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Constants;
 
 namespace LethalInternship.Patches.ObjectsPatches
 {

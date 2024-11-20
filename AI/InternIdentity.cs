@@ -9,6 +9,8 @@ namespace LethalInternship.AI
         public string Name { get; set; }
         public InternVoice Voice { get; set; }
         public int? SuitID { get; set; }
+        public int Hp { get; set; }
+        public bool Alive { get { return Hp > 0; } }
 
         public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
         {
@@ -16,11 +18,12 @@ namespace LethalInternship.AI
             Name = name;
             SuitID = suitID;
             Voice = voice;
+            Hp = Plugin.Config.InternMaxHealth.Value;
         }
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {SuitID}, Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {SuitID}, Hp {Hp}, Voice : {{{Voice.ToString()}}}";
         }
 
         public int GetRandomSuitID()

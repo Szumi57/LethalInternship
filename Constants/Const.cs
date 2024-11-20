@@ -2,7 +2,7 @@
 using LethalInternship.NetworkSerializers;
 using UnityEngine;
 
-namespace LethalInternship
+namespace LethalInternship.Constants
 {
     /// <summary>
     /// Class of constants, used in various places in the plugin code
@@ -120,32 +120,13 @@ namespace LethalInternship
         public static readonly int COMPANY_BUILDING_MOON_ID = 3;
         public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 10f;
 
-        // Voices
-        public static readonly float VOLUME_INTERNS = 0.5f;
-        public static readonly int MIN_COOLDOWN_PLAYVOICE = 5;
-        public static readonly int MAX_COOLDOWN_PLAYVOICE = 20;
-        public static readonly float DISTANCE_HEAR_OTHER_INTERNS = 10f;
-        public static readonly float FADE_IN_TIME = 0.1f;
-        public static readonly float FADE_OUT_TIME = 0.2f;
-        public static readonly string SWEAR_KEYWORD = "_cuss";
-
-        // Debug
-        public static readonly bool DRAW_LINES = true;
-        public static readonly bool SHOW_LOG_DEBUG_ONTRANSFORMPARENTCHANGED = false;
-        public static readonly bool SPAWN_INTERN_WITH_EMOTE = true;
-        public static readonly bool INVULNERABILITY = false;
-        public static readonly bool INVINCIBILITY = true;
-        public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
-        public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
-        public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
-
         // NpcController
         public static readonly int PLAYER_MASK = 8;
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSBOTHHANDS = "HoldingItemsBothHands";
         public static readonly string PLAYER_ANIMATION_WEIGHT_SPECIALANIMATIONS = "SpecialAnimations";
         public static readonly string PLAYER_ANIMATION_WEIGHT_EMOTESNOARMS = "EmotesNoArms";
-                                      
+
         public static readonly string PLAYER_ANIMATION_BOOL_GRAB = "Grab";
         public static readonly string PLAYER_ANIMATION_BOOL_GRABVALIDATED = "GrabValidated";
         public static readonly string PLAYER_ANIMATION_BOOL_GRABINVALIDATED = "GrabInvalidated";
@@ -166,7 +147,7 @@ namespace LethalInternship
 
         public static readonly string PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED = "animationSpeed";
         public static readonly string PLAYER_ANIMATION_FLOAT_TIREDAMOUNT = "tiredAmount";
-        
+
         public static readonly string MAPDOT_ANIMATION_BOOL_DEAD = "dead";
 
         // SearchingForPlayerState 
@@ -188,7 +169,7 @@ namespace LethalInternship
         public static readonly float DISTANCE_TO_ENTRANCE = 4f;
         public static readonly float MIN_TIME_FREEZE_LOOKING_AROUND = 0.5f;
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
-        
+
         // Stuck
         public static readonly float TIMER_STUCK_TOO_MUCH = 2f;
 
@@ -220,69 +201,6 @@ namespace LethalInternship
         public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
         public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
-
-        // Terminal
-        public static readonly int INDEX_HELP_TERMINALNODE = 13;
-        public static readonly string STRING_OTHER_HELP = ">OTHER";
-        public static readonly int INDEX_AUDIO_BOUGHT_ITEM = 0;
-        public static readonly int INDEX_AUDIO_ERROR = 1;
-
-        public static readonly string STRING_BUY_COMMAND = "buy";
-        public static readonly string STRING_LAND_COMMAND = "land";
-        public static readonly string STRING_ABORT_COMMAND = "abort";
-        public static readonly string STRING_CONFIRM_COMMAND = "confirm";
-        public static readonly string STRING_CANCEL_COMMAND = "deny";
-        public static readonly string STRING_BACK_COMMAND = "back";
-
-        public static readonly string STRING_LANDING_STATUS_ALLOWED = "+ Allowed +";
-        public static readonly string STRING_LANDING_STATUS_ABORTED = "--Aborted--";
-        public static readonly string STRING_LANDING_STATUS_ABORTED_COMPANY_MOON = " (aborted on company building moon)";
-
-        public static readonly string STRING_INTERNSHIP_PROGRAM_HELP = ">{0}\n{1}\n\n";
-
-
-        public static readonly string TEXT_INFO_PAGE_IN_SPACE = @"Remaining interns : {0}
-Unit price : ${1}
-
-----------------------------------------
---> Interns scheduled on next moon : {2}
-----------------------------------------
-
-Interns landing status : {3}
-
-
-Commands :
-- Type 'Land' or 'Abort' to allow interns to drop on moons
-- Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
-
-        public static readonly string TEXT_INFO_PAGE_INTERN_TO_DROPSHIP = "Interns waiting to land : {0}";
-        public static readonly string TEXT_INFO_PAGE_ON_MOON = @"Remaining interns : {0}
-Unit price : ${1}
-
-{2}
-------------------------------
---> Interns on this moon : {3}
-------------------------------
-
-Interns landing status : {4}
-
-
-Commands :
- - Type 'Land' or 'Abort' to allow interns to drop on moons
- - Type 'buy' to order new intern, 'buy 2' to order 2 interns, etc";
-
-
-        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM = "(max)";
-        public static readonly string TEXT_CONFIRM_CANCEL_PURCHASE = @"You have requested to order interns. Amount {0}{1}
-
-Total cost of items: ${2}
-
-
-Please CONFIRM or DENY.";
-
-        public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
-        public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";
-        public static readonly string TEXT_NO_MORE_INTERNS_PURCHASABLE = @"No more interns available";
-        public static readonly string TEXT_ERROR_SHIP_LEAVING = @"You can not buy when the ship is leaving the moon";
+        
     }
 }

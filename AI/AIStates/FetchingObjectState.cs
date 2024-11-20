@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using UnityEngine;
 

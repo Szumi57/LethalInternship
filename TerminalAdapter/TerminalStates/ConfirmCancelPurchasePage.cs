@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using System;
 using UnityEngine;
@@ -10,12 +11,6 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// </summary>
     internal class ConfirmCancelPurchasePage : TerminalState
     {
-        private static readonly EnumTerminalStates STATE = EnumTerminalStates.ConfirmCancelPurchase;
-        /// <summary>
-        /// <inheritdoc cref="TerminalState.GetTerminalState"/>
-        /// </summary>
-        public override EnumTerminalStates GetTerminalState() { return STATE; }
-
         private int NbOrdered;
 
         /// <summary>
@@ -23,6 +18,8 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// </summary>
         public ConfirmCancelPurchasePage(TerminalState oldState, int nbOrdered) : base(oldState)
         {
+            CurrentState = EnumTerminalStates.ConfirmCancelPurchase;
+
             int internPrice = Plugin.Config.InternPrice.Value;
             if (internPrice <= 0)
             {
@@ -49,15 +46,15 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             TerminalManager instanceTM = TerminalManager.Instance;
 
             if (terminalParser.IsMatchWord(firstWord, instanceTM.CommandIntershipProgram)
-                || terminalParser.IsMatchWord(firstWord, Const.STRING_CANCEL_COMMAND)
-                || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
+                || terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_CANCEL_COMMAND)
+                || terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_BACK_COMMAND))
             {
                 // get back to info page
                 terminalParser.TerminalState = new InfoPage(this);
                 return true;
             }
 
-            if (terminalParser.IsMatchWord(firstWord, Const.STRING_CONFIRM_COMMAND))
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_CONFIRM_COMMAND))
             {
                 InternManager instanceIM = InternManager.Instance;
 
@@ -91,11 +88,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             string textIfTooMuchOrdered = string.Empty;
             if (this.NbOrdered > internsAvailable)
             {
-                textIfTooMuchOrdered = Const.TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM;
+                textIfTooMuchOrdered = TerminalConst.TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM;
                 this.NbOrdered = internsAvailable;
             }
 
-            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE,
+            terminalNode.displayText = string.Format(TerminalConst.TEXT_CONFIRM_CANCEL_PURCHASE,
                                                      this.NbOrdered,
                                                      textIfTooMuchOrdered,
                                                      Plugin.Config.InternPrice.Value * this.NbOrdered);

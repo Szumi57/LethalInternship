@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System;
@@ -162,7 +163,7 @@ namespace LethalInternship.Patches.NpcPatches
                 return false;
             }
 
-            if (Const.INVULNERABILITY)
+            if (DebugConst.INVULNERABILITY)
             {
                 // Bootleg invulnerability
                 Plugin.LogDebug($"Bootleg invulnerability (return false)");
@@ -214,8 +215,7 @@ namespace LethalInternship.Patches.NpcPatches
             }
 
             // A player is killed 
-
-            if (Const.INVINCIBILITY)
+            if (DebugConst.INVINCIBILITY)
             {
                 // Bootleg invincibility
                 Plugin.LogDebug($"Bootleg invincibility");
@@ -1070,7 +1070,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPostfix]
         static void PerformEmote_PostFix(PlayerControllerB __instance)
         {
-            if (!Const.SPAWN_INTERN_WITH_EMOTE)
+            if (!DebugConst.SPAWN_INTERN_WITH_EMOTE)
             {
                 return;
             }

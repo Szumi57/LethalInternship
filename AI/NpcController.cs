@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.NpcPatches;
@@ -77,6 +78,8 @@ namespace LethalInternship.AI
         private bool isFallingNoJump;
         private float slideFriction;
 
+        private Vector3 lastNearEntitiesPushVector;
+        private float nearEntitiesCheckTimer = 1f;
         private Collider[] nearByPlayers = new Collider[4];
         private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
 
@@ -220,7 +223,6 @@ namespace LethalInternship.AI
 
                     // Update movement when using jetpack controls
                     UpdateJetPackMoveValuesForOwner();
-                    Npc.isPlayerSliding = Vector3.Angle(Vector3.up, Npc.playerGroundNormal) >= Npc.thisController.slopeLimit;
                 }
                 else if (Npc.isClimbingLadder)
                 {
@@ -270,7 +272,7 @@ namespace LethalInternship.AI
             UpdateAnimationUpperBody();
 
             // Update line of sight cube
-            UpdateLineOfSightCube();
+            //UpdateLineOfSightCube();
         }
 
         /// <summary>
@@ -621,7 +623,6 @@ namespace LethalInternship.AI
             {
                 Npc.moveInputVector = Vector2.zero;
             }
-            PlayerControllerBPatch.CalculateGroundNormal_ReversePatch(this.Npc);
             float num3 = Npc.movementSpeed / Npc.carryWeight;
             if (Npc.sinkingValue > 0.73f)
             {
@@ -653,19 +654,6 @@ namespace LethalInternship.AI
                 {
                     num3 *= 0.5f;
                 }
-                if (!Npc.isCrouching)
-                {
-                    float num4 = Vector3.Dot(Npc.playerGroundNormal, walkForce);
-                    if (num4 > 0.05f)
-                    {
-                        slopeModifier = Mathf.MoveTowards(slopeModifier, num4, (Npc.slopeModifierSpeed + 0.45f) * Time.deltaTime);
-                    }
-                    else
-                    {
-                        slopeModifier = Mathf.MoveTowards(slopeModifier, num4, Npc.slopeModifierSpeed / 2f * Time.deltaTime);
-                    }
-                    num3 = Mathf.Max(num3 * 0.8f, num3 + Npc.slopeIntensity * slopeModifier);
-                }
             }
             if (Npc.isTypingChat || Npc.jetpackControls && !IsTouchingGround || instanceSOR.suckingPlayersOutOfShip)
             {
@@ -673,38 +661,49 @@ namespace LethalInternship.AI
             }
 
             // Near other players detection
-            Collider collider;
-            PlayerControllerB componentPlayer;
-            Vector3 vector = new Vector3(0f, 0f, 0f);
-            int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.95f, nearByPlayers, instanceSOR.playersMask);
-            for (int i = 0; i < num5; i++)
+            //-----------------------------
+            lastNearEntitiesPushVector = Vector3.Slerp(lastNearEntitiesPushVector, new Vector3(0f, 0f, 0f), 0.25f);
+            Vector3 vector = lastNearEntitiesPushVector;
+            nearEntitiesCheckTimer += Time.deltaTime;
+            if (nearEntitiesCheckTimer > 0.25f)
             {
-                collider = nearByPlayers[i];
-                if (collider.CompareTag("Player"))
+                nearEntitiesCheckTimer = 0f;
+
+                Collider collider;
+                PlayerControllerB componentPlayer;
+                int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.95f, nearByPlayers, instanceSOR.playersMask);
+                for (int i = 0; i < num5; i++)
                 {
-                    componentPlayer = nearByPlayers[i].GetComponent<PlayerControllerB>();
-                    if (componentPlayer != null
-                        && !InternManager.Instance.IsPlayerIntern(componentPlayer))
+                    collider = nearByPlayers[i];
+                    if (collider.CompareTag("Player"))
                     {
-                        vector += Vector3.Normalize((Npc.transform.position - collider.transform.position) * 100f) * 1.2f;
+                        componentPlayer = nearByPlayers[i].GetComponent<PlayerControllerB>();
+                        if (componentPlayer != null
+                            && !InternManager.Instance.IsPlayerIntern(componentPlayer))
+                        {
+                            vector += Vector3.Normalize((Npc.transform.position - collider.transform.position) * 100f) * 1.2f;
+                        }
                     }
                 }
-            }
-            int num6 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 1.25f, nearByPlayers, 524288);
-            EnemyAICollisionDetect component;
-            for (int j = 0; j < num6; j++)
-            {
-                component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
-                if (component != null
-                    && component.mainScript != null
-                    && component.mainScript.GetType() != typeof(InternAI)
-                    && component.mainScript.GetType() != typeof(FlowerSnakeEnemy)
-                    && !component.mainScript.isEnemyDead
-                    && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
+                int num6 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 1.25f, nearByPlayers, 524288);
+                EnemyAICollisionDetect component;
+                for (int j = 0; j < num6; j++)
                 {
-                    vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
+                    component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
+                    if (component != null
+                        && component.mainScript != null
+                        && component.mainScript.GetType() != typeof(InternAI)
+                        && component.mainScript.GetType() != typeof(FlowerSnakeEnemy)
+                        && !component.mainScript.isEnemyDead
+                        && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
+                    {
+                        vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
+                    }
                 }
+
+                lastNearEntitiesPushVector = vector;
             }
+            //---------------------------------------
 
             float num7;
             if (IsFallingFromJump || isFallingNoJump)
@@ -735,42 +734,12 @@ namespace LethalInternship.AI
                 vector2 += Npc.externalForceAutoFade;
                 Npc.externalForceAutoFade = Vector3.Lerp(Npc.externalForceAutoFade, Vector3.zero, 2f * Time.deltaTime);
             }
-            if (Npc.isPlayerSliding && IsTouchingGround)
-            {
-                PlayerSlidingTimer += Time.deltaTime;
-                if (slideFriction > Npc.maxSlideFriction)
-                {
-                    slideFriction -= 35f * Time.deltaTime;
-                }
-                vector2 = new Vector3(vector2.x + (1f - Npc.playerGroundNormal.y) * Npc.playerGroundNormal.x * (1f - slideFriction), vector2.y, vector2.z + (1f - Npc.playerGroundNormal.y) * Npc.playerGroundNormal.z * (1f - slideFriction));
-            }
-            else
-            {
-                PlayerSlidingTimer = 0f;
-                slideFriction = 0f;
-            }
+
+            PlayerSlidingTimer = 0f;
+            slideFriction = 0f;
 
             // Move
             MoveVector = vector2;
-
-            // Update animation
-            //if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING))
-            //{
-            //    Plugin.LogDebug($"{Npc.playerUsername} NpcController.MoveVector.z {MoveVector.z}");
-            //}
-
-            //if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING))
-            //{
-            //    Vector3 directionHorizontal = new Vector3(MoveVector.x, 0f, MoveVector.z);
-            //    var turnSpeed = Vector3.Dot(directionHorizontal, Npc.thisController.transform.forward);
-            //    // Stop sprinting if the turn angle is too much
-            //    Plugin.LogDebug($"{Npc.playerUsername} turnSpeedz {turnSpeed}");
-            //    if (turnSpeed < 0.1f)
-            //    {
-            //        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
-            //        Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
-            //    }
-            //}
         }
 
         /// <summary>
@@ -1280,7 +1249,7 @@ namespace LethalInternship.AI
                         {
                             distMaxBeforeUpdating = 0.06f;
                         }
-                        else if (PlayerControllerBPatch.NearOtherPlayers_ReversePatch(Npc, Npc, 10f))
+                        else if (IsRealPlayerClose(Npc.transform.position, 10f))
                         {
                             distMaxBeforeUpdating = 0.1f;
                         }
@@ -1405,6 +1374,18 @@ namespace LethalInternship.AI
             }
 
             return true;
+        }
+
+        private bool IsRealPlayerClose(Vector3 thisPosition, float distance)
+        {
+            for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+            {
+                if ((StartOfRound.Instance.allPlayerScripts[i].transform.position - thisPosition).sqrMagnitude < distance * distance)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         #region Emotes

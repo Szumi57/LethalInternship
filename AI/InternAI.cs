@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI.AIStates;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.MapPatches;
@@ -75,7 +76,6 @@ namespace LethalInternship.AI
 
         private Coroutine grabObjectCoroutine = null!;
 
-        private bool isMovementFree;
         private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
         private bool isDestinationChanged;
@@ -157,7 +157,7 @@ namespace LethalInternship.AI
             this.NpcController.Awake();
 
             // Health
-            MaxHealth = Plugin.Config.InternMaxHealth.Value;
+            MaxHealth = InternIdentity.Hp;
             NpcController.Npc.health = MaxHealth;
             healthRegenerateTimerMax = 100f / (float)MaxHealth;
             NpcController.Npc.healthRegenerateTimer = healthRegenerateTimerMax;
@@ -243,6 +243,9 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Update()
         {
+            // Update identity
+            InternIdentity.Hp = NpcController.Npc.health;
+
             // Not owner no AI
             if (!IsOwner)
             {
@@ -395,6 +398,14 @@ namespace LethalInternship.AI
 
         public void UpdateController()
         {
+            //float time;
+            //time += Time.deltaTime;
+            //if(time > Time.fixedDeltaTime)
+            //{
+            //    time = time - Time.fixedDeltaTime;
+            //}
+
+
             if (RagdollInternBody != null
                 && RagdollInternBody.IsRagdollBodyHeld())
             {
@@ -3057,6 +3068,7 @@ namespace LethalInternship.AI
             NpcController.Npc.DisableJetpackControlsLocally();
             NpcController.IsControllerInCruiser = false;
             this.isEnemyDead = true;
+            this.InternIdentity.Hp = 0;
             if (this.agent != null)
             {
                 this.agent.enabled = false;

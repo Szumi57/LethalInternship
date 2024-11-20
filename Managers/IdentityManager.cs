@@ -1,4 +1,5 @@
 ﻿using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using System;
@@ -39,31 +40,31 @@ namespace LethalInternship.Managers
             }
         }
 
-        public void CreateIdentities(int maxInternsAvailable, ConfigIdentity[] configIdentities)
+        public void CreateIdentities(int nbIdentities, ConfigIdentity[] configIdentities)
         {
-            InternIdentities = new InternIdentity[maxInternsAvailable];
+            InternIdentities = new InternIdentity[nbIdentities];
             this.configIdentities = configIdentities;
 
             // InitNewIdentity
-            for (int i = 0; i < maxInternsAvailable; i++)
+            for (int i = 0; i < nbIdentities; i++)
             {
                 InternIdentities[i] = InitNewIdentity(i);
             }
         }
 
-        private InternIdentity InitNewIdentity(int indexIntern)
+        private InternIdentity InitNewIdentity(int idIdentity)
         {
             // Get a config identity
             string name;
             ConfigIdentity configIdentity;
-            if (indexIntern >= this.configIdentities.Length)
+            if (idIdentity >= this.configIdentities.Length)
             {
                 configIdentity = Const.DEFAULT_CONFIG_IDENTITY;
-                name = string.Format(configIdentity.name, indexIntern);
+                name = string.Format(configIdentity.name, idIdentity);
             }
             else
             {
-                configIdentity = this.configIdentities[indexIntern];
+                configIdentity = this.configIdentities[idIdentity];
                 name = configIdentity.name;
             }
 
@@ -98,18 +99,43 @@ namespace LethalInternship.Managers
                                                 configIdentity.voicePitch);
 
             // InternIdentity
-            return new InternIdentity(indexIntern, name, suitID, voice);
+            return new InternIdentity(idIdentity, name, suitID, voice);
         }
 
-        public int GetRandomIdentityIndex(InternIdentity[] usedIdentities)
+        public int GetRandomAliveIdentityIndex(InternIdentity[] usedIdentities)
         {
             InternIdentity[] allIdentities = new InternIdentity[InternIdentities.Length];
             InternIdentities.CopyTo(allIdentities, 0);
-            InternIdentity[] remainingIdentities = allIdentities.Except(usedIdentities).ToArray();
+            InternIdentity[] remainingIdentities = allIdentities
+                                                    .Except(usedIdentities)
+                                                    .Where(x => x.Alive)
+                                                    .ToArray();
+
+            if (remainingIdentities.Length == 0)
+            {
+                return -1;
+            }
 
             Random randomInstance = new Random();
             int randomIndex = randomInstance.Next(0, remainingIdentities.Length);
             return remainingIdentities[randomIndex].IdIdentity;
+        }
+
+        public int GetNextAliveIdentityIndex(InternIdentity[] usedIdentities)
+        {
+            InternIdentity[] allIdentities = new InternIdentity[InternIdentities.Length];
+            InternIdentities.CopyTo(allIdentities, 0);
+            InternIdentity[] remainingIdentities = allIdentities
+                                                    .Except(usedIdentities)
+                                                    .Where(x => x.Alive)
+                                                    .ToArray();
+
+            if (remainingIdentities.Length == 0)
+            {
+                return -1;
+            }
+
+            return remainingIdentities[0].IdIdentity;
         }
     }
 }

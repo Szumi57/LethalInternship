@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using UnityEngine;
 
@@ -9,12 +10,6 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// </summary>
     internal class ErrorPage : TerminalState
     {
-        private static readonly EnumTerminalStates STATE = EnumTerminalStates.Error;
-        /// <summary>
-        /// <inheritdoc cref="TerminalState.GetTerminalState"/>
-        /// </summary>
-        public override EnumTerminalStates GetTerminalState() { return STATE; }
-
         private readonly EnumErrorTypeTerminalPage enumErrorType;
 
         /// <summary>
@@ -22,6 +17,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// </summary>
         public ErrorPage(TerminalState newState, EnumErrorTypeTerminalPage enumErrorType) : base(newState)
         {
+            CurrentState = EnumTerminalStates.Error;
             this.enumErrorType = enumErrorType;
         }
 
@@ -51,23 +47,23 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             switch (enumErrorType)
             {
                 case EnumErrorTypeTerminalPage.NotEnoughCredits:
-                    terminalNode.displayText = Const.TEXT_ERROR_NOT_ENOUGH_CREDITS;
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_NOT_ENOUGH_CREDITS;
                     break;
                 case EnumErrorTypeTerminalPage.NoMoreInterns:
-                    terminalNode.displayText = Const.TEXT_NO_MORE_INTERNS_PURCHASABLE;
+                    terminalNode.displayText = TerminalConst.TEXT_NO_MORE_INTERNS_PURCHASABLE;
                     break;
                 case EnumErrorTypeTerminalPage.ShipLeavingMoon:
-                    terminalNode.displayText = Const.TEXT_ERROR_SHIP_LEAVING;
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_SHIP_LEAVING;
                     break;
                 default:
-                    terminalNode.displayText = Const.TEXT_ERROR_DEFAULT;
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_DEFAULT;
                     break;
             }
 
             // Play sound
             TerminalManager.Instance.GetTerminal()
                 .terminalAudio.PlayOneShot(TerminalManager.Instance.GetTerminal()
-                                            .syncedAudios[Const.INDEX_AUDIO_ERROR]);
+                                            .syncedAudios[TerminalConst.INDEX_AUDIO_ERROR]);
 
             return terminalNode;
         }

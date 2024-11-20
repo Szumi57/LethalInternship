@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
@@ -408,7 +409,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
 
-            if (Const.TEST_MORE_THAN_X_PLAYER_BYPASS)
+            if (DebugConst.TEST_MORE_THAN_X_PLAYER_BYPASS)
             {
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 11; i++)

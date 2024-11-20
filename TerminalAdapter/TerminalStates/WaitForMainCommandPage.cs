@@ -8,21 +8,21 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// </summary>
     internal class WaitForMainCommandPage : TerminalState
     {
-        private static readonly EnumTerminalStates STATE = EnumTerminalStates.WaitForMainCommand;
-        /// <summary>
-        /// <inheritdoc cref="TerminalState.GetTerminalState"/><br/>
-        /// </summary>
-        public override EnumTerminalStates GetTerminalState() { return STATE; }
-
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalParser)"/>
         /// </summary>
-        public WaitForMainCommandPage(TerminalParser terminalParser) : base(terminalParser) { }
+        public WaitForMainCommandPage(TerminalParser terminalParser) : base(terminalParser) 
+        { 
+            CurrentState = EnumTerminalStates.WaitForMainCommand;
+        }
 
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalState)"/>
         /// </summary>
-        public WaitForMainCommandPage(TerminalState newState) : base(newState) { }
+        public WaitForMainCommandPage(TerminalState newState) : base(newState)
+        {
+            CurrentState = EnumTerminalStates.WaitForMainCommand;
+        }
 
         /// <summary>
         /// <inheritdoc cref="TerminalState.ParseCommandValid"/><br/>

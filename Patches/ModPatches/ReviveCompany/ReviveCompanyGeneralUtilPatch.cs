@@ -53,10 +53,9 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             }
 
             // Respawn intern
-            InternManager.Instance.SpawnThisInternServerRpc(new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
+            InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity, 
+                                                            new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                                 {
-                                                                    IndexNextPlayerObject = (int)internAI.NpcController.Npc.playerClientId,
-                                                                    InternIdentityID = internAI.InternIdentity.IdIdentity,
                                                                     SpawnPosition = revivePos,
                                                                     YRot = yRot,
                                                                     IsOutside = !isInsideFactory

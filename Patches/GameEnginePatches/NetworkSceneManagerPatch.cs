@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using Unity.Netcode;
 

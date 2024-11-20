@@ -2,6 +2,7 @@
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
+using LethalInternship.Constants;
 using LethalInternship.Inputs;
 using LethalInternship.Managers;
 using LethalInternship.Patches.EnemiesPatches;

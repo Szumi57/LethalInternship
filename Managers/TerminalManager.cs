@@ -1,4 +1,5 @@
-﻿using LethalInternship.TerminalAdapter;
+﻿using LethalInternship.Constants;
+using LethalInternship.TerminalAdapter;
 using LethalInternship.TerminalAdapter.TerminalStates;
 using Unity.Netcode;
 using UnityEngine;
@@ -45,17 +46,17 @@ namespace LethalInternship.Managers
         /// <param name="terminalNodesList">List of all terminal nodes from the base game terminal</param>
         public void AddTextToHelpTerminalNode(TerminalNodesList terminalNodesList)
         {
-            TerminalNode helpTerminalNode = terminalNodesList.specialNodes[Const.INDEX_HELP_TERMINALNODE];
+            TerminalNode helpTerminalNode = terminalNodesList.specialNodes[TerminalConst.INDEX_HELP_TERMINALNODE];
             if (helpTerminalNode == null)
             {
                 Plugin.LogError("LethalInternship.Managers.TerminalManager could not find the help terminal node in AddTextToHelpTerminalNode");
                 return;
             }
 
-            int indexOther = helpTerminalNode.displayText.IndexOf(Const.STRING_OTHER_HELP);
+            int indexOther = helpTerminalNode.displayText.IndexOf(TerminalConst.STRING_OTHER_HELP);
             if (indexOther < 0)
             {
-                Plugin.LogError($"LethalInternship.Managers.TerminalManager could not find the text {Const.STRING_OTHER_HELP} in AddTextToHelpTerminalNode");
+                Plugin.LogError($"LethalInternship.Managers.TerminalManager could not find the text {TerminalConst.STRING_OTHER_HELP} in AddTextToHelpTerminalNode");
                 return;
             }
 
@@ -144,7 +145,7 @@ namespace LethalInternship.Managers
         {
             InternManager.Instance.UpdateInternsOrdered(nbInternsOwned, nbInternToDropShip);
             GetTerminal().groupCredits = newCredits;
-            GetTerminal().terminalAudio.PlayOneShot(GetTerminal().syncedAudios[Const.INDEX_AUDIO_BOUGHT_ITEM]);
+            GetTerminal().terminalAudio.PlayOneShot(GetTerminal().syncedAudios[TerminalConst.INDEX_AUDIO_BOUGHT_ITEM]);
         }
 
         #endregion

@@ -2,6 +2,7 @@
 using BepInEx.Configuration;
 using CSync.Extensions;
 using CSync.Lib;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using System;
@@ -201,7 +202,7 @@ namespace LethalInternship.Configs
 
         public string GetTitleInternshipProgram()
         {
-            return string.Format(Const.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
+            return string.Format(TerminalConst.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)
