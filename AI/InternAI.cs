@@ -9,6 +9,7 @@ using LethalInternship.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -17,6 +18,7 @@ using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
 using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
+using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
@@ -469,7 +471,15 @@ namespace LethalInternship.AI
 
         public override void OnCollideWithPlayer(Collider other)
         {
-            //Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} collided with body {other.gameObject.GetComponent<PlayerControllerB>()?.playerUsername}");
+            if (other.CompareTag("Player"))
+            {
+                PlayerControllerB componentPlayer = other.GetComponent<PlayerControllerB>();
+                if (componentPlayer != null
+                    && !InternManager.Instance.IsPlayerIntern(componentPlayer))
+                {
+                    NpcController.NearEntitiesPushVector += Vector3.Normalize((NpcController.Npc.transform.position - other.transform.position) * 100f) * 1.2f;
+                }
+            }
         }
 
         public override void OnCollideWithEnemy(Collider other, EnemyAI collidedEnemy)
@@ -480,11 +490,18 @@ namespace LethalInternship.AI
             }
 
             if (collidedEnemy == null
-                || collidedEnemy.enemyType.enemyName == "InternNPC")
+                || collidedEnemy.GetType() == typeof(InternAI)
+                || collidedEnemy.GetType() == typeof(FlowerSnakeEnemy))
             {
                 return;
             }
 
+            if ((NpcController.Npc.transform.position - other.transform.position).sqrMagnitude < collidedEnemy.enemyType.pushPlayerDistance * collidedEnemy.enemyType.pushPlayerDistance)
+            {
+                NpcController.NearEntitiesPushVector += Vector3.Normalize((NpcController.Npc.transform.position - other.transform.position) * 100f) * collidedEnemy.enemyType.pushPlayerForce;
+            }
+
+            // Enemy collide with the intern collider
             collidedEnemy.OnCollideWithPlayer(InternBodyCollider);
         }
 
@@ -1309,7 +1326,7 @@ namespace LethalInternship.AI
                 }
 
                 // Object in cruiser vehicle
-                if (grabbableObject.transform.parent != null 
+                if (grabbableObject.transform.parent != null
                     && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
                 {
                     continue;

@@ -53,6 +53,7 @@ namespace LethalInternship.AI
         public RaycastHit GroundHit;
         public EnemyAI? EnemyInAnimationWith;
         public bool ShouldAnimate;
+        public Vector3 NearEntitiesPushVector;
 
         private InternAI InternAIController
         {
@@ -78,7 +79,6 @@ namespace LethalInternship.AI
         private Vector3 walkForce;
         private bool isFallingNoJump;
 
-        private Vector3 lastNearEntitiesPushVector;
         private float nearEntitiesCheckTimer = 1f;
         private Collider[] nearByPlayers = new Collider[4];
         private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
@@ -679,51 +679,6 @@ namespace LethalInternship.AI
                 Npc.moveInputVector = Vector2.zero;
             }
 
-            // Near other players detection
-            //-----------------------------
-            lastNearEntitiesPushVector = Vector3.Slerp(lastNearEntitiesPushVector, new Vector3(0f, 0f, 0f), 0.25f);
-            Vector3 vector = lastNearEntitiesPushVector;
-            nearEntitiesCheckTimer += Time.deltaTime;
-            if (nearEntitiesCheckTimer > 0.25f)
-            {
-                nearEntitiesCheckTimer = 0f;
-
-                Collider collider;
-                PlayerControllerB componentPlayer;
-                int num5 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 0.95f, nearByPlayers, instanceSOR.playersMask);
-                for (int i = 0; i < num5; i++)
-                {
-                    collider = nearByPlayers[i];
-                    if (collider.CompareTag("Player"))
-                    {
-                        componentPlayer = nearByPlayers[i].GetComponent<PlayerControllerB>();
-                        if (componentPlayer != null
-                            && !InternManager.Instance.IsPlayerIntern(componentPlayer))
-                        {
-                            vector += Vector3.Normalize((Npc.transform.position - collider.transform.position) * 100f) * 1.2f;
-                        }
-                    }
-                }
-                int num6 = Physics.OverlapSphereNonAlloc(Npc.transform.position, 1.25f, nearByPlayers, 524288);
-                EnemyAICollisionDetect component;
-                for (int j = 0; j < num6; j++)
-                {
-                    component = nearByPlayers[j].gameObject.GetComponent<EnemyAICollisionDetect>();
-                    if (component != null
-                        && component.mainScript != null
-                        && component.mainScript.GetType() != typeof(InternAI)
-                        && component.mainScript.GetType() != typeof(FlowerSnakeEnemy)
-                        && !component.mainScript.isEnemyDead
-                        && Vector3.Distance(Npc.transform.position, nearByPlayers[j].transform.position) < component.mainScript.enemyType.pushPlayerDistance)
-                    {
-                        vector += Vector3.Normalize((Npc.transform.position - nearByPlayers[j].transform.position) * 100f) * component.mainScript.enemyType.pushPlayerForce;
-                    }
-                }
-
-                lastNearEntitiesPushVector = vector;
-            }
-            //---------------------------------------
-
             float num7;
             if (IsFallingFromJump || isFallingNoJump)
             {
@@ -746,7 +701,7 @@ namespace LethalInternship.AI
                 num7 = 10f / Npc.carryWeight;
             }
             walkForce = Vector3.MoveTowards(walkForce, Npc.transform.right * Npc.moveInputVector.x + Npc.transform.forward * Npc.moveInputVector.y, num7 * Time.deltaTime);
-            Vector3 vector2 = walkForce * num3 * sprintMultiplier + new Vector3(0f, Npc.fallValue, 0f) + vector;
+            Vector3 vector2 = walkForce * num3 * sprintMultiplier + new Vector3(0f, Npc.fallValue, 0f) + NearEntitiesPushVector;
             vector2 += Npc.externalForces;
             if (Npc.externalForceAutoFade.magnitude > 0.05f)
             {
@@ -755,6 +710,7 @@ namespace LethalInternship.AI
             }
 
             PlayerSlidingTimer = 0f;
+            NearEntitiesPushVector = Vector3.zero;
 
             // Move
             MoveVector = vector2;
@@ -1550,7 +1506,7 @@ namespace LethalInternship.AI
 
             // Update after some interval of time
             // Only if there's at least one player near
-            if (this.UpdatePlayerLookInterval > 0.25f && Physics.OverlapSphere(Npc.transform.position, 35f, this.PlayerMask).Length != 0)
+            if (this.UpdatePlayerLookInterval > 0.25f && IsRealPlayerClose(Npc.transform.position, 35f))
             {
                 this.UpdatePlayerLookInterval = 0f;
                 InternAIController.SyncUpdateInternRotationAndLook(InternAIController.State.GetBillboardStateIndicator(),
