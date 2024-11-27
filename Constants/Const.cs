@@ -111,7 +111,7 @@ namespace LethalInternship.Constants
         public static readonly float BASE_MAX_SPEED = 0.9f;
         public static readonly float BASE_MIN_SPEED = 0.01f;
         public static readonly float BODY_TURNSPEED = 6f;
-        public static readonly float CAMERA_TURNSPEED = 8f;
+        public static readonly float CAMERA_TURNSPEED = 4f;
 
         public static readonly float DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 1f;
         public static readonly float DISTANCE_CHECK_FOR_HOLES = 2.5f;

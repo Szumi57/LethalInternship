@@ -52,6 +52,7 @@ namespace LethalInternship.AI
         public bool IsTouchingGround;
         public RaycastHit GroundHit;
         public EnemyAI? EnemyInAnimationWith;
+        public bool ShouldAnimate;
 
         private InternAI InternAIController
         {
@@ -76,7 +77,6 @@ namespace LethalInternship.AI
         private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
         private bool isFallingNoJump;
-        private float slideFriction;
 
         private Vector3 lastNearEntitiesPushVector;
         private float nearEntitiesCheckTimer = 1f;
@@ -155,6 +155,12 @@ namespace LethalInternship.AI
                 Npc.gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
             }
             Npc.gameObject.GetComponent<CharacterController>().enabled = false;
+
+            Npc.playerBodyAnimator.cullingMode = AnimatorCullingMode.CullCompletely;
+            foreach (var skinnedMeshRenderer in Npc.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                skinnedMeshRenderer.updateWhenOffscreen = false;
+            }
         }
 
         /// <summary>
@@ -273,6 +279,22 @@ namespace LethalInternship.AI
 
             // Update line of sight cube
             //UpdateLineOfSightCube();
+
+            if (ShouldAnimate)
+            {
+                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, IsWalking);
+                }
+                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING) != Npc.isSprinting)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, Npc.isSprinting);
+                }
+            }
+            else
+            {
+                CutAnimations();
+            }
         }
 
         /// <summary>
@@ -411,7 +433,6 @@ namespace LethalInternship.AI
                         if (!Npc.isCrouching)
                         {
                             Npc.isSprinting = true;
-                            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, true);
                         }
                     }
                 }
@@ -422,7 +443,6 @@ namespace LethalInternship.AI
                     {
                         Npc.isExhausted = true;
                     }
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
                 }
 
                 if (Npc.isSprinting)
@@ -433,6 +453,7 @@ namespace LethalInternship.AI
                 {
                     sprintMultiplier = Mathf.Lerp(sprintMultiplier, 1f, 10f * Time.deltaTime);
                 }
+
                 if (Npc.moveInputVector.y < 0.2f && Npc.moveInputVector.y > -0.2f && !Npc.inSpecialInteractAnimation)
                 {
                     Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, true);
@@ -460,11 +481,9 @@ namespace LethalInternship.AI
                 {
                     Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
                 }
-
                 if (Npc.moveInputVector.sqrMagnitude >= 0.001f && (!Npc.inSpecialInteractAnimation || Npc.isClimbingLadder || Npc.inShockingMinigame))
                 {
                     IsWalking = true;
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, true);
                 }
             }
 
@@ -736,7 +755,6 @@ namespace LethalInternship.AI
             }
 
             PlayerSlidingTimer = 0f;
-            slideFriction = 0f;
 
             // Move
             MoveVector = vector2;
@@ -1695,12 +1713,17 @@ namespace LethalInternship.AI
         /// </summary>
         private void UpdateLookAt()
         {
+            if (IsMoving())
+            {
+                return;
+            }
+
             Vector3 direction;
             switch (enumObjectsLookingAt)
             {
                 case EnumObjectsLookingAt.Forward:
 
-                    Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, Npc.thisPlayerBody.rotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+                    Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, Npc.thisPlayerBody.rotation, Const.CAMERA_TURNSPEED);
                     break;
 
                 case EnumObjectsLookingAt.Player:
@@ -1709,7 +1732,7 @@ namespace LethalInternship.AI
                     if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
                     {
                         Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-                        Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+                        Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED);
 
                         if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
                         {
@@ -1727,7 +1750,7 @@ namespace LethalInternship.AI
                     if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
                     {
                         Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-                        Npc.gameplayCamera.transform.rotation = Quaternion.Lerp(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED * Time.deltaTime);
+                        Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED);
 
                         if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 20f)
                         {
@@ -1745,6 +1768,19 @@ namespace LethalInternship.AI
         {
             IsWalking = false;
             Npc.isSprinting = false;
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+        }
+
+        public bool IsMoving()
+        {
+            return MoveVector != Vector3.zero; 
+        }
+
+        private void CutAnimations()
+        {
+            Npc.playerBodyAnimator.SetInteger("emoteNumber", 0);
             Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
             Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
             Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);

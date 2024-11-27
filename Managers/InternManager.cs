@@ -16,7 +16,9 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Audio;
 using Object = UnityEngine.Object;
+using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
+using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.Managers
 {
@@ -91,6 +93,9 @@ namespace LethalInternship.Managers
         private Coroutine BeamOutInternsCoroutine = null!;
         private ClientRpcParams ClientRpcParams = new ClientRpcParams();
 
+        private float timerAnimationCulling;
+        private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
+
         /// <summary>
         /// Initialize instance,
         /// repopulate pool of interns if InternManager reset when loading game
@@ -107,6 +112,11 @@ namespace LethalInternship.Managers
                 // But the manager somehow reset
                 ManagePoolOfInterns();
             }
+        }
+
+        private void Update()
+        {
+            UpdateAnimationsCulling();
         }
 
         private void Config_InitialSyncCompleted(object sender, EventArgs e)
@@ -1335,6 +1345,102 @@ namespace LethalInternship.Managers
         public void SyncPlayAudioIntern(int internID, string smallPathAudioClip)
         {
             AllInternAIs[internID].PlayAudioServerRpc(smallPathAudioClip);
+        }
+
+        #endregion
+
+        #region Animations culling
+
+        private void UpdateAnimationsCulling()
+        {
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+            {
+                return;
+            }
+
+            timerAnimationCulling += Time.deltaTime;
+            if (timerAnimationCulling < 0.05f)
+            {
+                return;
+            }
+            timerAnimationCulling = 0f;
+
+            Array.Fill(internsInFOV, null);
+
+            Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
+            Vector3 playerPos = StartOfRound.Instance.localPlayerController.transform.position;
+            int baseLayer = StartOfRound.Instance.localPlayerController.gameObject.layer;
+            StartOfRound.Instance.localPlayerController.gameObject.layer = 0;
+
+            int index = 0;
+            Vector3 internBodyPos;
+            Vector3 vectorPlayerToIntern;
+            foreach (InternAI? internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.NpcController.Npc.isPlayerDead)
+                {
+                    continue;
+                }
+
+                internAI.NpcController.ShouldAnimate = false;
+                if (!internAI.NpcController.IsMoving())
+                {
+                    continue;
+                }
+
+                internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
+                vectorPlayerToIntern = internBodyPos - localPlayerCamera.transform.position;
+                if (Vector3.Angle(localPlayerCamera.transform.forward, vectorPlayerToIntern) < localPlayerCamera.fieldOfView * 0.81f)
+                {
+                    // Intern in FOV
+                    internsInFOV[index++] = internAI;
+                }
+            }
+
+            index = 0;
+            var orderedInternInFOV = internsInFOV.Where(x => x != null)
+                                                 .OrderBy(x => (x.NpcController.Npc.transform.position - playerPos).sqrMagnitude);
+            foreach (InternAI? internAI in orderedInternInFOV)
+            {
+                if (index >= Plugin.Config.MaxAnimatedInterns)
+                {
+                    break;
+                }
+
+                internAI.NpcController.Npc.gameObject.layer = 0;
+                internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
+                vectorPlayerToIntern = internBodyPos - localPlayerCamera.transform.position;
+
+                bool collideWithAnotherPlayer = false;
+                RaycastHit[] raycastHits = new RaycastHit[5];
+                Ray ray = new Ray(localPlayerCamera.transform.position, vectorPlayerToIntern);
+                int raycastResults = Physics.RaycastNonAlloc(ray, raycastHits, vectorPlayerToIntern.magnitude, StartOfRound.Instance.playersMask);
+                for (int i = 0; i < raycastResults; i++)
+                {
+                    RaycastHit hit = raycastHits[i];
+                    if (hit.collider != null
+                        && hit.collider.tag == "Player")
+                    {
+                        collideWithAnotherPlayer = true;
+                        break;
+                    }
+                }
+
+                if (!collideWithAnotherPlayer)
+                {
+                    internAI.NpcController.ShouldAnimate = true;
+                    index++;
+                }
+
+                internAI.NpcController.Npc.gameObject.layer = baseLayer;
+            }
+
+            StartOfRound.Instance.localPlayerController.gameObject.layer = baseLayer;
         }
 
         #endregion
