@@ -94,6 +94,7 @@ namespace LethalInternship.Managers
         private ClientRpcParams ClientRpcParams = new ClientRpcParams();
 
         private float timerAnimationCulling;
+        private float timerNoAnimationAfterLag;
         private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
 
         /// <summary>
@@ -1359,12 +1360,16 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            if (timerNoAnimationAfterLag > 0f)
+            {
+                timerNoAnimationAfterLag += Time.deltaTime;
+            }
+
             timerAnimationCulling += Time.deltaTime;
             if (timerAnimationCulling < 0.05f)
             {
                 return;
             }
-            timerAnimationCulling = 0f;
 
             Array.Fill(internsInFOV, null);
 
@@ -1387,7 +1392,24 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
+                // Cut animation before deciding which intern can animate
                 internAI.NpcController.ShouldAnimate = false;
+
+                if (timerNoAnimationAfterLag > 3f)
+                {
+                    timerNoAnimationAfterLag = 0f;
+                }
+                if (timerNoAnimationAfterLag > 0f)
+                {
+                    continue;
+                }
+                // Stop animation if we are losing frames
+                if (timerNoAnimationAfterLag <= 0f && Time.deltaTime > 0.125f)
+                {
+                    timerNoAnimationAfterLag += timerAnimationCulling;
+                    continue;
+                }
+
                 if (!internAI.NpcController.IsMoving())
                 {
                     continue;
@@ -1441,6 +1463,7 @@ namespace LethalInternship.Managers
             }
 
             StartOfRound.Instance.localPlayerController.gameObject.layer = baseLayer;
+            timerAnimationCulling = 0f;
         }
 
         #endregion
