@@ -79,8 +79,6 @@ namespace LethalInternship.AI
         private Vector3 walkForce;
         private bool isFallingNoJump;
 
-        private float nearEntitiesCheckTimer = 1f;
-        private Collider[] nearByPlayers = new Collider[4];
         private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
 
         private float upperBodyAnimationsWeight;
@@ -108,8 +106,7 @@ namespace LethalInternship.AI
         private bool goDownLadder;
 
         private float timerShowName;
-
-        private RaycastHit hit;
+        private float timerPlayFootstep;
 
         public NpcController(PlayerControllerB npc)
         {
@@ -277,24 +274,8 @@ namespace LethalInternship.AI
             // Update animations when holding items and exhausion
             UpdateAnimationUpperBody();
 
-            // Update line of sight cube
-            //UpdateLineOfSightCube();
-
-            if (ShouldAnimate)
-            {
-                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
-                {
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, IsWalking);
-                }
-                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING) != Npc.isSprinting)
-                {
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, Npc.isSprinting);
-                }
-            }
-            else
-            {
-                CutAnimations();
-            }
+            // Update anmiations
+            UpdateAnimations();
         }
 
         /// <summary>
@@ -1117,19 +1098,80 @@ namespace LethalInternship.AI
         /// <summary>
         /// Update line of sight cube
         /// </summary>
-        private void UpdateLineOfSightCube()
+        private void UpdateAnimations()
         {
-            if (Physics.Raycast(Npc.lineOfSightCube.position, Npc.lineOfSightCube.forward, out hit, 10f, Npc.playersManager.collidersAndRoomMask, QueryTriggerInteraction.Ignore))
+            if (ShouldAnimate)
             {
-                Npc.lineOfSightCube.localScale = new Vector3(1.5f, 1.5f, hit.distance);
+                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, IsWalking);
+                }
+                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING) != Npc.isSprinting)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, Npc.isSprinting);
+                }
             }
             else
             {
-                Npc.lineOfSightCube.localScale = new Vector3(1.5f, 1.5f, 10f);
+                CutAnimations();
+                PlayFootstepIfClose();
             }
         }
 
         #endregion
+
+        public void StopAnimations()
+        {
+            IsWalking = false;
+            Npc.isSprinting = false;
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+        }
+
+        private void CutAnimations()
+        {
+            Npc.playerBodyAnimator.SetInteger("emoteNumber", 0);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
+            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+        }
+
+        private void PlayFootstepIfClose()
+        {
+            if ((StartOfRound.Instance.localPlayerController.transform.position - Npc.transform.position).sqrMagnitude > 20f * 20f)
+            {
+                return;
+            }
+
+            float threshold = 0f;
+            if (IsWalking)
+            {
+                threshold = 0.498f;
+            }
+            if (Npc.isSprinting)
+            {
+                threshold = 0.170f + Random.Range(0f, 0.070f);
+            }
+            if (threshold > 0f)
+            {
+                timerPlayFootstep += Time.deltaTime;
+                if (timerPlayFootstep > threshold)
+                {
+                    timerPlayFootstep = 0f;
+                    bool noiseIsInsideClosedShip = Npc.isInHangarShipRoom && Npc.playersManager.hangarDoorsClosed;
+                    if (Npc.isSprinting)
+                    {
+                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
+                    }
+                    else
+                    {
+                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
+                    }
+                    Npc.PlayFootstepSound();
+                }
+            }
+        }
 
         /// <summary>
         /// LateUpdate called from <see cref="PlayerControllerBPatch.LateUpdate_PreFix"><c>PlayerControllerBPatch.LateUpdate_PreFix</c></see> 
@@ -1720,26 +1762,9 @@ namespace LethalInternship.AI
             }
         }
 
-        public void StopAnimations()
-        {
-            IsWalking = false;
-            Npc.isSprinting = false;
-            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
-            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
-            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
-        }
-
         public bool IsMoving()
         {
-            return MoveVector != Vector3.zero; 
-        }
-
-        private void CutAnimations()
-        {
-            Npc.playerBodyAnimator.SetInteger("emoteNumber", 0);
-            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, false);
-            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, false);
-            Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
+            return MoveVector != Vector3.zero;
         }
 
         private void ForceTurnTowardsTarget()
