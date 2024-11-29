@@ -118,9 +118,9 @@ namespace LethalInternship.Managers
         /// <param name="nbInternToDropShip"></param>
         /// <param name="newCredits"></param>
         [ServerRpc(RequireOwnership = false)]
-        public void UpdatePurchaseAndCreditsServerRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
+        public void UpdatePurchaseAndCreditsServerRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits, int idIdentityIntern)
         {
-            UpdatePurchaseAndCreditsClientRpc(nbInternsOwned, nbInternToDropShip, newCredits);
+            UpdatePurchaseAndCreditsClientRpc(nbInternsOwned, nbInternToDropShip, newCredits, idIdentityIntern);
         }
 
         /// <summary>
@@ -130,9 +130,9 @@ namespace LethalInternship.Managers
         /// <param name="nbInternToDropShip"></param>
         /// <param name="newCredits"></param>
         [ClientRpc]
-        private void UpdatePurchaseAndCreditsClientRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits)
+        private void UpdatePurchaseAndCreditsClientRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits, int idIdentityIntern)
         {
-            UpdatePurchaseAndCredits(nbInternsOwned, nbInternToDropShip, newCredits);
+            UpdatePurchaseAndCredits(nbInternsOwned, nbInternToDropShip, newCredits, idIdentityIntern);
         }
 
         /// <summary>
@@ -141,11 +141,16 @@ namespace LethalInternship.Managers
         /// <param name="nbInternsOwned"></param>
         /// <param name="nbInternToDropShip"></param>
         /// <param name="newCredits"></param>
-        private void UpdatePurchaseAndCredits(int nbInternsOwned, int nbInternToDropShip, int newCredits)
+        private void UpdatePurchaseAndCredits(int nbInternsOwned, int nbInternToDropShip, int newCredits, int idIdentityIntern)
         {
             InternManager.Instance.UpdateInternsOrdered(nbInternsOwned, nbInternToDropShip);
             GetTerminal().groupCredits = newCredits;
             GetTerminal().terminalAudio.PlayOneShot(GetTerminal().syncedAudios[TerminalConst.INDEX_AUDIO_BOUGHT_ITEM]);
+
+            if (idIdentityIntern > -1)
+            {
+                IdentityManager.Instance.InternIdentities[idIdentityIntern].SelectedToDrop = true;
+            }
         }
 
         #endregion

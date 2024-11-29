@@ -62,11 +62,19 @@ Total cost of items: ${2}
 
 
 Please CONFIRM or DENY.";
+        public static readonly string TEXT_CONFIRM_CANCEL_SPECIFIC_PURCHASE = @"You have select {0} for the next drop.
 
-        public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program";
-        public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern";
-        public static readonly string TEXT_NO_MORE_INTERNS_PURCHASABLE = @"No more interns available";
-        public static readonly string TEXT_ERROR_SHIP_LEAVING = @"You can not buy when the ship is leaving the moon";
+Total cost : ${1}
+
+
+Please CONFIRM or DENY.";
+
+        public static readonly string TEXT_ERROR_DEFAULT = @"An error occured in the internship program.";
+        public static readonly string TEXT_ERROR_NOT_ENOUGH_CREDITS = @"You do not have enough credits to order an intern.";
+        public static readonly string TEXT_NO_MORE_INTERNS_PURCHASABLE = @"No more interns available.";
+        public static readonly string TEXT_ERROR_SHIP_LEAVING = @"You can not buy when the ship is leaving the moon.";
+        public static readonly string TEXT_ERROR_INTERN_DEAD = @"Sorry, this intern is dead, try with another one.";
+        public static readonly string TEXT_ERROR_INTERN_ALREADY_SELECTED = @"Sorry, this intern is already selected for the next moon, try with another one.";
 
         public static readonly string TEXT_STATUS = @"Interns status : 
 

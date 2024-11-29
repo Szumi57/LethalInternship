@@ -81,8 +81,8 @@ namespace LethalInternship.AI
         private Vector3 previousWantedDestination;
         private bool isDestinationChanged;
         private float updateDestinationIntervalInternAI;
-        private float timerCheckDoor;
         private float healthRegenerateTimerMax;
+        private float timerCheckDoor;
 
         public LineRendererUtil LineRendererUtil = null!;
 

@@ -40,6 +40,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             terminalNode.clearPreviousText = true;
 
             StringBuilder sb = new StringBuilder();
+            sb.Append($"{"Name",-30} {"Hp",-3} {"Status",-6}");
+            sb.AppendLine();
+            sb.Append($"---------------------------------------------------");
             foreach (InternIdentity identity in IdentityManager.Instance.InternIdentities)
             {
                 if (identity == null)
@@ -47,10 +50,20 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                     continue;
                 }
 
-                sb.AppendLine();
-                sb.Append($"{identity.Name}      Hp {identity.Hp}     {(identity.Alive ? "" : "dead")}");
-            }
+                string status = string.Empty;
+                if (identity.Alive
+                    && identity.SelectedToDrop)
+                {
+                    status = "to drop";
+                }
+                else if (!identity.Alive)
+                {
+                    status = "dead";
+                }
 
+                sb.AppendLine();
+                sb.Append($"{identity.Name,-30} {identity.Hp,-3} {status}");
+            }
             terminalNode.displayText = string.Format(TerminalConst.TEXT_STATUS, sb.ToString());
 
             return terminalNode;

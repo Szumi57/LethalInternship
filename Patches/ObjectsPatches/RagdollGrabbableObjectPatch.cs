@@ -24,7 +24,9 @@ namespace LethalInternship.Patches.ObjectsPatches
             // So we make sure that the deadbody id still match the bodyID network variable in case it has been updated
             if (___foundRagdollObject)
             {
-                if (StartOfRound.Instance.allPlayerScripts[bodyID].deadBody != __instance.ragdoll)
+                if (StartOfRound.Instance.allPlayerScripts[bodyID].deadBody != null
+                    && __instance.ragdoll != null
+                    && bodyID != (int)__instance.ragdoll.playerScript.playerClientId)
                 {
                     ___foundRagdollObject = false;
                 }

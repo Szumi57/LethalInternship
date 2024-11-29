@@ -14,7 +14,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalState)"/>
         /// </summary>
-        public InfoPage(TerminalState newState) : base(newState) 
+        public InfoPage(TerminalState newState) : base(newState)
         {
             CurrentState = EnumTerminalStates.Info;
         }
@@ -43,13 +43,13 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return BuyCommandSetNextPage(words);
             }
 
-            // firstWord landing status
+            // firstWord land
             if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_LAND_COMMAND))
             {
                 return LandingStatusCommand(firstWord);
             }
 
-            // firstWord status status
+            // firstWord status
             if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_STATUS_COMMAND))
             {
                 terminalParser.TerminalState = new StatusPage(this);
@@ -78,29 +78,61 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 return true;
             }
 
-            string secondWord;
-            if (words.Length > 1)
-            {
-                secondWord = words[1];
-            }
-            else
+            if (words.Length <= 1)
             {
                 terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
                 return true;
             }
 
             // secondWord number
-            if (!secondWord.IsNullOrWhiteSpace()
-                && int.TryParse(secondWord, out int nbOrdered)
+            if (!words[1].IsNullOrWhiteSpace()
+                && int.TryParse(words[1], out int nbOrdered)
                 && nbOrdered > 0)
             {
                 terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, nbOrdered);
-            }
-            else
-            {
-                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
+                return true;
             }
 
+            // secondWord word
+            // Looking for identities
+            string sentence = string.Empty;
+            for (int i = 1; i < words.Length; i++)
+            {
+                sentence += words[i].Trim();
+            }
+
+            if (sentence.Length <= 2)
+            {
+                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
+                return true;
+            }
+
+            string[] nameIdentities = IdentityManager.Instance.GetIdentitiesNamesLowerCaseWithoutSpace();
+            for (int i = sentence.Length - 1; i >= 1; i--)
+            {
+                string search = sentence.Substring(0, i + 1);
+                for (int j = 0; j < nameIdentities.Length; j++)
+                {
+                    if (nameIdentities[j].Contains(search))
+                    {
+                        if (!IdentityManager.Instance.InternIdentities[j].Alive)
+                        {
+                            terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.InternDead);
+                            return true;
+                        }
+                        if (IdentityManager.Instance.InternIdentities[j].SelectedToDrop)
+                        {
+                            terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.InternAlreadySelected);
+                            return true;
+                        }
+
+                        terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1, j);
+                        return true;
+                    }
+                }
+            }
+
+            terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
             return true;
         }
 
@@ -150,9 +182,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 || isCurrentMoonCompanyBuilding)
             {
                 // in space or on company building moon
-                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_IN_SPACE, 
-                                             instanceIM.NbInternsPurchasable, 
-                                             Plugin.Config.InternPrice.Value, 
+                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_IN_SPACE,
+                                             instanceIM.NbInternsPurchasable,
+                                             Plugin.Config.InternPrice.Value,
                                              instanceIM.NbInternsToDropShip,
                                              landingStatus);
             }
@@ -167,10 +199,10 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 {
                     textNbInternsToDropShip = string.Format(TerminalConst.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
-                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_ON_MOON, 
-                                             instanceIM.NbInternsPurchasable, 
-                                             Plugin.Config.InternPrice.Value, 
-                                             textNbInternsToDropShip, 
+                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_ON_MOON,
+                                             instanceIM.NbInternsPurchasable,
+                                             Plugin.Config.InternPrice.Value,
+                                             textNbInternsToDropShip,
                                              nbInternsOnThisMoon,
                                              landingStatus);
             }

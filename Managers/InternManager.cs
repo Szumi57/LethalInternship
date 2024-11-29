@@ -327,22 +327,43 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            // Get identity
-            int identityID;
-            if (Plugin.Config.SpawnIdentitiesRandomly)
+            int identityID = -1;
+
+            // Get selected identities
+            InternIdentity[] internIdentitiesCurrentlyUsed = GetIdentitiesInternsCurrentlyUsed();
+            int[] IdIdentitiesCurrentlyUsed = internIdentitiesCurrentlyUsed.Select(x => x.IdIdentity).ToArray();
+            int[] selectedIdentities = IdentityManager.Instance.GetSelectedIdentitiesToDropAlive();
+            for (int i = 0; i < selectedIdentities.Length; i++)
             {
-                identityID = IdentityManager.Instance.GetRandomAliveIdentityIndex(GetIdentitiesInternsCurrentlyUsed());
+                if (IdIdentitiesCurrentlyUsed.Contains(selectedIdentities[i]))
+                {
+                    continue;
+                }
+
+                identityID = selectedIdentities[i];
+                break;
             }
-            else
-            {
-                identityID = IdentityManager.Instance.GetNextAliveIdentityIndex(GetIdentitiesInternsCurrentlyUsed());
-            }
+
             if (identityID == -1)
             {
-                Plugin.LogInfo($"No more alive interns available.");
+                // Get identity
+                if (Plugin.Config.SpawnIdentitiesRandomly)
+                {
+                    identityID = IdentityManager.Instance.GetRandomAliveIdentityIndex(internIdentitiesCurrentlyUsed);
+                }
+                else
+                {
+                    identityID = IdentityManager.Instance.GetNextAliveIdentityIndex(internIdentitiesCurrentlyUsed);
+                }
+            }
+
+            if (identityID == -1)
+            {
+                Plugin.LogInfo($"No more intern identities available.");
                 return;
             }
 
+            IdentityManager.Instance.InternIdentities[identityID].SelectedToDrop = false;
             spawnInternsParamsNetworkSerializable.InternIdentityID = identityID;
             SpawnInternServer(spawnInternsParamsNetworkSerializable);
         }
@@ -554,6 +575,7 @@ namespace LethalInternship.Managers
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             internAI.InternIdentity = internIdentity;
             internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
+            internAI.InternIdentity.SelectedToDrop = false;
             internAI.SetEnemyOutside(spawnParamsNetworkSerializable.IsOutside);
 
             // Attach ragdoll body
@@ -575,7 +597,6 @@ namespace LethalInternship.Managers
             // Remove dead bodies if exists
             if (internController.deadBody != null)
             {
-                //UnityEngine.Object.Destroy(internController.deadBody.gameObject);
                 internController.deadBody = null;
             }
 

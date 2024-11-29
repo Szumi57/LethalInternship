@@ -11,6 +11,7 @@ namespace LethalInternship.AI
         public int? SuitID { get; set; }
         public int Hp { get; set; }
         public bool Alive { get { return Hp > 0; } }
+        public bool SelectedToDrop { get; set; }
 
         public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
         {

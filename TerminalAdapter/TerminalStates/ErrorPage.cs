@@ -55,6 +55,12 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 case EnumErrorTypeTerminalPage.ShipLeavingMoon:
                     terminalNode.displayText = TerminalConst.TEXT_ERROR_SHIP_LEAVING;
                     break;
+                case EnumErrorTypeTerminalPage.InternDead:
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_INTERN_DEAD;
+                    break;
+                case EnumErrorTypeTerminalPage.InternAlreadySelected:
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_INTERN_ALREADY_SELECTED;
+                    break;
                 default:
                     terminalNode.displayText = TerminalConst.TEXT_ERROR_DEFAULT;
                     break;

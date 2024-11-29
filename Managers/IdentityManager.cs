@@ -3,6 +3,7 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Random = System.Random;
@@ -25,17 +26,19 @@ namespace LethalInternship.Managers
 
         private void Update()
         {
-            if (InternIdentities != null)
+            if (InternIdentities == null)
             {
-                InternIdentity internIdentity;
-                for (int i = 0; i < InternIdentities.Length; i++)
+                return;
+            }
+
+            InternIdentity internIdentity;
+            for (int i = 0; i < InternIdentities.Length; i++)
+            {
+                internIdentity = InternIdentities[i];
+                if (internIdentity != null
+                    && internIdentity.Voice != null)
                 {
-                    internIdentity = InternIdentities[i];
-                    if (internIdentity != null
-                        && internIdentity.Voice != null)
-                    {
-                        internIdentity.Voice.ReduceCooldown(Time.deltaTime);
-                    }
+                    internIdentity.Voice.ReduceCooldown(Time.deltaTime);
                 }
             }
         }
@@ -136,6 +139,31 @@ namespace LethalInternship.Managers
             }
 
             return remainingIdentities[0].IdIdentity;
+        }
+
+        public int[] GetSelectedIdentitiesToDropAlive()
+        {
+            if (InternIdentities == null)
+            {
+                return new int[0];
+            }
+
+            return InternIdentities
+                        .Where(x => x.Alive && x.SelectedToDrop)
+                        .Select(x => x.IdIdentity)
+                        .ToArray();
+        }
+
+        public string[] GetIdentitiesNamesLowerCaseWithoutSpace()
+        {
+            if (InternIdentities == null)
+            {
+                return new string[0];
+            }
+
+            return InternIdentities
+                        .Select(x => string.Join(' ', x.Name).ToLowerInvariant())
+                        .ToArray();
         }
     }
 }

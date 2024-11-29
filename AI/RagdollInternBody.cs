@@ -18,6 +18,12 @@ namespace LethalInternship.AI
 
         public static void Update_Patch(RagdollGrabbableObject ragdollGrabbableObject)
         {
+            if (ragdollGrabbableObject.ragdoll != null)
+            {
+                ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
+                ragdollGrabbableObject.ragdoll.attachedTo = ragdollGrabbableObject.transform;
+                ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
+            }
             GrabbableObjectPatch.GrabbableObject_Update_ReversePatch(ragdollGrabbableObject);
             ragdollGrabbableObject.grabbableToEnemies = false;
         }

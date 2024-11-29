@@ -1083,19 +1083,5 @@ namespace LethalInternship.Patches.NpcPatches
         }
 
         #endregion
-
-        //private static Stopwatch timer = new Stopwatch();
-        //[HarmonyPatch("PlayFootstepSound")]
-        //[HarmonyPostfix]
-        //static void PlayFootstepSound_PostFix()
-        //{
-        //    if(timer.IsRunning)
-        //    {
-        //        timer.Stop();
-        //        Plugin.LogDebug($"t TotalMilliseconds {timer.Elapsed.TotalMilliseconds}, {timer.Elapsed.ToString("mm':'ss':'fffffff")}");
-        //        timer.Reset();
-        //    }
-        //    timer.Start();
-        //}
     }
 }
