@@ -116,7 +116,7 @@ namespace LethalInternship.Managers
 
                     InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[identitySaveFile.IdIdentity];
                     internIdentity.Hp = identitySaveFile.Hp;
-                    internIdentity.SuitID = identitySaveFile.SuitID;
+                    internIdentity.SuitID = identitySaveFile.SuitID < 0 ? null : identitySaveFile.SuitID;
                     internIdentity.SelectedToDrop = identitySaveFile.SelectedToDrop;
                     Plugin.LogDebug($"Loaded identity {internIdentity.ToString()}");
                 }

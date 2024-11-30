@@ -174,6 +174,11 @@ namespace LethalInternship.Managers
 
         private IEnumerator FadeInAudioCoroutine(AudioSource audioSource, float fadeTime, float volumeMax)
         {
+            if (audioSource == null)
+            {
+                yield break;
+            }
+
             // https://discussions.unity.com/t/fade-out-audio-source/585912/6
             float startVolume = 0.2f;
             audioSource.volume = 0;
@@ -196,6 +201,11 @@ namespace LethalInternship.Managers
 
         private IEnumerator FadeOutAndStopAudioCoroutine(AudioSource audioSource, float fadeTime)
         {
+            if (audioSource == null)
+            {
+                yield break;
+            }
+
             // https://discussions.unity.com/t/fade-out-audio-source/585912/6
             float startVolume = audioSource.volume;
 

@@ -35,7 +35,8 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> CanSpectateInterns;
         [SyncedEntryField] public SyncedEntry<bool> RadarEnabled;
 
-        // Interns names   
+        // Identity  
+        [SyncedEntryField] public SyncedEntry<int> MaxIdentities;
         [SyncedEntryField] public SyncedEntry<bool> SpawnIdentitiesRandomly;
 
         // Behaviour       
@@ -116,11 +117,17 @@ namespace LethalInternship.Configs
                                        defaultVal: Const.DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE,
                                        "");
 
-            // Names
+            // Identities
             SpawnIdentitiesRandomly = cfg.BindSyncedEntry(Const.ConfigSectionIdentities,
                                               "Randomness of identities",
                                               defaultVal: true,
                                               "Spawn the interns with random identities ?");
+
+            MaxIdentities = cfg.BindSyncedEntry(Const.ConfigSectionIdentities,
+                                           "Max amount of identities",
+                                           defaultValue: Const.DEFAULT_MAX_IDENTITIES,
+                                           new ConfigDescription("Number of different identities available, if they all die, no more intern spawn for this game.",
+                                                                 new AcceptableValueRange<int>(Const.MIN_IDENTITIES, Const.MAX_IDENTITIES)));
 
             // Behaviour
             FollowCrouchWithPlayer = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,

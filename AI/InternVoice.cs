@@ -29,7 +29,7 @@ namespace LethalInternship.AI
 
         public override string ToString()
         {
-            return $"InternID: {InternID}, VoiceFolder: {VoiceFolder}, VoicePitch {VoicePitch}, CurrentAudioSource : {CurrentAudioSource?.name}";
+            return $"InternID: {InternID}, VoiceFolder: {VoiceFolder}, VoicePitch {VoicePitch}";
         }
 
         public void SetCooldownAudio(float cooldown)

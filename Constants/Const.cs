@@ -86,6 +86,9 @@ namespace LethalInternship.Constants
 
         public static EnumOptionSuitChange DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE = EnumOptionSuitChange.Manual;
 
+        public static readonly int DEFAULT_MAX_IDENTITIES = 50;
+        public static readonly int MIN_IDENTITIES = 10;
+        public static readonly int MAX_IDENTITIES = 200;
         public static readonly string FILE_NAME_CONFIG_IDENTITIES_DEFAULT = "ConfigIdentitiesDefault.json";
         public static readonly string FILE_NAME_CONFIG_IDENTITIES_USER = "ConfigIdentitiesUser.json";
         public static readonly ConfigIdentity DEFAULT_CONFIG_IDENTITY = new ConfigIdentity()

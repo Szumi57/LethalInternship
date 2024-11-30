@@ -1074,36 +1074,45 @@ namespace LethalInternship.Managers
         {
             foreach (InternAI internAI in AllInternAIs)
             {
-                if (internAI == null)
+                if (internAI == null
+                    || internAI.NpcController == null)
                 {
                     continue;
                 }
 
-                if (internAI.NpcController.Npc.isInElevator
-                    && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                    && internAI.NpcController.IsTouchingGround)
+                if (!internAI.NpcController.IsTouchingGround)
                 {
-                    if (!internAI.AreHandsFree())
-                    {
-                        internAI.NpcController.Npc.SetItemInElevator(false, false, internAI.HeldItem);
-                    }
-                    internAI.NpcController.Npc.isInElevator = false;
-                    internAI.NpcController.Npc.isInHangarShipRoom = false;
+                    continue;
                 }
-                else if (!internAI.NpcController.Npc.isInElevator
-                    && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                    && internAI.NpcController.IsTouchingGround)
+
+                bool wasInHangarShipRoom = internAI.NpcController.Npc.isInHangarShipRoom;
+                if (!internAI.NpcController.Npc.isInElevator
+                    && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
                 {
                     internAI.NpcController.Npc.isInElevator = true;
-                    if (instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                        && internAI.NpcController.IsTouchingGround)
+                }
+                else if (internAI.NpcController.Npc.isInElevator
+                    && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
+                {
+                    internAI.NpcController.Npc.isInElevator = false;
+                    internAI.NpcController.Npc.isInHangarShipRoom = false;
+                    wasInHangarShipRoom = false;
+
+                    if (!internAI.AreHandsFree())
                     {
-                        internAI.NpcController.Npc.isInHangarShipRoom = true;
+                        internAI.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, internAI.HeldItem);
                     }
-                    else if (!internAI.AreHandsFree())
-                    {
-                        internAI.NpcController.Npc.SetItemInElevator(false, true, internAI.HeldItem);
-                    }
+                }
+                else if (internAI.NpcController.Npc.isInElevator
+                         && instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
+                {
+                    internAI.NpcController.Npc.isInHangarShipRoom = true;
+                }
+
+                if (wasInHangarShipRoom != internAI.NpcController.Npc.isInHangarShipRoom
+                    && !internAI.AreHandsFree())
+                {
+                    internAI.NpcController.Npc.SetItemInElevator(droppedInShipRoom: internAI.NpcController.Npc.isInHangarShipRoom, droppedInElevator: true, internAI.HeldItem);
                 }
             }
         }
@@ -1148,6 +1157,29 @@ namespace LethalInternship.Managers
 
                 if (internAI.RagdollInternBody != null
                     && internAI.RagdollInternBody.IsRagdollBodyHeldByPlayer((int)GameNetworkManager.Instance.localPlayerController.playerClientId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool IsIdentitySpawned(int idIdentity)
+        {
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                if (internAI.InternIdentity.IdIdentity == idIdentity)
                 {
                     return true;
                 }
@@ -1217,32 +1249,42 @@ namespace LethalInternship.Managers
         /// <returns>Number of interns still alive</returns>
         private int CountAliveAndDisableInterns()
         {
-            StartOfRound instance = StartOfRound.Instance;
-            if (instance.currentLevel.levelID == 3)
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            if (instanceSOR.currentLevel.levelID == 3)
             {
                 return NbInternsOwned;
             }
 
             int alive = 0;
             PlayerControllerB internController;
-            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
+            foreach (InternAI internAI in AllInternAIs)
             {
-                internController = instance.allPlayerScripts[i];
-                if (!internController.isPlayerDead && internController.isPlayerControlled)
+                if (internAI == null
+                    || internAI.NpcController == null)
                 {
-                    internController.isPlayerControlled = false;
-                    internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
-                    DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
-                    internController.transform.position = internController.playersManager.notSpawnedPosition.position;
-
-                    if (Plugin.IsModModelReplacementAPILoaded)
-                    {
-                        HideShowModelReplacement(internController, show: false);
-                    }
-
-                    instance.allPlayerObjects[i].SetActive(false);
-                    alive++;
+                    continue;
                 }
+
+                internController = internAI.NpcController.Npc;
+                if (internController.isPlayerDead
+                    || !internController.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                internController.isPlayerControlled = false;
+                internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
+                DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
+                internController.transform.position = internController.playersManager.notSpawnedPosition.position;
+
+                if (Plugin.IsModModelReplacementAPILoaded)
+                {
+                    HideShowModelReplacement(internController, show: false);
+                }
+
+                internAI.InternIdentity.SelectedToDrop = true;
+                instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
+                alive++;
             }
 
             // Alive and not landed interns
@@ -1310,6 +1352,9 @@ namespace LethalInternship.Managers
             {
                 Plugin.LogDebug($"{configIdentity.ToString()}");
             }
+
+            Plugin.LogDebug($"Recreate identities for {Plugin.Config.MaxIdentities.Value} interns");
+            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxIdentities.Value, configIdentityNetworkSerializable.ConfigIdentities);
         }
 
         #endregion

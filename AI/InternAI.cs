@@ -245,7 +245,7 @@ namespace LethalInternship.AI
         public override void Update()
         {
             // Update identity
-            InternIdentity.Hp = NpcController.Npc.health;
+            InternIdentity.Hp = NpcController.Npc.isPlayerDead ? 0 : NpcController.Npc.health;
 
             // Not owner no AI
             if (!IsOwner)
@@ -919,10 +919,10 @@ namespace LethalInternship.AI
 
                 case "Nutcracker":
                 case "Red Locust Bees":
+                case "Blob":
                     return 10f;
 
                 case "Earth Leviathan":
-                case "Blob":
                 case "Clay Surgeon":
                 case "Flowerman":
                 case "Bush Wolf":

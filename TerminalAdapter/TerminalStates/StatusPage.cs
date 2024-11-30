@@ -70,6 +70,12 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 {
                     status = "to drop";
                 }
+                else if (identity.Alive
+                         && !identity.SelectedToDrop
+                         && InternManager.Instance.IsIdentitySpawned(identity.IdIdentity))
+                {
+                    status = "on moon";
+                }
                 else if (!identity.Alive)
                 {
                     status = "dead";
