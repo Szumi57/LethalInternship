@@ -1,5 +1,4 @@
-﻿using BepInEx;
-using LethalInternship.Constants;
+﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using UnityEngine;
@@ -40,7 +39,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             // firstWord Buy
             if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_BUY_COMMAND))
             {
-                return BuyCommandSetNextPage(words);
+                return terminalParser.BuyCommandSetNextPage(words);
             }
 
             // firstWord land
@@ -59,82 +58,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             return false;
         }
 
-        private bool BuyCommandSetNextPage(string[] words)
-        {
-            // Can buy ?
-            if (TerminalManager.Instance.GetTerminal().groupCredits < Plugin.Config.InternPrice.Value)
-            {
-                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.NotEnoughCredits);
-                return true;
-            }
-            else if (InternManager.Instance.NbInternsPurchasable <= 0)
-            {
-                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.NoMoreInterns);
-                return true;
-            }
-            else if (StartOfRound.Instance.shipIsLeaving)
-            {
-                terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.ShipLeavingMoon);
-                return true;
-            }
-
-            if (words.Length <= 1)
-            {
-                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
-                return true;
-            }
-
-            // secondWord number
-            if (!words[1].IsNullOrWhiteSpace()
-                && int.TryParse(words[1], out int nbOrdered)
-                && nbOrdered > 0)
-            {
-                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, nbOrdered);
-                return true;
-            }
-
-            // secondWord word
-            // Looking for identities
-            string sentence = string.Empty;
-            for (int i = 1; i < words.Length; i++)
-            {
-                sentence += words[i].Trim();
-            }
-
-            if (sentence.Length <= 2)
-            {
-                terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
-                return true;
-            }
-
-            string[] nameIdentities = IdentityManager.Instance.GetIdentitiesNamesLowerCaseWithoutSpace();
-            for (int i = sentence.Length - 1; i >= 1; i--)
-            {
-                string search = sentence.Substring(0, i + 1);
-                for (int j = 0; j < nameIdentities.Length; j++)
-                {
-                    if (nameIdentities[j].Contains(search))
-                    {
-                        if (!IdentityManager.Instance.InternIdentities[j].Alive)
-                        {
-                            terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.InternDead);
-                            return true;
-                        }
-                        if (IdentityManager.Instance.InternIdentities[j].SelectedToDrop)
-                        {
-                            terminalParser.TerminalState = new ErrorPage(this, EnumErrorTypeTerminalPage.InternAlreadySelected);
-                            return true;
-                        }
-
-                        terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1, j);
-                        return true;
-                    }
-                }
-            }
-
-            terminalParser.TerminalState = new ConfirmCancelPurchasePage(this, 1);
-            return true;
-        }
+        
 
         private bool LandingStatusCommand(string command)
         {

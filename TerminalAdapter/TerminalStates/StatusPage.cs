@@ -22,6 +22,20 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         /// </summary>
         public override bool ParseCommandValid(string[] words)
         {
+            string firstWord = words[0];
+            if (string.IsNullOrWhiteSpace(firstWord))
+            {
+                // get back to info page
+                terminalParser.TerminalState = new InfoPage(this);
+                return true;
+            }
+
+            // firstWord Buy
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_BUY_COMMAND))
+            {
+                return terminalParser.BuyCommandSetNextPage(words);
+            }
+
             // get back to info page
             terminalParser.TerminalState = new InfoPage(this);
             return true;

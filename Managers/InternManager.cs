@@ -184,6 +184,9 @@ namespace LethalInternship.Managers
             // Identities
             IdentityManager.Instance.CreateIdentities(50, Plugin.Config.ConfigIdentities.configIdentities);
 
+            // Load save infos
+            SaveManager.Instance.LoadDataFromSave();
+
             ResizePoolOfInterns(irlPlayersAndInternsCount);
             PopulatePoolOfInterns(irlPlayersCount);
             UpdateSoundManagerWithInterns(irlPlayersAndInternsCount);
@@ -1301,15 +1304,12 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync interns identities");
+            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync json interns identities");
             Plugin.LogDebug($"Loaded {configIdentityNetworkSerializable.ConfigIdentities.Length} identities from server");
             foreach (ConfigIdentity configIdentity in configIdentityNetworkSerializable.ConfigIdentities)
             {
                 Plugin.LogDebug($"{configIdentity.ToString()}");
             }
-
-            Plugin.LogDebug($"Recreate identities for {Plugin.Config.MaxInternsAvailable.Value} interns");
-            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxInternsAvailable.Value, configIdentityNetworkSerializable.ConfigIdentities);
         }
 
         #endregion

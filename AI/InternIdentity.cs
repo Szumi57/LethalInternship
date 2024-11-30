@@ -24,7 +24,7 @@ namespace LethalInternship.AI
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {SuitID}, Hp {Hp}, Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {SuitID}, Hp {Hp}, SelectedToDrop {SelectedToDrop}, Voice : {{{Voice.ToString()}}}";
         }
 
         public int GetRandomSuitID()

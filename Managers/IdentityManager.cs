@@ -3,7 +3,6 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Random = System.Random;
@@ -45,6 +44,7 @@ namespace LethalInternship.Managers
 
         public void CreateIdentities(int nbIdentities, ConfigIdentity[] configIdentities)
         {
+            Plugin.LogDebug($"CreateIdentities, nbIdentities {nbIdentities}");
             InternIdentities = new InternIdentity[nbIdentities];
             this.configIdentities = configIdentities;
 

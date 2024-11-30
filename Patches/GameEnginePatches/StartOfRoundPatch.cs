@@ -27,8 +27,20 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             Plugin.LogDebug("Initialize managers...");
 
+            GameObject objectManager;
+
+            // MonoBehaviours
+            objectManager = new GameObject("InputManager");
+            objectManager.AddComponent<InputManager>();
+
+            objectManager = new GameObject("AudioManager");
+            objectManager.AddComponent<AudioManager>();
+
+            objectManager = new GameObject("IdentityManager");
+            objectManager.AddComponent<IdentityManager>();
+
             // NetworkBehaviours
-            GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
+            objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
                 objectManager.GetComponent<NetworkObject>().Spawn();
@@ -40,21 +52,11 @@ namespace LethalInternship.Patches.GameEnginePatches
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
 
-            objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
+            objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
-
-            // MonoBehaviours
-            objectManager = new GameObject("InputManager");
-            objectManager.AddComponent<InputManager>();
-
-            objectManager = new GameObject("AudioManager");
-            objectManager.AddComponent<AudioManager>();
-
-            objectManager = new GameObject("IdentityManager");
-            objectManager.AddComponent<IdentityManager>();
 
             Plugin.LogDebug("... Managers started");
         }
@@ -471,14 +473,15 @@ namespace LethalInternship.Patches.GameEnginePatches
         /// <param name="__instance"></param>
         [HarmonyPatch("OnPlayerConnectedClientRpc")]
         [HarmonyPostfix]
-        static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance)
+        static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance, ulong clientId)
         {
             // Sync save file
-            if (!__instance.IsServer && !__instance.IsHost)
+            if (!__instance.IsServer 
+                && !__instance.IsHost
+                && __instance.NetworkManager.LocalClientId == clientId)
             {
-                ulong clientId = __instance.NetworkManager.LocalClientId;
-                SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
                 InternManager.Instance.SyncLoadedJsonIdentitiesServerRpc(clientId);
+                SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
             }
         }
 
