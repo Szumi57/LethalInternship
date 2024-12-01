@@ -287,9 +287,6 @@ namespace LethalInternship.AI
                 return;
             }
 
-            // Walking on fallen bridge ?
-            bool shouldFreeMovement = ShouldFreeMovement();
-
             // Update movement
             float x;
             float z;
@@ -315,6 +312,9 @@ namespace LethalInternship.AI
                 x = Mathf.Lerp(NpcController.Npc.transform.position.x + NpcController.MoveVector.x * Time.deltaTime, this.transform.position.x, 0.075f);
                 z = Mathf.Lerp(NpcController.Npc.transform.position.z + NpcController.MoveVector.z * Time.deltaTime, this.transform.position.z, 0.075f);
             }
+
+            // Movement free (falling from bridge, jetpack, tulip snake taking off...)
+            bool shouldFreeMovement = ShouldFreeMovement();
 
             // Update position
             if (shouldFreeMovement
@@ -1914,14 +1914,36 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (IsClientOwnerOfIntern())
+            bool flag = this.NpcController.Npc.currentFootstepSurfaceIndex == 8 && ((base.IsOwner && this.NpcController.IsTouchingGround) || isPlayerGrounded);
+            if (this.NpcController.Npc.bleedingHeavily || flag)
+            {
+                this.NpcController.Npc.DropBlood(Vector3.down, this.NpcController.Npc.bleedingHeavily, flag);
+            }
+            this.NpcController.Npc.timeSincePlayerMoving = 0f;
+
+            if (base.IsOwner)
             {
                 // Only update if not owner
                 return;
             }
 
-            PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch(NpcController.Npc,
-                                                                              newPos, inElevator, isInShip, exhausted, isPlayerGrounded);
+            this.NpcController.Npc.isExhausted = exhausted;
+            this.NpcController.Npc.isInElevator = inElevator;
+            this.NpcController.Npc.isInHangarShipRoom = isInShip;
+
+            if (!this.AreHandsFree()
+                && this.HeldItem != null
+                && this.HeldItem.isInShipRoom != isInShip)
+            {
+                this.HeldItem.isInElevator = inElevator;
+                this.NpcController.Npc.SetItemInElevator(droppedInShipRoom: isInShip, droppedInElevator: inElevator, this.HeldItem);
+            }
+
+            this.NpcController.Npc.oldPlayerPosition = this.NpcController.Npc.serverPlayerPosition;
+            if (!this.NpcController.Npc.inVehicleAnimation)
+            {
+                this.NpcController.Npc.serverPlayerPosition = newPos;
+            }
         }
 
         #endregion
@@ -2114,7 +2136,7 @@ namespace LethalInternship.AI
 
         #endregion
 
-        #region SyncBodyPosition RPC
+        #region SyncDeadBodyPosition RPC
 
         /// <summary>
         /// Server side, call the clients to update the dead body of the intern

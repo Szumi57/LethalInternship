@@ -1210,44 +1210,44 @@ namespace LethalInternship.AI
             }
 
             // Physics regions
-            int priority = 0;
-            Transform? transform = null;
-            for (int i = 0; i < CurrentInternPhysicsRegions.Count; i++)
-            {
-                if (CurrentInternPhysicsRegions[i].priority > priority)
-                {
-                    priority = CurrentInternPhysicsRegions[i].priority;
-                    transform = CurrentInternPhysicsRegions[i].physicsTransform;
-                }
-            }
-            if (Npc.isInElevator && priority <= 0)
-            {
-                transform = null;
-            }
-            Npc.physicsParent = transform;
+            //int priority = 0;
+            //Transform? transform = null;
+            //for (int i = 0; i < CurrentInternPhysicsRegions.Count; i++)
+            //{
+            //    if (CurrentInternPhysicsRegions[i].priority > priority)
+            //    {
+            //        priority = CurrentInternPhysicsRegions[i].priority;
+            //        transform = CurrentInternPhysicsRegions[i].physicsTransform;
+            //    }
+            //}
+            //if (Npc.isInElevator && priority <= 0)
+            //{
+            //    transform = null;
+            //}
+            //Npc.physicsParent = transform;
 
-            if (Npc.physicsParent != null)
-            {
-                ReParentNotSpawnedTransform(Npc.physicsParent);
-            }
-            else
-            {
-                if (Npc.isInElevator)
-                {
-                    ReParentNotSpawnedTransform(Npc.playersManager.elevatorTransform);
-                    if (!InternAIController.AreHandsFree())
-                    {
-                        Npc.SetItemInElevator(Npc.isInHangarShipRoom, Npc.isInElevator, InternAIController.HeldItem);
-                    }
-                }
-                else
-                {
-                    if (!IsControllerInCruiser)
-                    {
-                        ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
-                    }
-                }
-            }
+            //if (Npc.physicsParent != null)
+            //{
+            //    ReParentNotSpawnedTransform(Npc.physicsParent);
+            //}
+            //else
+            //{
+            //    if (Npc.isInElevator)
+            //    {
+            //        ReParentNotSpawnedTransform(Npc.playersManager.elevatorTransform);
+            //        if (!InternAIController.AreHandsFree())
+            //        {
+            //            Npc.SetItemInElevator(Npc.isInHangarShipRoom, Npc.isInElevator, InternAIController.HeldItem);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        if (!IsControllerInCruiser)
+            //        {
+            //            ReParentNotSpawnedTransform(Npc.playersManager.playersContainer);
+            //        }
+            //    }
+            //}
 
             // Health regen
             InternAIController.HealthRegen();
