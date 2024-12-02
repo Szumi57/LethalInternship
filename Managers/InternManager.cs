@@ -97,10 +97,6 @@ namespace LethalInternship.Managers
         private float timerNoAnimationAfterLag;
         private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
 
-        public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
-        public List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
-        private float timerRegisterAINoiseListener;
-
         /// <summary>
         /// Initialize instance,
         /// repopulate pool of interns if InternManager reset when loading game
@@ -122,45 +118,6 @@ namespace LethalInternship.Managers
         private void Update()
         {
             UpdateAnimationsCulling();
-        }
-
-        private void FixedUpdate()
-        {
-            RegisterAINoiseListener();
-        }
-        
-        private void RegisterAINoiseListener()
-        {
-            timerRegisterAINoiseListener += Time.fixedDeltaTime;
-            if (timerRegisterAINoiseListener < 1f)
-            {
-                return;
-            }
-
-            timerRegisterAINoiseListener = 0f;
-            RoundManager instanceRM = RoundManager.Instance;
-            foreach (EnemyAI spawnedEnemy in instanceRM.SpawnedEnemies)
-            {
-                if (ListEnemyAINonNoiseListeners.Contains(spawnedEnemy))
-                {
-                    continue;
-                }
-                else if (DictEnemyAINoiseListeners.ContainsKey(spawnedEnemy))
-                {
-                    continue;
-                }
-
-                INoiseListener noiseListener;
-                if (spawnedEnemy.gameObject.TryGetComponent<INoiseListener>(out noiseListener))
-                {
-                    Plugin.LogDebug($"new enemy noise listener, spawnedEnemy {spawnedEnemy}");
-                    DictEnemyAINoiseListeners.Add(spawnedEnemy, noiseListener);
-                }
-                else
-                {
-                    ListEnemyAINonNoiseListeners.Add(spawnedEnemy);
-                }
-            }
         }
 
         private void Config_InitialSyncCompleted(object sender, EventArgs e)

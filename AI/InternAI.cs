@@ -1527,38 +1527,6 @@ namespace LethalInternship.AI
             }
         }
 
-        public void PlayAudibleNoiseIntern(Vector3 noisePosition, 
-                                           float noiseRange = 10f, 
-                                           float noiseLoudness = 0.5f, 
-                                           int timesPlayedInSameSpot = 0, 
-                                           bool noiseIsInsideClosedShip = false, 
-                                           int noiseID = 0)
-        {
-            if (noiseIsInsideClosedShip)
-            {
-                noiseRange /= 2f;
-            }
-
-            foreach (var enemyAINoiseListener in InternManager.Instance.DictEnemyAINoiseListeners)
-            {
-                EnemyAI enemyAI = enemyAINoiseListener.Key;
-                if ((NpcController.Npc.transform.position - enemyAI.transform.position).sqrMagnitude > noiseRange * noiseRange)
-                {
-                    continue;
-                }
-
-                if (noiseIsInsideClosedShip
-                    && !enemyAI.isInsidePlayerShip
-                    && noiseLoudness < 0.9f)
-                {
-                    continue;
-                }
-
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} Play audible noise for {enemyAI.name}");
-                enemyAINoiseListener.Value.DetectNoise(noisePosition, noiseLoudness, timesPlayedInSameSpot, noiseID);
-            }
-        }
-
         #region Voices
 
         public void StopAudioFadeOut()

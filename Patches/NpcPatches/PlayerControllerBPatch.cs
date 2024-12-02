@@ -447,19 +447,19 @@ namespace LethalInternship.Patches.NpcPatches
             return true;
         }
 
-        [HarmonyPatch("PlayFootstepServer")]
-        [HarmonyPrefix]
-        static bool PlayFootstepServer_PreFix(PlayerControllerB __instance)
-        {
-            return false;
-        }
+        //[HarmonyPatch("PlayFootstepServer")]
+        //[HarmonyPrefix]
+        //static bool PlayFootstepServer_PreFix(PlayerControllerB __instance)
+        //{
+        //    return false;
+        //}
 
-        [HarmonyPatch("PlayFootstepLocal")]
-        [HarmonyPrefix]
-        static bool PlayFootstepLocal_PreFix(PlayerControllerB __instance)
-        {
-            return false;
-        }
+        //[HarmonyPatch("PlayFootstepLocal")]
+        //[HarmonyPrefix]
+        //static bool PlayFootstepLocal_PreFix(PlayerControllerB __instance)
+        //{
+        //    return false;
+        //}
 
         #endregion
 
