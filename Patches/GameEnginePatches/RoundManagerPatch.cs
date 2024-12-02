@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using LethalInternship.Constants;
-using System.Collections.Generic;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {

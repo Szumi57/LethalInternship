@@ -97,6 +97,8 @@ namespace LethalInternship.Managers
         private float timerNoAnimationAfterLag;
         private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
 
+        private int FootStepSoundAtTheSameTimePlayed;
+
         /// <summary>
         /// Initialize instance,
         /// repopulate pool of interns if InternManager reset when loading game
@@ -118,6 +120,26 @@ namespace LethalInternship.Managers
         private void Update()
         {
             UpdateAnimationsCulling();
+        }
+
+        private void FixedUpdate()
+        {
+            FootStepSoundAtTheSameTimePlayed = 0;
+        }
+
+        public bool CanPlayFootStepSoundAtTheSameTime()
+        {
+            if (FootStepSoundAtTheSameTimePlayed >= (timerNoAnimationAfterLag > 0f ? 0f : 1f))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public void AddFootStepSoundAtTheSameTime()
+        {
+            FootStepSoundAtTheSameTimePlayed++;
         }
 
         private void Config_InitialSyncCompleted(object sender, EventArgs e)

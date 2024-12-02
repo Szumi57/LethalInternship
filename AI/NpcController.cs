@@ -1343,17 +1343,24 @@ namespace LethalInternship.AI
                 if (timerPlayFootstep > threshold)
                 {
                     timerPlayFootstep = 0f;
-                    bool noiseIsInsideClosedShip = Npc.isInHangarShipRoom && Npc.playersManager.hangarDoorsClosed;
-                    //if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
-                    //{
-                    //    RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
-                    //}
-                    //else
-                    //{
-                    //    RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
-                    //}
 
-                    //Npc.PlayFootstepSound();
+                    if (!InternManager.Instance.CanPlayFootStepSoundAtTheSameTime())
+                    {
+                        return;
+                    }
+                    InternManager.Instance.AddFootStepSoundAtTheSameTime();
+
+                    bool noiseIsInsideClosedShip = Npc.isInHangarShipRoom && Npc.playersManager.hangarDoorsClosed;
+                    if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
+                    {
+                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
+                    }
+                    else
+                    {
+                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
+                    }
+
+                    Npc.PlayFootstepSound();
                 }
             }
         }
