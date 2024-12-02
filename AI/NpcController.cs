@@ -105,6 +105,13 @@ namespace LethalInternship.AI
         private float floatSprint;
         private bool goDownLadder;
 
+        private int[] animationHashLayers = null!;
+        private List<int> currentAnimationStateHash = null!;
+        private List<int> previousAnimationStateHash = null!;
+        private float updatePlayerAnimationsInterval;
+        private float currentAnimationSpeed;
+        private float previousAnimationSpeed;
+
         private float timerShowName;
         private float timerPlayFootstep;
 
@@ -153,11 +160,15 @@ namespace LethalInternship.AI
             }
             Npc.gameObject.GetComponent<CharacterController>().enabled = false;
 
-            Npc.playerBodyAnimator.cullingMode = AnimatorCullingMode.CullCompletely;
+            Npc.playerBodyAnimator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             foreach (var skinnedMeshRenderer in Npc.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
                 skinnedMeshRenderer.updateWhenOffscreen = false;
             }
+
+            animationHashLayers = new int[Npc.playerBodyAnimator.layerCount];
+            currentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+            previousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
         }
 
         /// <summary>
@@ -240,12 +251,14 @@ namespace LethalInternship.AI
                 Npc.playerEye.position = Npc.gameplayCamera.transform.position;
                 Npc.playerEye.rotation = Npc.gameplayCamera.transform.rotation;
 
-                // Update intern animations and UpdatePlayerLookInterval
+                // Update UpdatePlayerLookInterval
                 if (NetworkManager.Singleton != null && Npc.playersManager.connectedPlayersAmount > 0)
                 {
                     this.UpdatePlayerLookInterval += Time.deltaTime;
-                    PlayerControllerBPatch.UpdatePlayerAnimationsToOtherClients_ReversePatch(this.Npc, Npc.moveInputVector);
                 }
+
+                // Update animations
+                UpdateAnimationsForOwner();
             }
             else // If not owner, the client just update the position and rotation of the controller
             {
@@ -254,6 +267,9 @@ namespace LethalInternship.AI
 
                 // Sync position and rotations
                 UpdateSyncPositionAndRotationForNotOwner();
+
+                // Update animations
+                UpdateInternAnimationsLocalForNotOwner(animationHashLayers);
             }
 
             Npc.timeSincePlayerMoving += Time.deltaTime;
@@ -274,8 +290,7 @@ namespace LethalInternship.AI
             // Update animations when holding items and exhausion
             UpdateAnimationUpperBody();
 
-            // Update anmiations
-            UpdateAnimations();
+            PlayFootstepIfCloseNoAnimation();
         }
 
         /// <summary>
@@ -354,7 +369,6 @@ namespace LethalInternship.AI
                 if (Npc.playerBodyAnimator.HasState(i, layerInfo[i].fullPathHash))
                 {
                     Npc.playerBodyAnimator.CrossFadeInFixedTime(layerInfo[i].fullPathHash, 0.1f);
-                    return;
                 }
             }
 
@@ -812,7 +826,6 @@ namespace LethalInternship.AI
                     {
                         Npc.getAverageVelocityInterval -= Time.deltaTime;
                     }
-                    Debug.Log(string.Format("Average velocity: {0}", Npc.averageVelocity));
                     if (TimeSinceTakingGravityDamage > 0.6f && Npc.velocityAverageCount > 4)
                     {
                         float num8 = Vector3.Angle(Npc.transform.up, Vector3.up);
@@ -821,19 +834,16 @@ namespace LethalInternship.AI
                         {
                             if (Npc.averageVelocity > 17f)
                             {
-                                Debug.Log("Take damage a");
                                 TimeSinceTakingGravityDamage = 0f;
                                 this.InternAIController.SyncDamageIntern(Mathf.Clamp(85, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                             }
                             else if (Npc.averageVelocity > 9f)
                             {
-                                Debug.Log("Take damage b");
                                 this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                 TimeSinceTakingGravityDamage = 0.35f;
                             }
                             else if (num8 > 60f && Npc.averageVelocity > 6f)
                             {
-                                Debug.Log("Take damage c");
                                 this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                 TimeSinceTakingGravityDamage = 0f;
                             }
@@ -884,6 +894,70 @@ namespace LethalInternship.AI
             }
         }
 
+        private void UpdateAnimationsForOwner()
+        {
+            //Plugin.LogDebug($"animationSpeed {Npc.playerBodyAnimator.GetFloat("animationSpeed")}");
+            //for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+            //{
+            //    Plugin.LogDebug($"layer {i}, {Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash}");
+            //}
+
+
+            // Update the "what should be the animation state"
+            // Layer 0
+            if (Npc.isCrouching)
+            {
+                if (IsWalking)
+                {
+                    animationHashLayers[0] = Const.CROUCHING_WALKING_STATE_HASH;
+                }
+                else
+                {
+                    animationHashLayers[0] = Const.CROUCHING_IDLE_STATE_HASH;
+                }
+            }
+            else if (Npc.isSprinting)
+            {
+                animationHashLayers[0] = Const.SPRINTING_STATE_HASH;
+            }
+            else if (IsWalking)
+            {
+                animationHashLayers[0] = Const.WALKING_STATE_HASH;
+            }
+            else
+            {
+                animationHashLayers[0] = Const.IDLE_STATE_HASH;
+            }
+
+            // Other layers
+            for (int i = 1; i < Npc.playerBodyAnimator.layerCount; i++)
+            {
+                animationHashLayers[i] = Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash;
+            }
+
+            if (NetworkManager.Singleton != null && Npc.playersManager.connectedPlayersAmount > 0)
+            {
+                // Sync
+                UpdateInternAnimationsToOtherClients(animationHashLayers);
+            }
+
+            if (ShouldAnimate)
+            {
+                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, IsWalking);
+                }
+                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING) != Npc.isSprinting)
+                {
+                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, Npc.isSprinting);
+                }
+            }
+            else
+            {
+                CutAnimations();
+            }
+        }
+
         #endregion
 
         #region Updates npc body for not owner
@@ -922,6 +996,56 @@ namespace LethalInternship.AI
             else if ((Npc.isPlayerDead || !Npc.isPlayerControlled) && Npc.setPositionOfDeadPlayer)
             {
                 Npc.transform.position = Npc.playersManager.notSpawnedPosition.position;
+            }
+        }
+
+        private void UpdateInternAnimationsLocalForNotOwner(int[] animationsStateHash)
+        {
+            this.updatePlayerAnimationsInterval += Time.deltaTime;
+            if (Npc.inSpecialInteractAnimation || this.updatePlayerAnimationsInterval > 0.14f)
+            {
+                this.updatePlayerAnimationsInterval = 0f;
+
+                if (ShouldAnimate)
+                {
+                    // If animation
+                    // Update animation if current != previous
+                    this.currentAnimationSpeed = Npc.playerBodyAnimator.GetFloat("animationSpeed");
+                    for (int i = 0; i < animationsStateHash.Length; i++)
+                    {
+                        this.currentAnimationStateHash[i] = animationsStateHash[i];
+                        if (this.previousAnimationStateHash[i] != this.currentAnimationStateHash[i])
+                        {
+                            this.previousAnimationStateHash[i] = this.currentAnimationStateHash[i];
+                            this.previousAnimationSpeed = this.currentAnimationSpeed;
+                            ApplyUpdateInternAnimationsNotOwner(this.currentAnimationStateHash[i], this.currentAnimationSpeed);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    // If no animation
+                    // Return to idle state and keep previous animation state to idle, for an update if animation resume
+                    if (Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != Const.IDLE_STATE_HASH)
+                    {
+                        for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+                        {
+                            if (Npc.playerBodyAnimator.HasState(i, Const.IDLE_STATE_HASH))
+                            {
+                                this.previousAnimationStateHash[i] = Const.IDLE_STATE_HASH;
+                                Npc.playerBodyAnimator.CrossFadeInFixedTime(Const.IDLE_STATE_HASH, 0.1f);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                if (this.previousAnimationSpeed != this.currentAnimationSpeed)
+                {
+                    this.previousAnimationSpeed = this.currentAnimationSpeed;
+                    ApplyUpdateInternAnimationsNotOwner(0, this.currentAnimationSpeed);
+                }
             }
         }
 
@@ -1095,30 +1219,84 @@ namespace LethalInternship.AI
             }
             Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_TIREDAMOUNT, this.exhaustionEffectLerp);
         }
-        /// <summary>
-        /// Update line of sight cube
-        /// </summary>
-        private void UpdateAnimations()
+
+        #endregion
+
+        #region Animations
+
+        private void UpdateInternAnimationsToOtherClients(int[] animationsStateHash)
         {
+            this.updatePlayerAnimationsInterval += Time.deltaTime;
+            if (Npc.inSpecialInteractAnimation || this.updatePlayerAnimationsInterval > 0.14f)
+            {
+                this.updatePlayerAnimationsInterval = 0f;
+                this.currentAnimationSpeed = Npc.playerBodyAnimator.GetFloat("animationSpeed");
+                for (int i = 0; i < animationsStateHash.Length; i++)
+                {
+                    this.currentAnimationStateHash[i] = animationsStateHash[i];
+                    if (this.previousAnimationStateHash[i] != this.currentAnimationStateHash[i])
+                    {
+                        this.previousAnimationStateHash[i] = this.currentAnimationStateHash[i];
+                        this.previousAnimationSpeed = this.currentAnimationSpeed;
+                        InternAIController.UpdateInternAnimationServerRpc(this.currentAnimationStateHash[i], this.currentAnimationSpeed);
+                        return;
+                    }
+                }
+
+                if (this.previousAnimationSpeed != this.currentAnimationSpeed)
+                {
+                    this.previousAnimationSpeed = this.currentAnimationSpeed;
+                    InternAIController.UpdateInternAnimationServerRpc(0, this.currentAnimationSpeed);
+                }
+            }
+        }
+
+        public void ApplyUpdateInternAnimationsNotOwner(int animationState, float animationSpeed)
+        {
+            if (Npc.playerBodyAnimator.GetFloat("animationSpeed") != animationSpeed)
+            {
+                Npc.playerBodyAnimator.SetFloat("animationSpeed", animationSpeed);
+            }
+
             if (ShouldAnimate)
             {
-                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
+                if (animationState != 0 && Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != animationState)
                 {
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_WALKING, IsWalking);
-                }
-                if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING) != Npc.isSprinting)
-                {
-                    Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SPRINTING, Npc.isSprinting);
+                    for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+                    {
+                        if (Npc.playerBodyAnimator.HasState(i, animationState))
+                        {
+                            animationHashLayers[i] = animationState;
+                            Npc.playerBodyAnimator.CrossFadeInFixedTime(animationState, 0.1f);
+                            return;
+                        }
+                    }
                 }
             }
             else
             {
-                CutAnimations();
-                PlayFootstepIfClose();
+                if (Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != Const.IDLE_STATE_HASH)
+                {
+                    for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+                    {
+                        if (Npc.playerBodyAnimator.HasState(i, Const.IDLE_STATE_HASH))
+                        {
+                            Npc.playerBodyAnimator.CrossFadeInFixedTime(Const.IDLE_STATE_HASH, 0.1f);
+                            break;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < Npc.playerBodyAnimator.layerCount; i++)
+                {
+                    if (Npc.playerBodyAnimator.HasState(i, animationState))
+                    {
+                        animationHashLayers[i] = animationState;
+                        break;
+                    }
+                }
             }
         }
-
-        #endregion
 
         public void StopAnimations()
         {
@@ -1137,22 +1315,28 @@ namespace LethalInternship.AI
             Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
         }
 
-        private void PlayFootstepIfClose()
+        private void PlayFootstepIfCloseNoAnimation()
         {
+            if (ShouldAnimate)
+            {
+                return;
+            }
+
             if ((StartOfRound.Instance.localPlayerController.transform.position - Npc.transform.position).sqrMagnitude > 20f * 20f)
             {
                 return;
             }
 
             float threshold = 0f;
-            if (IsWalking)
+            if (animationHashLayers[0] == Const.WALKING_STATE_HASH)
             {
                 threshold = 0.498f;
             }
-            if (Npc.isSprinting)
+            else if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
             {
                 threshold = 0.170f + Random.Range(0f, 0.070f);
             }
+
             if (threshold > 0f)
             {
                 timerPlayFootstep += Time.deltaTime;
@@ -1160,18 +1344,21 @@ namespace LethalInternship.AI
                 {
                     timerPlayFootstep = 0f;
                     bool noiseIsInsideClosedShip = Npc.isInHangarShipRoom && Npc.playersManager.hangarDoorsClosed;
-                    if (Npc.isSprinting)
-                    {
-                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
-                    }
-                    else
-                    {
-                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
-                    }
-                    Npc.PlayFootstepSound();
+                    //if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
+                    //{
+                    //    RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
+                    //}
+                    //else
+                    //{
+                    //    RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
+                    //}
+
+                    //Npc.PlayFootstepSound();
                 }
             }
         }
+
+        #endregion
 
         /// <summary>
         /// LateUpdate called from <see cref="PlayerControllerBPatch.LateUpdate_PreFix"><c>PlayerControllerBPatch.LateUpdate_PreFix</c></see> 
@@ -1764,7 +1951,9 @@ namespace LethalInternship.AI
 
         public bool IsMoving()
         {
-            return MoveVector != Vector3.zero;
+            return MoveVector != Vector3.zero
+                || animationHashLayers[0] != Const.IDLE_STATE_HASH
+                || Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != Const.IDLE_STATE_HASH;
         }
 
         private void ForceTurnTowardsTarget()

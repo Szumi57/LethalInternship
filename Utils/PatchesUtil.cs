@@ -31,7 +31,6 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
         public static readonly MethodInfo IsPlayerInternControlledAndOwnerMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternControlledAndOwner(new PlayerControllerB()));
 
-        public static readonly MethodInfo UpdatePlayerAnimationServerRpcMethod = SymbolExtensions.GetMethodInfo(() => UpdatePlayerAnimationServerRpc(new ulong(), new int(), new int()));
         public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
         public static readonly MethodInfo SyncLandFromJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncLandFromJump(new ulong(), new bool()));
 
@@ -177,12 +176,6 @@ namespace LethalInternship.Utils
         private static bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)
         {
             return InternManager.Instance.IsAnInternAiOwnerOfObject(grabbableObject);
-        }
-
-        private static void UpdatePlayerAnimationServerRpc(ulong playerClientId, int animationState, float animationSpeed)
-        {
-            InternManager.Instance.GetInternAI((int)playerClientId)?.UpdateInternAnimationServerRpc(animationState,
-                                                                                                    animationSpeed);
         }
 
         private static void SyncJump(ulong playerClientId)

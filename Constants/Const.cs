@@ -153,6 +153,20 @@ namespace LethalInternship.Constants
 
         public static readonly string MAPDOT_ANIMATION_BOOL_DEAD = "dead";
 
+        // Idle
+        // -1437577361
+        // -1904134370,
+        // -1204949837,
+        // 1942734694,
+        // -291778088,
+        // -822567509};
+
+        public static readonly int IDLE_STATE_HASH = -1437577361;
+        public static readonly int WALKING_STATE_HASH = 81563449;
+        public static readonly int SPRINTING_STATE_HASH = -350224702;
+        public static readonly int CROUCHING_IDLE_STATE_HASH = 1917280335;
+        public static readonly int CROUCHING_WALKING_STATE_HASH = -483816927;
+
         // SearchingForPlayerState 
         public static readonly float MIN_TIME_SPRINT_SEARCH_WANDER = 1f;
         public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 3f;

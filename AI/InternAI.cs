@@ -2056,8 +2056,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            PlayerControllerBPatch.UpdatePlayerAnimationClientRpc_ReversePatch(NpcController.Npc,
-                                                                               animationState, animationSpeed);
+            NpcController.ApplyUpdateInternAnimationsNotOwner(animationState, animationSpeed);
         }
 
         #endregion
