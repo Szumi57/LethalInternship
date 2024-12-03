@@ -929,6 +929,11 @@ namespace LethalInternship.AI
                 animationHashLayers[0] = Const.IDLE_STATE_HASH;
             }
 
+            if (IsControllerInCruiser)
+            {
+                animationHashLayers[0] = Const.IDLE_STATE_HASH;
+            }
+
             // Other layers
             for (int i = 1; i < Npc.playerBodyAnimator.layerCount; i++)
             {
