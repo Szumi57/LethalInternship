@@ -12,6 +12,7 @@ using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
 using LethalInternship.Patches.ModPatches.BetterEmotes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
+using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.LethalProgression;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
@@ -204,8 +205,6 @@ namespace LethalInternship
 
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));
-
-            //_harmony.PatchAll(typeof(MyPatches));
         }
 
         private void PatchOtherMods()
@@ -225,6 +224,7 @@ namespace LethalInternship
             bool isModReservedItemSlotCoreLoaded = IsModLoaded(Const.RESERVEDITEMSLOTCORE_GUID);
             bool isModLethalProgressionLoaded = IsModLoaded(Const.LETHALPROGRESSION_GUID);
             bool isModQuickBuyLoaded = IsModLoaded(Const.QUICKBUYMENU_GUID);
+            bool isModLCAlwaysHearWalkieModLoaded = IsModLoaded(Const.LCALWAYSHEARWALKIEMOD_GUID);
 
             // -------------------
             // Read the preloaders
@@ -327,6 +327,13 @@ namespace LethalInternship
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("QuickBuyMenu.Plugin"), "RunQuickBuy"),
                                new HarmonyMethod(typeof(QuickBuyMenuPatch), nameof(QuickBuyMenuPatch.RunQuickBuy_Prefix)));
+            }
+            if (isModLCAlwaysHearWalkieModLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LCAlwaysHearWalkieMod.Patches.PlayerControllerBPatch"), "alwaysHearWalkieTalkiesPatch"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(LCAlwaysHearActiveWalkiePatch), nameof(LCAlwaysHearActiveWalkiePatch.alwaysHearWalkieTalkiesPatch_Transpiler)));
             }
         }
 

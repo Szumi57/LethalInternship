@@ -25,6 +25,7 @@ namespace LethalInternship.Constants
         public const string LETHALPROGRESSION_GUID = "Stoneman.LethalProgression";
         public const string QUICKBUYMENU_GUID = "QuickBuyMenu";
         public const string CUSTOMITEMBEHAVIOURLIBRARY_GUID = "com.github.WhiteSpike.CustomItemBehaviourLibrary";
+        public const string LCALWAYSHEARWALKIEMOD_GUID = "suskitech.LCAlwaysHearActiveWalkie";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 
