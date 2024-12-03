@@ -103,9 +103,9 @@ namespace LethalInternship.Configs
                                                      "Can a dead player spectate interns ?");
 
             RadarEnabled = cfg.BindSyncedEntry(Const.ConfigSectionMain,
-                                              "Radar view enabled for interns",
+                                              "Radar monitoring enabled for interns",
                                               defaultVal: false,
-                                              "Can you view the intern on the ship radar computer screen ?");
+                                              "Can you monitor the intern on the ship radar computer screen ?");
 
             TitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
                                        "Title visible in help menu in the terminal",
