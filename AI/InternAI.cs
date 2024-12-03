@@ -2713,6 +2713,12 @@ namespace LethalInternship.AI
 
         #region Damage intern RPC
 
+        public override void HitEnemy(int force = 1, PlayerControllerB playerWhoHit = null!, bool playHitSFX = false, int hitID = -1)
+        {
+            // The HitEnemy function works with player controller instead
+            return;
+        }
+
         /// <summary>
         /// Sync the damage taken by the intern between server and clients
         /// </summary>

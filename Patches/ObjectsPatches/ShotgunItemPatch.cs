@@ -39,9 +39,9 @@ namespace LethalInternship.Patches.ObjectsPatches
                 }
 
                 int damage = 0;
-                float distanceTarget = Vector3.Distance(internController.transform.position, __instance.shotgunRayPoint.transform.position);
-                Vector3 contactPointTarget = internController.playerCollider.ClosestPoint(shotgunPosition);
-
+                Vector3 internPos = internController.transform.position + new Vector3(0, 1f, 0);
+                float distanceTarget = Vector3.Distance(internPos, __instance.shotgunRayPoint.transform.position);
+                Vector3 contactPointTarget = internPos;
                 if (Vector3.Angle(shotgunForward, contactPointTarget - shotgunPosition) < 30f
                     && !Physics.Linecast(shotgunPosition, contactPointTarget, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore))
                 {
@@ -62,7 +62,6 @@ namespace LethalInternship.Patches.ObjectsPatches
                         damage = 20;
                     }
 
-                    Plugin.LogDebug($"Dealing {damage} damage to intern {internController.name} {internController.playerClientId}, owner {internController.OwnerClientId}");
                     internAI.SyncDamageIntern(damage, CauseOfDeath.Gunshots, 0, false, __instance.shotgunRayPoint.forward * 30f);
                 }
             }
