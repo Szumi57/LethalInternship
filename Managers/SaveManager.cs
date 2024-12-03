@@ -65,6 +65,15 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            if (!StartOfRound.Instance.inShipPhase)
+            {
+                return;
+            }
+            if (StartOfRound.Instance.isChallengeFile)
+            {
+                return;
+            }
+
             Plugin.LogInfo($"Saving data for LethalInternship plugin.");
             string saveFile = GameNetworkManager.Instance.currentSaveFileName;
             SaveInfosInSave();
