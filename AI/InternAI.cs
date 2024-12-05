@@ -1611,7 +1611,12 @@ namespace LethalInternship.AI
                 return;
             }
 
-            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory});
+            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters()
+            {
+                ShouldSync = shouldSyncAudio,
+                IsInternInside = NpcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
             lastVoiceState = voiceState;
         }
 
@@ -1634,7 +1639,12 @@ namespace LethalInternship.AI
             }
 
             StopAudioFadeOut();
-            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
+            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters()
+            {
+                ShouldSync = shouldSyncAudio,
+                IsInternInside = NpcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
             lastVoiceState = voiceState;
         }
 
@@ -1650,7 +1660,12 @@ namespace LethalInternship.AI
                 || InternIdentity.Voice.CanPlayAudioAfterCooldown())
             {
                 StopAudioFadeOut();
-                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters()
+                {
+                    ShouldSync = shouldSyncAudio,
+                    IsInternInside = NpcController.Npc.isInsideFactory,
+                    AllowSwearing = Plugin.Config.AllowSwearing.Value
+                });
                 lastVoiceState = voiceState;
             }
         }
@@ -1662,16 +1677,23 @@ namespace LethalInternship.AI
                 return;
             }
 
+            PlayVoiceParameters voiceParameters = new PlayVoiceParameters()
+            {
+                ShouldSync = shouldSyncAudio,
+                IsInternInside = NpcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            };
+
             if (lastVoiceState != voiceState)
             {
                 StopAudioFadeOut();
-                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, voiceParameters);
                 lastVoiceState = voiceState;
             }
 
             if (!InternIdentity.Voice.IsTalking())
             {
-                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, voiceParameters);
             }
         }
 

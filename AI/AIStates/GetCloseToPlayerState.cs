@@ -1,7 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
-using LethalInternship.Managers;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates

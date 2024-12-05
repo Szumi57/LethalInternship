@@ -1,10 +1,7 @@
 ﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using AudioManager = LethalInternship.Managers.AudioManager;
 using Random = System.Random;
@@ -23,6 +20,9 @@ namespace LethalInternship.AI
 
         private Dictionary<EnumVoicesState, List<string>> dictAvailableAudioClipPathsByState = new Dictionary<EnumVoicesState, List<string>>();
         private Dictionary<EnumVoicesState, List<string>> availableAudioClipPaths = new Dictionary<EnumVoicesState, List<string>>();
+
+        private bool wasInside;
+        private bool wasAllowedToSwear;
 
         public InternVoice(string voiceFolder, float voicePitch)
         {
@@ -71,7 +71,7 @@ namespace LethalInternship.AI
         public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)
         {
             ResetAboutToTalk();
-            string audioClipPath = GetRandomAudioClipByState(enumVoicesState, parameters.IsInternInside);
+            string audioClipPath = GetRandomAudioClipByState(enumVoicesState, parameters);
             if (string.IsNullOrWhiteSpace(audioClipPath))
             {
                 return;
@@ -125,7 +125,7 @@ namespace LethalInternship.AI
         }
 
         private string GetRandomAudioClipByState(EnumVoicesState enumVoicesState,
-                                                 bool isInternInside)
+                                                 PlayVoiceParameters parameters)
         {
             if (!dictAvailableAudioClipPathsByState.ContainsKey(enumVoicesState))
             {
@@ -134,12 +134,13 @@ namespace LethalInternship.AI
 
             if (!availableAudioClipPaths.ContainsKey(enumVoicesState))
             {
-                availableAudioClipPaths.Add(enumVoicesState, FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], isInternInside).ToList());
+                availableAudioClipPaths.Add(enumVoicesState, FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], parameters).ToList());
             }
 
             if (availableAudioClipPaths[enumVoicesState].Count == 0)
             {
-                availableAudioClipPaths[enumVoicesState] = FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], isInternInside).ToList();
+                Plugin.LogDebug($"reset audio paths");
+                availableAudioClipPaths[enumVoicesState] = FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], parameters).ToList();
             }
 
             List<string> audioClipPaths = availableAudioClipPaths[enumVoicesState];
@@ -151,23 +152,32 @@ namespace LethalInternship.AI
             string audioClipPath;
             Random randomInstance = new Random();
             int index = randomInstance.Next(0, audioClipPaths.Count);
-
             audioClipPath = audioClipPaths[index];
-            audioClipPaths.RemoveAt(index);
+
+            if (DidParametersChanged(parameters))
+            {
+                // Reset pool of audio path
+                availableAudioClipPaths[enumVoicesState].Clear();
+            }
+            else
+            {
+                audioClipPaths.RemoveAt(index);
+            }
+
             return audioClipPath;
         }
 
         private IEnumerable<string> FilterAudioClipPaths(List<string> audioClipPaths,
-                                                         bool isInternInside)
+                                                         PlayVoiceParameters parameters)
         {
             var query = audioClipPaths.AsEnumerable();
 
-            if (!Plugin.Config.AllowSwearing.Value)
+            if (!parameters.AllowSwearing)
             {
                 query = query.Where(x => !x.ToLower().Contains(VoicesConst.SWEAR_KEYWORD.ToLower()));
             }
 
-            if (isInternInside)
+            if (parameters.IsInternInside)
             {
                 query = query.Where(x => !x.ToLower().Contains(VoicesConst.OUTSIDE_KEYWORD.ToLower()));
             }
@@ -177,6 +187,23 @@ namespace LethalInternship.AI
             }
 
             return query;
+        }
+
+        private bool DidParametersChanged(PlayVoiceParameters parameters)
+        {
+            bool parametersChanged = false;
+            if (wasInside != parameters.IsInternInside)
+            {
+                wasInside = parameters.IsInternInside;
+                parametersChanged = true;
+            }
+            if (wasAllowedToSwear != parameters.AllowSwearing)
+            {
+                wasAllowedToSwear = parameters.AllowSwearing;
+                parametersChanged = true;
+            }
+
+            return parametersChanged;
         }
 
         private string[] LoadAudioClipPathsByState(EnumVoicesState enumVoicesState)
@@ -206,5 +233,6 @@ namespace LethalInternship.AI
     {
         public bool ShouldSync { get; set; }
         public bool IsInternInside { get; set; }
+        public bool AllowSwearing { get; set; }
     }
 }
