@@ -151,7 +151,6 @@ namespace LethalInternship.AI
             Npc.usernameBillboardText.text = Npc.playerUsername;
             Npc.usernameAlpha.alpha = 1f;
             Npc.usernameCanvas.gameObject.SetActive(true);
-            Npc.usernameCanvas.transform.position = Npc.usernameCanvas.transform.position + new Vector3(0, 0.1f, 0);
 
             Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
             if (Npc.gameObject.GetComponent<Rigidbody>())
@@ -2141,11 +2140,11 @@ namespace LethalInternship.AI
         {
             if (Plugin.IsModModelReplacementAPILoaded)
             {
-                Npc.usernameCanvas.transform.position = GetBillBoardPositionModelReplacementAPI(Npc.usernameCanvas.transform.position);
+                Npc.usernameCanvas.transform.localPosition = GetBillBoardPositionModelReplacementAPI(Npc.usernameCanvas.transform.localPosition);
             }
             else
             {
-                Npc.usernameCanvas.transform.position = GetBillBoardPosition(Npc.gameObject, Npc.usernameCanvas.transform.position);
+                Npc.usernameCanvas.transform.localPosition = GetBillBoardPosition(Npc.gameObject, Npc.usernameCanvas.transform.localPosition);
             }
         }
 
@@ -2167,7 +2166,7 @@ namespace LethalInternship.AI
             }
 
             return new Vector3(lastPosition.x,
-                               bodyModel.transform.position.y + yMax,
+                               yMax + 0.30f,
                                lastPosition.z);
         }
 
@@ -2185,7 +2184,7 @@ namespace LethalInternship.AI
                 return GetBillBoardPosition(Npc.gameObject, lastPosition);
             }
 
-            return GetBillBoardPosition(model, Npc.usernameCanvas.transform.position);
+            return GetBillBoardPosition(model, Npc.usernameCanvas.transform.localPosition);
         }
     }
 }

@@ -159,6 +159,9 @@ namespace LethalInternship.AI
             // Init controller
             this.NpcController.Awake();
 
+            // Refresh billboard position
+            StartCoroutine(WaitEndOfFrameToRefreshBillBoard());
+
             // Health
             MaxHealth = InternIdentity.Hp;
             NpcController.Npc.health = MaxHealth;
@@ -3661,6 +3664,14 @@ namespace LethalInternship.AI
         {
             UnlockableSuit.SwitchSuitForPlayer(StartOfRound.Instance.allPlayerScripts[idInternController], suitID, playAudio: false);
             StartOfRound.Instance.allPlayerScripts[idInternController].thisPlayerModelArms.enabled = false;
+            StartCoroutine(WaitEndOfFrameToRefreshBillBoard());
+        }
+
+        private IEnumerator WaitEndOfFrameToRefreshBillBoard()
+        {
+            yield return new WaitForEndOfFrame();
+            NpcController.RefreshBillBoardPosition();
+            yield break;
         }
 
         #endregion
