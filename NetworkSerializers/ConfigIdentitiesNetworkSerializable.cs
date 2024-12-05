@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LethalInternship.Enums;
+using System;
 using Unity.Netcode;
 
 namespace LethalInternship.NetworkSerializers
@@ -23,7 +24,7 @@ namespace LethalInternship.NetworkSerializers
 
         public override string ToString()
         {
-            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption}, voiceFolder {voiceFolder}, voiceFolder {voicePitch}";
+            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, voiceFolder {voicePitch}";
         }
     }
 

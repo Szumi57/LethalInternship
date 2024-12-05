@@ -3699,9 +3699,22 @@ namespace LethalInternship.AI
         [ClientRpc]
         private void ChangeSuitInternClientRpc(ulong idInternController, int suitID)
         {
-            UnlockableSuit.SwitchSuitForPlayer(StartOfRound.Instance.allPlayerScripts[idInternController], suitID, playAudio: false);
-            StartOfRound.Instance.allPlayerScripts[idInternController].thisPlayerModelArms.enabled = false;
+            ChangeSuitIntern(idInternController, suitID, playAudio: true);
+        }
+
+        public void ChangeSuitIntern(ulong idInternController, int suitID, bool playAudio = false)
+        {
+            if (suitID > StartOfRound.Instance.unlockablesList.unlockables.Count())
+            {
+                suitID = 0;
+            }
+
+            PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[idInternController];
+
+            UnlockableSuit.SwitchSuitForPlayer(internController, suitID, playAudio);
+            internController.thisPlayerModelArms.enabled = false;
             StartCoroutine(WaitEndOfFrameToRefreshBillBoard());
+            InternIdentity.SuitID = suitID;
         }
 
         private IEnumerator WaitEndOfFrameToRefreshBillBoard()

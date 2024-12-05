@@ -159,7 +159,6 @@ namespace LethalInternship.AI
             }
             Npc.gameObject.GetComponent<CharacterController>().enabled = false;
 
-            Npc.playerBodyAnimator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             foreach (var skinnedMeshRenderer in Npc.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
                 skinnedMeshRenderer.updateWhenOffscreen = false;

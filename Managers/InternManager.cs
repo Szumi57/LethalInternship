@@ -611,7 +611,7 @@ namespace LethalInternship.Managers
             }
 
             // Switch suit
-            UnlockableSuit.SwitchSuitForPlayer(internController, internAI.InternIdentity.SuitID.Value, false);
+            internAI.ChangeSuitIntern(internController.playerClientId, internAI.InternIdentity.SuitID.Value);
 
             // Show model replacement
             if (Plugin.IsModModelReplacementAPILoaded)
