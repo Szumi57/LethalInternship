@@ -172,6 +172,11 @@ namespace LethalInternship.Managers
 
         public void FadeInAudio(AudioSource audioSource, float fadeTime, float volumeMax)
         {
+            if (StartOfRound.Instance.localPlayerController.isPlayerDead)
+            {
+                volumeMax *= 0.8f;
+            }
+
             StartCoroutine(FadeInAudioCoroutine(audioSource, fadeTime, volumeMax));
         }
 

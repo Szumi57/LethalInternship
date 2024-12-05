@@ -64,7 +64,7 @@ namespace LethalInternship.AI
         public Collider InternBodyCollider = null!;
 
         public int InternId = -1;
-        public int MaxHealth = Const.DEFAULT_INTERN_MAX_HEALTH;
+        public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
         public float TimeSinceTeleporting = 0f;
 
         private EnumStateControllerMovement StateControllerMovement;
@@ -1585,19 +1585,15 @@ namespace LethalInternship.AI
                 occludeAudio.lowPassOverride = 4000f;
                 audioLowPassFilter.lowpassResonanceQ = 3f;
             }
-
-            if (GameNetworkManager.Instance.localPlayerController.isPlayerDead)
-            {
-                this.creatureVoice.volume = 0.8f;
-            }
-            else
-            {
-                this.creatureVoice.volume = 1f;
-            }
         }
 
         public void TryPlayVoiceAudioWaitToTalk(EnumVoicesState voiceState, bool shouldSyncAudio = true)
         {
+            if (Plugin.Config.Talkativeness.Value == (int)EnumTalkativeness.NoTalking)
+            {
+                return;
+            }
+
             // Default states, wait for cooldown and if no one is talking close
             if (InternManager.Instance.DidAnInternJustTalkedClose(this))
             {
@@ -1615,12 +1611,17 @@ namespace LethalInternship.AI
                 return;
             }
 
-            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory});
             lastVoiceState = voiceState;
         }
 
         public void TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState voiceState, bool shouldSyncAudio = true)
         {
+            if (Plugin.Config.Talkativeness.Value == (int)EnumTalkativeness.NoTalking)
+            {
+                return;
+            }
+
             // Cut previous voice and talk if no one is talking
             if (lastVoiceState == voiceState)
             {
@@ -1633,34 +1634,44 @@ namespace LethalInternship.AI
             }
 
             StopAudioFadeOut();
-            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
             lastVoiceState = voiceState;
         }
 
         public void TryPlayVoiceAudioCutAndWaitTalk(EnumVoicesState voiceState, bool shouldSyncAudio = true)
         {
+            if (Plugin.Config.Talkativeness.Value == (int)EnumTalkativeness.NoTalking)
+            {
+                return;
+            }
+
             // Stop talking and voice new state
             if (lastVoiceState != voiceState
                 || InternIdentity.Voice.CanPlayAudioAfterCooldown())
             {
                 StopAudioFadeOut();
-                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
                 lastVoiceState = voiceState;
             }
         }
 
         public void TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState voiceState, bool shouldSyncAudio = true)
         {
+            if (Plugin.Config.Talkativeness.Value == (int)EnumTalkativeness.NoTalking)
+            {
+                return;
+            }
+
             if (lastVoiceState != voiceState)
             {
                 StopAudioFadeOut();
-                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
                 lastVoiceState = voiceState;
             }
-            
+
             if (!InternIdentity.Voice.IsTalking())
             {
-                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, new PlayVoiceParameters() { ShouldSync = shouldSyncAudio, IsInternInside = NpcController.Npc.isInsideFactory });
             }
         }
 
@@ -1674,15 +1685,19 @@ namespace LethalInternship.AI
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void PlayAudioServerRpc(string smallPathAudioClip)
+        public void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness)
         {
-            PlayAudioClientRpc(smallPathAudioClip);
+            PlayAudioClientRpc(smallPathAudioClip, enumTalkativeness);
         }
 
         [ClientRpc]
-        private void PlayAudioClientRpc(string smallPathAudioClip)
+        private void PlayAudioClientRpc(string smallPathAudioClip, int enumTalkativeness)
         {
-            AudioManager.Instance.PlayAudio(smallPathAudioClip, InternIdentity.Voice);
+            if (enumTalkativeness == Plugin.Config.Talkativeness.Value
+                || InternIdentity.Voice.CanPlayAudioAfterCooldown())
+            {
+                AudioManager.Instance.PlayAudio(smallPathAudioClip, InternIdentity.Voice);
+            }
         }
 
         #endregion

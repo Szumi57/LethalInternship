@@ -2,7 +2,9 @@
 using LethalInternship.Enums;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using AudioManager = LethalInternship.Managers.AudioManager;
 using Random = System.Random;
@@ -40,8 +42,7 @@ namespace LethalInternship.AI
 
         public void SetNewRandomCooldownAudio()
         {
-            Random randomInstance = new Random();
-            cooldownPlayAudio = (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE, VoicesConst.MAX_COOLDOWN_PLAYVOICE);
+            cooldownPlayAudio = GetRandomCooldown();
         }
 
         public void ReduceCooldown(float time)
@@ -67,17 +68,17 @@ namespace LethalInternship.AI
             return CurrentAudioSource.isPlaying || aboutToTalk;
         }
 
-        public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, bool shouldSyncAudio)
+        public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)
         {
             ResetAboutToTalk();
-            string audioClipPath = GetRandomAudioClipByState(enumVoicesState);
+            string audioClipPath = GetRandomAudioClipByState(enumVoicesState, parameters.IsInternInside);
             if (string.IsNullOrWhiteSpace(audioClipPath))
             {
                 return;
             }
 
             aboutToTalk = true;
-            if (shouldSyncAudio)
+            if (parameters.ShouldSync)
             {
                 // Can take time, coroutine stuff
                 AudioManager.Instance.SyncPlayAudio(audioClipPath, InternID);
@@ -92,13 +93,30 @@ namespace LethalInternship.AI
         {
             ResetAboutToTalk();
 
-            CurrentAudioSource.volume = VoicesConst.VOLUME_INTERNS;
             CurrentAudioSource.pitch = VoicePitch;
-
             CurrentAudioSource.clip = audioClip;
-            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, VoicesConst.VOLUME_INTERNS);
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, Plugin.Config.GetVolumeInterns());
+
+            SetCooldownAudio(audioClip.length + GetRandomCooldown());
+        }
+
+        private float GetRandomCooldown()
+        {
+            // Set random cooldown
             Random randomInstance = new Random();
-            SetCooldownAudio(audioClip.length + (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE, VoicesConst.MAX_COOLDOWN_PLAYVOICE));
+            switch (Plugin.Config.Talkativeness.Value)
+            {
+                case (int)EnumTalkativeness.Shy:
+                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_SHY, VoicesConst.MAX_COOLDOWN_PLAYVOICE_SHY);
+                case (int)EnumTalkativeness.Normal:
+                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_NORMAL, VoicesConst.MAX_COOLDOWN_PLAYVOICE_NORMAL);
+                case (int)EnumTalkativeness.Talkative:
+                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_TALKATIVE, VoicesConst.MAX_COOLDOWN_PLAYVOICE_TALKATIVE);
+                case (int)EnumTalkativeness.CantStopTalking:
+                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_CANTSTOPTALKING, VoicesConst.MAX_COOLDOWN_PLAYVOICE_CANTSTOPTALKING);
+                default:
+                    return 0f;
+            }
         }
 
         public void ResetAboutToTalk()
@@ -106,7 +124,8 @@ namespace LethalInternship.AI
             aboutToTalk = false;
         }
 
-        private string GetRandomAudioClipByState(EnumVoicesState enumVoicesState)
+        private string GetRandomAudioClipByState(EnumVoicesState enumVoicesState,
+                                                 bool isInternInside)
         {
             if (!dictAvailableAudioClipPathsByState.ContainsKey(enumVoicesState))
             {
@@ -115,12 +134,12 @@ namespace LethalInternship.AI
 
             if (!availableAudioClipPaths.ContainsKey(enumVoicesState))
             {
-                availableAudioClipPaths.Add(enumVoicesState, dictAvailableAudioClipPathsByState[enumVoicesState].ToList());
+                availableAudioClipPaths.Add(enumVoicesState, FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], isInternInside).ToList());
             }
 
             if (availableAudioClipPaths[enumVoicesState].Count == 0)
             {
-                availableAudioClipPaths[enumVoicesState] = dictAvailableAudioClipPathsByState[enumVoicesState].ToList();
+                availableAudioClipPaths[enumVoicesState] = FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], isInternInside).ToList();
             }
 
             List<string> audioClipPaths = availableAudioClipPaths[enumVoicesState];
@@ -138,17 +157,34 @@ namespace LethalInternship.AI
             return audioClipPath;
         }
 
+        private IEnumerable<string> FilterAudioClipPaths(List<string> audioClipPaths,
+                                                         bool isInternInside)
+        {
+            var query = audioClipPaths.AsEnumerable();
+
+            if (!Plugin.Config.AllowSwearing.Value)
+            {
+                query = query.Where(x => !x.ToLower().Contains(VoicesConst.SWEAR_KEYWORD.ToLower()));
+            }
+
+            if (isInternInside)
+            {
+                query = query.Where(x => !x.ToLower().Contains(VoicesConst.OUTSIDE_KEYWORD.ToLower()));
+            }
+            else
+            {
+                query = query.Where(x => !x.ToLower().Contains(VoicesConst.INSIDE_KEYWORD.ToLower()));
+            }
+
+            return query;
+        }
+
         private string[] LoadAudioClipPathsByState(EnumVoicesState enumVoicesState)
         {
             string path = string.Join(' ', VoiceFolder + "\\" + enumVoicesState.ToString()).Replace("_", "").ToLower();
 
             var audioClipPaths = AudioManager.Instance.DictAudioClipsByPath
                                     .Where(x => x.Key.Replace(" ", "").Replace("_", "").ToLower().Contains(path));
-
-            if (!Plugin.Config.AllowSwearing.Value)
-            {
-                audioClipPaths = audioClipPaths.Where(x => !x.Key.Contains(VoicesConst.SWEAR_KEYWORD));
-            }
 
             Plugin.LogDebug($"Loaded {audioClipPaths.Count()} path containing {path}");
             return audioClipPaths.Select(y => y.Key).ToArray();
@@ -164,5 +200,11 @@ namespace LethalInternship.AI
         {
             AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, VoicesConst.FADE_OUT_TIME);
         }
+    }
+
+    public struct PlayVoiceParameters
+    {
+        public bool ShouldSync { get; set; }
+        public bool IsInternInside { get; set; }
     }
 }

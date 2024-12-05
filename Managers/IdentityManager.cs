@@ -62,7 +62,7 @@ namespace LethalInternship.Managers
             ConfigIdentity configIdentity;
             if (idIdentity >= this.configIdentities.Length)
             {
-                configIdentity = Const.DEFAULT_CONFIG_IDENTITY;
+                configIdentity = ConfigConst.DEFAULT_CONFIG_IDENTITY;
                 name = string.Format(configIdentity.name, idIdentity);
             }
             else

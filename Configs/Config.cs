@@ -7,6 +7,7 @@ using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -54,7 +55,9 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
         // Voices
-        [SyncedEntryField] public SyncedEntry<bool> AllowSwearing;
+        public ConfigEntry<string> VolumeInterns;
+        public ConfigEntry<int> Talkativeness;
+        public ConfigEntry<bool> AllowSwearing;
 
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
@@ -67,131 +70,143 @@ namespace LethalInternship.Configs
             cfg.SaveOnConfigSet = false;
 
             // Internship program
-            MaxInternsAvailable = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            MaxInternsAvailable = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                            "Max amount of interns purchasable",
-                                           defaultValue: Const.DEFAULT_MAX_INTERNS_AVAILABLE,
+                                           defaultValue: ConfigConst.DEFAULT_MAX_INTERNS_AVAILABLE,
                                            new ConfigDescription("Be aware of possible performance problems when more than ~16 interns spawned",
-                                                                 new AcceptableValueRange<int>(Const.MIN_INTERNS_AVAILABLE, Const.MAX_INTERNS_AVAILABLE)));
+                                                                 new AcceptableValueRange<int>(ConfigConst.MIN_INTERNS_AVAILABLE, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
-            InternPrice = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            InternPrice = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                    "Price",
-                                   defaultValue: Const.DEFAULT_PRICE_INTERN,
+                                   defaultValue: ConfigConst.DEFAULT_PRICE_INTERN,
                                    new ConfigDescription("Price for one intern",
-                                                         new AcceptableValueRange<int>(Const.MIN_PRICE_INTERN, Const.MAX_PRICE_INTERN)));
+                                                         new AcceptableValueRange<int>(ConfigConst.MIN_PRICE_INTERN, ConfigConst.MAX_PRICE_INTERN)));
 
-            InternMaxHealth = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            InternMaxHealth = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                        "Max health",
-                                       defaultValue: Const.DEFAULT_INTERN_MAX_HEALTH,
+                                       defaultValue: ConfigConst.DEFAULT_INTERN_MAX_HEALTH,
                                        new ConfigDescription("Max health of intern",
-                                                             new AcceptableValueRange<int>(Const.MIN_INTERN_MAX_HEALTH, Const.MAX_INTERN_MAX_HEALTH)));
+                                                             new AcceptableValueRange<int>(ConfigConst.MIN_INTERN_MAX_HEALTH, ConfigConst.MAX_INTERN_MAX_HEALTH)));
 
-            InternSizeScale = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            InternSizeScale = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                        "Size multiplier of intern",
-                                       defaultValue: Const.DEFAULT_SIZE_SCALE_INTERN,
+                                       defaultValue: ConfigConst.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
-                                                             new AcceptableValueRange<float>(Const.MIN_SIZE_SCALE_INTERN, Const.MAX_SIZE_SCALE_INTERN)));
+                                                             new AcceptableValueRange<float>(ConfigConst.MIN_SIZE_SCALE_INTERN, ConfigConst.MAX_SIZE_SCALE_INTERN)));
 
-            MaxAnimatedInterns = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            MaxAnimatedInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                    "Max animated intern at once",
                                    defaultValue: 10,
                                    new ConfigDescription("Set the maximum of interns that can be animated at the same time (if heavy lag occurs when looking at a lot of interns)",
                                                          new AcceptableValueRange<int>(1, 32)));
 
-            CanSpectateInterns = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            CanSpectateInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                                      "Spectate interns",
                                                      defaultVal: false,
                                                      "Can a dead player spectate interns ?");
 
-            RadarEnabled = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            RadarEnabled = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                               "Radar monitoring enabled for interns",
                                               defaultVal: false,
                                               "Can you monitor the intern on the ship radar computer screen ?");
 
-            TitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            TitleInHelpMenu = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                        "Title visible in help menu in the terminal",
-                                       defaultVal: Const.DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE,
+                                       defaultVal: ConfigConst.DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE,
                                        "Careful ! This title will become your command to type in to enter the intership program");
 
-            SubTitleInHelpMenu = cfg.BindSyncedEntry(Const.ConfigSectionMain,
+            SubTitleInHelpMenu = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                        "Subtitle visible in help menu under the title of intership program",
-                                       defaultVal: Const.DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE,
+                                       defaultVal: ConfigConst.DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE,
                                        "");
 
             // Identities
-            SpawnIdentitiesRandomly = cfg.BindSyncedEntry(Const.ConfigSectionIdentities,
+            SpawnIdentitiesRandomly = cfg.BindSyncedEntry(ConfigConst.ConfigSectionIdentities,
                                               "Randomness of identities",
                                               defaultVal: true,
                                               "Spawn the interns with random identities ?");
 
-            MaxIdentities = cfg.BindSyncedEntry(Const.ConfigSectionIdentities,
+            MaxIdentities = cfg.BindSyncedEntry(ConfigConst.ConfigSectionIdentities,
                                            "Max amount of identities",
-                                           defaultValue: Const.DEFAULT_MAX_IDENTITIES,
+                                           defaultValue: ConfigConst.DEFAULT_MAX_IDENTITIES,
                                            new ConfigDescription("Number of different identities available, if they all die, no more intern spawn for this game.",
-                                                                 new AcceptableValueRange<int>(Const.MIN_IDENTITIES, Const.MAX_IDENTITIES)));
+                                                                 new AcceptableValueRange<int>(ConfigConst.MIN_IDENTITIES, ConfigConst.MAX_IDENTITIES)));
 
             // Behaviour
-            FollowCrouchWithPlayer = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            FollowCrouchWithPlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Crouch with player",
                                                defaultVal: true,
                                                "Should the intern crouch like the player is crouching ?");
 
-            ChangeSuitBehaviour = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            ChangeSuitBehaviour = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Options for changing interns suits",
-                                               defaultValue: (int)Const.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
+                                               defaultValue: (int)ConfigConst.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
                                                new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
                                                                new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Min(),
                                                                                              Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Max())));
 
-            TeleportWhenUsingLadders = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            TeleportWhenUsingLadders = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Teleport when using ladders",
                                                defaultVal: false,
                                                "Should the intern just teleport and bypass any animations when using ladders ?");
 
-            GrabItemsNearEntrances = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            GrabItemsNearEntrances = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Grab items near entrances",
                                                defaultVal: true,
                                                "Should the intern grab the items near main entrance and fire exits ?");
 
-            GrabBeesNest = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            GrabBeesNest = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                     "Grab bees nests",
                                     defaultVal: false,
                                     "Should the intern try to grab bees nests ?");
 
-            GrabDeadBodies = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            GrabDeadBodies = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                       "Grab dead bodies",
                                       defaultVal: false,
                                       "Should the intern try to grab dead bodies ?");
 
-            GrabManeaterBaby = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            GrabManeaterBaby = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                       "Grab the baby maneater",
                                       defaultVal: false,
                                       "Should the intern try to grab the baby maneater ?");
 
-            GrabWheelbarrow = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            GrabWheelbarrow = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                       "Grab the wheelbarrow",
                                       defaultVal: false,
                                       "Should the intern try to grab the wheelbarrow (mod) ?");
 
-            GrabShoppingCart = cfg.BindSyncedEntry(Const.ConfigSectionBehaviour,
+            GrabShoppingCart = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                       "Grab the shppping cart",
                                       defaultVal: false,
                                       "Should the intern try to grab the shopping cart (mod) ?");
 
             // Teleporters
-            TeleportedInternDropItems = cfg.BindSyncedEntry(Const.ConfigSectionTeleporters,
+            TeleportedInternDropItems = cfg.BindSyncedEntry(ConfigConst.ConfigSectionTeleporters,
                                                             "Teleported intern drop item (not if the intern is grabbed by player)",
                                                             defaultVal: true,
                                                             "Should the intern his held item before teleporting ?");
 
             // Voices
-            AllowSwearing = cfg.BindSyncedEntry(Const.ConfigSectionVoices,
-                                                "Swear words",
-                                                defaultVal: false,
-                                                "Allow the use of swear words in interns voice lines ?");
+            VolumeInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                     "Volume (Client only)",
+                                     defaultValue: ConfigConst.DEFAULT_VOLUME.ToString(),
+                                     "Volume of voices of interns");
+
+            Talkativeness = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                     "Talkativeness (Client only)",
+                                     defaultValue: (int)ConfigConst.DEFAULT_CONFIG_ENUM_TALKATIVENESS,
+                                     new ConfigDescription("0: No talking | 1: Shy | 2: Normal | 3: Talkative | 4: Can't stop talking",
+                                                     new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Min(),
+                                                                                   Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Max())));
+
+            AllowSwearing = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                     "Swear words (Client only)",
+                                     defaultValue: false,
+                                     "Allow the use of swear words in interns voice lines ?");
 
             // Debug
-            EnableDebugLog = cfg.Bind(Const.ConfigSectionDebug,
-                                      "EnableDebugLog",
+            EnableDebugLog = cfg.Bind(ConfigConst.ConfigSectionDebug,
+                                      "EnableDebugLog  (Client only)",
                                       defaultValue: false,
                                       "Enable the debug logs used for this mod.");
 
@@ -219,6 +234,19 @@ namespace LethalInternship.Configs
             return string.Format(TerminalConst.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
         }
 
+        public float GetVolumeInterns()
+        {
+            // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
+            NumberFormatInfo nfi = new NumberFormatInfo();
+            nfi.NumberDecimalSeparator = ",";
+
+            if(float.TryParse(VolumeInterns.Value, NumberStyles.Any, nfi, out float volume))
+            {
+                return Mathf.Clamp(volume, 0f, 1f);
+            }
+            return ConfigConst.DEFAULT_VOLUME;
+        }
+
         private void ClearUnusedEntries(ConfigFile cfg)
         {
             // Normally, old unused config entries don't get removed, so we do it with this piece of code. Credit to Kittenji.
@@ -234,7 +262,7 @@ namespace LethalInternship.Configs
             Directory.CreateDirectory(directoryPath);
 
             string json = ReadJsonResource("LethalInternship.Configs.ConfigIdentities.json");
-            using (StreamWriter outputFile = new StreamWriter(Utility.CombinePaths(directoryPath, Const.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
+            using (StreamWriter outputFile = new StreamWriter(Utility.CombinePaths(directoryPath, ConfigConst.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
             {
                 outputFile.WriteLine(json);
             }
@@ -258,7 +286,7 @@ namespace LethalInternship.Configs
             string json;
 
             // Try to read user config file
-            string path = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, Const.FILE_NAME_CONFIG_IDENTITIES_USER);
+            string path = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, ConfigConst.FILE_NAME_CONFIG_IDENTITIES_USER);
             if (File.Exists(path))
             {
                 using (StreamReader r = new StreamReader(path))

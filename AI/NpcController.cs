@@ -74,7 +74,7 @@ namespace LethalInternship.AI
 
         private int movementHinderedPrev;
         private float sprintMultiplier = 1f;
-        private float slopeModifier;
+        //private float slopeModifier; // ignore for now
         private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
         private bool isFallingNoJump;
@@ -462,11 +462,13 @@ namespace LethalInternship.AI
                 }
                 else if (Npc.moveInputVector.y < 0.3f && Npc.moveInputVector.x < 0.3f)
                 {
-                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                    //Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, -1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, -1f);
                 }
                 else
                 {
-                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                    //Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f * Mathf.Clamp(slopeModifier + 1f, 0.7f, 1.4f));
+                    Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_ANIMATIONSPEED, 1f);
                 }
             }
             else
@@ -782,11 +784,11 @@ namespace LethalInternship.AI
                         Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround GroundHit.point {GroundHit.point} fallValue {Npc.fallValue}");
                         PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
                     }
-                    if (!IsFallingFromJump)
-                    {
-                        Npc.fallValue = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
-                        Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
-                    }
+                    //if (!IsFallingFromJump)
+                    //{
+                    //    Npc.fallValue = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                    //    Npc.fallValueUncapped = -7f - Mathf.Clamp(12f * slopeModifier, 0f, 100f);
+                    //}
                 }
                 Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_FALLNOJUMP, false);
             }
@@ -2156,14 +2158,6 @@ namespace LethalInternship.AI
             float yMax = (from x in source
                           orderby x.size.y descending
                           select x).First<Bounds>().size.y;
-
-            Plugin.LogDebug($"skinned y {yMax}");
-
-            foreach (var s in source)
-            {
-                Plugin.LogDebug($"skinned size {s.size}");
-
-            }
 
             return new Vector3(lastPosition.x,
                                yMax + 0.30f,

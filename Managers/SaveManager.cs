@@ -119,7 +119,7 @@ namespace LethalInternship.Managers
 
             if (Save.IdentitiesSaveFiles != null)
             {
-                for (int i = 0; i < Save.IdentitiesSaveFiles.Length; i++)
+                for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
                 {
                     IdentitySaveFile identitySaveFile = Save.IdentitiesSaveFiles[i];
 

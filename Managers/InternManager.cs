@@ -189,7 +189,7 @@ namespace LethalInternship.Managers
             }
 
             // Identities
-            IdentityManager.Instance.CreateIdentities(50, Plugin.Config.ConfigIdentities.configIdentities);
+            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
 
             // Load save infos
             SaveManager.Instance.LoadDataFromSave();
@@ -251,7 +251,7 @@ namespace LethalInternship.Managers
                 internController.transform.localScale = new Vector3(Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value);
                 internController.thisController.radius *= Plugin.Config.InternSizeScale.Value;
                 internController.actualClientId = internController.playerClientId + Const.INTERN_ACTUAL_ID_OFFSET;
-                internController.playerUsername = string.Format(Const.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
+                internController.playerUsername = string.Format(ConfigConst.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
 
                 // Radar
                 instance.mapScreen.radarTargets.Add(new TransformAndName(internController.transform, internController.playerUsername, false));
@@ -1418,7 +1418,7 @@ namespace LethalInternship.Managers
 
         public void SyncPlayAudioIntern(int internID, string smallPathAudioClip)
         {
-            AllInternAIs[internID].PlayAudioServerRpc(smallPathAudioClip);
+            AllInternAIs[internID].PlayAudioServerRpc(smallPathAudioClip, Plugin.Config.Talkativeness.Value);
         }
 
         #endregion
