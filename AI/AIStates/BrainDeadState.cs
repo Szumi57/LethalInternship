@@ -14,10 +14,9 @@ namespace LethalInternship.AI.AIStates
             ai.StopMoving();
         }
 
-        public override void TryPlayVoiceAudio()
+        public override void TryPlayCurrentStateVoiceAudio()
         {
             ai.StopAudioFadeOut();
-            lastVoiceState = EnumVoicesState.None;
         }
     }
 }

@@ -7,9 +7,11 @@
         EnteringCruiser,
         FollowingPlayer,
         FoundLoot,
+        Hit,
         LosingPlayer,
         Lost,
         LostAndFound,
-        RunningFromMonster
+        RunningFromMonster,
+        SteppedOnTrap
     }
 }

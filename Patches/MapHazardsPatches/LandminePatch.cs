@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using System;
 using System.Collections.Generic;
@@ -45,11 +46,15 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
                 InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
-                if (internAI != null)
+                if (internAI != null
+                    && internAI.IsOwner)
                 {
                     ___localPlayerOnMine = true;
                     ___pressMineDebounceTimer = 0.5f;
                     __instance.PressMineServerRpc();
+
+                    // Audio
+                    internAI.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
                 }
             }
         }
@@ -84,9 +89,15 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
                 InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
-                if (internAI != null)
+                if (internAI != null
+                    && internAI.IsOwner)
                 {
                     ___localPlayerOnMine = false;
+
+                    // Audio
+                    internAI.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
+
+                    // Boom
                     TriggerMineOnLocalClientByExiting_ReversePatch(__instance);
                 }
             }

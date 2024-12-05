@@ -127,21 +127,6 @@ namespace LethalInternship.Managers
             FootStepSoundAtTheSameTimePlayed = 0;
         }
 
-        public bool CanPlayFootStepSoundAtTheSameTime()
-        {
-            if (FootStepSoundAtTheSameTimePlayed >= (timerNoAnimationAfterLag > 0f ? 0f : 1f))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public void AddFootStepSoundAtTheSameTime()
-        {
-            FootStepSoundAtTheSameTimePlayed++;
-        }
-
         private void Config_InitialSyncCompleted(object sender, EventArgs e)
         {
             if (IsHost)
@@ -1552,6 +1537,21 @@ namespace LethalInternship.Managers
 
             StartOfRound.Instance.localPlayerController.gameObject.layer = baseLayer;
             timerAnimationCulling = 0f;
+        }
+
+        public bool CanPlayFootStepSoundAtTheSameTime()
+        {
+            if (FootStepSoundAtTheSameTimePlayed >= (timerNoAnimationAfterLag > 0f ? 0f : 1f))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public void AddFootStepSoundAtTheSameTime()
+        {
+            FootStepSoundAtTheSameTimePlayed++;
         }
 
         #endregion

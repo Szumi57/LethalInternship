@@ -87,7 +87,7 @@ namespace LethalInternship.Patches.EnemiesPatches
                 if (__instance.currentBehaviourStateIndex == 0 || __instance.currentBehaviourStateIndex == 1)
                 {
                     __instance.SwitchToBehaviourState(2);
-                    __instance.ChangeOwnershipOfEnemy(playerControllerB.playerClientId);
+                    __instance.ChangeOwnershipOfEnemy(playerControllerB.actualClientId);
                     __instance.SetDestinationToPosition(playerControllerB.transform.position, false);
                     return false;
                 }

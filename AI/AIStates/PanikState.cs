@@ -109,17 +109,11 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
         }
 
-        public override void TryPlayVoiceAudio()
+        public override void TryPlayCurrentStateVoiceAudio()
         {
             // Priority state
             // Stop talking and voice new state
-            EnumVoicesState voiceState = EnumVoicesState.RunningFromMonster;
-            if (lastVoiceState != voiceState)
-            {
-                ai.StopAudioFadeOut();
-                ai.InternIdentity.Voice.PlayRandomVoiceAudio(voiceState);
-                lastVoiceState = voiceState;
-            }
+            ai.TryPlayVoiceAudioCutAndWaitTalk(EnumVoicesState.RunningFromMonster);
         }
 
         public override string GetBillboardStateIndicator()

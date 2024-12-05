@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -62,6 +63,7 @@ namespace LethalInternship.Managers
                 {
                     using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
                     {
+                        // Works if using 7zip to re-zip archive from dropbox (extract and rezip), why ?
                         archive.ExtractToDirectory(folderPath);
                     }
                 }
@@ -137,6 +139,7 @@ namespace LethalInternship.Managers
 
                 if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
                 {
+                    internVoice.ResetAboutToTalk();
                     Plugin.LogError($"Error while loading audio file at {uri} : {www.error}");
                 }
                 else

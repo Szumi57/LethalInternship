@@ -84,17 +84,10 @@ namespace LethalInternship.AI.AIStates
             ai.OrderMoveToDestination();
         }
 
-        public override void TryPlayVoiceAudio()
+        public override void TryPlayCurrentStateVoiceAudio()
         {
             // Talk if no one is talking close
-            EnumVoicesState voiceState = EnumVoicesState.FoundLoot;
-            if (lastVoiceState != voiceState  
-                && !InternManager.Instance.DidAnInternJustTalkedClose(ai))
-            {
-                ai.StopAudioFadeOut();
-                ai.InternIdentity.Voice.PlayRandomVoiceAudio(voiceState);
-                lastVoiceState = voiceState;
-            }
+            ai.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.FoundLoot);
         }
 
         public override string GetBillboardStateIndicator()

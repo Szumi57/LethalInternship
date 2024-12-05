@@ -87,22 +87,10 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
-        public override void TryPlayVoiceAudio()
+        public override void TryPlayCurrentStateVoiceAudio()
         {
             // Default states, wait for cooldown and if no one is talking close
-            if (InternManager.Instance.DidAnInternJustTalkedClose(ai))
-            {
-                ai.InternIdentity.Voice.SetNewRandomCooldownAudio();
-                return;
-            }
-
-            if (!ai.InternIdentity.Voice.CanPlayAudio())
-            {
-                return;
-            }
-
-            ai.InternIdentity.Voice.PlayRandomVoiceAudio(EnumVoicesState.Lost);
-            lastVoiceState = EnumVoicesState.Lost;
+            ai.TryPlayVoiceAudioWaitToTalk(EnumVoicesState.Lost);
         }
 
         public override void PlayerHeard(Vector3 noisePosition)

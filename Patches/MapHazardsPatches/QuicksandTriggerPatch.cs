@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using UnityEngine;
 
@@ -49,11 +50,14 @@ namespace LethalInternship.Patches.MapHazardsPatches
             internController.statusEffectAudioIndex = __instance.audioClipIndex;
             if (internController.isSinking)
             {
+                // Audio
+                internAI.TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
                 return;
             }
 
             if (internAI.NpcController.CheckConditionsForSinkingInQuicksandIntern())
             {
+                // Being sinking
                 internController.sourcesCausingSinking++;
                 internController.isMovementHindered++;
                 Plugin.LogDebug($"playerScript {internController.playerClientId} ++isMovementHindered {internController.isMovementHindered}");

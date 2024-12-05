@@ -36,8 +36,6 @@ namespace LethalInternship.AI
         protected Coroutine? panikCoroutine;
         protected EnemyAI? currentEnemy;
 
-        protected EnumVoicesState lastVoiceState;
-
         /// <summary>
         /// Constructor from another state
         /// </summary>
@@ -76,7 +74,7 @@ namespace LethalInternship.AI
         /// </summary>
         public abstract void DoAI();
 
-        public abstract void TryPlayVoiceAudio();
+        public abstract void TryPlayCurrentStateVoiceAudio();
 
         public virtual void PlayerHeard(Vector3 noisePosition) { }
 

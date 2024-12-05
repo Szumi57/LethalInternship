@@ -119,22 +119,10 @@ namespace LethalInternship.AI.AIStates
             npcController.MimicEmotes(ai.targetPlayer);
         }
 
-        public override void TryPlayVoiceAudio()
+        public override void TryPlayCurrentStateVoiceAudio()
         {
             // Default states, wait for cooldown and if no one is talking close
-            if (InternManager.Instance.DidAnInternJustTalkedClose(ai))
-            {
-                ai.InternIdentity.Voice.SetNewRandomCooldownAudio();
-                return;
-            }
-
-            if (!ai.InternIdentity.Voice.CanPlayAudio())
-            {
-                return;
-            }
-
-            ai.InternIdentity.Voice.PlayRandomVoiceAudio(EnumVoicesState.Chilling);
-            lastVoiceState = EnumVoicesState.Chilling;
+            ai.TryPlayVoiceAudioWaitToTalk(EnumVoicesState.Chilling);
         }
 
         public override void PlayerHeard(Vector3 noisePosition)

@@ -77,6 +77,8 @@ namespace LethalInternship.AI
 
         private Coroutine grabObjectCoroutine = null!;
 
+        private EnumVoicesState lastVoiceState;
+
         private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
         private bool isDestinationChanged;
@@ -394,7 +396,7 @@ namespace LethalInternship.AI
             FollowCrouchStateIfCan();
 
             // Voice
-            State.TryPlayVoiceAudio();
+            State.TryPlayCurrentStateVoiceAudio();
         }
 
         public void UpdateController()
@@ -1529,14 +1531,6 @@ namespace LethalInternship.AI
 
         #region Voices
 
-        public void StopAudioFadeOut()
-        {
-            if (this.InternVoice.isPlaying)
-            {
-                this.InternIdentity.Voice.StopAudioFadeOut();
-            }
-        }
-
         public void UpdateInternVoiceEffects()
         {
             PlayerControllerB internController = this.NpcController.Npc;
@@ -1596,6 +1590,83 @@ namespace LethalInternship.AI
             else
             {
                 this.creatureVoice.volume = 1f;
+            }
+        }
+
+        public void TryPlayVoiceAudioWaitToTalk(EnumVoicesState voiceState, bool shouldSyncAudio = true)
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            if (InternManager.Instance.DidAnInternJustTalkedClose(this))
+            {
+                InternIdentity.Voice.SetNewRandomCooldownAudio();
+                return;
+            }
+
+            if (!InternIdentity.Voice.CanPlayAudioAfterCooldown())
+            {
+                return;
+            }
+
+            if (InternIdentity.Voice.IsTalking())
+            {
+                return;
+            }
+
+            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+            lastVoiceState = voiceState;
+        }
+
+        public void TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState voiceState, bool shouldSyncAudio = true)
+        {
+            // Cut previous voice and talk if no one is talking
+            if (lastVoiceState == voiceState)
+            {
+                return;
+            }
+
+            if (InternManager.Instance.DidAnInternJustTalkedClose(this))
+            {
+                return;
+            }
+
+            StopAudioFadeOut();
+            InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+            lastVoiceState = voiceState;
+        }
+
+        public void TryPlayVoiceAudioCutAndWaitTalk(EnumVoicesState voiceState, bool shouldSyncAudio = true)
+        {
+            // Stop talking and voice new state
+            if (lastVoiceState != voiceState
+                || InternIdentity.Voice.CanPlayAudioAfterCooldown())
+            {
+                StopAudioFadeOut();
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+                lastVoiceState = voiceState;
+            }
+        }
+
+        public void TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState voiceState, bool shouldSyncAudio = true)
+        {
+            if (lastVoiceState != voiceState)
+            {
+                StopAudioFadeOut();
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+                lastVoiceState = voiceState;
+            }
+            
+            if (!InternIdentity.Voice.IsTalking())
+            {
+                InternIdentity.Voice.PlayRandomVoiceAudio(voiceState, shouldSyncAudio);
+            }
+        }
+
+        public void StopAudioFadeOut()
+        {
+            if (this.InternVoice.isPlaying)
+            {
+                this.InternIdentity.Voice.StopAudioFadeOut();
+                lastVoiceState = EnumVoicesState.None;
             }
         }
 
@@ -2860,6 +2931,9 @@ namespace LethalInternship.AI
                 {
                     NpcController.Npc.movementAudio.PlayOneShot(StartOfRound.Instance.fallDamageSFX, 1f);
                 }
+
+                // Audio, already in client rpc method so no sync necessary
+                this.TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState.Hit, shouldSyncAudio: false);
             }
 
             NpcController.Npc.takingFallDamage = false;
