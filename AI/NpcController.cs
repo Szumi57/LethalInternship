@@ -902,7 +902,6 @@ namespace LethalInternship.AI
             //    Plugin.LogDebug($"layer {i}, {Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash}");
             //}
 
-
             // Update the "what should be the animation state"
             // Layer 0
             if (Npc.isCrouching)

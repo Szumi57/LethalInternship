@@ -81,7 +81,7 @@ namespace LethalInternship.AI
 
         private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
-        private bool isDestinationChanged;
+        private bool hasDestinationChanged = true;
         private float updateDestinationIntervalInternAI;
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
@@ -549,7 +549,7 @@ namespace LethalInternship.AI
             if (previousWantedDestination != position)
             {
                 previousWantedDestination = position;
-                isDestinationChanged = true;
+                hasDestinationChanged = true;
                 destination = position;
             }
         }
@@ -561,7 +561,7 @@ namespace LethalInternship.AI
         {
             NpcController.OrderToMove();
 
-            if (!isDestinationChanged)
+            if (!hasDestinationChanged)
             {
                 return;
             }
@@ -578,8 +578,8 @@ namespace LethalInternship.AI
                     destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
                 }
                 agent.SetDestination(destination);
+                hasDestinationChanged = false;
             }
-            isDestinationChanged = false;
         }
 
         public void StopMoving()
