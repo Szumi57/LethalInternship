@@ -4,16 +4,12 @@ namespace LethalInternship.NetworkSerializers
 {
     internal struct SaveNetworkSerializable : INetworkSerializable
     {
-        public int NbInternsOwned;
-        public int NbInternsToDropShip;
         public bool LandingAllowed;
         public IdentitySaveFileNetworkSerializable[] Identities;
 
         // INetworkSerializable
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref NbInternsOwned);
-            serializer.SerializeValue(ref NbInternsToDropShip);
             serializer.SerializeValue(ref LandingAllowed);
             serializer.SerializeValue(ref Identities);
         }
@@ -24,7 +20,7 @@ namespace LethalInternship.NetworkSerializers
         public int IdIdentity;
         public int SuitID;
         public int Hp;
-        public bool SelectedToDrop;
+        public int Status;
 
         // INetworkSerializable
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -32,7 +28,7 @@ namespace LethalInternship.NetworkSerializers
             serializer.SerializeValue(ref IdIdentity);
             serializer.SerializeValue(ref SuitID);
             serializer.SerializeValue(ref Hp);
-            serializer.SerializeValue(ref SelectedToDrop);
+            serializer.SerializeValue(ref Status);
         }
     }
 }

@@ -65,18 +65,19 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                 }
 
                 string status = string.Empty;
-                if (identity.Alive
-                    && identity.SelectedToDrop)
+                switch (identity.Status)
                 {
-                    status = "to drop";
+                    case EnumStatusIdentity.Available:
+                        break;
+                    case EnumStatusIdentity.ToDrop:
+                        status = "to drop";
+                        break;
+                    case EnumStatusIdentity.Spawned:
+                        status = "on moon";
+                        break;
                 }
-                else if (identity.Alive
-                         && !identity.SelectedToDrop
-                         && InternManager.Instance.IsIdentitySpawned(identity.IdIdentity))
-                {
-                    status = "on moon";
-                }
-                else if (!identity.Alive)
+
+                if (!identity.Alive)
                 {
                     status = "dead";
                 }

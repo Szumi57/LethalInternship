@@ -75,7 +75,7 @@ namespace LethalInternship.TerminalAdapter
                 TerminalState = new ErrorPage(TerminalState, EnumErrorTypeTerminalPage.NotEnoughCredits);
                 return true;
             }
-            else if (InternManager.Instance.NbInternsPurchasable <= 0)
+            else if (IdentityManager.Instance.GetNbIdentitiesAvailable() <= 0)
             {
                 TerminalState = new ErrorPage(TerminalState, EnumErrorTypeTerminalPage.NoMoreInterns);
                 return true;
@@ -128,7 +128,7 @@ namespace LethalInternship.TerminalAdapter
                             TerminalState = new ErrorPage(TerminalState, EnumErrorTypeTerminalPage.InternDead);
                             return true;
                         }
-                        if (IdentityManager.Instance.InternIdentities[j].SelectedToDrop)
+                        if (IdentityManager.Instance.InternIdentities[j].Status == EnumStatusIdentity.ToDrop)
                         {
                             TerminalState = new ErrorPage(TerminalState, EnumErrorTypeTerminalPage.InternAlreadySelected);
                             return true;

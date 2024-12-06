@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.TerminalAdapter;
 using LethalInternship.TerminalAdapter.TerminalStates;
 using Unity.Netcode;
@@ -111,45 +112,63 @@ namespace LethalInternship.Managers
 
         #region Sync UpdatePurchaseAndCredits
 
+        [ServerRpc(RequireOwnership = false)]
+        public void BuyRandomInternsServerRpc(int newCredits, int nbInternsBought)
+        {
+            int[] idsRandomIdentities = new int[nbInternsBought];
+            for (int i = 0; i < nbInternsBought; i++)
+            {
+                int newIdentityToSpawn = IdentityManager.Instance.GetNewIdentityToSpawn();
+                if (newIdentityToSpawn < 0)
+                {
+                    Plugin.LogInfo($"Try to buy number {i + 1} intern error, no more intern identities available.");
+                    return;
+                }
+
+                IdentityManager.Instance.InternIdentities[newIdentityToSpawn].Status = EnumStatusIdentity.ToDrop;
+                idsRandomIdentities[i] = newIdentityToSpawn;
+            }
+
+            BuyRandomInternsClientRpc(newCredits, idsRandomIdentities);
+        }
+
+        [ClientRpc]
+        private void BuyRandomInternsClientRpc(int newCredits, int[] idsRandomIdentities)
+        {
+            BuyIntern(newCredits, idsRandomIdentities);
+        }
+
         /// <summary>
-        /// Server side, udpate to the client the group credits and the interns ordered after purchase
+        /// Server side, udpate to the client the group credits and the interns ordered
         /// </summary>
-        /// <param name="nbInternsOwned"></param>
-        /// <param name="nbInternToDropShip"></param>
         /// <param name="newCredits"></param>
         [ServerRpc(RequireOwnership = false)]
-        public void UpdatePurchaseAndCreditsServerRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits, int idIdentityIntern)
+        public void BuySpecificInternServerRpc(int newCredits, int idIdentityIntern)
         {
-            UpdatePurchaseAndCreditsClientRpc(nbInternsOwned, nbInternToDropShip, newCredits, idIdentityIntern);
+            BuySpecificInternClientRpc(newCredits, idIdentityIntern);
         }
 
         /// <summary>
-        /// Client side, udpate the group credits and the interns ordered after purchase
+        /// Client side, udpate the group credits and the interns ordered 
         /// </summary>
-        /// <param name="nbInternsOwned"></param>
-        /// <param name="nbInternToDropShip"></param>
         /// <param name="newCredits"></param>
         [ClientRpc]
-        private void UpdatePurchaseAndCreditsClientRpc(int nbInternsOwned, int nbInternToDropShip, int newCredits, int idIdentityIntern)
+        private void BuySpecificInternClientRpc(int newCredits, int idIdentityIntern)
         {
-            UpdatePurchaseAndCredits(nbInternsOwned, nbInternToDropShip, newCredits, idIdentityIntern);
+            BuyIntern(newCredits, new int[] { idIdentityIntern });
         }
 
-        /// <summary>
-        /// Udpate the group credits and the interns ordered after purchase
-        /// </summary>
-        /// <param name="nbInternsOwned"></param>
-        /// <param name="nbInternToDropShip"></param>
-        /// <param name="newCredits"></param>
-        private void UpdatePurchaseAndCredits(int nbInternsOwned, int nbInternToDropShip, int newCredits, int idIdentityIntern)
+        private void BuyIntern(int newCredits, int[] idsRandomIdentities)
         {
-            InternManager.Instance.UpdateInternsOrdered(nbInternsOwned, nbInternToDropShip);
             GetTerminal().groupCredits = newCredits;
             GetTerminal().terminalAudio.PlayOneShot(GetTerminal().syncedAudios[TerminalConst.INDEX_AUDIO_BOUGHT_ITEM]);
 
-            if (idIdentityIntern > -1)
+            if (!IsServer)
             {
-                IdentityManager.Instance.InternIdentities[idIdentityIntern].SelectedToDrop = true;
+                for (int i = 0; i < idsRandomIdentities.Length; i++)
+                {
+                    IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]].Status = EnumStatusIdentity.ToDrop;
+                }
             }
         }
 

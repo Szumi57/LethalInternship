@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using LethalInternship.Enums;
+using System.Collections.Generic;
 using Random = System.Random;
 
 namespace LethalInternship.AI
@@ -7,11 +8,13 @@ namespace LethalInternship.AI
     {
         public int IdIdentity { get; }
         public string Name { get; set; }
-        public InternVoice Voice { get; set; }
         public int? SuitID { get; set; }
+        public InternVoice Voice { get; set; }
+
         public int Hp { get; set; }
+        public EnumStatusIdentity Status { get; set; }
+
         public bool Alive { get { return Hp > 0; } }
-        public bool SelectedToDrop { get; set; }
 
         public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
         {
@@ -20,11 +23,12 @@ namespace LethalInternship.AI
             SuitID = suitID;
             Voice = voice;
             Hp = Plugin.Config.InternMaxHealth.Value;
+            Status = EnumStatusIdentity.Available;
         }
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {SuitID}, Hp {Hp}, SelectedToDrop {SelectedToDrop}, Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}, Status {(int)Status} {Status}, Voice : {{{Voice.ToString()}}}";
         }
 
         public int GetRandomSuitID()

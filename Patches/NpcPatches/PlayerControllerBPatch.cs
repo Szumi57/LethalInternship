@@ -6,13 +6,10 @@ using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using Label = System.Reflection.Emit.Label;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
 namespace LethalInternship.Patches.NpcPatches
@@ -775,7 +772,19 @@ namespace LethalInternship.Patches.NpcPatches
                 return;
             }
 
-            InternManager.Instance.SpawnInternServerRpc(new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
+            int identityID = -1;
+            int[] selectedIdentities = IdentityManager.Instance.GetIdentitiesToDrop();
+            if (selectedIdentities.Length > 0)
+            {
+                identityID = selectedIdentities[0];
+            }
+
+            if (identityID < 0)
+            {
+                identityID = IdentityManager.Instance.GetNewIdentityToSpawn();
+            }
+
+            InternManager.Instance.SpawnThisInternServerRpc(identityID, new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
             {
                 SpawnPosition = __instance.transform.position,
                 YRot = __instance.transform.eulerAngles.y,

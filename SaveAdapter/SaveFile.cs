@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LethalInternship.Enums;
+using System;
 
 namespace LethalInternship.SaveAdapter
 {
@@ -8,7 +9,6 @@ namespace LethalInternship.SaveAdapter
     [Serializable]
     internal class SaveFile
     {
-        public int NbInternsOwned;
         public bool LandingStatusAborted;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public IdentitySaveFile[] IdentitiesSaveFiles;
@@ -21,11 +21,11 @@ namespace LethalInternship.SaveAdapter
         public int IdIdentity;
         public int SuitID;
         public int Hp;
-        public bool SelectedToDrop;
+        public int Status;
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, suitID {SuitID}, Hp {Hp}, SelectedToDrop {SelectedToDrop}";
+            return $"IdIdentity: {IdIdentity}, suitID {SuitID}, Hp {Hp}, Status {Status} {(EnumStatusIdentity)Status}";
         }
     }
 }

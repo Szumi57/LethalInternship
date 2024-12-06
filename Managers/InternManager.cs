@@ -53,14 +53,6 @@ namespace LethalInternship.Managers
         /// </summary>
         public int AllEntitiesCount;
         /// <summary>
-        /// Number of interns already bought
-        /// </summary>
-        public int NbInternsOwned;
-        /// <summary>
-        /// Number of interns, among those already bought, scheduled to dropship on moon
-        /// </summary>
-        public int NbInternsToDropShip;
-        /// <summary>
         /// Integer corresponding to the first player controller associated with an intern in StartOfRound.Instance.allPlayerScripts
         /// </summary>
         public int IndexBeginOfInterns
@@ -68,17 +60,6 @@ namespace LethalInternship.Managers
             get
             {
                 return StartOfRound.Instance.allPlayerScripts.Length - (AllInternAIs?.Length ?? 0);
-            }
-        }
-        /// <summary>
-        /// Maximum interns actually purchasable minus the ones already bought
-        /// </summary>
-        public int NbInternsPurchasable
-        {
-            get
-            {
-                int val = Plugin.Config.MaxInternsAvailable.Value - NbInternsOwned;
-                return val < 0 ? 0 : val;
             }
         }
         public bool LandingStatusAllowed;
@@ -96,6 +77,8 @@ namespace LethalInternship.Managers
         private float timerAnimationCulling;
         private float timerNoAnimationAfterLag;
         private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
+        private float timerIsAnInternScheduledToLand;
+        private bool isAnInternScheduledToLand;
 
         private int FootStepSoundAtTheSameTimePlayed;
 
@@ -120,6 +103,13 @@ namespace LethalInternship.Managers
         private void Update()
         {
             UpdateAnimationsCulling();
+
+            timerIsAnInternScheduledToLand += Time.deltaTime;
+            if (timerIsAnInternScheduledToLand > 1f)
+            {
+                timerIsAnInternScheduledToLand = 0f;
+                isAnInternScheduledToLand = IdentityManager.Instance.IsAnIdentityToDrop();
+            }
         }
 
         private void FixedUpdate()
@@ -338,42 +328,20 @@ namespace LethalInternship.Managers
             }
 
             int identityID = -1;
-
             // Get selected identities
-            InternIdentity[] internIdentitiesCurrentlyUsed = GetIdentitiesInternsCurrentlyUsed();
-            int[] IdIdentitiesCurrentlyUsed = internIdentitiesCurrentlyUsed.Select(x => x.IdIdentity).ToArray();
-            int[] selectedIdentities = IdentityManager.Instance.GetSelectedIdentitiesToDropAlive();
-            for (int i = 0; i < selectedIdentities.Length; i++)
+            int[] selectedIdentities = IdentityManager.Instance.GetIdentitiesToDrop();
+            if (selectedIdentities.Length > 0)
             {
-                if (IdIdentitiesCurrentlyUsed.Contains(selectedIdentities[i]))
-                {
-                    continue;
-                }
-
-                identityID = selectedIdentities[i];
-                break;
+                identityID = selectedIdentities[0];
             }
 
-            if (identityID == -1)
+            if (identityID < 0)
             {
-                // Get identity
-                if (Plugin.Config.SpawnIdentitiesRandomly)
-                {
-                    identityID = IdentityManager.Instance.GetRandomAliveIdentityIndex(internIdentitiesCurrentlyUsed);
-                }
-                else
-                {
-                    identityID = IdentityManager.Instance.GetNextAliveIdentityIndex(internIdentitiesCurrentlyUsed);
-                }
-            }
-
-            if (identityID == -1)
-            {
-                Plugin.LogInfo($"No more intern identities available.");
+                Plugin.LogInfo($"Try to spawn intern, no more intern identities available.");
                 return;
             }
 
-            IdentityManager.Instance.InternIdentities[identityID].SelectedToDrop = false;
+            IdentityManager.Instance.InternIdentities[identityID].Status = EnumStatusIdentity.Spawned;
             spawnInternsParamsNetworkSerializable.InternIdentityID = identityID;
             SpawnInternServer(spawnInternsParamsNetworkSerializable);
         }
@@ -383,7 +351,13 @@ namespace LethalInternship.Managers
         {
             if (AllInternAIs == null || AllInternAIs.Length == 0)
             {
-                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console");
+                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console.");
+                return;
+            }
+
+            if (identityID < 0)
+            {
+                Plugin.LogInfo($"Failed to spawn specific intern identity with id {identityID}.");
                 return;
             }
 
@@ -585,7 +559,7 @@ namespace LethalInternship.Managers
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             internAI.InternIdentity = internIdentity;
             internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
-            internAI.InternIdentity.SelectedToDrop = false;
+            internAI.InternIdentity.Status = EnumStatusIdentity.Spawned;
             internAI.SetEnemyOutside(spawnParamsNetworkSerializable.IsOutside);
 
             // Attach ragdoll body
@@ -676,7 +650,8 @@ namespace LethalInternship.Managers
         {
             yield return null;
             int pos = 0;
-            for (int i = 0; i < NbInternsToDropShip; i++)
+            int nbInternsToDropShip = IdentityManager.Instance.GetNbIdentitiesToDrop();
+            for (int i = 0; i < nbInternsToDropShip; i++)
             {
                 if (pos >= 3)
                 {
@@ -692,25 +667,6 @@ namespace LethalInternship.Managers
 
                 yield return new WaitForSeconds(0.1f);
             }
-            EndSpawnInternsFromDropShipServerRpc();
-        }
-
-        /// <summary>
-        /// Server side, call clients for indicating that all interns landed and no more are to drop
-        /// </summary>
-        [ServerRpc(RequireOwnership = false)]
-        private void EndSpawnInternsFromDropShipServerRpc()
-        {
-            EndSpawnInternsFromDropShipClientRpc();
-        }
-
-        /// <summary>
-        /// Client side, indicating that all interns landed and no more are to drop
-        /// </summary>
-        [ClientRpc]
-        private void EndSpawnInternsFromDropShipClientRpc()
-        {
-            NbInternsToDropShip = 0;
         }
 
         #endregion
@@ -795,42 +751,7 @@ namespace LethalInternship.Managers
                 return false;
             }
 
-            return NbInternsToDropShip > 0 && LandingStatusAllowed;
-        }
-
-        /// <summary>
-        /// Adds, while in space or on moon, the number of intern bought and ready to drop ship
-        /// </summary>
-        /// <remarks>Used on client side for quick update of terminal infos</remarks>
-        /// <param name="nbOrdered">Number of intern just ordered</param>
-        public void AddNewCommandOfInterns(int nbOrdered)
-        {
-            if (StartOfRound.Instance.inShipPhase)
-            {
-                // in space
-                NbInternsOwned += nbOrdered;
-                NbInternsToDropShip = NbInternsOwned;
-                Plugin.LogDebug($"In space NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
-            }
-            else
-            {
-                // on moon
-                NbInternsToDropShip += nbOrdered;
-                NbInternsOwned += nbOrdered;
-                Plugin.LogDebug($"On moon NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
-            }
-        }
-
-        /// <summary>
-        /// Update, while in space or on moon, the number of intern bought and ready to drop ship
-        /// </summary>
-        /// <remarks>Used when syncing (server, client) numbers of interns bought and to dropship</remarks>
-        /// <param name="nbInternsOwned">Number of interns bought</param>
-        /// <param name="nbInternToDropShip">Number of interns to dropship on next moon</param>
-        public void UpdateInternsOrdered(int nbInternsOwned, int nbInternToDropShip)
-        {
-            NbInternsOwned = nbInternsOwned;
-            NbInternsToDropShip = nbInternToDropShip;
+            return isAnInternScheduledToLand && LandingStatusAllowed;
         }
 
         /// <summary>
@@ -1172,29 +1093,6 @@ namespace LethalInternship.Managers
             return false;
         }
 
-        public bool IsIdentitySpawned(int idIdentity)
-        {
-            foreach (InternAI internAI in AllInternAIs)
-            {
-                if (internAI == null
-                    || !internAI.IsSpawned
-                    || internAI.isEnemyDead
-                    || internAI.NpcController == null
-                    || internAI.NpcController.Npc.isPlayerDead
-                    || !internAI.NpcController.Npc.isPlayerControlled)
-                {
-                    continue;
-                }
-
-                if (internAI.InternIdentity.IdIdentity == idIdentity)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         #region SyncEndOfRoundInterns
 
         /// <summary>
@@ -1246,23 +1144,21 @@ namespace LethalInternship.Managers
         [ClientRpc]
         private void SyncEndOfRoundInternsFromServerToClientRpc()
         {
-            NbInternsOwned = CountAliveAndDisableInterns();
-            NbInternsToDropShip = NbInternsOwned;
+            CountAliveAndDisableInterns();
         }
 
         /// <summary>
         /// Count and disable the interns still alive
         /// </summary>
         /// <returns>Number of interns still alive</returns>
-        private int CountAliveAndDisableInterns()
+        private void CountAliveAndDisableInterns()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
             if (instanceSOR.currentLevel.levelID == 3)
             {
-                return NbInternsOwned;
+                return;
             }
 
-            int alive = 0;
             PlayerControllerB internController;
             foreach (InternAI internAI in AllInternAIs)
             {
@@ -1289,13 +1185,9 @@ namespace LethalInternship.Managers
                     HideShowModelReplacement(internController, show: false);
                 }
 
-                internAI.InternIdentity.SelectedToDrop = true;
+                internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
                 instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
-                alive++;
             }
-
-            // Alive and not landed interns
-            return alive + NbInternsToDropShip;
         }
 
         private void HideShowModelReplacement(PlayerControllerB playerController, bool show)
@@ -1303,14 +1195,6 @@ namespace LethalInternship.Managers
             playerController.gameObject
                 .GetComponent<ModelReplacement.BodyReplacementBase>()?
                 .SetAvatarRenderers(show);
-        }
-
-        private InternIdentity[] GetIdentitiesInternsCurrentlyUsed()
-        {
-            return AllInternAIs.Where(x => x != null && x.NpcController != null
-                                       && !x.NpcController.Npc.isPlayerDead && x.NpcController.Npc.isPlayerControlled)
-                               .Select(y => y.InternIdentity)
-                               .ToArray();
         }
 
         #endregion

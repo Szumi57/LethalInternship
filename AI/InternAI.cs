@@ -575,7 +575,12 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (agent.isActiveAndEnabled && agent.isOnNavMesh && !isEnemyDead && !NpcController.Npc.isPlayerDead)
+            if (agent.isActiveAndEnabled 
+                && agent.isOnNavMesh 
+                && !isEnemyDead 
+                && !NpcController.Npc.isPlayerDead
+                && !StartOfRound.Instance.shipIsLeaving
+                && StartOfRound.Instance.shipHasLanded)
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {

@@ -10,12 +10,30 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// </summary>
     internal class InfoPage : TerminalState
     {
+        private int diffNbInternAvailable;
+        private int diffNbInternToDrop;
+
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalState)"/>
         /// </summary>
         public InfoPage(TerminalState newState) : base(newState)
         {
             CurrentState = EnumTerminalStates.Info;
+            this.diffNbInternAvailable = 0;
+            this.diffNbInternToDrop = 0;
+        }
+
+        /// <summary>
+        /// Constructor only for client after to simulate new values and print them while waiting for server rpc to update values
+        /// </summary>
+        /// <param name="newState"></param>
+        /// <param name="diffNbInternAvailable"></param>
+        /// <param name="diffNbInternToDrop"></param>
+        public InfoPage(TerminalState newState, int diffNbInternAvailable, int diffNbInternToDrop) : base(newState)
+        {
+            CurrentState = EnumTerminalStates.Info;
+            this.diffNbInternAvailable = diffNbInternAvailable;
+            this.diffNbInternToDrop = diffNbInternToDrop;
         }
 
         /// <summary>
@@ -58,8 +76,6 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             return false;
         }
 
-        
-
         private bool LandingStatusCommand(string command)
         {
             TerminalManager instanceTM = TerminalManager.Instance;
@@ -83,6 +99,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
             InternManager instanceIM = InternManager.Instance;
+            IdentityManager instanceIDM = IdentityManager.Instance;
 
             if (!dictTerminalNodeByState.TryGetValue(this.GetTerminalState(), out TerminalNode terminalNode))
             {
@@ -100,6 +117,12 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
 
             string textInfoPage;
+            int nbInternsPurchasable = instanceIDM.GetNbIdentitiesAvailable() + diffNbInternAvailable;
+            int nbInternsToDropShip = instanceIDM.GetNbIdentitiesToDrop() + diffNbInternToDrop;
+
+            // Reset values for client number simulation
+            this.diffNbInternAvailable = 0;
+            this.diffNbInternToDrop = 0;
 
             if (instanceSOR.inShipPhase
                 || instanceSOR.shipIsLeaving
@@ -107,24 +130,23 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             {
                 // in space or on company building moon
                 textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_IN_SPACE,
-                                             instanceIM.NbInternsPurchasable,
+                                             nbInternsPurchasable,
                                              Plugin.Config.InternPrice.Value,
-                                             instanceIM.NbInternsToDropShip,
+                                             nbInternsToDropShip,
                                              landingStatus);
             }
             else
             {
                 // on moon
                 string textNbInternsToDropShip = string.Empty;
-                int nbInternsToDropShip = instanceIM.NbInternsToDropShip;
-                int nbInternsOnThisMoon = instanceIM.NbInternsOwned - nbInternsToDropShip;
+                int nbInternsOnThisMoon = instanceIDM.GetNbIdentitiesSpawned();
                 if (nbInternsToDropShip > 0
                     && !instanceSOR.shipIsLeaving)
                 {
                     textNbInternsToDropShip = string.Format(TerminalConst.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
                 textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_ON_MOON,
-                                             instanceIM.NbInternsPurchasable,
+                                             nbInternsPurchasable,
                                              Plugin.Config.InternPrice.Value,
                                              textNbInternsToDropShip,
                                              nbInternsOnThisMoon,

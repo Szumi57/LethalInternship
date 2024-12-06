@@ -3,6 +3,7 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Random = System.Random;
@@ -105,55 +106,6 @@ namespace LethalInternship.Managers
             return new InternIdentity(idIdentity, name, suitID, voice);
         }
 
-        public int GetRandomAliveIdentityIndex(InternIdentity[] usedIdentities)
-        {
-            InternIdentity[] allIdentities = new InternIdentity[InternIdentities.Length];
-            InternIdentities.CopyTo(allIdentities, 0);
-            InternIdentity[] remainingIdentities = allIdentities
-                                                    .Except(usedIdentities)
-                                                    .Where(x => x.Alive)
-                                                    .ToArray();
-
-            if (remainingIdentities.Length == 0)
-            {
-                return -1;
-            }
-
-            Random randomInstance = new Random();
-            int randomIndex = randomInstance.Next(0, remainingIdentities.Length);
-            return remainingIdentities[randomIndex].IdIdentity;
-        }
-
-        public int GetNextAliveIdentityIndex(InternIdentity[] usedIdentities)
-        {
-            InternIdentity[] allIdentities = new InternIdentity[InternIdentities.Length];
-            InternIdentities.CopyTo(allIdentities, 0);
-            InternIdentity[] remainingIdentities = allIdentities
-                                                    .Except(usedIdentities)
-                                                    .Where(x => x.Alive)
-                                                    .ToArray();
-
-            if (remainingIdentities.Length == 0)
-            {
-                return -1;
-            }
-
-            return remainingIdentities[0].IdIdentity;
-        }
-
-        public int[] GetSelectedIdentitiesToDropAlive()
-        {
-            if (InternIdentities == null)
-            {
-                return new int[0];
-            }
-
-            return InternIdentities
-                        .Where(x => x.Alive && x.SelectedToDrop)
-                        .Select(x => x.IdIdentity)
-                        .ToArray();
-        }
-
         public string[] GetIdentitiesNamesLowerCaseWithoutSpace()
         {
             if (InternIdentities == null)
@@ -164,6 +116,99 @@ namespace LethalInternship.Managers
             return InternIdentities
                         .Select(x => string.Join(' ', x.Name).ToLowerInvariant())
                         .ToArray();
+        }
+
+        public void ResetIdentities()
+        {
+            CreateIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
+        }
+
+        public int GetNewIdentityToSpawn()
+        {
+            // Get identity
+            if (Plugin.Config.SpawnIdentitiesRandomly)
+            {
+                return GetRandomAvailableAliveIdentityIndex();
+            }
+            else
+            {
+                return GetNextAvailableAliveIdentityIndex();
+            }
+        }
+
+        public int GetRandomAvailableAliveIdentityIndex()
+        {
+            InternIdentity[] availableIdentities = InternIdentities.FilterAvailableAlive().ToArray();
+            if (availableIdentities.Length == 0)
+            {
+                return -1;
+            }
+
+            Random randomInstance = new Random();
+            int randomIndex = randomInstance.Next(0, availableIdentities.Length);
+            return availableIdentities[randomIndex].IdIdentity;
+        }
+
+        public int GetNextAvailableAliveIdentityIndex()
+        {
+            InternIdentity[] availableIdentities = InternIdentities.FilterAvailableAlive().ToArray();
+            if (availableIdentities.Length == 0)
+            {
+                return -1;
+            }
+
+            return availableIdentities[0].IdIdentity;
+        }
+
+        public int GetNbIdentitiesAvailable()
+        {
+            return InternIdentities.FilterAvailableAlive().Count();
+        }
+
+        public int GetNbIdentitiesToDrop()
+        {
+            return InternIdentities.FilterToDropAlive().Count();
+        }
+
+        public int[] GetIdentitiesToDrop()
+        {
+            if (InternIdentities == null)
+            {
+                return new int[0];
+            }
+
+            return InternIdentities
+                        .FilterToDropAlive()
+                        .Select(x => x.IdIdentity)
+                        .ToArray();
+        }
+
+        public bool IsAnIdentityToDrop()
+        {
+            return InternIdentities.FilterToDropAlive().Any();
+        }
+
+        public int GetNbIdentitiesSpawned()
+        {
+            return InternIdentities.FilterSpawnedAlive().Count();
+        }
+    }
+
+    internal static class IdentityEnumerableExtension
+    {
+        public static IEnumerable<InternIdentity> FilterAvailableAlive(this IEnumerable<InternIdentity> enumerable)
+        {
+            return enumerable.Where(x => x.Status == EnumStatusIdentity.Available && x.Alive);
+        }
+
+        public static IEnumerable<InternIdentity> FilterToDropAlive(this IEnumerable<InternIdentity> enumerable)
+        {
+            return enumerable.Where(x => x.Status == EnumStatusIdentity.ToDrop && x.Alive);
+        }
+
+        public static IEnumerable<InternIdentity> FilterSpawnedAlive(this IEnumerable<InternIdentity> enumerable)
+        {
+            return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned && x.Alive);
         }
     }
 }

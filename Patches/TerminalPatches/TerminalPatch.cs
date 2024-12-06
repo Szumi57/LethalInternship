@@ -54,8 +54,8 @@ namespace LethalInternship.Patches.TerminalPatches
         [HarmonyPostfix]
         static void ClearBoughtItems_Postfix()
         {
-            Plugin.LogDebug("ClearBoughtItems reset interns bought");
-            InternManager.Instance.UpdateInternsOrdered(0, 0);
+            Plugin.LogDebug("ClearBoughtItems reset interns bought, after fired");
+            IdentityManager.Instance.ResetIdentities();
         }
 
         /// <summary>
