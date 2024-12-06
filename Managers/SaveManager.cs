@@ -116,8 +116,13 @@ namespace LethalInternship.Managers
 
             if (Save.IdentitiesSaveFiles != null)
             {
-                for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
+                for (int i = 0; i < Save.IdentitiesSaveFiles.Length; i++)
                 {
+                    if (i >= IdentityManager.Instance.InternIdentities.Length)
+                    {
+                        break;
+                    }
+
                     IdentitySaveFile identitySaveFile = Save.IdentitiesSaveFiles[i];
 
                     InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[identitySaveFile.IdIdentity];

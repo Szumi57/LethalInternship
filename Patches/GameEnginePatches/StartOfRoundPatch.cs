@@ -513,76 +513,14 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InternManager.Instance.UpdateAllInternsVoiceEffects();
         }
+
+        [HarmonyPatch("FirePlayersAfterDeadlineClientRpc")]
+        [HarmonyPostfix]
+        static void FirePlayersAfterDeadlineClientRpc_PostFix()
+        {
+            // Reset after fired
+            IdentityManager.Instance.ResetIdentities();
+            SaveManager.Instance.SavePluginInfos();
+        }
     }
-
-    //[HarmonyPatch(typeof(EnemyAICollisionDetect))] // make sure Harmony inspects the class
-    //class MyPatches
-    //{
-    //    [HarmonyPatch("OnTriggerStay")]
-    //    [HarmonyPrefix]
-    //    static void Prefix(Collider other)
-    //    {
-    //        if (other.CompareTag("Player"))
-    //        { 
-    //            Plugin.LogDebug($"intern? {other.gameObject.GetComponent<InternAI>()}");
-    //        }
-    //    }
-
-    //    //[HarmonyPatch("CheckBoundsForPlayers")]
-    //    //[HarmonyPostfix]
-    //    //static void Postfix(System.Diagnostics.Stopwatch __state)
-    //    //{
-    //    //    __state.Stop();
-    //    //    var elapsedMs = __state.Elapsed.TotalMilliseconds;
-    //    //    Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
-    //    //}
-    //}
-
-    //[HarmonyPatch] // make sure Harmony inspects the class
-    //class MyPatches
-    //{
-    //    static IEnumerable<MethodBase> TargetMethods()
-    //    {
-    //        var a = AccessTools.GetTypesFromAssembly(typeof(StartOfRound).Assembly)
-    //            .SelectMany(type => type.GetMethods())
-    //            .Where(method => //method.ReturnType != typeof(void) &&
-    //                            !method.DeclaringType.Name.Contains("BaseServer`3")&&
-    //                            !method.DeclaringType.Name.Contains("BaseClient`3") &&
-    //                            method.Name.Contains("Update"));
-    //        foreach(var method in a)
-    //        {
-    //            Plugin.LogDebug($"{method.DeclaringType.Name}.{method.Name}");
-    //        }
-
-    //        return AccessTools.GetTypesFromAssembly(typeof(StartOfRound).Assembly)
-    //            .SelectMany(type => type.GetMethods())
-    //            .Where(method => //method.ReturnType != typeof(void) &&
-    //                            !method.DeclaringType.Name.Contains("BaseServer`3") && 
-    //                            !method.DeclaringType.Name.Contains("BaseClient`3") &&
-    //                            method.Name.Contains("Update"))
-    //            .Cast<MethodBase>();
-    //    }
-
-    //    // prefix all methods in someAssembly with a non-void return type and beginning with "Player"
-    //    static void Prefix(out System.Diagnostics.Stopwatch __state)
-    //    {
-    //        __state = System.Diagnostics.Stopwatch.StartNew();
-    //    }
-
-    //    static void Postfix(MethodBase __originalMethod, System.Diagnostics.Stopwatch __state)
-    //    {
-    //        __state.Stop();
-    //        var elapsedMs = __state.Elapsed.TotalMilliseconds;
-    //        string name = __originalMethod.FullDescription();
-    //        if (!name.Contains("GrabbableObject"))
-    //        {
-    //            if(elapsedMs > 0.5)
-    //            {
-    //        Plugin.LogDebug($"Method {name}: {elapsedMs}ms");
-    //            }
-
-    //        }
-
-    //    }
-    //}
 }

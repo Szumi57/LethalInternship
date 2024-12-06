@@ -32,34 +32,33 @@ namespace LethalInternship.Constants
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE = "INTERNSHIP PROGRAM";
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE = "Need some help ? Try our new workforce, ready to assist you and gain experience";
 
-        public static EnumOptionNames DEFAULT_CONFIG_ENUM_INTERN_NAMES = EnumOptionNames.DefaultCustomList;
         public static readonly string DEFAULT_INTERN_NAME = "Intern #{0}";
-        public static readonly string[] DEFAULT_LIST_CUSTOM_INTERN_NAMES = new string[] {"Amy Stake",
-                                                                                         "Claire Annette",
-                                                                                         "Clare Voyant",
-                                                                                         "Ella Font",
-                                                                                         "Felix Cited",
-                                                                                         "Gerry Atrick",
-                                                                                         "Harry Legg",
-                                                                                         "Justin Case",
-                                                                                         "Lee King",
-                                                                                         "Luke Atmey",
-                                                                                         "Manuel Labour",
-                                                                                         "Mia Moore",
-                                                                                         "Ophelia Pane",
-                                                                                         "Paige Turner",
-                                                                                         "Paul Atishon",
-                                                                                         "Polly Esther",
-                                                                                         "Robyn Banks",
-                                                                                         "Terry Aki",
-                                                                                         "Tim Burr",
-                                                                                         "Toby Lerone",
-                                                                                         "Uriel Lucky",
-                                                                                         "Zoltan Pepper"};
+        //  "Amy Stake",
+        //  "Claire Annette",
+        //  "Clare Voyant",
+        //  "Ella Font",
+        //  "Felix Cited",
+        //  "Gerry Atrick",
+        //  "Harry Legg",
+        //  "Justin Case",
+        //  "Lee King",
+        //  "Luke Atmey",
+        //  "Manuel Labour",
+        //  "Mia Moore",
+        //  "Ophelia Pane",
+        //  "Paige Turner",
+        //  "Paul Atishon",
+        //  "Polly Esther",
+        //  "Robyn Banks",
+        //  "Terry Aki",
+        //  "Tim Burr",
+        //  "Toby Lerone",
+        //  "Uriel Lucky",
+        //  "Zoltan Pepper"
 
         public static EnumOptionSuitChange DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE = EnumOptionSuitChange.Manual;
 
-        public static readonly int DEFAULT_MAX_IDENTITIES = 50;
+        public static readonly int DEFAULT_MAX_IDENTITIES = 22;
         public static readonly int MIN_IDENTITIES = 10;
         public static readonly int MAX_IDENTITIES = 200;
         public static readonly string FILE_NAME_CONFIG_IDENTITIES_DEFAULT = "ConfigIdentitiesDefault.json";

@@ -1386,7 +1386,7 @@ namespace LethalInternship.Managers
                                                  .OrderBy(x => (x.NpcController.Npc.transform.position - playerPos).sqrMagnitude);
             foreach (InternAI? internAI in orderedInternInFOV)
             {
-                if (index >= Plugin.Config.MaxAnimatedInterns)
+                if (index >= Plugin.Config.MaxAnimatedInterns.Value)
                 {
                     break;
                 }

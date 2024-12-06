@@ -28,7 +28,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> InternPrice;
         [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
         [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
-        [SyncedEntryField] public SyncedEntry<int> MaxAnimatedInterns;
+        public ConfigEntry<int> MaxAnimatedInterns;
 
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
@@ -94,11 +94,11 @@ namespace LethalInternship.Configs
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(ConfigConst.MIN_SIZE_SCALE_INTERN, ConfigConst.MAX_SIZE_SCALE_INTERN)));
 
-            MaxAnimatedInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
+            MaxAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionMain,
                                    "Max animated intern at once",
-                                   defaultValue: 10,
-                                   new ConfigDescription("Set the maximum of interns that can be animated at the same time (if heavy lag occurs when looking at a lot of interns)",
-                                                         new AcceptableValueRange<int>(1, 32)));
+                                   defaultValue: ConfigConst.MAX_INTERNS_AVAILABLE,
+                                   new ConfigDescription("Set the maximum of interns that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
+                                                         new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             CanSpectateInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                                      "Spectate interns",

@@ -334,9 +334,8 @@ namespace LethalInternship.AI
                 Vector3 aiPosition = this.transform.position;
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} --> y {(NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y)} MoveVector {NpcController.MoveVector}");
                 NpcController.Npc.transform.position = new Vector3(x,
-                                                                   !StartOfRound.Instance.localPlayerController.isInElevator && NpcController.IsTouchingGround
-                                                                    ? NpcController.GroundHit.point.y : aiPosition.y,
-                                                                   z);
+                                                                   aiPosition.y,
+                                                                   z); ;
                 this.transform.position = aiPosition;
                 NpcController.Npc.ResetFallGravity();
             }
@@ -404,14 +403,6 @@ namespace LethalInternship.AI
 
         public void UpdateController()
         {
-            //float time;
-            //time += Time.deltaTime;
-            //if(time > Time.fixedDeltaTime)
-            //{
-            //    time = time - Time.fixedDeltaTime;
-            //}
-
-
             if (RagdollInternBody != null
                 && RagdollInternBody.IsRagdollBodyHeld())
             {

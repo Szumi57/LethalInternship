@@ -50,8 +50,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             internController.statusEffectAudioIndex = __instance.audioClipIndex;
             if (internController.isSinking)
             {
-                // Audio
-                internAI.TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
+                if (!__instance.isWater)
+                {
+                    // Audio
+                    internAI.TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
+                }
                 return;
             }
 
