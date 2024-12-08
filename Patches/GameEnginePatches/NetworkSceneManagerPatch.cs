@@ -19,7 +19,18 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPostfix]
         public static void PopulateScenePlacedObjects_Postfix()
         {
+            if (Plugin.IsModMoreCompanyLoaded)
+            {
+                UpdateIrlPlayerAfterMoreCompany();
+            }
+
             InternManager.Instance.ManagePoolOfInterns();
+        }
+
+        private static void UpdateIrlPlayerAfterMoreCompany()
+        {
+            Plugin.PluginIrlPlayersCount = MoreCompany.MainClass.newPlayerCount;
+            Plugin.LogDebug($"PluginIrlPlayersCount after morecompany = {Plugin.PluginIrlPlayersCount}");
         }
     }
 }

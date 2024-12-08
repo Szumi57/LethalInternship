@@ -91,13 +91,23 @@ namespace LethalInternship.Managers
             Instance = this;
             Plugin.Config.InitialSyncCompleted += Config_InitialSyncCompleted;
             Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {Plugin.Config.MaxInternsAvailable.Value}");
+        }
 
+        private void Start()
+        {
+            // Identities
+            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities.Value, Plugin.Config.ConfigIdentities.configIdentities);
+
+            // Intern objects
             if (Plugin.PluginIrlPlayersCount > 0)
             {
                 // only resize if irl players not 0, which means we already tried to populate pool of interns
                 // But the manager somehow reset
                 ManagePoolOfInterns();
             }
+
+            // Load data from save
+            SaveManager.Instance.LoadAllDataFromSave();
         }
 
         private void Update()
@@ -178,12 +188,7 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            // Identities
-            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
-
-            // Load save infos
-            SaveManager.Instance.LoadDataFromSave();
-
+            // Interns
             ResizePoolOfInterns(irlPlayersAndInternsCount);
             PopulatePoolOfInterns(irlPlayersCount);
             UpdateSoundManagerWithInterns(irlPlayersAndInternsCount);
@@ -269,6 +274,11 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogInfo("Pool of interns populated.");
+        }
+
+        public void ResetIdentities()
+        {
+            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
         }
 
         private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
@@ -1245,7 +1255,7 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogDebug($"Recreate identities for {Plugin.Config.MaxIdentities.Value} interns");
-            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxIdentities.Value, configIdentityNetworkSerializable.ConfigIdentities);
+            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities.Value, configIdentityNetworkSerializable.ConfigIdentities);
         }
 
         #endregion
