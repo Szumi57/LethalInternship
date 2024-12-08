@@ -581,6 +581,12 @@ namespace LethalInternship.Managers
             // Remove dead bodies if exists
             if (internController.deadBody != null)
             {
+                if(internAI.ListDeadBodiesInfo == null)
+                {
+                    internAI.ListDeadBodiesInfo = new List<DeadBodyInfo>();
+                }
+                internAI.ListDeadBodiesInfo.Add(internController.deadBody);
+
                 internController.deadBody = null;
             }
 

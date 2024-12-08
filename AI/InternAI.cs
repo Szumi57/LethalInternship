@@ -67,6 +67,8 @@ namespace LethalInternship.AI
         public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
         public float TimeSinceTeleporting = 0f;
 
+        public List<DeadBodyInfo> ListDeadBodiesInfo = null!;
+
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
