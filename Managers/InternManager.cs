@@ -1151,6 +1151,16 @@ namespace LethalInternship.Managers
             return false;
         }
 
+        public int GetDamageFromSlimeIfIntern(PlayerControllerB player)
+        {
+            if (IsPlayerIntern(player))
+            {
+                return 5;
+            }
+
+            return 35;
+        }
+
         #region SyncEndOfRoundInterns
 
         /// <summary>

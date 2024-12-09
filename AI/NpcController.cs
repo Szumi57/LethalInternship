@@ -7,7 +7,6 @@ using LethalInternship.Utils;
 using ModelReplacement;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -1344,13 +1343,6 @@ namespace LethalInternship.AI
                 if (timerPlayFootstep > threshold)
                 {
                     timerPlayFootstep = 0f;
-
-                    //if (!InternManager.Instance.CanPlayFootStepSoundAtTheSameTime())
-                    //{
-                    //    return;
-                    //}
-                    //InternManager.Instance.AddFootStepSoundAtTheSameTime();
-
                     PlayFootstep(isServer: false);
                 }
             }
@@ -1424,7 +1416,7 @@ namespace LethalInternship.AI
                 currentFootstepAudioClip = (currentFootstepAudioClip + 1) % currentFootstepAudioClips.Length;
             }
             Npc.movementAudio.pitch = Random.Range(0.93f, 1.07f);
-            
+
             float volumeScale = 0.9f;
             if (animationHashLayers[0] != Const.SPRINTING_STATE_HASH)
             {

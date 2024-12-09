@@ -30,6 +30,7 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo IsAnInternAiOwnerOfObjectMethod = SymbolExtensions.GetMethodInfo(() => IsAnInternAiOwnerOfObject((GrabbableObject)new object()));
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
         public static readonly MethodInfo IsPlayerInternControlledAndOwnerMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternControlledAndOwner(new PlayerControllerB()));
+        public static readonly MethodInfo GetDamageFromSlimeIfInternMethod = SymbolExtensions.GetMethodInfo(() => GetDamageFromSlimeIfIntern(new PlayerControllerB()));
 
         public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
         public static readonly MethodInfo SyncLandFromJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncLandFromJump(new ulong(), new bool()));
@@ -171,6 +172,10 @@ namespace LethalInternship.Utils
         private static bool IsPlayerInternControlledAndOwner(PlayerControllerB player)
         {
             return InternManager.Instance.IsPlayerInternControlledAndOwner(player);
+        }
+        private static int GetDamageFromSlimeIfIntern(PlayerControllerB player)
+        {
+            return InternManager.Instance.GetDamageFromSlimeIfIntern(player);
         }
 
         private static bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)
