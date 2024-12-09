@@ -90,6 +90,9 @@ namespace LethalInternship.AI
 
         public LineRendererUtil LineRendererUtil = null!;
 
+        private RaycastHit GroundHit;
+
+
         private void Awake()
         {
             // Behaviour states
@@ -162,7 +165,7 @@ namespace LethalInternship.AI
             this.NpcController.Awake();
 
             // Refresh billboard position
-            StartCoroutine(WaitEndOfFrameToRefreshBillBoard());
+            StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
 
             // Health
             MaxHealth = InternIdentity.Hp;
@@ -240,6 +243,25 @@ namespace LethalInternship.AI
 
             // AudioMixerGroup
             this.InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
+        }
+
+        private void FixedUpdate()
+        {
+            UpdateSurfaceRayCast();
+        }
+
+        private void UpdateSurfaceRayCast()
+        {
+            NpcController.IsTouchingGround = Physics.Raycast(new Ray(NpcController.Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
+                                                             out GroundHit,
+                                                             2.5f,
+                                                             StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+
+            // Update current material standing on
+            if (NpcController.IsTouchingGround)
+            {
+                NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[GroundHit.collider.tag];
+            }
         }
 
         /// <summary>
@@ -349,7 +371,7 @@ namespace LethalInternship.AI
             {
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= touch ground GroundHit.point {NpcController.GroundHit.point}");
                 StateControllerMovement = EnumStateControllerMovement.FollowAgent;
-                TeleportAgentAIAndBody(NpcController.GroundHit.point);
+                TeleportAgentAIAndBody(GroundHit.point);
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= NpcController.Npc.transform.position {NpcController.Npc.transform.position}");
             }
 
@@ -428,13 +450,13 @@ namespace LethalInternship.AI
         private bool ShouldFreeMovement()
         {
             if (NpcController.IsTouchingGround
-                && dictComponentByCollider.TryGetValue(NpcController.GroundHit.collider.name, out Component component))
+                && dictComponentByCollider.TryGetValue(GroundHit.collider.name, out Component component))
             {
                 BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                 if (bridgeTrigger != null
                     && bridgeTrigger.fallenBridgeColliders[0].enabled)
                 {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {NpcController.GroundHit.collider.name}");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {GroundHit.collider.name}");
                     return true;
                 }
             }
@@ -568,16 +590,23 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (agent.isActiveAndEnabled 
-                && agent.isOnNavMesh 
-                && !isEnemyDead 
+            if (agent.isActiveAndEnabled
+                && agent.isOnNavMesh
+                && !isEnemyDead
                 && !NpcController.Npc.isPlayerDead
                 && !StartOfRound.Instance.shipIsLeaving
                 && StartOfRound.Instance.shipHasLanded)
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
-                    destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
+                    try
+                    {
+                        destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
+                    }
+                    catch (Exception e)
+                    {
+                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} ChooseClosestNodeToPosition error : {e.Message} , InnerException : {e.InnerException}");
+                    }
                 }
                 agent.SetDestination(destination);
                 hasDestinationChanged = false;
@@ -3711,12 +3740,13 @@ namespace LethalInternship.AI
 
             UnlockableSuit.SwitchSuitForPlayer(internController, suitID, playAudio);
             internController.thisPlayerModelArms.enabled = false;
-            StartCoroutine(WaitEndOfFrameToRefreshBillBoard());
+            StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
             InternIdentity.SuitID = suitID;
         }
 
-        private IEnumerator WaitEndOfFrameToRefreshBillBoard()
+        private IEnumerator Wait2EndOfFrameToRefreshBillBoard()
         {
+            yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
             NpcController.RefreshBillBoardPosition();
             yield break;

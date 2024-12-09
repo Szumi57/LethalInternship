@@ -109,28 +109,23 @@ namespace LethalInternship.Managers
         /// <summary>
         /// Load data into managers from save data
         /// </summary>
-        public void LoadDataFromSave()
+        public void LoadAllDataFromSave()
         {
             InternManager.Instance.LandingStatusAllowed = !Save.LandingStatusAborted;
-            Plugin.LogDebug($"Loaded from save Landing status allowed : {InternManager.Instance.LandingStatusAllowed}");
+            Plugin.LogDebug($"Loaded from save : Landing status allowed : {InternManager.Instance.LandingStatusAllowed}");
 
-            if (Save.IdentitiesSaveFiles != null)
+            for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {
-                for (int i = 0; i < Save.IdentitiesSaveFiles.Length; i++)
+                InternIdentity identity = IdentityManager.Instance.InternIdentities[i];
+                if (identity.IdIdentity >= Save.IdentitiesSaveFiles.Length)
                 {
-                    if (i >= IdentityManager.Instance.InternIdentities.Length)
-                    {
-                        break;
-                    }
-
-                    IdentitySaveFile identitySaveFile = Save.IdentitiesSaveFiles[i];
-
-                    InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[identitySaveFile.IdIdentity];
-                    internIdentity.Hp = identitySaveFile.Hp;
-                    internIdentity.SuitID = identitySaveFile.SuitID < 0 ? null : identitySaveFile.SuitID;
-                    internIdentity.Status = (EnumStatusIdentity)identitySaveFile.Status;
-                    Plugin.LogDebug($"Loaded and updated identity from save {internIdentity.ToString()}");
+                    continue;
                 }
+                IdentitySaveFile identitySaveFile = Save.IdentitiesSaveFiles[identity.IdIdentity];
+                identity.UpdateIdentity(identitySaveFile.Hp,
+                                              identitySaveFile.SuitID < 0 ? null : identitySaveFile.SuitID,
+                                              (EnumStatusIdentity)identitySaveFile.Status);
+                Plugin.LogDebug($"Loaded and updated identity from save : {identity.ToString()}");
             }
         }
 
@@ -144,9 +139,9 @@ namespace LethalInternship.Managers
         /// </remarks>
         /// <param name="clientId">Client id of caller</param>
         [ServerRpc(RequireOwnership = false)]
-        public void SyncLoadedSaveInfosServerRpc(ulong clientId)
+        public void SyncCurrentValuesServerRpc(ulong clientId)
         {
-            Plugin.LogDebug($"Client {clientId} ask server/host {NetworkManager.LocalClientId} to SyncLoadedSaveInfos");
+            Plugin.LogDebug($"Client {clientId} ask server/host {NetworkManager.LocalClientId} to SyncCurrentStateValuesServerRpc");
             ClientRpcParams.Send = new ClientRpcSendParams()
             {
                 TargetClientIds = new ulong[] { clientId }
@@ -173,7 +168,7 @@ namespace LethalInternship.Managers
                 Identities = identitiesSaveNS
             };
 
-            SyncLoadedSaveInfosClientRpc(saveNS, ClientRpcParams);
+            SyncCurrentValuesClientRpc(saveNS, ClientRpcParams);
         }
 
         /// <summary>
@@ -181,34 +176,31 @@ namespace LethalInternship.Managers
         /// </summary>
         /// <param name="clientRpcParams"></param>
         [ClientRpc]
-        private void SyncLoadedSaveInfosClientRpc(SaveNetworkSerializable saveNetworkSerializable,
-                                                  ClientRpcParams clientRpcParams = default)
+        private void SyncCurrentValuesClientRpc(SaveNetworkSerializable saveNetworkSerializable,
+                                                ClientRpcParams clientRpcParams = default)
         {
             if (IsOwner)
             {
                 return;
             }
 
-            Plugin.LogDebug($"Client {NetworkManager.LocalClientId} : sync in save file landingAllowed {saveNetworkSerializable.LandingAllowed}");
-            Save.LandingStatusAborted = !saveNetworkSerializable.LandingAllowed;
+            Plugin.LogDebug($"Client {NetworkManager.LocalClientId} : sync in current values landingAllowed {saveNetworkSerializable.LandingAllowed}");
+            InternManager.Instance.LandingStatusAllowed = saveNetworkSerializable.LandingAllowed;
 
-            Save.IdentitiesSaveFiles = new IdentitySaveFile[saveNetworkSerializable.Identities.Length];
-            for (int i = 0; i < Save.IdentitiesSaveFiles.Length; i++)
+            for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {
-                IdentitySaveFileNetworkSerializable identitySaveNS = saveNetworkSerializable.Identities[i];
-                IdentitySaveFile identitySaveFile = new IdentitySaveFile()
+                InternIdentity identity = IdentityManager.Instance.InternIdentities[i];
+                if (identity.IdIdentity >= saveNetworkSerializable.Identities.Length)
                 {
-                    IdIdentity = identitySaveNS.IdIdentity,
-                    Hp = identitySaveNS.Hp,
-                    SuitID = identitySaveNS.SuitID,
-                    Status = identitySaveNS.Status
-                };
+                    return;
+                }
+                IdentitySaveFileNetworkSerializable identitySaveNS = saveNetworkSerializable.Identities[i];
+                identity.UpdateIdentity(identitySaveNS.Hp,
+                                        identitySaveNS.SuitID < 0 ? null : identitySaveNS.SuitID,
+                                        (EnumStatusIdentity)identitySaveNS.Status);
 
-                Plugin.LogDebug($"Client {NetworkManager.LocalClientId} : sync in save file, identity {identitySaveFile.ToString()}");
-                Save.IdentitiesSaveFiles[i] = identitySaveFile;
+                Plugin.LogDebug($"Client {NetworkManager.LocalClientId} : sync in current values, identity {identity.ToString()}");
             }
-
-            LoadDataFromSave();
         }
 
         #endregion

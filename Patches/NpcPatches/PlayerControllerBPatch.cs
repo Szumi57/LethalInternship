@@ -448,13 +448,13 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool PlayFootstepServer_PreFix(PlayerControllerB __instance)
         {
-            if (InternManager.Instance.IsPlayerIntern(__instance)
-                && !InternManager.Instance.CanPlayFootStepSoundAtTheSameTime())
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
             {
+                internAI.NpcController.PlayFootstep(isServer: true);
                 return false;
             }
 
-            InternManager.Instance.AddFootStepSoundAtTheSameTime();
             return true;
         }
 
@@ -462,13 +462,13 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool PlayFootstepLocal_PreFix(PlayerControllerB __instance)
         {
-            if (InternManager.Instance.IsPlayerIntern(__instance)
-                && !InternManager.Instance.CanPlayFootStepSoundAtTheSameTime())
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.playerClientId);
+            if (internAI != null)
             {
+                internAI.NpcController.PlayFootstep(isServer: false);
                 return false;
             }
 
-            InternManager.Instance.AddFootStepSoundAtTheSameTime();
             return true;
         }
 

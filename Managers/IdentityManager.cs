@@ -43,9 +43,9 @@ namespace LethalInternship.Managers
             }
         }
 
-        public void CreateIdentities(int nbIdentities, ConfigIdentity[] configIdentities)
+        public void InitIdentities(int nbIdentities, ConfigIdentity[] configIdentities)
         {
-            Plugin.LogDebug($"CreateIdentities, nbIdentities {nbIdentities}");
+            Plugin.LogDebug($"InitIdentities, nbIdentities {nbIdentities}");
             InternIdentities = new InternIdentity[nbIdentities];
             this.configIdentities = configIdentities;
 
@@ -116,11 +116,6 @@ namespace LethalInternship.Managers
             return InternIdentities
                         .Select(x => string.Join(' ', x.Name).ToLowerInvariant())
                         .ToArray();
-        }
-
-        public void ResetIdentities()
-        {
-            CreateIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
         }
 
         public int GetNewIdentityToSpawn()

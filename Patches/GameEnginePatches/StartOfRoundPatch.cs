@@ -481,7 +481,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 && __instance.NetworkManager.LocalClientId == clientId)
             {
                 InternManager.Instance.SyncLoadedJsonIdentitiesServerRpc(clientId);
-                SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
+                SaveManager.Instance.SyncCurrentValuesServerRpc(clientId);
             }
         }
 
@@ -519,8 +519,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         static void FirePlayersAfterDeadlineClientRpc_PostFix()
         {
             // Reset after fired
-            IdentityManager.Instance.ResetIdentities();
-            SaveManager.Instance.SavePluginInfos();
+            InternManager.Instance.ResetIdentities();
         }
     }
 }

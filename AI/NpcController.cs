@@ -50,7 +50,6 @@ namespace LethalInternship.AI
         public float UpdatePlayerLookInterval;
         public int PlayerMask;
         public bool IsTouchingGround;
-        public RaycastHit GroundHit;
         public EnemyAI? EnemyInAnimationWith;
         public bool ShouldAnimate;
         public Vector3 NearEntitiesPushVector;
@@ -78,6 +77,7 @@ namespace LethalInternship.AI
         private float limpMultiplier = 0.6f;
         private Vector3 walkForce;
         private bool isFallingNoJump;
+        private int previousFootstepClip;
 
         private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
 
@@ -721,10 +721,6 @@ namespace LethalInternship.AI
                 return;
             }
 
-            IsTouchingGround = Physics.Raycast(new Ray(Npc.thisPlayerBody.position + Vector3.up * 2, -Vector3.up),
-                                               out GroundHit,
-                                               2.5f,
-                                               StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
             if (!IsTouchingGround)
             {
                 if (Npc.jetpackControls && !Npc.disablingJetpackControls)
@@ -780,7 +776,7 @@ namespace LethalInternship.AI
                         {
                             Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
                         }
-                        Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround GroundHit.point {GroundHit.point} fallValue {Npc.fallValue}");
+                        Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround fallValue {Npc.fallValue}");
                         PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
                     }
                     //if (!IsFallingFromJump)
@@ -1347,26 +1343,89 @@ namespace LethalInternship.AI
                 if (timerPlayFootstep > threshold)
                 {
                     timerPlayFootstep = 0f;
-
-                    if (!InternManager.Instance.CanPlayFootStepSoundAtTheSameTime())
-                    {
-                        return;
-                    }
-                    InternManager.Instance.AddFootStepSoundAtTheSameTime();
-
-                    bool noiseIsInsideClosedShip = Npc.isInHangarShipRoom && Npc.playersManager.hangarDoorsClosed;
-                    if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
-                    {
-                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
-                    }
-                    else
-                    {
-                        RoundManager.Instance.PlayAudibleNoise(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
-                    }
-
-                    Npc.PlayFootstepSound();
+                    PlayFootstep(isServer: false);
                 }
             }
+        }
+
+        public void PlayFootstep(bool isServer)
+        {
+            if (Npc.isClimbingLadder || Npc.inSpecialInteractAnimation)
+            {
+                return;
+            }
+
+            if ((isServer && !InternAIController.IsOwner && Npc.isPlayerControlled)
+                || (!isServer && InternAIController.IsOwner && Npc.isPlayerControlled))
+            {
+                bool noiseIsInsideClosedShip = Npc.isInHangarShipRoom && Npc.playersManager.hangarDoorsClosed;
+                if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
+                {
+                    PlayAudibleNoiseIntern(Npc.transform.position, 22f, 0.6f, 0, noiseIsInsideClosedShip, 6);
+                }
+                else
+                {
+                    PlayAudibleNoiseIntern(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
+                }
+
+                if ((StartOfRound.Instance.localPlayerController.transform.position - Npc.transform.position).sqrMagnitude < 20f * 20f)
+                {
+                    PlayFootstepSound();
+                }
+            }
+        }
+
+        private void PlayAudibleNoiseIntern(Vector3 noisePosition,
+                                           float noiseRange = 10f,
+                                           float noiseLoudness = 0.5f,
+                                           int timesPlayedInSameSpot = 0,
+                                           bool noiseIsInsideClosedShip = false,
+                                           int noiseID = 0)
+        {
+            if (noiseIsInsideClosedShip)
+            {
+                noiseRange /= 2f;
+            }
+
+            foreach (var enemyAINoiseListener in InternManager.Instance.DictEnemyAINoiseListeners)
+            {
+                EnemyAI enemyAI = enemyAINoiseListener.Key;
+                if ((Npc.transform.position - enemyAI.transform.position).sqrMagnitude > noiseRange * noiseRange)
+                {
+                    continue;
+                }
+
+                if (noiseIsInsideClosedShip
+                    && !enemyAI.isInsidePlayerShip
+                    && noiseLoudness < 0.9f)
+                {
+                    continue;
+                }
+
+                Plugin.LogDebug($"{Npc.playerUsername} Play audible noise for {enemyAI.name}");
+                enemyAINoiseListener.Value.DetectNoise(noisePosition, noiseLoudness, timesPlayedInSameSpot, noiseID);
+            }
+        }
+
+        private void PlayFootstepSound()
+        {
+            AudioClip[] currentFootstepAudioClips = StartOfRound.Instance.footstepSurfaces[Npc.currentFootstepSurfaceIndex].clips;
+            int currentFootstepAudioClip = Random.Range(0, currentFootstepAudioClips.Length);
+            if (currentFootstepAudioClip == this.previousFootstepClip)
+            {
+                currentFootstepAudioClip = (currentFootstepAudioClip + 1) % currentFootstepAudioClips.Length;
+            }
+            Npc.movementAudio.pitch = Random.Range(0.93f, 1.07f);
+
+            float volumeScale = 0.9f;
+            if (animationHashLayers[0] != Const.SPRINTING_STATE_HASH)
+            {
+                volumeScale = 0.6f;
+            }
+
+            Npc.movementAudio.PlayOneShot(currentFootstepAudioClips[currentFootstepAudioClip], volumeScale);
+            this.previousFootstepClip = currentFootstepAudioClip;
+            //WalkieTalkie.TransmitOneShotAudio(this.movementAudio, StartOfRound.Instance.footstepSurfaces[this.currentFootstepSurfaceIndex].clips[num], num2);
         }
 
         #endregion

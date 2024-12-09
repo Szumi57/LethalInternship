@@ -26,6 +26,13 @@ namespace LethalInternship.AI
             Status = EnumStatusIdentity.Available;
         }
 
+        public void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity)
+        {
+            this.Hp = Hp;
+            this.SuitID = suitID;
+            this.Status = enumStatusIdentity;
+        }
+
         public override string ToString()
         {
             return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}, Status {(int)Status} {Status}, Voice : {{{Voice.ToString()}}}";

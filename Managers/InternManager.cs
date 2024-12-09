@@ -67,6 +67,8 @@ namespace LethalInternship.Managers
         public VehicleController? VehicleController;
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
+        public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
+
         private InternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
@@ -80,7 +82,9 @@ namespace LethalInternship.Managers
         private float timerIsAnInternScheduledToLand;
         private bool isAnInternScheduledToLand;
 
-        private int FootStepSoundAtTheSameTimePlayed;
+        private float timerRegisterAINoiseListener;
+        private List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
+        public Dictionary<string, int> DictTagSurfaceIndex = new Dictionary<string, int>();
 
         /// <summary>
         /// Initialize instance,
@@ -91,12 +95,29 @@ namespace LethalInternship.Managers
             Instance = this;
             Plugin.Config.InitialSyncCompleted += Config_InitialSyncCompleted;
             Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {Plugin.Config.MaxInternsAvailable.Value}");
+        }
 
+        private void Start()
+        {
+            // Identities
+            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities.Value, Plugin.Config.ConfigIdentities.configIdentities);
+
+            // Intern objects
             if (Plugin.PluginIrlPlayersCount > 0)
             {
                 // only resize if irl players not 0, which means we already tried to populate pool of interns
                 // But the manager somehow reset
                 ManagePoolOfInterns();
+            }
+
+            // Load data from save
+            SaveManager.Instance.LoadAllDataFromSave();
+
+            // Init footstep surfaces tags
+            DictTagSurfaceIndex.Clear();
+            for (int i = 0; i < StartOfRound.Instance.footstepSurfaces.Length; i++)
+            {
+                DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
             }
         }
 
@@ -114,7 +135,44 @@ namespace LethalInternship.Managers
 
         private void FixedUpdate()
         {
-            FootStepSoundAtTheSameTimePlayed = 0;
+            //FootStepSoundAtTheSameTimePlayed = 0;
+
+            RegisterAINoiseListener(Time.fixedDeltaTime);
+        }
+
+        private void RegisterAINoiseListener(float deltaTime)
+        {
+            timerRegisterAINoiseListener += deltaTime;
+            if (timerRegisterAINoiseListener < 1f)
+            {
+                return;
+            }
+
+            timerRegisterAINoiseListener = 0f;
+            RoundManager instanceRM = RoundManager.Instance;
+            foreach (EnemyAI spawnedEnemy in instanceRM.SpawnedEnemies)
+            {
+                if (ListEnemyAINonNoiseListeners.Contains(spawnedEnemy))
+                {
+                    continue;
+                }
+                else if (DictEnemyAINoiseListeners.ContainsKey(spawnedEnemy))
+                {
+                    continue;
+                }
+
+                INoiseListener noiseListener;
+                if (spawnedEnemy.gameObject.TryGetComponent<INoiseListener>(out noiseListener))
+                {
+                    Plugin.LogDebug($"new enemy noise listener, spawnedEnemy {spawnedEnemy}");
+                    DictEnemyAINoiseListeners.Add(spawnedEnemy, noiseListener);
+                }
+                else
+                {
+                    Plugin.LogDebug($"new enemy not noise listener, spawnedEnemy {spawnedEnemy}");
+                    ListEnemyAINonNoiseListeners.Add(spawnedEnemy);
+                }
+            }
         }
 
         private void Config_InitialSyncCompleted(object sender, EventArgs e)
@@ -178,12 +236,7 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            // Identities
-            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
-
-            // Load save infos
-            SaveManager.Instance.LoadDataFromSave();
-
+            // Interns
             ResizePoolOfInterns(irlPlayersAndInternsCount);
             PopulatePoolOfInterns(irlPlayersCount);
             UpdateSoundManagerWithInterns(irlPlayersAndInternsCount);
@@ -269,6 +322,11 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogInfo("Pool of interns populated.");
+        }
+
+        public void ResetIdentities()
+        {
+            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
         }
 
         private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
@@ -1099,6 +1157,16 @@ namespace LethalInternship.Managers
             return false;
         }
 
+        public int GetDamageFromSlimeIfIntern(PlayerControllerB player)
+        {
+            if (IsPlayerIntern(player))
+            {
+                return 5;
+            }
+
+            return 35;
+        }
+
         #region SyncEndOfRoundInterns
 
         /// <summary>
@@ -1251,7 +1319,7 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogDebug($"Recreate identities for {Plugin.Config.MaxIdentities.Value} interns");
-            IdentityManager.Instance.CreateIdentities(Plugin.Config.MaxIdentities.Value, configIdentityNetworkSerializable.ConfigIdentities);
+            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities.Value, configIdentityNetworkSerializable.ConfigIdentities);
         }
 
         #endregion
@@ -1427,21 +1495,6 @@ namespace LethalInternship.Managers
 
             StartOfRound.Instance.localPlayerController.gameObject.layer = baseLayer;
             timerAnimationCulling = 0f;
-        }
-
-        public bool CanPlayFootStepSoundAtTheSameTime()
-        {
-            if (FootStepSoundAtTheSameTimePlayed >= (timerNoAnimationAfterLag > 0f ? 0f : 1f))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public void AddFootStepSoundAtTheSameTime()
-        {
-            FootStepSoundAtTheSameTimePlayed++;
         }
 
         #endregion
