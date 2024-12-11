@@ -56,6 +56,7 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity, 
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                                 {
+                                                                    ShouldDestroyDeadBody = true,
                                                                     SpawnPosition = revivePos,
                                                                     YRot = yRot,
                                                                     IsOutside = !isInsideFactory

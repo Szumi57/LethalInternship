@@ -399,7 +399,7 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            IdentityManager.Instance.InternIdentities[identityID].Status = EnumStatusIdentity.Spawned;
+            //IdentityManager.Instance.InternIdentities[identityID].Status = EnumStatusIdentity.Spawned;
             spawnInternsParamsNetworkSerializable.InternIdentityID = identityID;
             SpawnInternServer(spawnInternsParamsNetworkSerializable);
         }
@@ -459,17 +459,11 @@ namespace LethalInternship.Managers
             NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject].playerClientId);
 
             // Send to client to spawn intern
-            SpawnInternClientRpc(networkObject, networkObjectRagdollBody,
-                                    new SpawnInternsParamsNetworkSerializable()
-                                    {
-                                        IndexNextIntern = indexNextIntern,
-                                        IndexNextPlayerObject = indexNextPlayerObject,
-                                        InternIdentityID = internAI.InternIdentity.IdIdentity,
-                                        IsOutside = spawnInternsParamsNetworkSerializable.IsOutside,
-                                        SpawnPosition = spawnInternsParamsNetworkSerializable.SpawnPosition,
-                                        SuitID = suitID,
-                                        YRot = spawnInternsParamsNetworkSerializable.YRot
-                                    });
+            spawnInternsParamsNetworkSerializable.IndexNextIntern = indexNextIntern;
+            spawnInternsParamsNetworkSerializable.IndexNextPlayerObject = indexNextPlayerObject;
+            spawnInternsParamsNetworkSerializable.InternIdentityID = internAI.InternIdentity.IdIdentity;
+            spawnInternsParamsNetworkSerializable.SuitID = suitID;
+            SpawnInternClientRpc(networkObject, networkObjectRagdollBody, spawnInternsParamsNetworkSerializable);
         }
 
         /// <summary>
@@ -616,6 +610,7 @@ namespace LethalInternship.Managers
             internAI.NpcController = new NpcController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             internAI.InternIdentity = internIdentity;
+            internAI.InternIdentity.Hp = spawnParamsNetworkSerializable.Hp == 0 ? Plugin.Config.InternMaxHealth.Value : spawnParamsNetworkSerializable.Hp;
             internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
             internAI.InternIdentity.Status = EnumStatusIdentity.Spawned;
             internAI.SetEnemyOutside(spawnParamsNetworkSerializable.IsOutside);
@@ -638,6 +633,10 @@ namespace LethalInternship.Managers
             // Remove dead bodies if exists
             if (internController.deadBody != null)
             {
+                if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
+                {
+                    Object.Destroy(internController.deadBody.gameObject);
+                }
                 internController.deadBody = null;
             }
 
