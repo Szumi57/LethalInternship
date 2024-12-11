@@ -53,6 +53,7 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
                                                                 IsOutside = true
                                                             });
             InternManager.Instance.UpdateReviveCountServerRpc(playerClientId + Plugin.PluginIrlPlayersCount);
+            GameNetworkManager.Instance.localPlayerController?.DespawnHeldObject();
 
             HUDManagerPatch.DisplayGlobalNotification_ReversePatch(HUDManager.Instance, $"{internAI.NpcController.Npc.playerUsername} has been revived");
             return false;
