@@ -1490,5 +1490,21 @@ namespace LethalInternship.Managers
         }
 
         #endregion
+
+        #region BunkbedMod RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void UpdateReviveCountServerRpc(int id)
+        {
+            UpdateReviveCountClientRpc(id);
+        }
+
+        [ClientRpc]
+        private void UpdateReviveCountClientRpc(int id)
+        {
+            BunkbedRevive.BunkbedController.UpdateReviveCount(id);
+        }
+
+        #endregion
     }
 }

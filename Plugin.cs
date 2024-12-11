@@ -11,6 +11,7 @@ using LethalInternship.Patches.MapHazardsPatches;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
 using LethalInternship.Patches.ModPatches.BetterEmotes;
+using LethalInternship.Patches.ModPatches.BunkbedRevive;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
 using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
@@ -49,6 +50,7 @@ namespace LethalInternship
     [BepInDependency(LethalCompanyInputUtils.LethalCompanyInputUtilsPlugin.ModId, BepInDependency.DependencyFlags.HardDependency)]
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.BUNKBEDREVIVE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BETTEREMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.TOOMANYEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -74,12 +76,13 @@ namespace LethalInternship
         internal static new Configs.Config Config = null!;
         internal static LethalInternshipInputs InputActionsInstance = null!;
 
-        internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
         internal static bool IsModCustomItemBehaviourLibraryLoaded = false;
         internal static bool IsModMoreCompanyLoaded = false;
-        
+        internal static bool IsModReviveCompanyLoaded = false;
+        internal static bool IsModBunkbedReviveLoaded = false;
+
         private readonly Harmony _harmony = new(ModGUID);
 
         private void Awake()
@@ -94,7 +97,7 @@ namespace LethalInternship
 
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
-            
+
             // Load mod assets from unity
             ModAssets = AssetBundle.LoadFromFile(Path.Combine(DirectoryName, bundleName));
             if (ModAssets == null)
@@ -211,11 +214,13 @@ namespace LethalInternship
         {
             // -----------------------
             // Are these mods loaded ?
-            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
             IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             IsModCustomItemBehaviourLibraryLoaded = IsModLoaded(Const.CUSTOMITEMBEHAVIOURLIBRARY_GUID);
             IsModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
+            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
+            IsModBunkbedReviveLoaded = IsModLoaded(Const.BUNKBEDREVIVE_GUID);
+
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
@@ -301,6 +306,10 @@ namespace LethalInternship
                                null,
                                null,
                                new HarmonyMethod(typeof(ReviveCompanyPlayerControllerBPatchPatch), nameof(ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler)));
+            }
+            if (IsModBunkbedReviveLoaded)
+            {
+                _harmony.PatchAll(typeof(BunkbedControllerPatch));
             }
             if (isModReservedItemSlotCoreLoaded)
             {

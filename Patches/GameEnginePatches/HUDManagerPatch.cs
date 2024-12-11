@@ -20,6 +20,14 @@ namespace LethalInternship.Patches.GameEnginePatches
     [HarmonyAfter(Const.BETTER_EXP_GUID)]
     internal class HUDManagerPatch
     {
+        #region Reverse patches
+
+        [HarmonyPatch("DisplayGlobalNotification")]
+        [HarmonyReversePatch]
+        public static void DisplayGlobalNotification_ReversePatch(object instance, string displayText) => throw new NotImplementedException("Stub LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.DisplayGlobalNotification_ReversePatch");
+
+        #endregion
+
         /// <summary>
         /// Patch for making the hud only show end games stats for irl players, not interns
         /// </summary>

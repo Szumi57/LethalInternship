@@ -2,6 +2,7 @@
 using LethalInternship.Constants;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -70,6 +71,14 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InternManager.Instance.SyncEndOfRoundInterns();
         }
+
+        #region Reverse patches
+
+        [HarmonyPatch("GetPlayerSpawnPosition")]
+        [HarmonyReversePatch]
+        public static Vector3 GetPlayerSpawnPosition_ReversePatch(object instance, int playerNum, bool simpleTeleport) => throw new NotImplementedException("Stub LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.GetPlayerSpawnPosition_ReversePatch");
+
+        #endregion
 
         #region Transpilers
 
