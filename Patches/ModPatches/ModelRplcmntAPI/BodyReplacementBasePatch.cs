@@ -11,9 +11,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
     [HarmonyPatch(typeof(BodyReplacementBase))]
     internal class BodyReplacementBasePatch
     {
-        //public static Dictionary<BodyReplacementBase, DeadBodyInfo> Dict = new Dictionary<BodyReplacementBase, DeadBodyInfo>();
         public static List<BodyReplacementBase> ListBodyReplacementOnDeadBodies = new List<BodyReplacementBase>();
-        public static List<DeadBodyInfo> ListRagdollBodiesWithBodyReplacement = new List<DeadBodyInfo>();
 
         [HarmonyPatch("LateUpdate")]
         [HarmonyPrefix]
@@ -27,15 +25,13 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
             if (internAI.RagdollInternBody.IsRagdollBodyHeld())
             {
-                // this dead body ??????
                 // Held intern
-                DeadBodyInfo? deadBodyInfo = internAI.RagdollInternBody.GetDeadBodyInfo();
-                if (deadBodyInfo != null
-                    && !ListRagdollBodiesWithBodyReplacement.Contains(deadBodyInfo))
+                DeadBodyInfo? heldDeadBodyInfo = internAI.RagdollInternBody.GetDeadBodyInfo();
+                if (heldDeadBodyInfo != null
+                    && ___replacementDeadBody == null)
                 {
-                    ListRagdollBodiesWithBodyReplacement.Add(deadBodyInfo);
                     __instance.cosmeticAvatar = __instance.ragdollAvatar;
-                    CreateAndParentRagdoll_ReversePatch(__instance, deadBodyInfo);
+                    CreateAndParentRagdoll_ReversePatch(__instance, heldDeadBodyInfo);
                 }
 
                 // Held intern with replacement body not null
@@ -47,28 +43,24 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             }
 
             if (__instance.controller.deadBody != null
-            && !ListBodyReplacementOnDeadBodies.Contains(__instance))
+                && !ListBodyReplacementOnDeadBodies.Contains(__instance))
             {
                 //Dict[__instance] = __instance.controller.deadBody;
                 ListBodyReplacementOnDeadBodies.Add(__instance);
+                __instance.viewState.ReportBodyReplacementRemoval();
                 __instance.cosmeticAvatar = __instance.ragdollAvatar;
                 CreateAndParentRagdoll_ReversePatch(__instance, __instance.controller.deadBody);
             }
 
+
             if (ListBodyReplacementOnDeadBodies.Contains(__instance))//___replacementDeadBody && __instance.controller.deadBody == null)
             {
-                //__instance.cosmeticAvatar = __instance.avatar;
-                //    Plugin.LogDebug("destroyed shit");
-                //UnityEngine.Object.Destroy(___replacementDeadBody);
-                //___replacementDeadBody = null!;
-
-                __instance.avatar.Update();
-                __instance.shadowAvatar.Update();
+                //Plugin.LogDebug($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} only ragdoll update");
                 __instance.ragdollAvatar.Update();
-                __instance.viewModelAvatar.Update();
                 return false;
             }
 
+            //Plugin.LogDebug($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} all update");
             return true;
         }
 
@@ -76,18 +68,20 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPatch("CreateAndParentRagdoll")]
         [HarmonyReversePatch]
         public static void CreateAndParentRagdoll_ReversePatch(object instance, DeadBodyInfo bodyinfo) => throw new NotImplementedException("Stub LethalInternship.Patches.ModPatches.ModelRplcmntAPI.BodyReplacementBasePatch.CreateAndParentRagdoll_ReversePatch");
-
-
-        //[HarmonyPatch("OnDestroy")]
-        //[HarmonyPrefix]
-        //static bool OnDestroy_Prefix(BodyReplacementBase __instance)
-        //{
-        //    UnityEngine.Object.Destroy(__instance.replacementModel);
-        //    UnityEngine.Object.Destroy(__instance.replacementModelShadow);
-        //    UnityEngine.Object.Destroy(__instance.replacementViewModel);
-
-        //    Plugin.LogDebug($"destroy");
-        //    return false;
-        //}
     }
+
+    //[HarmonyPatch(typeof(ManagerBase))]
+    //internal class ManagerBasePatch
+    //{
+    //    [HarmonyPatch("Update")]
+    //    [HarmonyPostfix]
+    //    static void Update_Prefix(PlayerControllerB ___controller, bool ___bodyReplacementExists, BodyReplacementBase ___bodyReplacement)
+    //    {
+    //        if (InternManager.Instance.IsPlayerIntern(___controller))
+    //        {
+
+    //            Plugin.LogDebug($"{___controller.playerUsername} {___bodyReplacementExists} {___bodyReplacement?.GetInstanceID()} {___bodyReplacement}");
+    //        }
+    //    }
+    //}
 }

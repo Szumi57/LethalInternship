@@ -624,7 +624,6 @@ namespace LethalInternship.Managers
             internAI.RagdollInternBody = new RagdollInternBody(ragdollBody);
 
             // Plug ai on intern body
-            Plugin.LogDebug($"Adding AI \"{internAI.InternId}\" for body {internController.playerUsername}");
             internAI.enabled = false;
             internAI.NetworkObject.AutoObjectParentSync = false;
             internAI.transform.parent = objectParent.transform;
@@ -639,12 +638,6 @@ namespace LethalInternship.Managers
             // Remove dead bodies if exists
             if (internController.deadBody != null)
             {
-                if(internAI.ListDeadBodiesInfo == null)
-                {
-                    internAI.ListDeadBodiesInfo = new List<DeadBodyInfo>();
-                }
-                internAI.ListDeadBodiesInfo.Add(internController.deadBody);
-
                 internController.deadBody = null;
             }
 

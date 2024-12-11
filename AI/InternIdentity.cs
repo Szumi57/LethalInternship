@@ -63,7 +63,6 @@ namespace LethalInternship.AI
             //Plugin.LogDebug($"indexesSpawnedUnlockables.Count {indexesSpawnedUnlockables.Count}");
             Random randomInstance = new Random();
             int randomIndex = randomInstance.Next(0, indexesSpawnedUnlockables.Count);
-            Plugin.LogDebug($"randomIndex {randomIndex}, random suit id {indexesSpawnedUnlockables[randomIndex]}");
             return indexesSpawnedUnlockables[randomIndex];
         }
     }

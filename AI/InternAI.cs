@@ -67,7 +67,7 @@ namespace LethalInternship.AI
         public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
         public float TimeSinceTeleporting = 0f;
 
-        public List<DeadBodyInfo> ListDeadBodiesInfo = null!;
+        public List<Component> ListModelReplacement = null!;
 
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
@@ -91,7 +91,6 @@ namespace LethalInternship.AI
         public LineRendererUtil LineRendererUtil = null!;
 
         private RaycastHit GroundHit;
-
 
         private void Awake()
         {
@@ -3742,6 +3741,8 @@ namespace LethalInternship.AI
             internController.thisPlayerModelArms.enabled = false;
             StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
             InternIdentity.SuitID = suitID;
+
+            Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}");
         }
 
         private IEnumerator Wait2EndOfFrameToRefreshBillBoard()
