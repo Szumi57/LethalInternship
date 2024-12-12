@@ -560,7 +560,6 @@ namespace LethalInternship.Managers
         {
             StartOfRound instance = StartOfRound.Instance;
             InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[spawnParamsNetworkSerializable.InternIdentityID];
-            Plugin.LogDebug($"Identity spawned: {internIdentity.ToString()}");
 
             GameObject objectParent = instance.allPlayerObjects[spawnParamsNetworkSerializable.IndexNextPlayerObject];
             objectParent.transform.position = spawnParamsNetworkSerializable.SpawnPosition;
@@ -660,6 +659,7 @@ namespace LethalInternship.Managers
                 }
             }
 
+            Plugin.LogDebug($"Identity spawned: {internIdentity.ToString()}");
             internAI.Init();
         }
 

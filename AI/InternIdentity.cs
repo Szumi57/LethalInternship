@@ -11,6 +11,7 @@ namespace LethalInternship.AI
         public int? SuitID { get; set; }
         public InternVoice Voice { get; set; }
 
+        public int HpMax { get; set; }
         public int Hp { get; set; }
         public EnumStatusIdentity Status { get; set; }
 
@@ -22,7 +23,8 @@ namespace LethalInternship.AI
             Name = name;
             SuitID = suitID;
             Voice = voice;
-            Hp = Plugin.Config.InternMaxHealth.Value;
+            HpMax = Plugin.Config.InternMaxHealth.Value;
+            Hp = HpMax;
             Status = EnumStatusIdentity.Available;
         }
 
@@ -35,7 +37,7 @@ namespace LethalInternship.AI
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}, Status {(int)Status} {Status}, Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}/{HpMax}, Status {(int)Status} {Status}, Voice : {{{Voice.ToString()}}}";
         }
 
         public int GetRandomSuitID()

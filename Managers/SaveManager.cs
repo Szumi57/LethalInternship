@@ -123,8 +123,8 @@ namespace LethalInternship.Managers
                 }
                 IdentitySaveFile identitySaveFile = Save.IdentitiesSaveFiles[identity.IdIdentity];
                 identity.UpdateIdentity(identitySaveFile.Hp,
-                                              identitySaveFile.SuitID < 0 ? null : identitySaveFile.SuitID,
-                                              (EnumStatusIdentity)identitySaveFile.Status);
+                                        identitySaveFile.SuitID < 0 ? null : identitySaveFile.SuitID,
+                                        (EnumStatusIdentity)identitySaveFile.Status);
                 Plugin.LogDebug($"Loaded and updated identity from save : {identity.ToString()}");
             }
         }

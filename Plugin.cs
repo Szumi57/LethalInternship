@@ -24,6 +24,7 @@ using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
 using LethalInternship.Patches.ModPatches.TooManyEmotes;
+using LethalInternship.Patches.ModPatches.Zaprillator;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
@@ -51,6 +52,7 @@ namespace LethalInternship
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BUNKBEDREVIVE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.ZAPRILLATOR_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BETTEREMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.TOOMANYEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -230,6 +232,7 @@ namespace LethalInternship
             bool isModLethalProgressionLoaded = IsModLoaded(Const.LETHALPROGRESSION_GUID);
             bool isModQuickBuyLoaded = IsModLoaded(Const.QUICKBUYMENU_GUID);
             bool isModLCAlwaysHearWalkieModLoaded = IsModLoaded(Const.LCALWAYSHEARWALKIEMOD_GUID);
+            bool isModZaprillatorLoaded = IsModLoaded(Const.ZAPRILLATOR_GUID);
 
             // -------------------
             // Read the preloaders
@@ -310,6 +313,11 @@ namespace LethalInternship
             if (IsModBunkbedReviveLoaded)
             {
                 _harmony.PatchAll(typeof(BunkbedControllerPatch));
+            }
+            if (isModZaprillatorLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("Zaprillator.Behaviors.RevivablePlayer"), "IShockableWithGun.StopShockingWithGun"),
+                               new HarmonyMethod(typeof(RevivablePlayerPatch), nameof(RevivablePlayerPatch.StopShockingWithGun_Prefix)));
             }
             if (isModReservedItemSlotCoreLoaded)
             {

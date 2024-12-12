@@ -167,7 +167,7 @@ namespace LethalInternship.AI
             StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
 
             // Health
-            MaxHealth = InternIdentity.Hp;
+            MaxHealth = InternIdentity.HpMax;
             NpcController.Npc.health = MaxHealth;
             healthRegenerateTimerMax = 100f / (float)MaxHealth;
             NpcController.Npc.healthRegenerateTimer = healthRegenerateTimerMax;

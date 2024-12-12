@@ -76,8 +76,6 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
             }
         }
 
-
-
         [HarmonyPatch("GetHeldBody")]
         [HarmonyReversePatch]
         public static RagdollGrabbableObject? GetHeldBody_ReversePatch(object instance) => throw new NotImplementedException("Stub LethalInternship.Patches.ModPatches.BunkbedRevive.BunkbedControllerPatch.GetHeldBody_ReversePatch");
