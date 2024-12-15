@@ -96,6 +96,7 @@ namespace LethalInternship.AI.AIStates
         {
             // Go towards the sound heard
             this.targetLastKnownPosition = noisePosition;
+            ai.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.HearsPlayer);
             ai.State = new JustLostPlayerState(this);
         }
 

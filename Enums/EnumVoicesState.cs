@@ -7,6 +7,7 @@
         EnteringCruiser,
         FollowingPlayer,
         FoundLoot,
+        HearsPlayer,
         Hit,
         LosingPlayer,
         Lost,

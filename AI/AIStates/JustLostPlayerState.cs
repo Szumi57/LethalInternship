@@ -138,6 +138,11 @@ namespace LethalInternship.AI.AIStates
             ai.TryPlayVoiceAudioWaitToTalk(EnumVoicesState.LosingPlayer);
         }
 
+        public override void PlayerHeard(Vector3 noisePosition)
+        {
+            ai.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.HearsPlayer);
+        }
+
         public override string GetBillboardStateIndicator()
         {
             return "!?";
