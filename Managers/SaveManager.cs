@@ -114,6 +114,11 @@ namespace LethalInternship.Managers
             InternManager.Instance.LandingStatusAllowed = !Save.LandingStatusAborted;
             Plugin.LogDebug($"Loaded from save : Landing status allowed : {InternManager.Instance.LandingStatusAllowed}");
 
+            if (Save.IdentitiesSaveFiles.Length > IdentityManager.Instance.InternIdentities.Length)
+            {
+                IdentityManager.Instance.ExpandWithNewDefaultIdentities(Save.IdentitiesSaveFiles.Length - IdentityManager.Instance.InternIdentities.Length);
+            }
+
             for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {
                 InternIdentity identity = IdentityManager.Instance.InternIdentities[i];
@@ -186,6 +191,11 @@ namespace LethalInternship.Managers
 
             Plugin.LogDebug($"Client {NetworkManager.LocalClientId} : sync in current values landingAllowed {saveNetworkSerializable.LandingAllowed}");
             InternManager.Instance.LandingStatusAllowed = saveNetworkSerializable.LandingAllowed;
+
+            if (saveNetworkSerializable.Identities.Length > IdentityManager.Instance.InternIdentities.Length)
+            {
+                IdentityManager.Instance.ExpandWithNewDefaultIdentities(saveNetworkSerializable.Identities.Length - IdentityManager.Instance.InternIdentities.Length);
+            }
 
             for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {

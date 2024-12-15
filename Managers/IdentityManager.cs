@@ -43,14 +43,14 @@ namespace LethalInternship.Managers
             }
         }
 
-        public void InitIdentities(int nbIdentities, ConfigIdentity[] configIdentities)
+        public void InitIdentities(ConfigIdentity[] configIdentities)
         {
-            Plugin.LogDebug($"InitIdentities, nbIdentities {nbIdentities}");
-            InternIdentities = new InternIdentity[nbIdentities];
+            Plugin.LogDebug($"InitIdentities, nbIdentities {configIdentities.Length}");
+            InternIdentities = new InternIdentity[configIdentities.Length];
             this.configIdentities = configIdentities;
 
             // InitNewIdentity
-            for (int i = 0; i < nbIdentities; i++)
+            for (int i = 0; i < configIdentities.Length; i++)
             {
                 InternIdentities[i] = InitNewIdentity(i);
             }
@@ -121,14 +121,25 @@ namespace LethalInternship.Managers
         public int GetNewIdentityToSpawn()
         {
             // Get identity
+            int idNewIdentity;
             if (Plugin.Config.SpawnIdentitiesRandomly)
             {
-                return GetRandomAvailableAliveIdentityIndex();
+                idNewIdentity = GetRandomAvailableAliveIdentityIndex();
             }
             else
             {
-                return GetNextAvailableAliveIdentityIndex();
+                idNewIdentity = GetNextAvailableAliveIdentityIndex();
             }
+
+            // No more identities
+            // Create new ones
+            if (idNewIdentity == -1)
+            {
+                ExpandWithNewDefaultIdentities(numberToAdd: 1);
+                return InternIdentities.Length - 1;
+            }
+
+            return idNewIdentity;
         }
 
         public int GetRandomAvailableAliveIdentityIndex()
@@ -155,14 +166,29 @@ namespace LethalInternship.Managers
             return availableIdentities[0].IdIdentity;
         }
 
+        public void ExpandWithNewDefaultIdentities(int numberToAdd)
+        {
+            Array.Resize(ref InternIdentities, InternIdentities.Length + numberToAdd);
+            for (int i = InternIdentities.Length - numberToAdd; i < InternIdentities.Length; i++)
+            {
+                InternIdentities[i] = InitNewIdentity(i);
+                Plugin.LogDebug($"new identity ? {InternIdentities[i]}");
+            }
+        }
+
         public int GetNbIdentitiesAvailable()
         {
-            return InternIdentities.FilterAvailableAlive().Count();
+            return Plugin.Config.MaxInternsAvailable - InternIdentities.FilterToDropOrSpawnedAlive().Count();
         }
 
         public int GetNbIdentitiesToDrop()
         {
             return InternIdentities.FilterToDropAlive().Count();
+        }
+
+        public int GetNbIddentitiesToDropOrSpawned()
+        {
+            return InternIdentities.FilterToDropOrSpawnedAlive().Count();
         }
 
         public int[] GetIdentitiesToDrop()
@@ -199,6 +225,12 @@ namespace LethalInternship.Managers
         public static IEnumerable<InternIdentity> FilterToDropAlive(this IEnumerable<InternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.ToDrop && x.Alive);
+        }
+
+        public static IEnumerable<InternIdentity> FilterToDropOrSpawnedAlive(this IEnumerable<InternIdentity> enumerable)
+        {
+            return enumerable.Where(x => (x.Status == EnumStatusIdentity.ToDrop || x.Status == EnumStatusIdentity.Spawned)
+                                         && x.Alive);
         }
 
         public static IEnumerable<InternIdentity> FilterSpawnedAlive(this IEnumerable<InternIdentity> enumerable)

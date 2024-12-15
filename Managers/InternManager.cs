@@ -101,7 +101,7 @@ namespace LethalInternship.Managers
         private void Start()
         {
             // Identities
-            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities.Value, Plugin.Config.ConfigIdentities.configIdentities);
+            IdentityManager.Instance.InitIdentities(Plugin.Config.ConfigIdentities.configIdentities);
 
             // Intern objects
             if (Plugin.PluginIrlPlayersCount > 0)
@@ -327,7 +327,7 @@ namespace LethalInternship.Managers
 
         public void ResetIdentities()
         {
-            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities, Plugin.Config.ConfigIdentities.configIdentities);
+            IdentityManager.Instance.InitIdentities(Plugin.Config.ConfigIdentities.configIdentities);
         }
 
         private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
@@ -542,6 +542,12 @@ namespace LethalInternship.Managers
             // Get ragdoll body from server
             networkObjectReferenceRagdollInternBody.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
             RagdollGrabbableObject ragdollBody = networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>();
+
+            // Check for identites correctness
+            if (spawnParamsNetworkSerializable.InternIdentityID >= IdentityManager.Instance.InternIdentities.Length)
+            {
+                IdentityManager.Instance.ExpandWithNewDefaultIdentities(numberToAdd: 1);
+            }
 
             InitInternSpawning(internAI, ragdollBody,
                                spawnParamsNetworkSerializable);
@@ -1258,7 +1264,7 @@ namespace LethalInternship.Managers
             }
         }
 
-        
+
 
         #endregion
 
@@ -1307,8 +1313,8 @@ namespace LethalInternship.Managers
                 Plugin.LogDebug($"{configIdentity.ToString()}");
             }
 
-            Plugin.LogDebug($"Recreate identities for {Plugin.Config.MaxIdentities.Value} interns");
-            IdentityManager.Instance.InitIdentities(Plugin.Config.MaxIdentities.Value, configIdentityNetworkSerializable.ConfigIdentities);
+            Plugin.LogDebug($"Recreate identities for {configIdentityNetworkSerializable.ConfigIdentities.Length} interns");
+            IdentityManager.Instance.InitIdentities(configIdentityNetworkSerializable.ConfigIdentities);
         }
 
         #endregion

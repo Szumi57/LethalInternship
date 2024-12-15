@@ -2,6 +2,7 @@
 using LethalInternship.Enums;
 using LethalInternship.TerminalAdapter;
 using LethalInternship.TerminalAdapter.TerminalStates;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -165,6 +166,13 @@ namespace LethalInternship.Managers
 
             if (!IsServer)
             {
+                // Check for size or identities
+                int idMax = idsRandomIdentities.Max();
+                if (idMax + 1 > IdentityManager.Instance.InternIdentities.Length)
+                {
+                    IdentityManager.Instance.ExpandWithNewDefaultIdentities(idMax + 1 - IdentityManager.Instance.InternIdentities.Length);
+                }
+
                 for (int i = 0; i < idsRandomIdentities.Length; i++)
                 {
                     IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]].Status = EnumStatusIdentity.ToDrop;

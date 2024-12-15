@@ -139,7 +139,7 @@ namespace LethalInternship.AI
 
             if (availableAudioClipPaths[enumVoicesState].Count == 0)
             {
-                Plugin.LogDebug($"reset audio paths");
+                //Plugin.LogDebug($"reset audio paths");
                 availableAudioClipPaths[enumVoicesState] = FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], parameters).ToList();
             }
 

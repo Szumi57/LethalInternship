@@ -68,7 +68,7 @@ namespace LethalInternship.Constants
             name = DEFAULT_INTERN_NAME,
             suitConfigOption = (int)EnumOptionSuitConfig.AutomaticSameAsPlayer,
             suitID = 0,
-            voiceFolder = "RandomMale1"
+            voiceFolder = "DefaultVoices"
         };
     }
 }
