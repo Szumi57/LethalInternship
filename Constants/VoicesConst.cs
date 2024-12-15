@@ -1,7 +1,12 @@
-﻿namespace LethalInternship.Constants
+﻿using LethalInternship.Enums;
+
+namespace LethalInternship.Constants
 {
     internal class VoicesConst
     {
+        public static readonly float DEFAULT_VOLUME = 0.4f;
+        public static EnumTalkativeness DEFAULT_CONFIG_ENUM_TALKATIVENESS = EnumTalkativeness.Normal;
+
         public static readonly float DISTANCE_HEAR_OTHER_INTERNS = 10f;
         public static readonly float FADE_IN_TIME = 0.1f;
         public static readonly float FADE_OUT_TIME = 0.2f;

@@ -532,7 +532,8 @@ namespace LethalInternship.AI
                 || !NpcController.Npc.gameObject.activeSelf
                 || !NpcController.Npc.isPlayerControlled
                 || isEnemyDead
-                || NpcController.Npc.isPlayerDead)
+                || NpcController.Npc.isPlayerDead
+                || State == null)
             {
                 return;
             }
@@ -544,7 +545,13 @@ namespace LethalInternship.AI
             }
 
             // Make the intern stop talking for some time
-            StopAudioFadeOut();
+            if (lastVoiceState != EnumVoicesState.Hit
+                && lastVoiceState != EnumVoicesState.SteppedOnTrap
+                && lastVoiceState != EnumVoicesState.RunningFromMonster)
+            {
+                StopAudioFadeOut();
+            }
+
             if (IsOwner)
             {
                 InternIdentity.Voice.SetNewRandomCooldownAudio();

@@ -189,12 +189,12 @@ namespace LethalInternship.Configs
             // Voices
             VolumeInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
                                      "Volume (Client only)",
-                                     defaultValue: ConfigConst.DEFAULT_VOLUME.ToString(),
+                                     defaultValue: VoicesConst.DEFAULT_VOLUME.ToString(),
                                      "Volume of voices of interns");
 
             Talkativeness = cfg.Bind(ConfigConst.ConfigSectionVoices,
                                      "Talkativeness (Client only)",
-                                     defaultValue: (int)ConfigConst.DEFAULT_CONFIG_ENUM_TALKATIVENESS,
+                                     defaultValue: (int)VoicesConst.DEFAULT_CONFIG_ENUM_TALKATIVENESS,
                                      new ConfigDescription("0: No talking | 1: Shy | 2: Normal | 3: Talkative | 4: Can't stop talking",
                                                      new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Min(),
                                                                                    Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Max())));
@@ -244,7 +244,7 @@ namespace LethalInternship.Configs
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }
-            return ConfigConst.DEFAULT_VOLUME;
+            return VoicesConst.DEFAULT_VOLUME;
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)

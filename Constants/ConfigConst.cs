@@ -70,8 +70,5 @@ namespace LethalInternship.Constants
             suitID = 0,
             voiceFolder = "RandomMale1"
         };
-
-        public static readonly float DEFAULT_VOLUME = 0.5f;
-        public static EnumTalkativeness DEFAULT_CONFIG_ENUM_TALKATIVENESS = EnumTalkativeness.Normal;
     }
 }
