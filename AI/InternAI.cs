@@ -2040,7 +2040,8 @@ namespace LethalInternship.AI
 
         private void AssignTargetAndSetMovingTo(ulong playerid)
         {
-            SetMovingTowardsTargetPlayer(StartOfRound.Instance.allPlayerScripts[playerid]);
+            PlayerControllerB targetPlayer = StartOfRound.Instance.allPlayerScripts[playerid];
+            SetMovingTowardsTargetPlayer(targetPlayer);
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
 
@@ -2050,9 +2051,9 @@ namespace LethalInternship.AI
             }
             else if (this.State == null
                     || this.State.GetAIState() == EnumAIStates.SearchingForPlayer
-                    || this.State.GetAIState() == EnumAIStates.SpawningAnimation)
+                    || this.State.GetAIState() == EnumAIStates.BrainDead)
             {
-                this.State = new GetCloseToPlayerState(this);
+                this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
         }
 
@@ -3381,7 +3382,7 @@ namespace LethalInternship.AI
             NpcController.OrderToStopMoving();
 
             // Set intern to brain dead
-            State = new BrainDeadState(State);
+            State = new BrainDeadState(this);
         }
 
         private void InstantiateDeadBodyInfo(PlayerControllerB playerReference, Vector3 bodyVelocity = default)
@@ -3541,8 +3542,8 @@ namespace LethalInternship.AI
             // Enable model
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
 
-            // Set intern to brain dead
-            State = new ChillWithPlayerState(State);
+            // Set intern to chill
+            State = new ChillWithPlayerState(this);
         }
 
         #endregion

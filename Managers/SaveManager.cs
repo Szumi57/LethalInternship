@@ -114,6 +114,11 @@ namespace LethalInternship.Managers
             InternManager.Instance.LandingStatusAllowed = !Save.LandingStatusAborted;
             Plugin.LogDebug($"Loaded from save : Landing status allowed : {InternManager.Instance.LandingStatusAllowed}");
 
+            if (Save.IdentitiesSaveFiles == null)
+            {
+                return;
+            }
+
             if (Save.IdentitiesSaveFiles.Length > IdentityManager.Instance.InternIdentities.Length)
             {
                 IdentityManager.Instance.ExpandWithNewDefaultIdentities(Save.IdentitiesSaveFiles.Length - IdentityManager.Instance.InternIdentities.Length);

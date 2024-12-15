@@ -136,8 +136,6 @@ namespace LethalInternship.Managers
 
         private void FixedUpdate()
         {
-            //FootStepSoundAtTheSameTimePlayed = 0;
-
             RegisterAINoiseListener(Time.fixedDeltaTime);
         }
 

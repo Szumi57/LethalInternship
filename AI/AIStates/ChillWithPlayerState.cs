@@ -39,6 +39,19 @@ namespace LethalInternship.AI.AIStates
         }
 
         /// <summary>
+        /// <inheritdoc cref="AIState(InternAI)"/>
+        /// </summary>
+        public ChillWithPlayerState(InternAI ai) : base(ai)
+        {
+            CurrentState = EnumAIStates.ChillWithPlayer;
+
+            if (searchForPlayers.inProgress)
+            {
+                ai.StopSearch(searchForPlayers, true);
+            }
+        }
+
+        /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
         /// </summary>
         public ChillWithPlayerState(AIState state) : base(state)

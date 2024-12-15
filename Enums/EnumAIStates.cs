@@ -6,7 +6,6 @@
     internal enum EnumAIStates
     {
         BrainDead,
-        SpawningAnimation,
         SearchingForPlayer,
         GetCloseToPlayer,
         JustLostPlayer,

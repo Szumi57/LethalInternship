@@ -28,6 +28,18 @@ namespace LethalInternship.Patches.GameEnginePatches
 
         #endregion
 
+        [HarmonyPatch("FillEndGameStats")]
+        [HarmonyPrefix]
+        static void FillEndGameStats_PreFix(HUDManager __instance)
+        {
+            // Why hudmanager statsUIElements gets to length 0 on client ?
+            if (InternManager.Instance.AllEntitiesCount == 0
+                || __instance.statsUIElements.playerNamesText.Length < InternManager.Instance.AllEntitiesCount)
+            {
+                ResizeStatsUIElements(__instance);
+            }
+        }
+
         /// <summary>
         /// Patch for making the hud only show end games stats for irl players, not interns
         /// </summary>
@@ -211,10 +223,15 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPostfix]
         public static void Start_Postfix(HUDManager __instance)
         {
-            EndOfGameStatUIElements statsUIElements = __instance.statsUIElements;
+            ResizeStatsUIElements(__instance);
+        }
+
+        private static void ResizeStatsUIElements(HUDManager instance)
+        {
+            EndOfGameStatUIElements statsUIElements = instance.statsUIElements;
             GameObject gameObjectParent = statsUIElements.playerNamesText[0].gameObject.transform.parent.gameObject;
 
-            int allEntitiesCount = InternManager.Instance.AllEntitiesCount;
+            int allEntitiesCount = InternManager.Instance.AllEntitiesCount == 0 ? Plugin.PluginIrlPlayersCount : InternManager.Instance.AllEntitiesCount;
             Array.Resize(ref statsUIElements.playerNamesText, allEntitiesCount);
             Array.Resize(ref statsUIElements.playerStates, allEntitiesCount);
             Array.Resize(ref statsUIElements.playerNotesText, allEntitiesCount);
@@ -230,6 +247,8 @@ namespace LethalInternship.Patches.GameEnginePatches
                 statsUIElements.playerNotesText[i] = gameObjectNotes.GetComponent<TextMeshProUGUI>();
                 statsUIElements.playerStates[i] = gameObjectSymbol.GetComponent<Image>();
             }
+
+            Plugin.LogDebug($"ResizeStatsUIElements {instance.statsUIElements.playerNamesText.Length}");
         }
 
         [HarmonyPatch("ChangeControlTipMultiple")]

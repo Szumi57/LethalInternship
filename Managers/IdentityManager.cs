@@ -172,7 +172,6 @@ namespace LethalInternship.Managers
             for (int i = InternIdentities.Length - numberToAdd; i < InternIdentities.Length; i++)
             {
                 InternIdentities[i] = InitNewIdentity(i);
-                Plugin.LogDebug($"new identity ? {InternIdentities[i]}");
             }
         }
 
