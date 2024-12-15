@@ -65,6 +65,7 @@ namespace LethalInternship.Managers
         public bool LandingStatusAllowed;
 
         public VehicleController? VehicleController;
+        public Vector3 ItemDropShipPos;
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
@@ -645,7 +646,7 @@ namespace LethalInternship.Managers
             // Show model replacement
             if (Plugin.IsModModelReplacementAPILoaded)
             {
-                HideShowModelReplacement(internController, show: true);
+                internAI.HideShowModelReplacement(show: true);
             }
 
             // Radar name update
@@ -660,7 +661,7 @@ namespace LethalInternship.Managers
             }
 
             Plugin.LogDebug($"Identity spawned: {internIdentity.ToString()}");
-            internAI.Init();
+            internAI.Init((EnumSpawnAnimation)spawnParamsNetworkSerializable.enumSpawnAnimation);
         }
 
         /// <summary>
@@ -709,13 +710,14 @@ namespace LethalInternship.Managers
             int nbInternsToDropShip = IdentityManager.Instance.GetNbIdentitiesToDrop();
             for (int i = 0; i < nbInternsToDropShip; i++)
             {
-                if (pos >= 3)
+                if (pos > 3)
                 {
                     pos = 0;
                 }
                 Transform transform = spawnPositions[pos++];
                 SpawnInternServerRpc(new SpawnInternsParamsNetworkSerializable()
                 {
+                    enumSpawnAnimation = (int)EnumSpawnAnimation.RagdollFromDropShipAndPlayerSpawnAnimation,
                     SpawnPosition = transform.position,
                     YRot = transform.eulerAngles.y,
                     IsOutside = true
@@ -1248,7 +1250,7 @@ namespace LethalInternship.Managers
 
                 if (Plugin.IsModModelReplacementAPILoaded)
                 {
-                    HideShowModelReplacement(internController, show: false);
+                    internAI.HideShowModelReplacement(show: false);
                 }
 
                 internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
@@ -1256,12 +1258,7 @@ namespace LethalInternship.Managers
             }
         }
 
-        private void HideShowModelReplacement(PlayerControllerB playerController, bool show)
-        {
-            playerController.gameObject
-                .GetComponent<ModelReplacement.BodyReplacementBase>()?
-                .SetAvatarRenderers(show);
-        }
+        
 
         #endregion
 

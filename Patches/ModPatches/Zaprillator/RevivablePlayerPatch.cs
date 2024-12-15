@@ -1,4 +1,5 @@
 ﻿using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace LethalInternship.Patches.ModPatches.Zaprillator
                                                       ref GrabbableObject ____shockedBy,
                                                       float ____batteryLevel)
         {
-            if(____ragdoll == null)
+            if (____ragdoll == null)
             {
                 return true;
             }
@@ -45,6 +46,7 @@ namespace LethalInternship.Patches.ModPatches.Zaprillator
                                                             {
                                                                 ShouldDestroyDeadBody = true,
                                                                 Hp = restoreHealth,
+                                                                enumSpawnAnimation = (int)EnumSpawnAnimation.OnlyPlayerSpawnAnimation,
                                                                 SpawnPosition = ____ragdoll.ragdoll.transform.position,
                                                                 YRot = 0,
                                                                 IsOutside = !GameNetworkManager.Instance.localPlayerController.isInsideFactory

@@ -2207,20 +2207,6 @@ namespace LethalInternship.AI
             }
         }
 
-        private Vector3 GetBillBoardPosition(GameObject bodyModel, Vector3 lastPosition)
-        {
-            // Code from mod ModelReplacementAPI.BodyReplacementBase.GetBounds
-            IEnumerable<Bounds> source = from r in bodyModel.GetComponentsInChildren<SkinnedMeshRenderer>()
-                                         select r.bounds;
-            float yMax = (from x in source
-                          orderby x.size.y descending
-                          select x).First<Bounds>().size.y;
-
-            return new Vector3(lastPosition.x,
-                               yMax + 0.30f,
-                               lastPosition.z);
-        }
-
         private Vector3 GetBillBoardPositionModelReplacementAPI(Vector3 lastPosition)
         {
             BodyReplacementBase? bodyReplacement = Npc.gameObject.GetComponent<BodyReplacementBase>();
@@ -2236,6 +2222,20 @@ namespace LethalInternship.AI
             }
 
             return GetBillBoardPosition(model, Npc.usernameCanvas.transform.localPosition);
+        }
+
+        private Vector3 GetBillBoardPosition(GameObject bodyModel, Vector3 lastPosition)
+        {
+            // Code from mod ModelReplacementAPI.BodyReplacementBase.GetBounds
+            IEnumerable<Bounds> source = from r in bodyModel.GetComponentsInChildren<SkinnedMeshRenderer>()
+                                         select r.bounds;
+            float yMax = (from x in source
+                          orderby x.size.y descending
+                          select x).First<Bounds>().size.y;
+
+            return new Vector3(lastPosition.x,
+                               yMax + 0.30f,
+                               lastPosition.z);
         }
     }
 }

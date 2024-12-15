@@ -36,6 +36,11 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        public GetCloseToPlayerState(InternAI ai, PlayerControllerB targetPlayer) : this(ai)
+        {
+            ai.targetPlayer = targetPlayer;
+        }
+
         /// <summary>
         /// <inheritdoc cref="AIState.DoAI"/>
         /// </summary>

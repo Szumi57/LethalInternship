@@ -10,6 +10,7 @@ namespace LethalInternship.NetworkSerializers
         public int InternIdentityID;
         public int Hp;
         public int SuitID;
+        public int enumSpawnAnimation;
         public Vector3 SpawnPosition;
         public float YRot;
         public bool IsOutside;
@@ -23,6 +24,7 @@ namespace LethalInternship.NetworkSerializers
             serializer.SerializeValue(ref InternIdentityID);
             serializer.SerializeValue(ref Hp);
             serializer.SerializeValue(ref SuitID);
+            serializer.SerializeValue(ref enumSpawnAnimation);
             serializer.SerializeValue(ref SpawnPosition);
             serializer.SerializeValue(ref YRot);
             serializer.SerializeValue(ref IsOutside);

@@ -1,6 +1,7 @@
 ﻿using BunkbedRevive;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Patches.GameEnginePatches;
 using System;
@@ -48,6 +49,7 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                             {
                                                                 ShouldDestroyDeadBody = true,
+                                                                enumSpawnAnimation = (int)EnumSpawnAnimation.OnlyPlayerSpawnAnimation,
                                                                 SpawnPosition = StartOfRoundPatch.GetPlayerSpawnPosition_ReversePatch(StartOfRound.Instance, playerClientId, simpleTeleport: false),
                                                                 YRot = 0,
                                                                 IsOutside = true

@@ -2,6 +2,7 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System;
@@ -786,6 +787,7 @@ namespace LethalInternship.Patches.NpcPatches
 
             InternManager.Instance.SpawnThisInternServerRpc(identityID, new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
             {
+                enumSpawnAnimation = (int)EnumSpawnAnimation.None,
                 SpawnPosition = __instance.transform.position,
                 YRot = __instance.transform.eulerAngles.y,
                 IsOutside = !__instance.isInsideFactory

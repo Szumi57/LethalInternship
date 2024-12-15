@@ -78,6 +78,7 @@ namespace LethalInternship.AI
         private DeadBodyInfo ragdollBodyDeadBodyInfo = null!;
 
         private Coroutine grabObjectCoroutine = null!;
+        public bool AnimationCoroutineRagdollingRunning = false;
 
         private EnumVoicesState lastVoiceState;
 
@@ -143,11 +144,8 @@ namespace LethalInternship.AI
         /// <remarks>
         /// This method is used as an initialization and re-initialization too.
         /// </remarks>
-        public void Init()
+        public void Init(EnumSpawnAnimation enumSpawnAnimation)
         {
-            // Ladders
-            laddersInteractTrigger = RefreshLaddersList();
-
             // Entrances
             entrancesTeleportArray = Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
 
@@ -174,10 +172,8 @@ namespace LethalInternship.AI
 
             // AI init
             this.ventAnimationFinished = true;
-            TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             this.isEnemyDead = false;
             this.enabled = true;
-
             addPlayerVelocityToDestination = 3f;
 
             // Body collider
@@ -190,10 +186,11 @@ namespace LethalInternship.AI
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
-            // Init state
-            InitStateToSearchingNoTarget();
-
+            TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
+
+            // Spawn animation
+            BeginInternSpawnAnimation(enumSpawnAnimation);
         }
 
         private void InitInternVoiceComponent()
@@ -247,6 +244,11 @@ namespace LethalInternship.AI
         private void FixedUpdate()
         {
             UpdateSurfaceRayCast();
+
+            if (AnimationCoroutineRagdollingRunning)
+            {
+                TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState.Hit, shouldSyncAudio: false);
+            }
         }
 
         private void UpdateSurfaceRayCast()
@@ -406,7 +408,8 @@ namespace LethalInternship.AI
         public override void DoAIInterval()
         {
             if (isEnemyDead
-                || NpcController.Npc.isPlayerDead)
+                || NpcController.Npc.isPlayerDead
+                || State == null)
             {
                 return;
             }
@@ -593,8 +596,7 @@ namespace LethalInternship.AI
                 && agent.isOnNavMesh
                 && !isEnemyDead
                 && !NpcController.Npc.isPlayerDead
-                && !StartOfRound.Instance.shipIsLeaving
-                && StartOfRound.Instance.shipHasLanded)
+                && !StartOfRound.Instance.shipIsLeaving)
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
@@ -1094,7 +1096,7 @@ namespace LethalInternship.AI
 
             if (IsOwner)
             {
-                indicator = State.GetBillboardStateIndicator();
+                indicator = State == null ? string.Empty : State.GetBillboardStateIndicator();
             }
             else
             {
@@ -1558,6 +1560,55 @@ namespace LethalInternship.AI
             }
         }
 
+        public void HideShowModelReplacement(bool show)
+        {
+            NpcController.Npc.gameObject
+                .GetComponent<ModelReplacement.BodyReplacementBase>()?
+                .SetAvatarRenderers(show);
+        }
+
+        public void HideShowReplacementModelOnlyBody(bool show)
+        {
+            NpcController.Npc.thisPlayerModel.enabled = show;
+            NpcController.Npc.thisPlayerModelLOD1.enabled = show;
+            NpcController.Npc.thisPlayerModelLOD2.enabled = show;
+
+            int layer = show ? 0 : 31;
+            NpcController.Npc.thisPlayerModel.gameObject.layer = layer;
+            NpcController.Npc.thisPlayerModelLOD1.gameObject.layer = layer;
+            NpcController.Npc.thisPlayerModelLOD2.gameObject.layer = layer;
+            NpcController.Npc.thisPlayerModelArms.gameObject.layer = layer;
+
+            ModelReplacement.BodyReplacementBase? bodyReplacement = NpcController.Npc.gameObject.GetComponent<ModelReplacement.BodyReplacementBase>();
+            if (bodyReplacement == null)
+            {
+                HideShowLevelStickerBetaBadge(show);
+                return;
+            }
+
+            GameObject? model = bodyReplacement.replacementModel;
+            if (model == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
+            {
+                renderer.enabled = show;
+            }
+        }
+
+        public void HideShowLevelStickerBetaBadge(bool show)
+        {
+            MeshRenderer[] componentsInChildren = NpcController.Npc.gameObject.GetComponentsInChildren<MeshRenderer>();
+            (from x in componentsInChildren
+             where x.gameObject.name == "LevelSticker"
+             select x).First<MeshRenderer>().enabled = show;
+            (from x in componentsInChildren
+             where x.gameObject.name == "BetaBadge"
+             select x).First<MeshRenderer>().enabled = show;
+        }
+
         #region Voices
 
         public void UpdateInternVoiceEffects()
@@ -1991,7 +2042,8 @@ namespace LethalInternship.AI
                 this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
             }
             else if (this.State == null
-                    || this.State.GetAIState() == EnumAIStates.SearchingForPlayer)
+                    || this.State.GetAIState() == EnumAIStates.SearchingForPlayer
+                    || this.State.GetAIState() == EnumAIStates.SpawningAnimation)
             {
                 this.State = new GetCloseToPlayerState(this);
             }
@@ -3325,15 +3377,15 @@ namespace LethalInternship.AI
             State = new BrainDeadState(State);
         }
 
-        private void InstantiateDeadBodyInfo(PlayerControllerB playerGrabberController)
+        private void InstantiateDeadBodyInfo(PlayerControllerB playerReference, Vector3 bodyVelocity = default)
         {
             float num = 1.32f;
             int deathAnimation = 0;
 
             Transform parent = null!;
-            if (playerGrabberController.isInElevator)
+            if (playerReference.isInElevator)
             {
-                parent = playerGrabberController.playersManager.elevatorTransform;
+                parent = playerReference.playersManager.elevatorTransform;
             }
 
             Vector3 position = NpcController.Npc.thisPlayerBody.position + Vector3.up * num;
@@ -3351,13 +3403,19 @@ namespace LethalInternship.AI
             ragdollBodyDeadBodyInfo.transform.rotation = rotation;
             ragdollBodyDeadBodyInfo.transform.parent = parent;
 
-            if (playerGrabberController.physicsParent != null)
+            if (playerReference.physicsParent != null)
             {
-                ragdollBodyDeadBodyInfo.SetPhysicsParent(playerGrabberController.physicsParent);
+                ragdollBodyDeadBodyInfo.SetPhysicsParent(playerReference.physicsParent);
             }
 
-            ragdollBodyDeadBodyInfo.parentedToShip = playerGrabberController.isInElevator;
+            ragdollBodyDeadBodyInfo.parentedToShip = playerReference.isInElevator;
             ragdollBodyDeadBodyInfo.playerObjectId = (int)NpcController.Npc.playerClientId;
+
+            Rigidbody[] componentsInChildren = ragdollBodyDeadBodyInfo.gameObject.GetComponentsInChildren<Rigidbody>();
+            for (int i = 0; i < componentsInChildren.Length; i++)
+            {
+                componentsInChildren[i].velocity = bodyVelocity;
+            }
 
             // Scale ragdoll (without stretching the body parts)
             ResizeRagdoll(ragdollBodyDeadBodyInfo.transform);
@@ -3471,16 +3529,158 @@ namespace LethalInternship.AI
                 HeldItem.EnableItemMeshes(enable: true);
             }
 
-            RagdollInternBody.SetReleased();
+            RagdollInternBody.Hide();
 
             // Enable model
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
 
             // Set intern to brain dead
             State = new ChillWithPlayerState(State);
+        }
 
-            // Unsubscribe from events to prevent double trigger
-            PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
+        #endregion
+
+        #region Spawn animation
+
+        public Coroutine BeginInternSpawnAnimation(EnumSpawnAnimation enumSpawnAnimation)
+        {
+            switch (enumSpawnAnimation)
+            {
+                case EnumSpawnAnimation.None:
+                    return StartCoroutine(CoroutineNoSpawnAnimation());
+
+                case EnumSpawnAnimation.OnlyPlayerSpawnAnimation:
+                    return StartCoroutine(CoroutineOnlyPlayerSpawnAnimation());
+
+                case EnumSpawnAnimation.RagdollFromDropShipAndPlayerSpawnAnimation:
+                    return StartCoroutine(CoroutineFromDropShipAndPlayerSpawnAnimation());
+
+                default:
+                    return StartCoroutine(CoroutineNoSpawnAnimation());
+            }
+        }
+
+        private IEnumerator CoroutineNoSpawnAnimation()
+        {
+            // Change ai state
+            SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+            yield break;
+        }
+
+        private IEnumerator CoroutineOnlyPlayerSpawnAnimation()
+        {
+            NpcController.Npc.inSpecialInteractAnimation = true;
+            NpcController.Npc.playerBodyAnimator.ResetTrigger("SpawnPlayer");
+            NpcController.Npc.playerBodyAnimator.SetTrigger("SpawnPlayer");
+
+            yield return new WaitForSeconds(3f);
+
+            NpcController.Npc.inSpecialInteractAnimation = false;
+
+            // Change ai state
+            SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+            yield break;
+        }
+
+        private IEnumerator CoroutineFromDropShipAndPlayerSpawnAnimation()
+        {
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                // Wait for model replacement to add its component
+                yield return new WaitForEndOfFrame();
+                // Wait for  model replacement to init replacement models
+                yield return new WaitForEndOfFrame();
+            }
+
+            AnimationCoroutineRagdollingRunning = true;
+            PlayerControllerB closestPlayer = GetClosestIrlPlayer();
+
+            // Spawn ragdoll
+            InstantiateDeadBodyInfo(closestPlayer, GetRandomPushForce(InternManager.Instance.ItemDropShipPos + new Vector3(0, -0.8f, 0), NpcController.Npc.transform.position, 5f));
+            RagdollInternBody.SetFreeRagdoll(ragdollBodyDeadBodyInfo);
+
+            // Hide intern
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                HideShowReplacementModelOnlyBody(show: false);
+            }
+            else
+            {
+                InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: false, disableLocalArms: false);
+                HideShowLevelStickerBetaBadge(show: false);
+            }
+
+            // Wait in ragdoll state
+            yield return new WaitForSeconds(3f);
+            AnimationCoroutineRagdollingRunning = false;
+
+            // Enable model
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                HideShowReplacementModelOnlyBody(show: true);
+            }
+            else
+            {
+                InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
+                HideShowLevelStickerBetaBadge(show: true);
+            }
+
+            // Hide ragdoll
+            RagdollInternBody.Hide();
+
+            if (!IsOwner)
+            {
+                yield break;
+            }
+
+            DeadBodyInfo? deadBodyInfo = RagdollInternBody.GetDeadBodyInfo();
+            TeleportAgentAIAndBody(deadBodyInfo == null ? NpcController.Npc.transform.position : deadBodyInfo.transform.position);
+            UpdateInternSpecialAnimationValue(specialAnimation: true, timed: 0f, climbingLadder: false);
+            NpcController.Npc.inSpecialInteractAnimation = true;
+            NpcController.Npc.playerBodyAnimator.ResetTrigger("SpawnPlayer");
+            NpcController.Npc.playerBodyAnimator.SetTrigger("SpawnPlayer");
+
+            // Wait in spawn player animation
+            yield return new WaitForSeconds(3f);
+
+            NpcController.Npc.inSpecialInteractAnimation = false;
+            UpdateInternSpecialAnimationValue(specialAnimation: false, timed: 0f, climbingLadder: false);
+
+            // Change ai state
+            SyncAssignTargetAndSetMovingTo(closestPlayer);
+
+            yield break;
+        }
+
+        private PlayerControllerB GetClosestIrlPlayer()
+        {
+            PlayerControllerB closest = null!;
+            for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+            {
+                PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
+                if (!player.isPlayerControlled
+                    || player.isPlayerDead)
+                {
+                    continue;
+                }
+
+                if (closest == null
+                   || (player.transform.position - this.NpcController.Npc.transform.position).sqrMagnitude < (closest.transform.position - this.NpcController.Npc.transform.position).sqrMagnitude)
+                {
+                    closest = player;
+                }
+            }
+
+            return closest;
+        }
+
+        private Vector3 GetRandomPushForce(Vector3 origin, Vector3 point, float forceMean)
+        {
+            point.y += UnityEngine.Random.Range(0.5f, 4f);
+
+            //DrawUtil.DrawWhiteLine(LineRendererUtil.GetLineRenderer(), new Ray(origin, point - origin), Vector3.Distance(point, origin));
+            float force = UnityEngine.Random.Range(forceMean * 0.5f, forceMean * 1.5f);
+            return Vector3.Normalize(point - origin) * force / Vector3.Distance(point, origin);
         }
 
         #endregion

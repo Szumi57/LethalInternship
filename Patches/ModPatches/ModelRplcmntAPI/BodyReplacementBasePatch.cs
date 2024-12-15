@@ -23,7 +23,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 return true;
             }
 
-            if (internAI.RagdollInternBody.IsRagdollBodyHeld())
+            if (internAI.RagdollInternBody.IsRagdollEnabled())
             {
                 // Held intern
                 DeadBodyInfo? heldDeadBodyInfo = internAI.RagdollInternBody.GetDeadBodyInfo();
@@ -69,19 +69,4 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyReversePatch]
         public static void CreateAndParentRagdoll_ReversePatch(object instance, DeadBodyInfo bodyinfo) => throw new NotImplementedException("Stub LethalInternship.Patches.ModPatches.ModelRplcmntAPI.BodyReplacementBasePatch.CreateAndParentRagdoll_ReversePatch");
     }
-
-    //[HarmonyPatch(typeof(ManagerBase))]
-    //internal class ManagerBasePatch
-    //{
-    //    [HarmonyPatch("Update")]
-    //    [HarmonyPostfix]
-    //    static void Update_Prefix(PlayerControllerB ___controller, bool ___bodyReplacementExists, BodyReplacementBase ___bodyReplacement)
-    //    {
-    //        if (InternManager.Instance.IsPlayerIntern(___controller))
-    //        {
-
-    //            Plugin.LogDebug($"{___controller.playerUsername} {___bodyReplacementExists} {___bodyReplacement?.GetInstanceID()} {___bodyReplacement}");
-    //        }
-    //    }
-    //}
 }

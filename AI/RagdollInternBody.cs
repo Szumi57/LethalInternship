@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.Patches.ObjectsPatches;
 using UnityEngine;
 
 namespace LethalInternship.AI
@@ -14,18 +13,6 @@ namespace LethalInternship.AI
             this.ragdollGrabbableObject = ragdollGrabbableObject;
             this.ragdollGrabbableObject.transform.position = StartOfRound.Instance.notSpawnedPosition.position;
             this.idPlayerHolder = -1;
-        }
-
-        public static void Update_Patch(RagdollGrabbableObject ragdollGrabbableObject)
-        {
-            if (ragdollGrabbableObject.ragdoll != null)
-            {
-                ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
-                ragdollGrabbableObject.ragdoll.attachedTo = ragdollGrabbableObject.transform;
-                ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
-            }
-            GrabbableObjectPatch.GrabbableObject_Update_ReversePatch(ragdollGrabbableObject);
-            ragdollGrabbableObject.grabbableToEnemies = false;
         }
 
         public void SetGrabbedBy(PlayerControllerB playerGrabberController,
@@ -65,7 +52,7 @@ namespace LethalInternship.AI
             //}
         }
 
-        public void SetReleased()
+        public void Hide()
         {
             ragdollGrabbableObject.ragdoll.attachedTo = null;
             ragdollGrabbableObject.ragdoll.attachedLimb = null;
@@ -82,6 +69,14 @@ namespace LethalInternship.AI
             this.idPlayerHolder = -1;
         }
 
+        public void SetFreeRagdoll(DeadBodyInfo deadBodyInfo)
+        {
+            ragdollGrabbableObject.ragdoll = deadBodyInfo;
+            ragdollGrabbableObject.ragdoll.grabBodyObject = ragdollGrabbableObject;
+            ragdollGrabbableObject.parentObject = ragdollGrabbableObject.ragdoll.bodyParts[5].transform;
+            ragdollGrabbableObject.transform.SetParent(ragdollGrabbableObject.ragdoll.bodyParts[5].transform);
+        }
+
         public float GetWeight()
         {
             return ragdollGrabbableObject.itemProperties.weight;
@@ -91,20 +86,24 @@ namespace LethalInternship.AI
         {
             return ragdollGrabbableObject?.ragdoll;
         }
+        public bool IsRagdollBodyHeld()
+        {
+            return ragdollGrabbableObject.isHeld;
+        }
 
         public bool IsRagdollBodyHeldByPlayer(int idPlayer)
         {
             return idPlayer == idPlayerHolder && IsRagdollBodyHeld();
         }
 
-        public bool IsRagdollBodyHeld()
-        {
-            return ragdollGrabbableObject.isHeld;
-        }
-
         public PlayerControllerB GetPlayerHolder()
         {
             return StartOfRound.Instance.allPlayerScripts[idPlayerHolder];
+        }
+
+        public bool IsRagdollEnabled()
+        {
+            return ragdollGrabbableObject.ragdoll != null && !ragdollGrabbableObject.ragdoll.deactivated;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using OPJosMod.ReviveCompany;
 using UnityEngine;
@@ -53,14 +54,15 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             }
 
             // Respawn intern
-            InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity, 
+            InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity,
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
-                                                                {
-                                                                    ShouldDestroyDeadBody = true,
-                                                                    SpawnPosition = revivePos,
-                                                                    YRot = yRot,
-                                                                    IsOutside = !isInsideFactory
-                                                                });
+                                                            {
+                                                                ShouldDestroyDeadBody = true,
+                                                                enumSpawnAnimation = (int)EnumSpawnAnimation.OnlyPlayerSpawnAnimation,
+                                                                SpawnPosition = revivePos,
+                                                                YRot = yRot,
+                                                                IsOutside = !isInsideFactory
+                                                            });
 
             return false;
         }
