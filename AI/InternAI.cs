@@ -1441,6 +1441,15 @@ namespace LethalInternship.AI
                 return false;
             }
 
+            RagdollGrabbableObject? ragdollGrabbableObject = grabbableObject as RagdollGrabbableObject;
+            if (ragdollGrabbableObject != null)
+            {
+                if (!ragdollGrabbableObject.grabbableToEnemies)
+                {
+                    return false;
+                }
+            }
+
             // Item just dropped, should wait a bit before grab it again
             if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
             {
@@ -3500,7 +3509,7 @@ namespace LethalInternship.AI
             PlayerControllerB closestPlayer = GetClosestIrlPlayer();
 
             // Spawn ragdoll
-            InstantiateDeadBodyInfo(closestPlayer, GetRandomPushForce(InternManager.Instance.ItemDropShipPos + new Vector3(0, -0.8f, 0), NpcController.Npc.transform.position, 5f));
+            InstantiateDeadBodyInfo(closestPlayer, GetRandomPushForce(InternManager.Instance.ItemDropShipPos + new Vector3(0, -1f, 0), NpcController.Npc.transform.position, 4f));
             RagdollInternBody.SetFreeRagdoll(ragdollBodyDeadBodyInfo);
 
             // Hide intern
@@ -3515,7 +3524,7 @@ namespace LethalInternship.AI
             }
 
             // Wait in ragdoll state
-            yield return new WaitForSeconds(3f);
+            yield return new WaitForSeconds(2.5f);
             AnimationCoroutineRagdollingRunning = false;
 
             // Enable model
@@ -3580,7 +3589,7 @@ namespace LethalInternship.AI
 
         private Vector3 GetRandomPushForce(Vector3 origin, Vector3 point, float forceMean)
         {
-            point.y += UnityEngine.Random.Range(0.5f, 4f);
+            point.y += UnityEngine.Random.Range(2f, 4f);
 
             //DrawUtil.DrawWhiteLine(LineRendererUtil.GetLineRenderer(), new Ray(origin, point - origin), Vector3.Distance(point, origin));
             float force = UnityEngine.Random.Range(forceMean * 0.5f, forceMean * 1.5f);
