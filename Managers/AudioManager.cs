@@ -128,6 +128,7 @@ namespace LethalInternship.Managers
             {
                 internVoice.PlayAudioClip(audioClip);
             }
+            Plugin.LogDebug($"New audioClip loaded {smallPathAudioClip}");
         }
 
         private IEnumerator LoadAudioAndPlay(string uri, InternVoice internVoice)
@@ -144,7 +145,6 @@ namespace LethalInternship.Managers
                 else
                 {
                     AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
-                    Plugin.LogDebug($"New audioClip loaded {audioClip.length}");
                     AddAudioClip(uri, audioClip);
 
                     internVoice.PlayAudioClip(audioClip);

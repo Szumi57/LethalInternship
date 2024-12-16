@@ -54,7 +54,18 @@ namespace LethalInternship.Patches.MapHazardsPatches
                     __instance.PressMineServerRpc();
 
                     // Audio
-                    internAI.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
+                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    {
+                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        CanTalkIfOtherInternTalk = true,
+                        WaitForCooldown = false,
+                        CutCurrentVoiceStateToTalk = true,
+                        CanRepeatVoiceState = false,
+
+                        ShouldSync = false,
+                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                        AllowSwearing = Plugin.Config.AllowSwearing.Value
+                    });
                 }
             }
         }
@@ -95,7 +106,18 @@ namespace LethalInternship.Patches.MapHazardsPatches
                     ___localPlayerOnMine = false;
 
                     // Audio
-                    internAI.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
+                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    {
+                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        CanTalkIfOtherInternTalk = true,
+                        WaitForCooldown = false,
+                        CutCurrentVoiceStateToTalk = true,
+                        CanRepeatVoiceState = true,
+
+                        ShouldSync = false,
+                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                        AllowSwearing = Plugin.Config.AllowSwearing.Value
+                    });
 
                     // Boom
                     TriggerMineOnLocalClientByExiting_ReversePatch(__instance);

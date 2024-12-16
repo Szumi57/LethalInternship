@@ -86,7 +86,18 @@ namespace LethalInternship.AI.AIStates
         public override void TryPlayCurrentStateVoiceAudio()
         {
             // Talk if no one is talking close
-            ai.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.FoundLoot);
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.FoundLoot,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
         }
 
         public override string GetBillboardStateIndicator()

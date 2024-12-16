@@ -53,7 +53,18 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 if (!__instance.isWater)
                 {
                     // Audio
-                    internAI.TryPlayVoiceAudioCutAndRepeatTalk(EnumVoicesState.SteppedOnTrap, shouldSyncAudio: false);
+                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    {
+                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        CanTalkIfOtherInternTalk = true,
+                        WaitForCooldown = false,
+                        CutCurrentVoiceStateToTalk = true,
+                        CanRepeatVoiceState = true,
+
+                        ShouldSync = false,
+                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                        AllowSwearing = Plugin.Config.AllowSwearing.Value
+                    });
                 }
                 return;
             }

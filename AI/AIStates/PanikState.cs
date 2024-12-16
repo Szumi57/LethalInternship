@@ -113,7 +113,18 @@ namespace LethalInternship.AI.AIStates
         {
             // Priority state
             // Stop talking and voice new state
-            ai.TryPlayVoiceAudioCutAndWaitTalk(EnumVoicesState.RunningFromMonster);
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.RunningFromMonster,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
         }
 
         public override string GetBillboardStateIndicator()

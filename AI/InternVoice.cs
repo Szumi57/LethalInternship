@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Managers;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace LethalInternship.AI
 
         private float cooldownPlayAudio = 0f;
         private bool aboutToTalk;
+        private EnumVoicesState lastVoiceState;
 
         private Dictionary<EnumVoicesState, List<string>> dictAvailableAudioClipPathsByState = new Dictionary<EnumVoicesState, List<string>>();
         private Dictionary<EnumVoicesState, List<string>> availableAudioClipPaths = new Dictionary<EnumVoicesState, List<string>>();
@@ -68,8 +70,64 @@ namespace LethalInternship.AI
             return CurrentAudioSource.isPlaying || aboutToTalk;
         }
 
+        public void TryPlayVoiceAudio(PlayVoiceParameters parameters)
+        {
+            if (Plugin.Config.Talkativeness.Value == (int)EnumTalkativeness.NoTalking)
+            {
+                return;
+            }
+
+            if (!parameters.CanTalkIfOtherInternTalk)
+            {
+                if (InternManager.Instance.DidAnInternJustTalkedClose(this.InternID))
+                {
+                    SetNewRandomCooldownAudio();
+                    return;
+                }
+            }
+
+            if (parameters.WaitForCooldown)
+            {
+                if (!CanPlayAudioAfterCooldown())
+                {
+                    return;
+                }
+            }
+
+            if (!parameters.CutCurrentVoiceStateToTalk)
+            {
+                if (IsTalking())
+                {
+                    return;
+                }
+            }
+
+            if (parameters.CanRepeatVoiceState)
+            {
+                // Wait if already in state
+                if (lastVoiceState == parameters.VoiceState
+                    && IsTalking())
+                {
+                    // We wait for end
+                    return;
+                }
+            }
+            else
+            {
+                // Cannot repeat allowed, if in same state no cut talking
+                if (lastVoiceState == parameters.VoiceState)
+                {
+                    return;
+                }
+            }
+
+            PlayRandomVoiceAudio(parameters.VoiceState, parameters);
+            lastVoiceState = parameters.VoiceState;
+        }
+
         public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)
         {
+            StopAudioFadeOut();
             ResetAboutToTalk();
             string audioClipPath = GetRandomAudioClipByState(enumVoicesState, parameters);
             if (string.IsNullOrWhiteSpace(audioClipPath))
@@ -223,14 +281,35 @@ namespace LethalInternship.AI
             availableAudioClipPaths.Clear();
         }
 
+        public void TryStopAudioFadeOut()
+        {
+            if (lastVoiceState != EnumVoicesState.Hit
+                && lastVoiceState != EnumVoicesState.SteppedOnTrap
+                && lastVoiceState != EnumVoicesState.RunningFromMonster)
+            {
+                StopAudioFadeOut();
+            }
+        }
+
         public void StopAudioFadeOut()
         {
-            AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, VoicesConst.FADE_OUT_TIME);
+            if (CurrentAudioSource.isPlaying)
+            {
+                AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, VoicesConst.FADE_OUT_TIME);
+                lastVoiceState = EnumVoicesState.None;
+            }
         }
     }
 
     public struct PlayVoiceParameters
     {
+        public bool CanTalkIfOtherInternTalk { get; set; }
+        public bool WaitForCooldown { get; set; }
+        public bool CutCurrentVoiceStateToTalk { get; set; }
+        public bool CanRepeatVoiceState { get; set; }
+
+        public EnumVoicesState VoiceState { get; set; }
+
         public bool ShouldSync { get; set; }
         public bool IsInternInside { get; set; }
         public bool AllowSwearing { get; set; }

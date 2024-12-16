@@ -107,7 +107,18 @@ namespace LethalInternship.AI.AIStates
         public override void TryPlayCurrentStateVoiceAudio()
         {
             // Default states, wait for cooldown and if no one is talking close
-            ai.TryPlayVoiceAudioWaitToTalk(EnumVoicesState.EnteringCruiser);
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.EnteringCruiser,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = false,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
         }
 
         private Vector3 GetNextRandomInCruiserPos()

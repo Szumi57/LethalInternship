@@ -1338,8 +1338,10 @@ namespace LethalInternship.Managers
             }
         }
 
-        public bool DidAnInternJustTalkedClose(InternAI internTryingToTalk)
+        public bool DidAnInternJustTalkedClose(int idInternTryingToTalk)
         {
+            InternAI internTryingToTalk = AllInternAIs[idInternTryingToTalk];
+
             foreach (var internAI in AllInternAIs)
             {
                 if (internAI == null

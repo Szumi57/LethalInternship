@@ -89,14 +89,37 @@ namespace LethalInternship.AI.AIStates
         public override void TryPlayCurrentStateVoiceAudio()
         {
             // Default states, wait for cooldown and if no one is talking close
-            ai.TryPlayVoiceAudioWaitToTalk(EnumVoicesState.Lost);
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.Lost,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = false,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
         }
 
         public override void PlayerHeard(Vector3 noisePosition)
         {
             // Go towards the sound heard
             this.targetLastKnownPosition = noisePosition;
-            ai.TryPlayVoiceAudioCutAndTalkOnce(EnumVoicesState.HearsPlayer);
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.HearsPlayer,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
+
             ai.State = new JustLostPlayerState(this);
         }
 
