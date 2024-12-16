@@ -97,41 +97,15 @@ namespace LethalInternship.Managers
             Plugin.Config.InitialSyncCompleted += Config_InitialSyncCompleted;
             Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {Plugin.Config.MaxInternsAvailable.Value}");
         }
-
-        private void Start()
+        private void Config_InitialSyncCompleted(object sender, EventArgs e)
         {
-            // Identities
-            IdentityManager.Instance.InitIdentities(Plugin.Config.ConfigIdentities.configIdentities);
-
-            // Intern objects
-            if (Plugin.PluginIrlPlayersCount > 0)
+            if (IsHost)
             {
-                // only resize if irl players not 0, which means we already tried to populate pool of interns
-                // But the manager somehow reset
-                ManagePoolOfInterns();
+                return;
             }
 
-            // Load data from save
-            SaveManager.Instance.LoadAllDataFromSave();
-
-            // Init footstep surfaces tags
-            DictTagSurfaceIndex.Clear();
-            for (int i = 0; i < StartOfRound.Instance.footstepSurfaces.Length; i++)
-            {
-                DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
-            }
-        }
-
-        private void Update()
-        {
-            UpdateAnimationsCulling();
-
-            timerIsAnInternScheduledToLand += Time.deltaTime;
-            if (timerIsAnInternScheduledToLand > 1f)
-            {
-                timerIsAnInternScheduledToLand = 0f;
-                isAnInternScheduledToLand = IdentityManager.Instance.IsAnIdentityToDrop();
-            }
+            Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, ManagePoolOfInterns after CSync, MaxInternsAvailable {Plugin.Config.MaxInternsAvailable.Value}");
+            ManagePoolOfInterns();
         }
 
         private void FixedUpdate()
@@ -174,15 +148,40 @@ namespace LethalInternship.Managers
             }
         }
 
-        private void Config_InitialSyncCompleted(object sender, EventArgs e)
+        private void Start()
         {
-            if (IsHost)
+            // Identities
+            IdentityManager.Instance.InitIdentities(Plugin.Config.ConfigIdentities.configIdentities);
+
+            // Intern objects
+            if (Plugin.PluginIrlPlayersCount > 0)
             {
-                return;
+                // only resize if irl players not 0, which means we already tried to populate pool of interns
+                // But the manager somehow reset
+                ManagePoolOfInterns();
             }
 
-            Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, ManagePoolOfInterns after CSync, MaxInternsAvailable {Plugin.Config.MaxInternsAvailable.Value}");
-            ManagePoolOfInterns();
+            // Load data from save
+            SaveManager.Instance.LoadAllDataFromSave();
+
+            // Init footstep surfaces tags
+            DictTagSurfaceIndex.Clear();
+            for (int i = 0; i < StartOfRound.Instance.footstepSurfaces.Length; i++)
+            {
+                DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
+            }
+        }
+
+        private void Update()
+        {
+            UpdateAnimationsCulling();
+
+            timerIsAnInternScheduledToLand += Time.deltaTime;
+            if (timerIsAnInternScheduledToLand > 1f)
+            {
+                timerIsAnInternScheduledToLand = 0f;
+                isAnInternScheduledToLand = IdentityManager.Instance.IsAnIdentityToDrop();
+            }
         }
 
         /// <summary>
@@ -1165,6 +1164,56 @@ namespace LethalInternship.Managers
             return 35;
         }
 
+        private void EndOfRoundForInterns()
+        {
+            DictEnemyAINoiseListeners.Clear();
+
+            CountAliveAndDisableInterns();
+        }
+
+        /// <summary>
+        /// Count and disable the interns still alive
+        /// </summary>
+        /// <returns>Number of interns still alive</returns>
+        private void CountAliveAndDisableInterns()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            if (instanceSOR.currentLevel.levelID == 3)
+            {
+                return;
+            }
+
+            PlayerControllerB internController;
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || internAI.NpcController == null)
+                {
+                    continue;
+                }
+
+                internController = internAI.NpcController.Npc;
+                if (internController.isPlayerDead
+                    || !internController.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                internController.isPlayerControlled = false;
+                internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
+                DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
+                internController.transform.position = internController.playersManager.notSpawnedPosition.position;
+
+                if (Plugin.IsModModelReplacementAPILoaded)
+                {
+                    internAI.HideShowModelReplacement(show: false);
+                }
+
+                internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
+                instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
+            }
+        }
+
         #region SyncEndOfRoundInterns
 
         /// <summary>
@@ -1216,53 +1265,8 @@ namespace LethalInternship.Managers
         [ClientRpc]
         private void SyncEndOfRoundInternsFromServerToClientRpc()
         {
-            CountAliveAndDisableInterns();
+            EndOfRoundForInterns();
         }
-
-        /// <summary>
-        /// Count and disable the interns still alive
-        /// </summary>
-        /// <returns>Number of interns still alive</returns>
-        private void CountAliveAndDisableInterns()
-        {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            if (instanceSOR.currentLevel.levelID == 3)
-            {
-                return;
-            }
-
-            PlayerControllerB internController;
-            foreach (InternAI internAI in AllInternAIs)
-            {
-                if (internAI == null
-                    || internAI.NpcController == null)
-                {
-                    continue;
-                }
-
-                internController = internAI.NpcController.Npc;
-                if (internController.isPlayerDead
-                    || !internController.isPlayerControlled)
-                {
-                    continue;
-                }
-
-                internController.isPlayerControlled = false;
-                internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
-                DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
-                internController.transform.position = internController.playersManager.notSpawnedPosition.position;
-
-                if (Plugin.IsModModelReplacementAPILoaded)
-                {
-                    internAI.HideShowModelReplacement(show: false);
-                }
-
-                internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
-                instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
-            }
-        }
-
-
 
         #endregion
 

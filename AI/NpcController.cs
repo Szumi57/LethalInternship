@@ -1390,6 +1390,11 @@ namespace LethalInternship.AI
             foreach (var enemyAINoiseListener in InternManager.Instance.DictEnemyAINoiseListeners)
             {
                 EnemyAI enemyAI = enemyAINoiseListener.Key;
+                if (enemyAI == null)
+                {
+                    continue;
+                }
+
                 if ((Npc.transform.position - enemyAI.transform.position).sqrMagnitude > noiseRange * noiseRange)
                 {
                     continue;
