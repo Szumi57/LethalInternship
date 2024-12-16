@@ -1,4 +1,5 @@
-﻿using LethalInternship.Constants;
+﻿using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using System;
@@ -129,8 +130,11 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
             else
             {
+                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idIdentityChosen];
+                string textRevivedIntern = internIdentity.Alive ? string.Empty : TerminalConst.TEXT_CONFIRM_CANCEL_REVIVE_INTERN;
                 terminalNode.displayText = string.Format(TerminalConst.TEXT_CONFIRM_CANCEL_SPECIFIC_PURCHASE,
-                                                         IdentityManager.Instance.InternIdentities[idIdentityChosen].Name,
+                                                         internIdentity.Name,
+                                                         textRevivedIntern,
                                                          Plugin.Config.InternPrice.Value * this.nbOrdered);
             }
 

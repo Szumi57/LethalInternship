@@ -133,7 +133,7 @@ namespace LethalInternship.AI
                 Plugin.LogError(string.Format("Error when initializing intern variables for {0} : {1}", gameObject.name, arg));
             }
 
-            Plugin.LogDebug("InternAI started");
+            //Plugin.LogDebug("InternAI started");
         }
 
         /// <summary>
@@ -236,6 +236,11 @@ namespace LethalInternship.AI
             NpcController.AudioHighPassFilterComponent = audioHighPassFilter;
 
             // AudioMixerGroup
+            if ((int)NpcController.Npc.playerClientId >= SoundManager.Instance.playerVoiceMixers.Length)
+            {
+                // Because of morecompany, playerVoiceMixers gets somehow resized down
+                InternManager.Instance.ResizePlayerVoiceMixers(InternManager.Instance.AllEntitiesCount);
+            }
             this.InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
         }
 

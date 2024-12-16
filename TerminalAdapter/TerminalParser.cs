@@ -123,8 +123,10 @@ namespace LethalInternship.TerminalAdapter
                 {
                     if (nameIdentities[j].Contains(search))
                     {
-                        if (!IdentityManager.Instance.InternIdentities[j].Alive)
+                        if (!IdentityManager.Instance.InternIdentities[j].Alive
+                            && !StartOfRound.Instance.inShipPhase)
                         {
+                            // No revive on moon
                             TerminalState = new ErrorPage(TerminalState, EnumErrorTypeTerminalPage.InternDead);
                             return true;
                         }

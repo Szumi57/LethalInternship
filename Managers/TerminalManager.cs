@@ -1,4 +1,5 @@
-﻿using LethalInternship.Constants;
+﻿using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.TerminalAdapter;
 using LethalInternship.TerminalAdapter.TerminalStates;
@@ -126,7 +127,9 @@ namespace LethalInternship.Managers
                     return;
                 }
 
-                IdentityManager.Instance.InternIdentities[newIdentityToSpawn].Status = EnumStatusIdentity.ToDrop;
+                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[newIdentityToSpawn];
+                internIdentity.Status = EnumStatusIdentity.ToDrop;
+                internIdentity.Hp = internIdentity.Alive ? internIdentity.Hp : internIdentity.HpMax;
                 idsRandomIdentities[i] = newIdentityToSpawn;
             }
 
@@ -172,11 +175,13 @@ namespace LethalInternship.Managers
                 {
                     IdentityManager.Instance.ExpandWithNewDefaultIdentities(idMax + 1 - IdentityManager.Instance.InternIdentities.Length);
                 }
+            }
 
-                for (int i = 0; i < idsRandomIdentities.Length; i++)
-                {
-                    IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]].Status = EnumStatusIdentity.ToDrop;
-                }
+            for (int i = 0; i < idsRandomIdentities.Length; i++)
+            {
+                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]];
+                internIdentity.Status = EnumStatusIdentity.ToDrop;
+                internIdentity.Hp = internIdentity.Alive ? internIdentity.Hp : internIdentity.HpMax;
             }
         }
 

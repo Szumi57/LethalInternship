@@ -126,7 +126,7 @@ namespace LethalInternship.AI
         /// </summary>
         public void Awake()
         {
-            Plugin.LogDebug("Awake intern controller.");
+            //Plugin.LogDebug("Awake intern controller.");
             Init();
 
             PatchesUtil.FieldInfoPreviousAnimationStateHash.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
@@ -748,7 +748,7 @@ namespace LethalInternship.AI
                     if (!isFallingNoJump)
                     {
                         isFallingNoJump = true;
-                        Plugin.LogDebug($"{Npc.playerUsername} isFallingNoJump true");
+                        //Plugin.LogDebug($"{Npc.playerUsername} isFallingNoJump true");
                         Npc.fallValue = -7f;
                         Npc.fallValueUncapped = -7f;
                     }
@@ -776,7 +776,7 @@ namespace LethalInternship.AI
                         {
                             Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_SHORTFALLLANDING);
                         }
-                        Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround fallValue {Npc.fallValue}");
+                        //Plugin.LogDebug($"{Npc.playerUsername} JustTouchedGround fallValue {Npc.fallValue}");
                         PlayerControllerBPatch.PlayerHitGroundEffects_ReversePatch(this.Npc);
                     }
                     //if (!IsFallingFromJump)

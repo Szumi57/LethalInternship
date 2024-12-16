@@ -225,8 +225,8 @@ namespace LethalInternship.Managers
                 Array.Resize(ref RagdollInternBodies, irlPlayersAndInternsCount);
             }
 
-            // Need to populate pool of interns ?
             AllEntitiesCount = irlPlayersAndInternsCount;
+            // Need to populate pool of interns ?
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
@@ -329,7 +329,6 @@ namespace LethalInternship.Managers
 
         private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
         {
-            Plugin.LogDebug($"irlPlayersAndInternsCount {irlPlayersAndInternsCount}");
             SoundManager instanceSM = SoundManager.Instance;
 
             Array.Resize(ref instanceSM.playerVoicePitchLerpSpeed, irlPlayersAndInternsCount);
@@ -338,14 +337,25 @@ namespace LethalInternship.Managers
             Array.Resize(ref instanceSM.playerVoiceVolumes, irlPlayersAndInternsCount);
 
             // From moreCompany
-            Array.Resize<AudioMixerGroup>(ref instanceSM.playerVoiceMixers, irlPlayersAndInternsCount);
-            AudioMixerGroup audioMixerGroup = Resources.FindObjectsOfTypeAll<AudioMixerGroup>().FirstOrDefault((AudioMixerGroup x) => x.name.StartsWith("VoicePlayer"));
             for (int i = IndexBeginOfInterns; i < irlPlayersAndInternsCount; i++)
             {
                 instanceSM.playerVoicePitchLerpSpeed[i] = 3f;
                 instanceSM.playerVoicePitchTargets[i] = 1f;
                 instanceSM.playerVoicePitches[i] = 1f;
                 instanceSM.playerVoiceVolumes[i] = 0.5f;
+            }
+
+            ResizePlayerVoiceMixers(irlPlayersAndInternsCount);
+        }
+
+        public void ResizePlayerVoiceMixers(int irlPlayersAndInternsCount)
+        {
+            // From moreCompany
+            SoundManager instanceSM = SoundManager.Instance;
+            Array.Resize<AudioMixerGroup>(ref instanceSM.playerVoiceMixers, irlPlayersAndInternsCount);
+            AudioMixerGroup audioMixerGroup = Resources.FindObjectsOfTypeAll<AudioMixerGroup>().FirstOrDefault((AudioMixerGroup x) => x.name.StartsWith("VoicePlayer"));
+            for (int i = IndexBeginOfInterns; i < irlPlayersAndInternsCount; i++)
+            {
                 instanceSM.playerVoiceMixers[i] = audioMixerGroup;
             }
         }
