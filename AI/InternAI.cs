@@ -977,6 +977,7 @@ namespace LethalInternship.AI
                 case "Nutcracker":
                 case "Red Locust Bees":
                 case "Blob":
+                case "ImmortalSnail":
                     return 10f;
 
                 case "Earth Leviathan":
