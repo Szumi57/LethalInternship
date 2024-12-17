@@ -78,6 +78,7 @@ namespace LethalInternship.AI
         private DeadBodyInfo ragdollBodyDeadBodyInfo = null!;
 
         private Coroutine grabObjectCoroutine = null!;
+        private Coroutine? spawnAnimationCoroutine = null!;
         public bool AnimationCoroutineRagdollingRunning = false;
 
         private string stateIndicatorServer = string.Empty;
@@ -188,7 +189,7 @@ namespace LethalInternship.AI
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
 
             // Spawn animation
-            BeginInternSpawnAnimation(enumSpawnAnimation);
+            spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
         }
 
         private void InitInternVoiceComponent()
@@ -3460,6 +3461,11 @@ namespace LethalInternship.AI
 
         #region Spawn animation
 
+        public bool IsSpawningAnimationRunning()
+        {
+            return spawnAnimationCoroutine != null;
+        }
+
         public Coroutine BeginInternSpawnAnimation(EnumSpawnAnimation enumSpawnAnimation)
         {
             switch (enumSpawnAnimation)
@@ -3482,6 +3488,8 @@ namespace LethalInternship.AI
         {
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+            
+            spawnAnimationCoroutine = null;
             yield break;
         }
 
@@ -3497,6 +3505,8 @@ namespace LethalInternship.AI
 
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+
+            spawnAnimationCoroutine = null;
             yield break;
         }
 
@@ -3567,6 +3577,7 @@ namespace LethalInternship.AI
             // Change ai state
             SyncAssignTargetAndSetMovingTo(closestPlayer);
 
+            spawnAnimationCoroutine = null;
             yield break;
         }
 

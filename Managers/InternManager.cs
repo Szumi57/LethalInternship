@@ -1131,6 +1131,7 @@ namespace LethalInternship.Managers
                 }
 
                 if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
+                    && internAI.State != null
                     && internAI.State.GetAIState() == EnumAIStates.ChillWithPlayer)
                 {
                     return true;

@@ -855,6 +855,12 @@ namespace LethalInternship.Patches.NpcPatches
                 // Name billboard
                 intern.NpcController.ShowFullNameBillboard();
 
+                // No action if in spawning animation
+                if (intern.IsSpawningAnimationRunning())
+                {
+                    continue;
+                }
+
                 StringBuilder sb = new StringBuilder();
                 // Line item
                 if (!intern.AreHandsFree())

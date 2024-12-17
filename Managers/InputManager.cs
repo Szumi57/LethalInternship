@@ -197,7 +197,8 @@ namespace LethalInternship.Managers
                     continue;
                 }
                 InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null)
+                if (intern == null
+                    || intern.IsSpawningAnimationRunning())
                 {
                     continue;
                 }
@@ -242,7 +243,8 @@ namespace LethalInternship.Managers
                     continue;
                 }
                 InternAI? intern = InternManager.Instance.GetInternAI((int)internController.playerClientId);
-                if (intern == null)
+                if (intern == null
+                    || intern.IsSpawningAnimationRunning())
                 {
                     continue;
                 }
@@ -289,7 +291,8 @@ namespace LethalInternship.Managers
                     continue;
                 }
                 InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null)
+                if (intern == null
+                    || intern.IsSpawningAnimationRunning())
                 {
                     continue;
                 }
@@ -349,7 +352,8 @@ namespace LethalInternship.Managers
                     continue;
                 }
                 InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null)
+                if (intern == null 
+                    || intern.IsSpawningAnimationRunning())
                 {
                     continue;
                 }
