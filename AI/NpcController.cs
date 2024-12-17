@@ -1375,7 +1375,7 @@ namespace LethalInternship.AI
             }
         }
 
-        private void PlayAudibleNoiseIntern(Vector3 noisePosition,
+        public void PlayAudibleNoiseIntern(Vector3 noisePosition,
                                            float noiseRange = 10f,
                                            float noiseLoudness = 0.5f,
                                            int timesPlayedInSameSpot = 0,

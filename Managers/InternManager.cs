@@ -1389,6 +1389,22 @@ namespace LethalInternship.Managers
             AllInternAIs[internID].PlayAudioServerRpc(smallPathAudioClip, Plugin.Config.Talkativeness.Value);
         }
 
+        public void PlayAudibleNoiseForIntern(int internID,
+                                              Vector3 noisePosition,
+                                              float noiseRange = 10f,
+                                              float noiseLoudness = 0.5f,
+                                              int noiseID = 0)
+        {
+            InternAI internAI = AllInternAIs[internID];
+            bool noiseIsInsideClosedShip = internAI.NpcController.Npc.isInHangarShipRoom && internAI.NpcController.Npc.playersManager.hangarDoorsClosed;
+            internAI.NpcController.PlayAudibleNoiseIntern(noisePosition,
+                                                          noiseRange,
+                                                          noiseLoudness,
+                                                          timesPlayedInSameSpot: 0,
+                                                          noiseIsInsideClosedShip,
+                                                          noiseID);
+        }
+
         #endregion
 
         #region Animations culling

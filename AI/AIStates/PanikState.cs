@@ -117,7 +117,7 @@ namespace LethalInternship.AI.AIStates
             {
                 VoiceState = EnumVoicesState.RunningFromMonster,
                 CanTalkIfOtherInternTalk = true,
-                WaitForCooldown = true,
+                WaitForCooldown = false,
                 CutCurrentVoiceStateToTalk = true,
                 CanRepeatVoiceState = true,
 

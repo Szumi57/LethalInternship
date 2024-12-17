@@ -123,6 +123,7 @@ namespace LethalInternship.AI
 
             PlayRandomVoiceAudio(parameters.VoiceState, parameters);
             lastVoiceState = parameters.VoiceState;
+            InternManager.Instance.PlayAudibleNoiseForIntern(this.InternID, CurrentAudioSource.transform.position, 16f, 0.9f, 5);
         }
 
         public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)

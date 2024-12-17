@@ -489,6 +489,13 @@ namespace LethalInternship.AI
 
         private void FollowCrouchStateIfCan()
         {
+            if (State != null
+                && State.GetAIState() == EnumAIStates.Panik
+                && NpcController.Npc.isCrouching)
+            {
+                NpcController.OrderToToggleCrouch();
+            }
+
             if (Plugin.Config.FollowCrouchWithPlayer
                 && targetPlayer != null)
             {
@@ -3488,7 +3495,7 @@ namespace LethalInternship.AI
         {
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
-            
+
             spawnAnimationCoroutine = null;
             yield break;
         }
