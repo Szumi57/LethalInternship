@@ -7,6 +7,7 @@ using LethalInternship.Utils;
 using ModelReplacement;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -100,6 +101,8 @@ namespace LethalInternship.AI
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
+        private Vector3 lastDirectionToLookAt;
+        private Quaternion cameraRotationToUpdateLookAt;
 
         private Vector2 lastMoveVector;
         private float floatSprint;
@@ -1968,20 +1971,21 @@ namespace LethalInternship.AI
             this.enumObjectsLookingAt = EnumObjectsLookingAt.Position;
             this.positionToLookAt = positionToLookAt;
         }
+
         /// <summary>
         /// Update the head of the intern to look at what he is set to
         /// </summary>
         private void UpdateLookAt()
         {
-            if (IsMoving())
-            {
-                return;
-            }
-
             Vector3 direction;
             switch (enumObjectsLookingAt)
             {
                 case EnumObjectsLookingAt.Forward:
+
+                    if (Npc.gameplayCamera.transform.rotation == Npc.thisPlayerBody.rotation)
+                    {
+                        break;
+                    }
 
                     Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, Npc.thisPlayerBody.rotation, Const.CAMERA_TURNSPEED);
                     break;
@@ -1989,36 +1993,58 @@ namespace LethalInternship.AI
                 case EnumObjectsLookingAt.Player:
 
                     direction = positionPlayerEyeToLookAt - Npc.gameplayCamera.transform.position;
-                    if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
+                    if (!DirectionNotZero(direction.x) && !DirectionNotZero(direction.y) && !DirectionNotZero(direction.z))
                     {
-                        Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-                        Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED);
+                        break;
+                    }
 
-                        if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
-                        {
-                            if (this.HasToMove)
-                                enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
-                            else
-                                SetTurnBodyTowardsDirectionWithPosition(positionPlayerEyeToLookAt);
-                        }
+                    if (direction != lastDirectionToLookAt)
+                    {
+                        lastDirectionToLookAt = direction;
+                        cameraRotationToUpdateLookAt = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                    }
+
+                    if (Npc.gameplayCamera.transform.rotation == cameraRotationToUpdateLookAt)
+                    {
+                        break;
+                    }
+
+                    Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotationToUpdateLookAt, Const.CAMERA_TURNSPEED);
+                    if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
+                    {
+                        if (this.HasToMove)
+                            enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
+                        else
+                            SetTurnBodyTowardsDirectionWithPosition(positionPlayerEyeToLookAt);
                     }
                     break;
 
                 case EnumObjectsLookingAt.Position:
 
                     direction = positionToLookAt - Npc.gameplayCamera.transform.position;
-                    if (DirectionNotZero(direction.x) || DirectionNotZero(direction.y) || DirectionNotZero(direction.z))
+                    if (!DirectionNotZero(direction.x) && !DirectionNotZero(direction.y) && !DirectionNotZero(direction.z))
                     {
-                        Quaternion cameraRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-                        Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotation, Const.CAMERA_TURNSPEED);
+                        break;
+                    }
 
-                        if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 20f)
-                        {
-                            if (this.HasToMove)
-                                enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
-                            else
-                                SetTurnBodyTowardsDirectionWithPosition(positionToLookAt);
-                        }
+                    if (direction != lastDirectionToLookAt)
+                    {
+                        lastDirectionToLookAt = direction;
+                        cameraRotationToUpdateLookAt = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                    }
+
+                    if (Npc.gameplayCamera.transform.rotation == cameraRotationToUpdateLookAt)
+                    {
+                        break;
+                    }
+
+                    Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotationToUpdateLookAt, Const.CAMERA_TURNSPEED);
+                    if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 20f)
+                    {
+                        if (this.HasToMove)
+                            enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
+                        else
+                            SetTurnBodyTowardsDirectionWithPosition(positionToLookAt);
                     }
                     break;
             }
