@@ -1178,6 +1178,7 @@ namespace LethalInternship.Managers
         private void EndOfRoundForInterns()
         {
             DictEnemyAINoiseListeners.Clear();
+            ListEnemyAINonNoiseListeners.Clear();
 
             CountAliveAndDisableInterns();
         }
