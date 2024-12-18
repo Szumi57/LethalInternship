@@ -7,7 +7,7 @@ namespace LethalInternship.AI.AIStates
 {
     internal class PlayerInCruiserState : AIState
     {
-        private VehicleController vehicleController;
+        private VehicleController? vehicleController;
 
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>
@@ -22,7 +22,7 @@ namespace LethalInternship.AI.AIStates
         /// <summary>
         /// <inheritdoc cref="AIState(InternAI)"/>
         /// </summary>
-        public PlayerInCruiserState(InternAI ai, VehicleController vehicleController) : base(ai)
+        public PlayerInCruiserState(InternAI ai, VehicleController? vehicleController) : base(ai)
         {
             CurrentState = EnumAIStates.PlayerInCruiser;
 

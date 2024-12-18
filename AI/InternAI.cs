@@ -1874,7 +1874,7 @@ namespace LethalInternship.AI
                 if (networkBehaviourReferenceVehicle.TryGet(out VehicleController vehicleController))
                 {
                     // Attach intern to vehicle
-                    Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} enters vehicle");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} enters vehicle");
                     this.ReParentIntern(vehicleController.transform);
                 }
 
@@ -1882,7 +1882,7 @@ namespace LethalInternship.AI
             }
             else
             {
-                Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} exits vehicle");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} exits vehicle");
                 this.ReParentIntern(NpcController.Npc.playersManager.playersContainer);
             }
         }
@@ -1955,11 +1955,9 @@ namespace LethalInternship.AI
 
             if (NpcController.IsControllerInCruiser)
             {
-                this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
+                this.State = new PlayerInCruiserState(this, this.GetVehicleCruiserTargetPlayerIsIn());
             }
-            else if (this.State == null
-                    || this.State.GetAIState() == EnumAIStates.SearchingForPlayer
-                    || this.State.GetAIState() == EnumAIStates.BrainDead)
+            else 
             {
                 this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
@@ -3503,6 +3501,7 @@ namespace LethalInternship.AI
 
         private IEnumerator CoroutineOnlyPlayerSpawnAnimation()
         {
+            UpdateInternSpecialAnimationValue(specialAnimation: true, timed: 0f, climbingLadder: false);
             NpcController.Npc.inSpecialInteractAnimation = true;
             NpcController.Npc.playerBodyAnimator.ResetTrigger("SpawnPlayer");
             NpcController.Npc.playerBodyAnimator.SetTrigger("SpawnPlayer");
