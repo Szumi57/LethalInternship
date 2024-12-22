@@ -11,6 +11,7 @@ namespace LethalInternship.NetworkSerializers
         public int suitID;
         public int suitConfigOption;
         public string voiceFolder;
+        public float volume;
         public float voicePitch;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -19,12 +20,13 @@ namespace LethalInternship.NetworkSerializers
             serializer.SerializeValue(ref suitID);
             serializer.SerializeValue(ref suitConfigOption);
             serializer.SerializeValue(ref voiceFolder);
+            serializer.SerializeValue(ref volume);
             serializer.SerializeValue(ref voicePitch);
         }
 
         public override string ToString()
         {
-            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, voiceFolder {voicePitch}";
+            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, volme {volume}, voiceFolder {voicePitch}";
         }
     }
 

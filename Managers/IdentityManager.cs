@@ -65,6 +65,7 @@ namespace LethalInternship.Managers
             {
                 configIdentity = ConfigConst.DEFAULT_CONFIG_IDENTITY;
                 name = string.Format(configIdentity.name, idIdentity);
+                configIdentity.voicePitch = UnityEngine.Random.Range(0.8f, 1.2f);
             }
             else
             {
@@ -100,6 +101,7 @@ namespace LethalInternship.Managers
 
             // Voice
             InternVoice voice = new InternVoice(configIdentity.voiceFolder,
+                                                configIdentity.volume, 
                                                 configIdentity.voicePitch);
 
             // InternIdentity

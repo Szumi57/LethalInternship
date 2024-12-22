@@ -54,7 +54,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
         // Voices
-        public ConfigEntry<string> VolumeInterns;
+        public ConfigEntry<string> VolumeMultiplierInterns;
         public ConfigEntry<int> Talkativeness;
         public ConfigEntry<bool> AllowSwearing;
 
@@ -180,10 +180,10 @@ namespace LethalInternship.Configs
                                                             "Should the intern his held item before teleporting ?");
 
             // Voices
-            VolumeInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Volume (Client only)",
+            VolumeMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                     "Volume multiplier (Client only)",
                                      defaultValue: VoicesConst.DEFAULT_VOLUME.ToString(),
-                                     "Volume of voices of interns");
+                                     "Volume multiplier of voices of interns");
 
             Talkativeness = cfg.Bind(ConfigConst.ConfigSectionVoices,
                                      "Talkativeness (Client only)",
@@ -227,13 +227,13 @@ namespace LethalInternship.Configs
             return string.Format(TerminalConst.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
         }
 
-        public float GetVolumeInterns()
+        public float GetVolumeMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
             NumberFormatInfo nfi = new NumberFormatInfo();
             nfi.NumberDecimalSeparator = ",";
 
-            if(float.TryParse(VolumeInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if(float.TryParse(VolumeMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }

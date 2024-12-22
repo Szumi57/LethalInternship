@@ -68,7 +68,9 @@ namespace LethalInternship.Constants
             name = DEFAULT_INTERN_NAME,
             suitConfigOption = (int)EnumOptionSuitConfig.AutomaticSameAsPlayer,
             suitID = 0,
-            voiceFolder = "DefaultVoices"
+            voiceFolder = "Mathew_kelly",
+            volume = 0.5f
+            // voice pitch set after
         };
     }
 }

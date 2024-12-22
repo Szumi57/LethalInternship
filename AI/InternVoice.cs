@@ -13,6 +13,7 @@ namespace LethalInternship.AI
     {
         public int InternID { get; set; }
         public string VoiceFolder { get; set; }
+        public float Volume { get; set; }
         public float VoicePitch { get; set; }
         public AudioSource CurrentAudioSource { get; set; } = null!;
 
@@ -26,15 +27,16 @@ namespace LethalInternship.AI
         private bool wasInside;
         private bool wasAllowedToSwear;
 
-        public InternVoice(string voiceFolder, float voicePitch)
+        public InternVoice(string voiceFolder, float volume, float voicePitch)
         {
             this.VoiceFolder = voiceFolder;
+            this.Volume = volume;
             this.VoicePitch = voicePitch;
         }
 
         public override string ToString()
         {
-            return $"InternID: {InternID}, VoiceFolder: {VoiceFolder}, VoicePitch {VoicePitch}";
+            return $"InternID: {InternID}, VoiceFolder: {VoiceFolder}, Volume: {Volume}, VoicePitch {VoicePitch}";
         }
 
         public void SetCooldownAudio(float cooldown)
@@ -154,7 +156,7 @@ namespace LethalInternship.AI
 
             CurrentAudioSource.pitch = VoicePitch;
             CurrentAudioSource.clip = audioClip;
-            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, Plugin.Config.GetVolumeInterns());
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, this.Volume * Plugin.Config.GetVolumeMultiplierInterns());
 
             SetCooldownAudio(audioClip.length + GetRandomCooldown());
         }

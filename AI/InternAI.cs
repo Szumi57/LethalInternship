@@ -248,22 +248,6 @@ namespace LethalInternship.AI
         private void FixedUpdate()
         {
             UpdateSurfaceRayCast();
-
-            if (AnimationCoroutineRagdollingRunning)
-            {
-                this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
-                {
-                    VoiceState = EnumVoicesState.Hit,
-                    CanTalkIfOtherInternTalk = true,
-                    WaitForCooldown = false,
-                    CutCurrentVoiceStateToTalk = true,
-                    CanRepeatVoiceState = true,
-
-                    ShouldSync = false,
-                    IsInternInside = NpcController.Npc.isInsideFactory,
-                    AllowSwearing = Plugin.Config.AllowSwearing.Value
-                });
-            }
         }
 
         private void UpdateSurfaceRayCast()
@@ -1957,7 +1941,8 @@ namespace LethalInternship.AI
             {
                 this.State = new PlayerInCruiserState(this, this.GetVehicleCruiserTargetPlayerIsIn());
             }
-            else 
+            else if(this.State == null 
+                || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
             {
                 this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
@@ -3545,10 +3530,26 @@ namespace LethalInternship.AI
                 HideShowLevelStickerBetaBadge(show: false);
             }
 
+            yield return null;
+
+            // Voice
+            AnimationCoroutineRagdollingRunning = false;
+            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.Hit,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = false,
+                IsInternInside = NpcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
+
             // Wait in ragdoll state
             yield return new WaitForSeconds(2.5f);
-            AnimationCoroutineRagdollingRunning = false;
-
+            
             // Enable model
             if (Plugin.IsModModelReplacementAPILoaded)
             {
