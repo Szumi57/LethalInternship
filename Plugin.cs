@@ -12,6 +12,7 @@ using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
 using LethalInternship.Patches.ModPatches.BetterEmotes;
 using LethalInternship.Patches.ModPatches.BunkbedRevive;
+using LethalInternship.Patches.ModPatches.ButteryFixes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
 using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
@@ -64,6 +65,7 @@ namespace LethalInternship
     [BepInDependency(Const.RESERVEDITEMSLOTCORE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALPROGRESSION_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.QUICKBUYMENU_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.BUTTERYFIXES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -233,6 +235,7 @@ namespace LethalInternship
             bool isModQuickBuyLoaded = IsModLoaded(Const.QUICKBUYMENU_GUID);
             bool isModLCAlwaysHearWalkieModLoaded = IsModLoaded(Const.LCALWAYSHEARWALKIEMOD_GUID);
             bool isModZaprillatorLoaded = IsModLoaded(Const.ZAPRILLATOR_GUID);
+            bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
 
             // -------------------
             // Read the preloaders
@@ -352,6 +355,11 @@ namespace LethalInternship
                                null,
                                null,
                                new HarmonyMethod(typeof(LCAlwaysHearActiveWalkiePatch), nameof(LCAlwaysHearActiveWalkiePatch.alwaysHearWalkieTalkiesPatch_Transpiler)));
+            }
+            if (isModButteryFixesLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ButteryFixes.Patches.Player.BodyPatches"), "DeadBodyInfoPostStart"),
+                               new HarmonyMethod(typeof(BodyPatchesPatch), nameof(BodyPatchesPatch.DeadBodyInfoPostStart_Prefix)));
             }
         }
 
