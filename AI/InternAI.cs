@@ -1501,6 +1501,55 @@ namespace LethalInternship.AI
             }
         }
 
+        public void SetInternInElevator()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+
+            if (this.NpcController == null)
+            {
+                return;
+            }
+
+            if (this.RagdollInternBody != null
+                && this.RagdollInternBody.IsRagdollBodyHeld())
+            {
+                return;
+            }
+
+            bool wasInHangarShipRoom = this.NpcController.Npc.isInHangarShipRoom;
+            if (!this.NpcController.Npc.isInElevator
+                && instanceSOR.shipBounds.bounds.Contains(this.NpcController.Npc.transform.position))
+            {
+                this.NpcController.Npc.isInElevator = true;
+            }
+
+            if (this.NpcController.Npc.isInElevator
+                && !wasInHangarShipRoom
+                && instanceSOR.shipInnerRoomBounds.bounds.Contains(this.NpcController.Npc.transform.position))
+            {
+                this.NpcController.Npc.isInHangarShipRoom = true;
+            }
+            else if (this.NpcController.Npc.isInElevator
+                && !instanceSOR.shipBounds.bounds.Contains(this.NpcController.Npc.transform.position))
+            {
+                this.NpcController.Npc.isInElevator = false;
+                this.NpcController.Npc.isInHangarShipRoom = false;
+                wasInHangarShipRoom = false;
+
+                if (!this.AreHandsFree())
+                {
+                    this.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, this.HeldItem);
+                }
+            }
+
+            if (wasInHangarShipRoom != this.NpcController.Npc.isInHangarShipRoom
+                && !this.NpcController.Npc.isInHangarShipRoom
+                && !this.AreHandsFree())
+            {
+                this.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, this.HeldItem);
+            }
+        }
+
         private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
         {
             // Bee nest
@@ -1803,10 +1852,6 @@ namespace LethalInternship.AI
                 this.transform.position = navMeshPosition;
                 agent.enabled = true;
             }
-
-            // Check for intern in elevator
-            Plugin.LogDebug($"TeleportAgentAIAndBody isInHangarShipRoom {this.NpcController.Npc.isInHangarShipRoom}-----------");
-            InternManager.Instance.SetInternInElevator(this);
 
             // For CullFactory mod
             if (HeldItem != null)
@@ -2523,12 +2568,10 @@ namespace LethalInternship.AI
                     {
                         droppedInElevator = false;
                         targetFloorPosition = NpcController.Npc.playersManager.propsContainer.InverseTransformPoint(vector2);
-                        Plugin.LogDebug($"targetFloorPosition1 {targetFloorPosition}, {grabbableObject.transform.parent}");
                     }
                     else
                     {
                         targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
-                        Plugin.LogDebug($"targetFloorPosition2 {targetFloorPosition}, {grabbableObject.transform.parent}");
                     }
                 }
                 int floorYRot = (int)base.transform.localEulerAngles.y;
@@ -2629,7 +2672,6 @@ namespace LethalInternship.AI
                 grabbableObject.transform.SetParent(NpcController.Npc.playersManager.propsContainer, true);
             }
 
-            Plugin.LogDebug($"SetItemInElevator ?? droppedInShipRoom {droppedInShipRoom} {grabbableObject.isInShipRoom} {this.NpcController.Npc.isInHangarShipRoom}- droppedInElevator {droppedInElevator}");
             NpcController.Npc.SetItemInElevator(droppedInShipRoom, droppedInElevator, grabbableObject);
             grabbableObject.EnablePhysics(true);
             grabbableObject.EnableItemMeshes(true);
