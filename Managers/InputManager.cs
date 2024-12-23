@@ -255,7 +255,7 @@ namespace LethalInternship.Managers
                 if (!intern.AreHandsFree())
                 {
                     // Intern drop item
-                    intern.DropItemServerRpc();
+                    intern.DropItem();
                 }
                 else if (localPlayer.currentlyHeldObjectServer != null)
                 {

@@ -93,7 +93,7 @@ namespace LethalInternship.AI.AIStates
                 if (npcController.Npc.isInHangarShipRoom)
                 {
                     // Intern drop item
-                    ai.DropItemServerRpc();
+                    ai.DropItem();
                 }
             }
 

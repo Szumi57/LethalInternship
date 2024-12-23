@@ -3,6 +3,7 @@ using LethalInternship.AI.AIStates;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
+using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
@@ -1946,7 +1947,7 @@ namespace LethalInternship.AI
             {
                 this.State = new PlayerInCruiserState(this, this.GetVehicleCruiserTargetPlayerIsIn());
             }
-            else if(this.State == null 
+            else if (this.State == null
                 || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
             {
                 this.State = new GetCloseToPlayerState(this, targetPlayer);
@@ -2419,24 +2420,6 @@ namespace LethalInternship.AI
         #region Drop item RPC
 
         /// <summary>
-        /// Server side, call clients to make the intern drop the held item on their side, to sync everyone
-        /// </summary>
-        [ServerRpc(RequireOwnership = false)]
-        public void DropItemServerRpc()
-        {
-            DropItemClientRpc();
-        }
-
-        /// <summary>
-        /// Client side, make the intern drop the held item
-        /// </summary>
-        [ClientRpc]
-        private void DropItemClientRpc()
-        {
-            DropItem();
-        }
-
-        /// <summary>
         /// Make the intern drop his item like an enemy, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
         public void DropItem()
@@ -2476,15 +2459,41 @@ namespace LethalInternship.AI
                         placePosition = StartOfRound.Instance.propsContainer.InverseTransformPoint(placePosition);
                     }
                     int floorYRot2 = (int)base.transform.localEulerAngles.y;
-                    SetObjectAsNoLongerHeld(grabbableObject, placePosition, floorYRot2);
+
+                    // on client
+                    SetObjectAsNoLongerHeld(grabbableObject,
+                                            this.NpcController.Npc.isInElevator,
+                                            this.NpcController.Npc.isInHangarShipRoom,
+                                            placePosition,
+                                            floorYRot2);
+                    // for other clients
+                    SetObjectAsNoLongerHeldServerRpc(new DropItemNetworkSerializable()
+                    {
+                        DroppedInElevator = this.NpcController.Npc.isInElevator,
+                        DroppedInShipRoom = this.NpcController.Npc.isInHangarShipRoom,
+                        FloorYRot = floorYRot2,
+                        GrabbedObject = grabbableObject.NetworkObject,
+                        TargetFloorPosition = placePosition
+                    });
                 }
                 else
                 {
+                    // on client
                     PlaceGrabbableObject(grabbableObject, parentObjectTo.transform, placePosition, matchRotationOfParent);
+
+                    // for other clients
+                    PlaceGrabbableObjectServerRpc(new PlaceItemNetworkSerializable()
+                    {
+                        GrabbedObject = grabbableObject.NetworkObject,
+                        MatchRotationOfParent = matchRotationOfParent,
+                        ParentObject = parentObjectTo,
+                        PlacePositionOffset = placePosition
+                    });
                 }
             }
             else
             {
+                bool droppedInElevator = this.NpcController.Npc.isInElevator;
                 Vector3 targetFloorPosition;
                 if (!NpcController.Npc.isInElevator)
                 {
@@ -2503,6 +2512,7 @@ namespace LethalInternship.AI
                     }
                     else
                     {
+                        droppedInElevator = true;
                         targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
                     }
                 }
@@ -2511,38 +2521,37 @@ namespace LethalInternship.AI
                     Vector3 vector2 = grabbableObject.GetItemFloorPosition(default(Vector3));
                     if (!NpcController.Npc.playersManager.shipBounds.bounds.Contains(vector2))
                     {
+                        droppedInElevator = false;
                         targetFloorPosition = NpcController.Npc.playersManager.propsContainer.InverseTransformPoint(vector2);
-            Plugin.LogDebug($"targetFloorPosition1 {targetFloorPosition}, {grabbableObject.transform.parent}");
+                        Plugin.LogDebug($"targetFloorPosition1 {targetFloorPosition}, {grabbableObject.transform.parent}");
                     }
                     else
                     {
                         targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
-            Plugin.LogDebug($"targetFloorPosition2 {targetFloorPosition}, {grabbableObject.transform.parent}");
+                        Plugin.LogDebug($"targetFloorPosition2 {targetFloorPosition}, {grabbableObject.transform.parent}");
                     }
                 }
                 int floorYRot = (int)base.transform.localEulerAngles.y;
-                SetObjectAsNoLongerHeld(grabbableObject, targetFloorPosition, floorYRot);
+
+                // on client
+                SetObjectAsNoLongerHeld(grabbableObject,
+                                        droppedInElevator,
+                                        this.NpcController.Npc.isInHangarShipRoom,
+                                        targetFloorPosition,
+                                        floorYRot);
+
+                // for other clients
+                SetObjectAsNoLongerHeldServerRpc(new DropItemNetworkSerializable()
+                {
+                    DroppedInElevator = droppedInElevator,
+                    DroppedInShipRoom = this.NpcController.Npc.isInHangarShipRoom,
+                    FloorYRot = floorYRot,
+                    GrabbedObject = grabbableObject.NetworkObject,
+                    TargetFloorPosition = targetFloorPosition
+                });
             }
 
-            grabbableObject.DiscardItem();
 
-            this.SetSpecialGrabAnimationBool(false, grabbableObject);
-            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
-            NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
-
-            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
-            this.HeldItem = null;
-            NpcController.Npc.isHoldingObject = false;
-            NpcController.Npc.currentlyHeldObjectServer = null;
-            NpcController.Npc.twoHanded = false;
-            NpcController.Npc.twoHandedAnimation = false;
-            NpcController.GrabbedObjectValidated = false;
-
-            float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
-            NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
-
-            SyncBatteryInternServerRpc(grabbableObject.NetworkObject, (int)(grabbableObject.insertedBattery.charge * 100f));
-            Plugin.LogDebug($"{NpcController.Npc.playerUsername} dropped {grabbableObject}");
         }
 
         private Vector3 DropItemAheadOfPlayer(GrabbableObject grabbableObject, PlayerControllerB player)
@@ -2565,12 +2574,50 @@ namespace LethalInternship.AI
             return itemFloorPosition;
         }
 
-        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject, Vector3 targetFloorPosition, int floorYRot = -1)
+        [ServerRpc(RequireOwnership = false)]
+        private void SetObjectAsNoLongerHeldServerRpc(DropItemNetworkSerializable dropItemNetworkSerializable)
         {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            bool droppedInElevator = instanceSOR.shipBounds.bounds.Contains(this.transform.position);
-            bool droppedInShipRoom = instanceSOR.shipInnerRoomBounds.bounds.Contains(this.transform.position);
+            NetworkObject networkObject;
+            if (dropItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            {
+                SetObjectAsNoLongerHeldClientRpc(dropItemNetworkSerializable);
+            }
+            else
+            {
+                Plugin.LogError($"Intern {this.NpcController.Npc.playerUsername} on client #{NetworkManager.LocalClientId} (server) drop item : Object was not thrown because it does not exist on the server.");
+            }
+        }
 
+        [ClientRpc]
+        private void SetObjectAsNoLongerHeldClientRpc(DropItemNetworkSerializable dropItemNetworkSerializable)
+        {
+            if (this.HeldItem == null)
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} held item already dropped, on client #{NetworkManager.LocalClientId}");
+                return;
+            }
+
+            NetworkObject networkObject;
+            if (dropItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            {
+                SetObjectAsNoLongerHeld(networkObject.GetComponent<GrabbableObject>(),
+                                        dropItemNetworkSerializable.DroppedInElevator,
+                                        dropItemNetworkSerializable.DroppedInShipRoom,
+                                        dropItemNetworkSerializable.TargetFloorPosition,
+                                        dropItemNetworkSerializable.FloorYRot);
+            }
+            else
+            {
+                Plugin.LogError($"Intern {this.NpcController.Npc.playerUsername} on client #{NetworkManager.LocalClientId} drop item : The server did not have a reference to the held object");
+            }
+        }
+
+        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject,
+                                             bool droppedInElevator,
+                                             bool droppedInShipRoom,
+                                             Vector3 targetFloorPosition,
+                                             int floorYRot = -1)
+        {
             grabbableObject.heldByPlayerOnServer = false;
             grabbableObject.parentObject = null;
             if (droppedInElevator)
@@ -2592,10 +2639,69 @@ namespace LethalInternship.AI
             grabbableObject.startFallingPosition = grabbableObject.transform.parent.InverseTransformPoint(grabbableObject.transform.position);
             grabbableObject.targetFloorPosition = targetFloorPosition;
             grabbableObject.floorYRot = floorYRot;
+
+            EndDropItem(grabbableObject);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void PlaceGrabbableObjectServerRpc(PlaceItemNetworkSerializable placeItemNetworkSerializable)
+        {
+            NetworkObject networkObject;
+            NetworkObject networkObject2;
+            if (placeItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null)
+                && placeItemNetworkSerializable.ParentObject.TryGet(out networkObject2, null))
+            {
+                PlaceGrabbableObjectClientRpc(placeItemNetworkSerializable);
+                return;
+            }
+
+            NetworkObject networkObject3;
+            if (!placeItemNetworkSerializable.GrabbedObject.TryGet(out networkObject3, null))
+            {
+                Plugin.LogError($"Object placement not synced to clients, missing reference to a network object: placing object with id: {placeItemNetworkSerializable.GrabbedObject.NetworkObjectId}; intern {NpcController.Npc.playerUsername}");
+                return;
+            }
+            NetworkObject networkObject4;
+            if (!placeItemNetworkSerializable.ParentObject.TryGet(out networkObject4, null))
+            {
+                Plugin.LogError($"Object placement not synced to clients, missing reference to a network object: parent object with id: {placeItemNetworkSerializable.ParentObject.NetworkObjectId}; intern {NpcController.Npc.playerUsername}");
+            }
+        }
+
+        [ClientRpc]
+        private void PlaceGrabbableObjectClientRpc(PlaceItemNetworkSerializable placeItemNetworkSerializable)
+        {
+            NetworkObject networkObject;
+            if (placeItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            {
+                GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+                NetworkObject networkObject2;
+                if (placeItemNetworkSerializable.ParentObject.TryGet(out networkObject2, null))
+                {
+                    this.PlaceGrabbableObject(grabbableObject,
+                                              networkObject2.transform,
+                                              placeItemNetworkSerializable.PlacePositionOffset,
+                                              placeItemNetworkSerializable.MatchRotationOfParent);
+                }
+                else
+                {
+                    Plugin.LogError($"Reference to parent object when placing was missing. object: {grabbableObject} placed by intern #{NpcController.Npc.playerUsername}");
+                }
+            }
+            else
+            {
+                Plugin.LogError("The server did not have a reference to the held object (when attempting to PLACE object on client.)");
+            }
         }
 
         private void PlaceGrabbableObject(GrabbableObject placeObject, Transform parentObject, Vector3 positionOffset, bool matchRotationOfParent)
         {
+            if (this.HeldItem == null)
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} held item already placed, on client #{NetworkManager.LocalClientId}");
+                return;
+            }
+
             PlayerPhysicsRegion componentInChildren = parentObject.GetComponentInChildren<PlayerPhysicsRegion>();
             if (componentInChildren != null && componentInChildren.allowDroppingItems)
             {
@@ -2623,6 +2729,30 @@ namespace LethalInternship.AI
                 placeObject.fallTime = 1.1f;
             }
             placeObject.OnPlaceObject();
+
+            EndDropItem(placeObject);
+        }
+
+        private void EndDropItem(GrabbableObject grabbableObject)
+        {
+            grabbableObject.DiscardItem();
+            this.SetSpecialGrabAnimationBool(false, grabbableObject);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
+            NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
+
+            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
+            this.HeldItem = null;
+            NpcController.Npc.isHoldingObject = false;
+            NpcController.Npc.currentlyHeldObjectServer = null;
+            NpcController.Npc.twoHanded = false;
+            NpcController.Npc.twoHandedAnimation = false;
+            NpcController.GrabbedObjectValidated = false;
+
+            float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
+            NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
+
+            SyncBatteryIntern(grabbableObject, (int)(grabbableObject.insertedBattery.charge * 100f));
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} dropped {grabbableObject}, on client #{NetworkManager.LocalClientId}");
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -2647,6 +2777,11 @@ namespace LethalInternship.AI
                 return;
             }
 
+            SyncBatteryIntern(grabbableObject, charge);
+        }
+
+        private void SyncBatteryIntern(GrabbableObject grabbableObject, int charge)
+        {
             float num = (float)charge / 100f;
             grabbableObject.insertedBattery = new Battery(num <= 0f, num);
             grabbableObject.ChargeBatteries();
@@ -3574,7 +3709,7 @@ namespace LethalInternship.AI
 
             // Wait in ragdoll state
             yield return new WaitForSeconds(2.5f);
-            
+
             // Enable model
             if (Plugin.IsModModelReplacementAPILoaded)
             {

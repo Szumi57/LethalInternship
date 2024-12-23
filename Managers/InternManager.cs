@@ -1266,7 +1266,7 @@ namespace LethalInternship.Managers
                         continue;
                     }
 
-                    internAI.DropItemServerRpc();
+                    internAI.DropItem();
                 }
 
                 SyncEndOfRoundInternsFromServerToClientRpc();
