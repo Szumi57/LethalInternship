@@ -208,7 +208,8 @@ namespace LethalInternship.Managers
 
         private IEnumerator FadeOutAndStopAudioCoroutine(AudioSource audioSource, float fadeTime)
         {
-            if (audioSource == null)
+            if (audioSource == null
+                || !audioSource.isPlaying)
             {
                 yield break;
             }
@@ -218,6 +219,12 @@ namespace LethalInternship.Managers
 
             while (audioSource.volume > 0)
             {
+                if (audioSource == null
+                    || !audioSource.isPlaying)
+                {
+                    yield break;
+                }
+
                 audioSource.volume -= startVolume * Time.deltaTime / fadeTime;
 
                 yield return null;

@@ -1069,50 +1069,65 @@ namespace LethalInternship.Managers
             return results.ToArray();
         }
 
-        public void SetInternsInElevatorLateUpdate(StartOfRound instanceSOR)
+        public void SetInternsInElevatorLateUpdate()
         {
             foreach (InternAI internAI in AllInternAIs)
             {
-                if (internAI == null
-                    || internAI.NpcController == null)
-                {
-                    continue;
-                }
+                SetInternInElevator(internAI);
+            }
+        }
 
-                if (!internAI.NpcController.IsTouchingGround)
-                {
-                    continue;
-                }
+        public void SetInternInElevator(InternAI internAI)
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
 
-                bool wasInHangarShipRoom = internAI.NpcController.Npc.isInHangarShipRoom;
-                if (!internAI.NpcController.Npc.isInElevator
-                    && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
-                {
-                    internAI.NpcController.Npc.isInElevator = true;
-                }
-                else if (internAI.NpcController.Npc.isInElevator
-                    && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
-                {
-                    internAI.NpcController.Npc.isInElevator = false;
-                    internAI.NpcController.Npc.isInHangarShipRoom = false;
-                    wasInHangarShipRoom = false;
+            if (internAI == null
+                || internAI.NpcController == null)
+            {
+                return;
+            }
 
-                    if (!internAI.AreHandsFree())
-                    {
-                        internAI.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, internAI.HeldItem);
-                    }
-                }
-                else if (internAI.NpcController.Npc.isInElevator
-                         && instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
-                {
-                    internAI.NpcController.Npc.isInHangarShipRoom = true;
-                }
+            if (internAI.RagdollInternBody != null
+                && internAI.RagdollInternBody.IsRagdollBodyHeld())
+            {
+                return;
+            }
 
-                if (wasInHangarShipRoom != internAI.NpcController.Npc.isInHangarShipRoom
-                    && !internAI.AreHandsFree())
+            bool wasInHangarShipRoom = internAI.NpcController.Npc.isInHangarShipRoom;
+            if (!internAI.NpcController.Npc.isInElevator
+                && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
+            {
+                Plugin.LogDebug($"isInElevator was false now true");
+                internAI.NpcController.Npc.isInElevator = true;
+            }
+
+            if (internAI.NpcController.Npc.isInElevator
+                && !wasInHangarShipRoom
+                && instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
+            {
+                Plugin.LogDebug($"isInHangarShipRoom now true");
+                internAI.NpcController.Npc.isInHangarShipRoom = true;
+            }
+            else if (internAI.NpcController.Npc.isInElevator
+                && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position))
+            {
+                Plugin.LogDebug($"shipBounds.bounds.Contains {instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)}");
+                internAI.NpcController.Npc.isInElevator = false;
+                internAI.NpcController.Npc.isInHangarShipRoom = false;
+                wasInHangarShipRoom = false;
+
+                if (!internAI.AreHandsFree())
                 {
-                    internAI.NpcController.Npc.SetItemInElevator(droppedInShipRoom: internAI.NpcController.Npc.isInHangarShipRoom, droppedInElevator: true, internAI.HeldItem);
+                    internAI.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, internAI.HeldItem);
                 }
+            }
+
+            if (wasInHangarShipRoom != internAI.NpcController.Npc.isInHangarShipRoom
+                && !internAI.NpcController.Npc.isInHangarShipRoom
+                && !internAI.AreHandsFree())
+            {
+                Plugin.LogDebug($"SetItemInElevator droppedInShipRoom false, droppedInElevator: true");
+                internAI.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, internAI.HeldItem);
             }
         }
 

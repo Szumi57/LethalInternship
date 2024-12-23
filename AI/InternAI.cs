@@ -1360,8 +1360,9 @@ namespace LethalInternship.AI
                     continue;
                 }
 
-                // Object on ship (inside or outside hangar)
-                if (grabbableObject.isInElevator)
+                // Object on ship
+                if (grabbableObject.isInElevator
+                    || grabbableObject.isInShipRoom)
                 {
                     continue;
                 }
@@ -1801,6 +1802,10 @@ namespace LethalInternship.AI
                 this.transform.position = navMeshPosition;
                 agent.enabled = true;
             }
+
+            // Check for intern in elevator
+            Plugin.LogDebug($"TeleportAgentAIAndBody isInHangarShipRoom {this.NpcController.Npc.isInHangarShipRoom}-----------");
+            InternManager.Instance.SetInternInElevator(this);
 
             // For CullFactory mod
             if (HeldItem != null)
@@ -2436,10 +2441,10 @@ namespace LethalInternship.AI
         /// </summary>
         public void DropItem()
         {
-            Plugin.LogDebug($"Try to drop item on client #{NetworkManager.LocalClientId}");
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} Try to drop item on client #{NetworkManager.LocalClientId}");
             if (this.HeldItem == null)
             {
-                Plugin.LogError($"Try to drop not held item on client #{NetworkManager.LocalClientId}");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} Try to drop not held item on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
@@ -2471,7 +2476,7 @@ namespace LethalInternship.AI
                         placePosition = StartOfRound.Instance.propsContainer.InverseTransformPoint(placePosition);
                     }
                     int floorYRot2 = (int)base.transform.localEulerAngles.y;
-                    SetObjectAsNoLongerHeld(grabbableObject, NpcController.Npc.isInElevator, NpcController.Npc.isInHangarShipRoom, placePosition, floorYRot2);
+                    SetObjectAsNoLongerHeld(grabbableObject, placePosition, floorYRot2);
                 }
                 else
                 {
@@ -2480,7 +2485,6 @@ namespace LethalInternship.AI
             }
             else
             {
-                bool droppedInElevator = NpcController.Npc.isInElevator;
                 Vector3 targetFloorPosition;
                 if (!NpcController.Npc.isInElevator)
                 {
@@ -2499,7 +2503,6 @@ namespace LethalInternship.AI
                     }
                     else
                     {
-                        droppedInElevator = true;
                         targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
                     }
                 }
@@ -2508,16 +2511,17 @@ namespace LethalInternship.AI
                     Vector3 vector2 = grabbableObject.GetItemFloorPosition(default(Vector3));
                     if (!NpcController.Npc.playersManager.shipBounds.bounds.Contains(vector2))
                     {
-                        droppedInElevator = false;
                         targetFloorPosition = NpcController.Npc.playersManager.propsContainer.InverseTransformPoint(vector2);
+            Plugin.LogDebug($"targetFloorPosition1 {targetFloorPosition}, {grabbableObject.transform.parent}");
                     }
                     else
                     {
                         targetFloorPosition = NpcController.Npc.playersManager.elevatorTransform.InverseTransformPoint(vector2);
+            Plugin.LogDebug($"targetFloorPosition2 {targetFloorPosition}, {grabbableObject.transform.parent}");
                     }
                 }
                 int floorYRot = (int)base.transform.localEulerAngles.y;
-                SetObjectAsNoLongerHeld(grabbableObject, droppedInElevator, NpcController.Npc.isInHangarShipRoom, targetFloorPosition, floorYRot);
+                SetObjectAsNoLongerHeld(grabbableObject, targetFloorPosition, floorYRot);
             }
 
             grabbableObject.DiscardItem();
@@ -2538,7 +2542,7 @@ namespace LethalInternship.AI
             NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
 
             SyncBatteryInternServerRpc(grabbableObject.NetworkObject, (int)(grabbableObject.insertedBattery.charge * 100f));
-            Plugin.LogDebug($"intern dropped {grabbableObject}");
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} dropped {grabbableObject}");
         }
 
         private Vector3 DropItemAheadOfPlayer(GrabbableObject grabbableObject, PlayerControllerB player)
@@ -2561,8 +2565,12 @@ namespace LethalInternship.AI
             return itemFloorPosition;
         }
 
-        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject, bool droppedInElevator, bool droppedInShipRoom, Vector3 targetFloorPosition, int floorYRot = -1)
+        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject, Vector3 targetFloorPosition, int floorYRot = -1)
         {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            bool droppedInElevator = instanceSOR.shipBounds.bounds.Contains(this.transform.position);
+            bool droppedInShipRoom = instanceSOR.shipInnerRoomBounds.bounds.Contains(this.transform.position);
+
             grabbableObject.heldByPlayerOnServer = false;
             grabbableObject.parentObject = null;
             if (droppedInElevator)
@@ -2573,6 +2581,8 @@ namespace LethalInternship.AI
             {
                 grabbableObject.transform.SetParent(NpcController.Npc.playersManager.propsContainer, true);
             }
+
+            Plugin.LogDebug($"SetItemInElevator ?? droppedInShipRoom {droppedInShipRoom} {grabbableObject.isInShipRoom} {this.NpcController.Npc.isInHangarShipRoom}- droppedInElevator {droppedInElevator}");
             NpcController.Npc.SetItemInElevator(droppedInShipRoom, droppedInElevator, grabbableObject);
             grabbableObject.EnablePhysics(true);
             grabbableObject.EnableItemMeshes(true);
@@ -3477,6 +3487,12 @@ namespace LethalInternship.AI
 
         private IEnumerator CoroutineNoSpawnAnimation()
         {
+            if (!IsOwner)
+            {
+                spawnAnimationCoroutine = null;
+                yield break;
+            }
+
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
 
@@ -3486,6 +3502,15 @@ namespace LethalInternship.AI
 
         private IEnumerator CoroutineOnlyPlayerSpawnAnimation()
         {
+            if (!IsOwner)
+            {
+                // Wait for spawn player animation
+                yield return new WaitForSeconds(3f);
+                NpcController.Npc.inSpecialInteractAnimation = false;
+                spawnAnimationCoroutine = null;
+                yield break;
+            }
+
             UpdateInternSpecialAnimationValue(specialAnimation: true, timed: 0f, climbingLadder: false);
             NpcController.Npc.inSpecialInteractAnimation = true;
             NpcController.Npc.playerBodyAnimator.ResetTrigger("SpawnPlayer");
@@ -3566,6 +3591,10 @@ namespace LethalInternship.AI
 
             if (!IsOwner)
             {
+                // Wait for spawn player animation
+                yield return new WaitForSeconds(3f);
+                NpcController.Npc.inSpecialInteractAnimation = false;
+                spawnAnimationCoroutine = null;
                 yield break;
             }
 

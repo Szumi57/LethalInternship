@@ -26,7 +26,7 @@ namespace LethalInternship.NetworkSerializers
 
         public override string ToString()
         {
-            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, volme {volume}, voiceFolder {voicePitch}";
+            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, volume {volume}, voiceFolder {voicePitch}";
         }
     }
 
