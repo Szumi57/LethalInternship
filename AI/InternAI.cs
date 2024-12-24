@@ -3735,7 +3735,6 @@ namespace LethalInternship.AI
             yield return null;
 
             // Voice
-            AnimationCoroutineRagdollingRunning = false;
             this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
                 VoiceState = EnumVoicesState.Hit,
@@ -3752,6 +3751,8 @@ namespace LethalInternship.AI
             // Wait in ragdoll state
             yield return new WaitForSeconds(2.5f);
             // End of ragdoll wait
+
+            AnimationCoroutineRagdollingRunning = false;
 
             // Enable model
             if (Plugin.IsModModelReplacementAPILoaded)
