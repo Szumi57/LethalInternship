@@ -156,7 +156,7 @@ namespace LethalInternship.AI
             InitImportantColliders();
 
             // Grabbableobject
-            HoarderBugAI.RefreshGrabbableObjectsInMapList();
+            InternManager.Instance.RegisterItems();
 
             // Init controller
             this.NpcController.Awake();
@@ -1478,7 +1478,7 @@ namespace LethalInternship.AI
             if (IsOwner
                 && this.PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
             {
-                Plugin.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
+                //Plugin.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
                 return false;
             }
 
@@ -4085,7 +4085,7 @@ namespace LethalInternship.AI
             StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
             InternIdentity.SuitID = suitID;
 
-            Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}");
+            Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}: {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
         }
 
         private IEnumerator Wait2EndOfFrameToRefreshBillBoard()

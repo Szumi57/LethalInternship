@@ -37,7 +37,7 @@ namespace LethalInternship.AI
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}/{HpMax}, Status {(int)Status} {Status}, Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', Voice : {{{Voice.ToString()}}}";
         }
 
         public int GetRandomSuitID()

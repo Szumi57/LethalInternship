@@ -74,6 +74,7 @@ namespace LethalInternship.Managers
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
+        private Coroutine registerItemsCoroutine = null!;
         private Coroutine BeamOutInternsCoroutine = null!;
         private ClientRpcParams ClientRpcParams = new ClientRpcParams();
 
@@ -97,6 +98,7 @@ namespace LethalInternship.Managers
             Plugin.Config.InitialSyncCompleted += Config_InitialSyncCompleted;
             Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {Plugin.Config.MaxInternsAvailable.Value}");
         }
+
         private void Config_InitialSyncCompleted(object sender, EventArgs e)
         {
             if (IsHost)
@@ -146,6 +148,52 @@ namespace LethalInternship.Managers
                     ListEnemyAINonNoiseListeners.Add(spawnedEnemy);
                 }
             }
+        }
+
+        public void RegisterItems()
+        {
+            if (registerItemsCoroutine == null)
+            {
+                registerItemsCoroutine = StartCoroutine(RegisterItemsCoroutine());
+            }
+        }
+
+        private IEnumerator RegisterItemsCoroutine()
+        {
+            HoarderBugAI.grabbableObjectsInMap.Clear();
+            yield return null;
+
+            GrabbableObject[] array = Object.FindObjectsOfType<GrabbableObject>();
+            Plugin.LogDebug($"Intern register grabbable object, found : {array.Length}");
+            for (int i = 0; i < array.Length; i++)
+            {
+                GrabbableObject grabbableObject = array[i];
+                if (!grabbableObject.grabbableToEnemies || grabbableObject.deactivated)
+                {
+                    continue;
+                }
+
+                Vector3 floorPosition;
+                bool inShipRoom = false;
+                bool inElevator = false;
+                floorPosition = grabbableObject.GetItemFloorPosition(default(Vector3));
+                if (StartOfRound.Instance.shipInnerRoomBounds.bounds.Contains(floorPosition))
+                {
+                    inElevator = true;
+                    inShipRoom = true;
+                }
+                else if (StartOfRound.Instance.shipBounds.bounds.Contains(floorPosition))
+                {
+                    inElevator = true;
+                }
+                GameNetworkManager.Instance.localPlayerController.SetItemInElevator(inElevator, inShipRoom, grabbableObject);
+
+                HoarderBugAI.grabbableObjectsInMap.Add(grabbableObject.gameObject);
+                yield return null;
+            }
+
+            registerItemsCoroutine = null!;
+            yield break;
         }
 
         private void Start()
@@ -673,7 +721,7 @@ namespace LethalInternship.Managers
                 }
             }
 
-            Plugin.LogDebug($"Identity spawned: {internIdentity.ToString()}");
+            Plugin.LogDebug($"++ Identity spawned: {internIdentity.ToString()}");
             internAI.Init((EnumSpawnAnimation)spawnParamsNetworkSerializable.enumSpawnAnimation);
         }
 
