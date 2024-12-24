@@ -3751,6 +3751,7 @@ namespace LethalInternship.AI
 
             // Wait in ragdoll state
             yield return new WaitForSeconds(2.5f);
+            // End of ragdoll wait
 
             // Enable model
             if (Plugin.IsModModelReplacementAPILoaded)
