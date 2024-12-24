@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using System;
 using Random = System.Random;

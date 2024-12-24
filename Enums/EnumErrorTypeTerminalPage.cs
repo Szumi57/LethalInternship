@@ -8,6 +8,8 @@
         Default,
         NotEnoughCredits,
         NoMoreInterns,
-        ShipLeavingMoon
+        ShipLeavingMoon,
+        InternDead,
+        InternAlreadySelected,
     }
 }

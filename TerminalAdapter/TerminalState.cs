@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.AI;
+using LethalInternship.Enums;
 using System.Collections.Generic;
 
 namespace LethalInternship.TerminalAdapter
@@ -8,6 +9,20 @@ namespace LethalInternship.TerminalAdapter
     /// </summary>
     internal abstract class TerminalState
     {
+        private EnumTerminalStates currentState;
+        protected EnumTerminalStates CurrentState
+        {
+            get
+            {
+                return this.currentState;
+            }
+            set
+            {
+                this.currentState = value;
+                Plugin.LogDebug($"TerminalState new state :                 {this.currentState}");
+            }
+        }
+
         protected TerminalParser terminalParser;
         protected Dictionary<EnumTerminalStates, TerminalNode> dictTerminalNodeByState;
 
@@ -33,7 +48,6 @@ namespace LethalInternship.TerminalAdapter
             }
 
             this.terminalParser = terminalParser;
-            Plugin.LogDebug($"TerminalState new state :                 {this.GetTerminalState()}");
 
             if (this.dictTerminalNodeByState == null)
             {
@@ -45,7 +59,7 @@ namespace LethalInternship.TerminalAdapter
         /// Get the <see cref="Enums.EnumTerminalStates"><c>Enums.EnumTerminalStates</c></see> of current State
         /// </summary>
         /// <returns></returns>
-        public abstract EnumTerminalStates GetTerminalState();
+        public virtual EnumTerminalStates GetTerminalState() { return CurrentState; }
 
         /// <summary>
         /// Analyze the words in the command send by the player in the terminal,<br/>

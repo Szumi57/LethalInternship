@@ -11,5 +11,6 @@
         ConfirmCancelPurchase,
         AbortLanding,
         ConfirmCancelAbortLanding,
+        Status,
     }
 }

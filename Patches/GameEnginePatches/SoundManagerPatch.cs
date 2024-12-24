@@ -3,10 +3,13 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
+using MoreCompany;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using UnityEngine;
+using UnityEngine.Audio;
 using NetworkManager = Unity.Netcode.NetworkManager;
 
 namespace LethalInternship.Patches.GameEnginePatches
@@ -102,19 +105,28 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPostfix]
         static void Start_PostFix(SoundManager __instance)
         {
-            int playersAndInternsCount = StartOfRound.Instance.allPlayerObjects.Length;
+            //int playersAndInternsCount = StartOfRound.Instance.allPlayerObjects.Length;
 
-            __instance.playerVoicePitchLerpSpeed = new float[playersAndInternsCount];
-            Array.Fill(__instance.playerVoicePitchLerpSpeed, 3f);
+            //Array.Resize<float>(ref __instance.playerVoicePitchLerpSpeed, playersAndInternsCount);
+            //Array.Resize<float>(ref __instance.playerVoicePitchTargets, playersAndInternsCount);
+            //Array.Resize<float>(ref __instance.playerVoicePitches, playersAndInternsCount);
+            //Array.Resize<float>(ref __instance.playerVoiceVolumes, playersAndInternsCount);
 
-            __instance.playerVoicePitchTargets = new float[playersAndInternsCount];
-            Array.Fill(__instance.playerVoicePitchTargets, 1f);
-
-            __instance.playerVoicePitches = new float[playersAndInternsCount];
-            Array.Fill(__instance.playerVoicePitches, 1f);
-
-            __instance.playerVoiceVolumes = new float[playersAndInternsCount];
-            Array.Fill(__instance.playerVoiceVolumes, 0.5f);
+            //// From moreCompany
+            //Array.Resize<AudioMixerGroup>(ref __instance.playerVoiceMixers, playersAndInternsCount);
+            //AudioMixerGroup audioMixerGroup = Resources.FindObjectsOfTypeAll<AudioMixerGroup>().FirstOrDefault((AudioMixerGroup x) => x.name.StartsWith("VoicePlayer"));
+            //for (int i = 0; i < playersAndInternsCount; i++)
+            //{
+            //    __instance.playerVoicePitchLerpSpeed[i] = 3f;
+            //    __instance.playerVoicePitchTargets[i] = 1f;
+            //    __instance.playerVoicePitches[i] = 1f;
+            //    __instance.playerVoiceVolumes[i] = 0.5f;
+            //    if (__instance.playerVoiceMixers[i] != null)
+            //    {
+            //        Plugin.LogDebug($"playerVoiceMixers {i} {audioMixerGroup}");
+            //        __instance.playerVoiceMixers[i] = audioMixerGroup;
+            //    }
+            //}
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using System.Collections;
 using UnityEngine;
@@ -68,7 +69,7 @@ namespace LethalInternship.AI.AIStates
                 // new target
                 StopSearchingWanderCoroutine();
                 ai.SyncAssignTargetAndSetMovingTo(player);
-                if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionInternSuitChange.AutomaticSameAsPlayer)
+                if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionSuitChange.AutomaticSameAsPlayer)
                 {
                     ai.ChangeSuitInternServerRpc(npcController.Npc.playerClientId, player.currentSuitID);
                 }
@@ -83,6 +84,43 @@ namespace LethalInternship.AI.AIStates
                 // Start the coroutine from base game to search for players
                 ai.StartSearch(ai.NpcController.Npc.transform.position, searchForPlayers);
             }
+        }
+
+        public override void TryPlayCurrentStateVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.Lost,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = false,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
+        }
+
+        public override void PlayerHeard(Vector3 noisePosition)
+        {
+            // Go towards the sound heard
+            this.targetLastKnownPosition = noisePosition;
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.HearsPlayer,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
+
+            ai.State = new JustLostPlayerState(this);
         }
 
         public override string GetBillboardStateIndicator()

@@ -4,7 +4,7 @@ namespace LethalInternship.AI.AIStates
 {
     internal class BrainDeadState : AIState
     {
-        public BrainDeadState(AIState oldState) : base(oldState)
+        public BrainDeadState(InternAI ai) : base(ai)
         {
             CurrentState = EnumAIStates.BrainDead;
         }
@@ -12,6 +12,11 @@ namespace LethalInternship.AI.AIStates
         public override void DoAI()
         {
             ai.StopMoving();
+        }
+
+        public override void TryPlayCurrentStateVoiceAudio()
+        {
+            ai.InternIdentity.Voice.StopAudioFadeOut();
         }
     }
 }

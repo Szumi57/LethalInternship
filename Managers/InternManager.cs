@@ -2,7 +2,9 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Configs;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using System;
@@ -12,8 +14,11 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Audio;
 using Object = UnityEngine.Object;
+using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
+using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.Managers
 {
@@ -48,14 +53,6 @@ namespace LethalInternship.Managers
         /// </summary>
         public int AllEntitiesCount;
         /// <summary>
-        /// Number of interns already bought
-        /// </summary>
-        public int NbInternsOwned;
-        /// <summary>
-        /// Number of interns, among those already bought, scheduled to dropship on moon
-        /// </summary>
-        public int NbInternsToDropShip;
-        /// <summary>
         /// Integer corresponding to the first player controller associated with an intern in StartOfRound.Instance.allPlayerScripts
         /// </summary>
         public int IndexBeginOfInterns
@@ -65,31 +62,31 @@ namespace LethalInternship.Managers
                 return StartOfRound.Instance.allPlayerScripts.Length - (AllInternAIs?.Length ?? 0);
             }
         }
-        /// <summary>
-        /// Maximum interns actually purchasable minus the ones already bought
-        /// </summary>
-        public int NbInternsPurchasable
-        {
-            get
-            {
-                int val = Plugin.Config.MaxInternsAvailable.Value - NbInternsOwned;
-                return val < 0 ? 0 : val;
-            }
-        }
         public bool LandingStatusAllowed;
 
         public VehicleController? VehicleController;
+        public Vector3 ItemDropShipPos;
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
+
+        public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
 
         private InternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
-        private List<string> listOfNames = new List<string>();
-        private EnumOptionInternNames optionInternNames;
-        private string[] arrayOfUserCustomNames = null!;
-        private int indexIterationName = 0;
+        private Coroutine registerItemsCoroutine = null!;
         private Coroutine BeamOutInternsCoroutine = null!;
+        private ClientRpcParams ClientRpcParams = new ClientRpcParams();
+
+        private float timerAnimationCulling;
+        private float timerNoAnimationAfterLag;
+        private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
+        private float timerIsAnInternScheduledToLand;
+        private bool isAnInternScheduledToLand;
+
+        private float timerRegisterAINoiseListener;
+        private List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
+        public Dictionary<string, int> DictTagSurfaceIndex = new Dictionary<string, int>();
 
         /// <summary>
         /// Initialize instance,
@@ -100,13 +97,6 @@ namespace LethalInternship.Managers
             Instance = this;
             Plugin.Config.InitialSyncCompleted += Config_InitialSyncCompleted;
             Plugin.LogDebug($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {Plugin.Config.MaxInternsAvailable.Value}");
-
-            if (Plugin.PluginIrlPlayersCount > 0)
-            {
-                // only resize if irl players not 0, which means we already tried to populate pool of interns
-                // But the manager somehow reset
-                ManagePoolOfInterns();
-            }
         }
 
         private void Config_InitialSyncCompleted(object sender, EventArgs e)
@@ -120,13 +110,135 @@ namespace LethalInternship.Managers
             ManagePoolOfInterns();
         }
 
+        private void FixedUpdate()
+        {
+            RegisterAINoiseListener(Time.fixedDeltaTime);
+        }
+
+        private void RegisterAINoiseListener(float deltaTime)
+        {
+            timerRegisterAINoiseListener += deltaTime;
+            if (timerRegisterAINoiseListener < 1f)
+            {
+                return;
+            }
+
+            timerRegisterAINoiseListener = 0f;
+            RoundManager instanceRM = RoundManager.Instance;
+            foreach (EnemyAI spawnedEnemy in instanceRM.SpawnedEnemies)
+            {
+                if (ListEnemyAINonNoiseListeners.Contains(spawnedEnemy))
+                {
+                    continue;
+                }
+                else if (DictEnemyAINoiseListeners.ContainsKey(spawnedEnemy))
+                {
+                    continue;
+                }
+
+                INoiseListener noiseListener;
+                if (spawnedEnemy.gameObject.TryGetComponent<INoiseListener>(out noiseListener))
+                {
+                    Plugin.LogDebug($"new enemy noise listener, spawnedEnemy {spawnedEnemy}");
+                    DictEnemyAINoiseListeners.Add(spawnedEnemy, noiseListener);
+                }
+                else
+                {
+                    Plugin.LogDebug($"new enemy not noise listener, spawnedEnemy {spawnedEnemy}");
+                    ListEnemyAINonNoiseListeners.Add(spawnedEnemy);
+                }
+            }
+        }
+
+        public void RegisterItems()
+        {
+            if (registerItemsCoroutine == null)
+            {
+                registerItemsCoroutine = StartCoroutine(RegisterItemsCoroutine());
+            }
+        }
+
+        private IEnumerator RegisterItemsCoroutine()
+        {
+            HoarderBugAI.grabbableObjectsInMap.Clear();
+            yield return null;
+
+            GrabbableObject[] array = Object.FindObjectsOfType<GrabbableObject>();
+            Plugin.LogDebug($"Intern register grabbable object, found : {array.Length}");
+            for (int i = 0; i < array.Length; i++)
+            {
+                GrabbableObject grabbableObject = array[i];
+                if (!grabbableObject.grabbableToEnemies || grabbableObject.deactivated)
+                {
+                    continue;
+                }
+
+                Vector3 floorPosition;
+                bool inShipRoom = false;
+                bool inElevator = false;
+                floorPosition = grabbableObject.GetItemFloorPosition(default(Vector3));
+                if (StartOfRound.Instance.shipInnerRoomBounds.bounds.Contains(floorPosition))
+                {
+                    inElevator = true;
+                    inShipRoom = true;
+                }
+                else if (StartOfRound.Instance.shipBounds.bounds.Contains(floorPosition))
+                {
+                    inElevator = true;
+                }
+                GameNetworkManager.Instance.localPlayerController.SetItemInElevator(inElevator, inShipRoom, grabbableObject);
+
+                HoarderBugAI.grabbableObjectsInMap.Add(grabbableObject.gameObject);
+                yield return null;
+            }
+
+            registerItemsCoroutine = null!;
+            yield break;
+        }
+
+        private void Start()
+        {
+            // Identities
+            IdentityManager.Instance.InitIdentities(Plugin.Config.ConfigIdentities.configIdentities);
+
+            // Intern objects
+            if (Plugin.PluginIrlPlayersCount > 0)
+            {
+                // only resize if irl players not 0, which means we already tried to populate pool of interns
+                // But the manager somehow reset
+                ManagePoolOfInterns();
+            }
+
+            // Load data from save
+            SaveManager.Instance.LoadAllDataFromSave();
+
+            // Init footstep surfaces tags
+            DictTagSurfaceIndex.Clear();
+            for (int i = 0; i < StartOfRound.Instance.footstepSurfaces.Length; i++)
+            {
+                DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
+            }
+        }
+
+        private void Update()
+        {
+            UpdateAnimationsCulling();
+
+            timerIsAnInternScheduledToLand += Time.deltaTime;
+            if (timerIsAnInternScheduledToLand > 1f)
+            {
+                timerIsAnInternScheduledToLand = 0f;
+                isAnInternScheduledToLand = IdentityManager.Instance.IsAnIdentityToDrop();
+            }
+        }
+
         /// <summary>
         /// Initialize, resize and populate allPlayerScripts, allPlayerObjects with new interns
         /// </summary>
         public void ManagePoolOfInterns()
         {
             StartOfRound instance = StartOfRound.Instance;
-            int maxInternsAvailable = Plugin.Config.MaxInternsAvailable.Value;
+            int maxInternsPossible = Plugin.Config.MaxInternsAvailable.Value;
 
             if (instance.allPlayerObjects[3].gameObject == null)
             {
@@ -141,27 +253,28 @@ namespace LethalInternship.Managers
             }
 
             int irlPlayersCount = Plugin.PluginIrlPlayersCount;
-            int irlPlayersAndInternsCount = irlPlayersCount + maxInternsAvailable;
+            int irlPlayersAndInternsCount = irlPlayersCount + maxInternsPossible;
 
             // Initialize back ups
             if (AllPlayerObjectsBackUp == null)
             {
-                AllInternAIs = new InternAI[maxInternsAvailable];
-                AllPlayerObjectsBackUp = new GameObject[maxInternsAvailable];
-                AllPlayerScriptsBackUp = new PlayerControllerB[maxInternsAvailable];
+                AllInternAIs = new InternAI[maxInternsPossible];
+                AllPlayerObjectsBackUp = new GameObject[maxInternsPossible];
+                AllPlayerScriptsBackUp = new PlayerControllerB[maxInternsPossible];
 
                 RagdollInternBodies = new RagdollGrabbableObject[irlPlayersAndInternsCount];
             }
-            else if (AllPlayerObjectsBackUp.Length != maxInternsAvailable)
+            else if (AllPlayerObjectsBackUp.Length != maxInternsPossible)
             {
-                Array.Resize(ref AllInternAIs, maxInternsAvailable);
-                Array.Resize(ref AllPlayerObjectsBackUp, maxInternsAvailable);
-                Array.Resize(ref AllPlayerScriptsBackUp, maxInternsAvailable);
+                Array.Resize(ref AllInternAIs, maxInternsPossible);
+                Array.Resize(ref AllPlayerObjectsBackUp, maxInternsPossible);
+                Array.Resize(ref AllPlayerScriptsBackUp, maxInternsPossible);
 
                 Array.Resize(ref RagdollInternBodies, irlPlayersAndInternsCount);
             }
 
             AllEntitiesCount = irlPlayersAndInternsCount;
+            // Need to populate pool of interns ?
             if (instance.allPlayerScripts.Length == AllEntitiesCount)
             {
                 // the arrays have not been resize between round
@@ -169,8 +282,10 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            // Interns
             ResizePoolOfInterns(irlPlayersAndInternsCount);
             PopulatePoolOfInterns(irlPlayersCount);
+            UpdateSoundManagerWithInterns(irlPlayersAndInternsCount);
         }
 
         /// <summary>
@@ -199,14 +314,11 @@ namespace LethalInternship.Managers
             StartOfRound instance = StartOfRound.Instance;
             GameObject internObjectParent = instance.allPlayerObjects[3];
 
-            optionInternNames = Plugin.Config.GetOptionInternNames();
-            arrayOfUserCustomNames = Plugin.Config.GetArrayOfUserCustomNames();
-            indexIterationName = 0;
-
             // Using back up if available,
             // If the size of array has been modified by morecompany for example when loading scene or the game, at some point
             for (int i = 0; i < AllPlayerObjectsBackUp.Length; i++)
             {
+                // Back ups ?
                 int indexPlusIrlPlayersCount = i + irlPlayersCount;
                 if (AllPlayerObjectsBackUp[i] != null)
                 {
@@ -220,6 +332,7 @@ namespace LethalInternship.Managers
 
                 GameObject internObject = Object.Instantiate<GameObject>(internObjectParent, internObjectParent.transform.parent);
 
+                // Body
                 PlayerControllerB internController = internObject.GetComponentInChildren<PlayerControllerB>();
                 internController.playerClientId = (ulong)(indexPlusIrlPlayersCount);
                 internController.isPlayerDead = false;
@@ -227,8 +340,8 @@ namespace LethalInternship.Managers
                 internController.transform.localScale = new Vector3(Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value, Plugin.Config.InternSizeScale.Value);
                 internController.thisController.radius *= Plugin.Config.InternSizeScale.Value;
                 internController.actualClientId = internController.playerClientId + Const.INTERN_ACTUAL_ID_OFFSET;
-                internController.playerUsername = string.Format(Const.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
-                
+                internController.playerUsername = string.Format(ConfigConst.DEFAULT_INTERN_NAME, internController.playerClientId - (ulong)irlPlayersCount);
+
                 // Radar
                 instance.mapScreen.radarTargets.Add(new TransformAndName(internController.transform, internController.playerUsername, false));
 
@@ -257,6 +370,44 @@ namespace LethalInternship.Managers
             Plugin.LogInfo("Pool of interns populated.");
         }
 
+        public void ResetIdentities()
+        {
+            IdentityManager.Instance.InitIdentities(Plugin.Config.ConfigIdentities.configIdentities);
+        }
+
+        private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
+        {
+            SoundManager instanceSM = SoundManager.Instance;
+
+            Array.Resize(ref instanceSM.playerVoicePitchLerpSpeed, irlPlayersAndInternsCount);
+            Array.Resize(ref instanceSM.playerVoicePitchTargets, irlPlayersAndInternsCount);
+            Array.Resize(ref instanceSM.playerVoicePitches, irlPlayersAndInternsCount);
+            Array.Resize(ref instanceSM.playerVoiceVolumes, irlPlayersAndInternsCount);
+
+            // From moreCompany
+            for (int i = IndexBeginOfInterns; i < irlPlayersAndInternsCount; i++)
+            {
+                instanceSM.playerVoicePitchLerpSpeed[i] = 3f;
+                instanceSM.playerVoicePitchTargets[i] = 1f;
+                instanceSM.playerVoicePitches[i] = 1f;
+                instanceSM.playerVoiceVolumes[i] = 0.5f;
+            }
+
+            ResizePlayerVoiceMixers(irlPlayersAndInternsCount);
+        }
+
+        public void ResizePlayerVoiceMixers(int irlPlayersAndInternsCount)
+        {
+            // From moreCompany
+            SoundManager instanceSM = SoundManager.Instance;
+            Array.Resize<AudioMixerGroup>(ref instanceSM.playerVoiceMixers, irlPlayersAndInternsCount);
+            AudioMixerGroup audioMixerGroup = Resources.FindObjectsOfTypeAll<AudioMixerGroup>().FirstOrDefault((AudioMixerGroup x) => x.name.StartsWith("VoicePlayer"));
+            for (int i = IndexBeginOfInterns; i < irlPlayersAndInternsCount; i++)
+            {
+                instanceSM.playerVoiceMixers[i] = audioMixerGroup;
+            }
+        }
+
         private void RemovePlayerModelReplacement(PlayerControllerB internController)
         {
             ModelReplacement.ModelReplacementAPI.RemovePlayerModelReplacement(internController);
@@ -282,7 +433,7 @@ namespace LethalInternship.Managers
         /// <param name="yRot">Rotation of the interns when spawning</param>
         /// <param name="isOutside">Spawning outside or inside the facility (used for initializing AI Nodes)</param>
         [ServerRpc(RequireOwnership = false)]
-        public void SpawnInternServerRpc(Vector3 spawnPosition, float yRot, bool isOutside)
+        public void SpawnInternServerRpc(SpawnInternsParamsNetworkSerializable spawnInternsParamsNetworkSerializable)
         {
             if (AllInternAIs == null || AllInternAIs.Length == 0)
             {
@@ -290,32 +441,55 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            int indexNextPlayerObject = GetNextAvailablePlayerObject();
-            if (indexNextPlayerObject < 0)
+            int identityID = -1;
+            // Get selected identities
+            int[] selectedIdentities = IdentityManager.Instance.GetIdentitiesToDrop();
+            if (selectedIdentities.Length > 0)
             {
-                Plugin.LogInfo($"No more intern available");
+                identityID = selectedIdentities[0];
+            }
+
+            if (identityID < 0)
+            {
+                Plugin.LogInfo($"Try to spawn intern, no more intern identities available.");
                 return;
             }
 
-            SpawnInternServer(indexNextPlayerObject, spawnPosition, yRot, isOutside);
+            //IdentityManager.Instance.InternIdentities[identityID].Status = EnumStatusIdentity.Spawned;
+            spawnInternsParamsNetworkSerializable.InternIdentityID = identityID;
+            SpawnInternServer(spawnInternsParamsNetworkSerializable);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void SpawnThisInternServerRpc(int indexPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
+        public void SpawnThisInternServerRpc(int identityID, SpawnInternsParamsNetworkSerializable spawnInternsParamsNetworkSerializable)
         {
             if (AllInternAIs == null || AllInternAIs.Length == 0)
             {
-                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console");
+                Plugin.LogError($"Fatal error : client #{NetworkManager.LocalClientId} no interns initialized ! Please check for previous errors in the console.");
                 return;
             }
 
-            SpawnInternServer(indexPlayerObject, spawnPosition, yRot, isOutside);
+            if (identityID < 0)
+            {
+                Plugin.LogInfo($"Failed to spawn specific intern identity with id {identityID}.");
+                return;
+            }
+
+            spawnInternsParamsNetworkSerializable.InternIdentityID = identityID;
+            SpawnInternServer(spawnInternsParamsNetworkSerializable);
         }
 
-        private void SpawnInternServer(int indexNextPlayerObject, Vector3 spawnPosition, float yRot, bool isOutside)
+        private void SpawnInternServer(SpawnInternsParamsNetworkSerializable spawnInternsParamsNetworkSerializable)
         {
-            NetworkObject networkObject;
+            int indexNextPlayerObject = GetNextAvailablePlayerObject();
+            if (indexNextPlayerObject < 0)
+            {
+                Plugin.LogInfo($"No more intern can be spawned at the same time, see MaxInternsAvailable value : {Plugin.Config.MaxInternsAvailable}");
+                return;
+            }
             int indexNextIntern = indexNextPlayerObject - IndexBeginOfInterns;
+
+            NetworkObject networkObject;
             InternAI internAI = AllInternAIs[indexNextIntern];
             if (internAI != null)
             {
@@ -333,33 +507,19 @@ namespace LethalInternship.Managers
                 networkObject.Spawn(true);
             }
 
-            // Get a name for the intern
-            PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject];
-            string internName = internController.playerUsername;
-            if (!internAI.AlreadyNamed)
-            {
-                internName = GetNameForIntern(internName, optionInternNames, arrayOfUserCustomNames);
-                internAI.AlreadyNamed = true;
-            }
-
-            // Get a suit
-            int suitID = internAI.SuitID;
-            if (!internAI.AlreadySuited
-                && Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionInternSuitChange.Random)
-            {
-                suitID = GetRandomSuitID();
-                internAI.AlreadySuited = true;
-            }
+            // Get an identity for the intern
+            internAI.InternIdentity = IdentityManager.Instance.InternIdentities[spawnInternsParamsNetworkSerializable.InternIdentityID];
+            int suitID = internAI.InternIdentity.SuitID ?? internAI.InternIdentity.GetRandomSuitID();
 
             // Spawn ragdoll dead bodies of intern
-            NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)internController.playerClientId);
+            NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject].playerClientId);
 
             // Send to client to spawn intern
-            SpawnInternClientRpc(networkObject, networkObjectRagdollBody,
-                                 indexNextIntern, indexNextPlayerObject,
-                                 internName,
-                                 suitID,
-                                 spawnPosition, yRot, isOutside);
+            spawnInternsParamsNetworkSerializable.IndexNextIntern = indexNextIntern;
+            spawnInternsParamsNetworkSerializable.IndexNextPlayerObject = indexNextPlayerObject;
+            spawnInternsParamsNetworkSerializable.InternIdentityID = internAI.InternIdentity.IdIdentity;
+            spawnInternsParamsNetworkSerializable.SuitID = suitID;
+            SpawnInternClientRpc(networkObject, networkObjectRagdollBody, spawnInternsParamsNetworkSerializable);
         }
 
         /// <summary>
@@ -377,93 +537,6 @@ namespace LethalInternship.Managers
                 }
             }
             return -1;
-        }
-
-        private string GetNameForIntern(string defaultName, EnumOptionInternNames optionInternNames, string[] arrayOfUserCustomNames)
-        {
-            switch (optionInternNames)
-            {
-                case EnumOptionInternNames.Default:
-                    return defaultName;
-
-                case EnumOptionInternNames.DefaultCustomList:
-                    return GetRandomNameFromArray(Const.DEFAULT_LIST_CUSTOM_INTERN_NAMES);
-
-                case EnumOptionInternNames.UserCustomList:
-                    return GetRandomNameFromArray(arrayOfUserCustomNames);
-
-                default:
-                    Plugin.LogWarning($"Option for intern names invalid: {optionInternNames}");
-                    return defaultName;
-            }
-        }
-
-        private string GetRandomNameFromArray(string[] originalArrayOfNames)
-        {
-            if (listOfNames.Count == 0)
-            {
-                listOfNames.AddRange(originalArrayOfNames);
-            }
-
-            if (listOfNames.Count == 0)
-            {
-                return "List of names empty !";
-            }
-
-            string name;
-            string iterationString = indexIterationName == 0 ? string.Empty : $" ({indexIterationName})";
-
-            if (listOfNames.Count == 1)
-            {
-                name = listOfNames[0] + iterationString;
-                listOfNames.RemoveAt(0);
-                listOfNames.AddRange(originalArrayOfNames);
-                indexIterationName++;
-                return name;
-            }
-
-            int index;
-            if (Plugin.Config.UseCustomNamesRandomly.Value)
-            {
-                Random randomInstance = new Random();
-                index = randomInstance.Next(0, listOfNames.Count);
-            }
-            else
-            {
-                index = 0;
-            }
-
-            name = listOfNames[index] + iterationString;
-            listOfNames.RemoveAt(index);
-            return name;
-        }
-
-        private int GetRandomSuitID()
-        {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            UnlockableItem unlockableItem;
-            List<int> indexesSpawnedUnlockables = new List<int>();
-            foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
-            {
-                if (unlockable.Value == null)
-                {
-                    continue;
-                }
-
-                unlockableItem = instanceSOR.unlockablesList.unlockables[unlockable.Key];
-                if (unlockableItem != null
-                    && unlockableItem.unlockableType == 0)
-                {
-                    // Suits
-                    indexesSpawnedUnlockables.Add(unlockable.Key);
-                    Plugin.LogDebug($"unlockable index {unlockable.Key}");
-                }
-            }
-
-            Random randomInstance = new Random();
-            int randomIndex = randomInstance.Next(0, indexesSpawnedUnlockables.Count);
-            Plugin.LogDebug($"randomIndex {randomIndex}, random suit id {indexesSpawnedUnlockables[randomIndex]}");
-            return indexesSpawnedUnlockables[randomIndex];
         }
 
         private NetworkObject SpawnRagdollBodies(int playerClientId)
@@ -493,7 +566,6 @@ namespace LethalInternship.Managers
             return networkObjectRagdoll;
         }
 
-
         /// <summary>
         /// Client side, when receiving <c>NetworkObjectReference</c> for the <c>InternAI</c> spawned on server,
         /// adds it to its corresponding arrays
@@ -507,12 +579,9 @@ namespace LethalInternship.Managers
         [ClientRpc]
         private void SpawnInternClientRpc(NetworkObjectReference networkObjectReferenceInternAI,
                                           NetworkObjectReference networkObjectReferenceRagdollInternBody,
-                                          int indexNextIntern, int indexNextPlayerObject,
-                                          string internName,
-                                          int suitID,
-                                          Vector3 spawnPosition, float yRot, bool isOutside)
+                                          SpawnInternsParamsNetworkSerializable spawnParamsNetworkSerializable)
         {
-            Plugin.LogInfo($"Client receive RPC to spawn intern... position : {spawnPosition}, yRot: {yRot}");
+            Plugin.LogInfo($"Client receive RPC to spawn intern... position : {spawnParamsNetworkSerializable.SpawnPosition}, yRot: {spawnParamsNetworkSerializable.YRot}");
 
             if (AllInternAIs == null || AllInternAIs.Length == 0)
             {
@@ -523,18 +592,20 @@ namespace LethalInternship.Managers
             // Get internAI from server
             networkObjectReferenceInternAI.TryGet(out NetworkObject networkObjectInternAI);
             InternAI internAI = networkObjectInternAI.gameObject.GetComponent<InternAI>();
-            AllInternAIs[indexNextIntern] = internAI;
+            AllInternAIs[spawnParamsNetworkSerializable.IndexNextIntern] = internAI;
 
             // Get ragdoll body from server
             networkObjectReferenceRagdollInternBody.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
             RagdollGrabbableObject ragdollBody = networkObjectRagdollGrabbableObject.gameObject.GetComponent<RagdollGrabbableObject>();
 
-            internAI.SetEnemyOutside(isOutside);
+            // Check for identites correctness
+            if (spawnParamsNetworkSerializable.InternIdentityID >= IdentityManager.Instance.InternIdentities.Length)
+            {
+                IdentityManager.Instance.ExpandWithNewDefaultIdentities(numberToAdd: 1);
+            }
+
             InitInternSpawning(internAI, ragdollBody,
-                               indexNextPlayerObject,
-                               internName,
-                               suitID,
-                               spawnPosition, yRot, isOutside);
+                               spawnParamsNetworkSerializable);
         }
 
         /// <summary>
@@ -547,24 +618,23 @@ namespace LethalInternship.Managers
         /// <param name="yRot">Rotation of the interns when spawning</param>
         /// <param name="isOutside">Spawning outside or inside the facility (used for initializing AI Nodes)</param>
         private void InitInternSpawning(InternAI internAI, RagdollGrabbableObject ragdollBody,
-                                        int indexNextPlayerObject,
-                                        string internName,
-                                        int suitID,
-                                        Vector3 spawnPosition, float yRot, bool isOutside)
+                                        SpawnInternsParamsNetworkSerializable spawnParamsNetworkSerializable)
         {
             StartOfRound instance = StartOfRound.Instance;
-            GameObject objectParent = instance.allPlayerObjects[indexNextPlayerObject];
-            objectParent.transform.position = spawnPosition;
-            objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, yRot, 0f));
+            InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[spawnParamsNetworkSerializable.InternIdentityID];
 
-            PlayerControllerB internController = instance.allPlayerScripts[indexNextPlayerObject];
-            internController.playerUsername = internName;
+            GameObject objectParent = instance.allPlayerObjects[spawnParamsNetworkSerializable.IndexNextPlayerObject];
+            objectParent.transform.position = spawnParamsNetworkSerializable.SpawnPosition;
+            objectParent.transform.rotation = Quaternion.Euler(new Vector3(0f, spawnParamsNetworkSerializable.YRot, 0f));
+
+            PlayerControllerB internController = instance.allPlayerScripts[spawnParamsNetworkSerializable.IndexNextPlayerObject];
+            internController.playerUsername = internIdentity.Name;
             internController.isPlayerDead = false;
             internController.isPlayerControlled = true;
             internController.playerActions = new PlayerActions();
             internController.health = Plugin.Config.InternMaxHealth.Value;
             DisableInternControllerModel(objectParent, internController, enable: true, disableLocalArms: true);
-            internController.isInsideFactory = !isOutside;
+            internController.isInsideFactory = !spawnParamsNetworkSerializable.IsOutside;
             internController.isMovementHindered = 0;
             internController.hinderedMultiplier = 1f;
             internController.criticallyInjured = false;
@@ -596,16 +666,20 @@ namespace LethalInternship.Managers
             CleanLegsFromMoreEmotesMod(internController);
 
             // internAI
-            internAI.InternId = Array.IndexOf(AllInternAIs, internAI).ToString();
+            internAI.InternId = Array.IndexOf(AllInternAIs, internAI);
             internAI.creatureAnimator = internController.playerBodyAnimator;
             internAI.NpcController = new NpcController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
+            internAI.InternIdentity = internIdentity;
+            internAI.InternIdentity.Hp = spawnParamsNetworkSerializable.Hp == 0 ? Plugin.Config.InternMaxHealth.Value : spawnParamsNetworkSerializable.Hp;
+            internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
+            internAI.InternIdentity.Status = EnumStatusIdentity.Spawned;
+            internAI.SetEnemyOutside(spawnParamsNetworkSerializable.IsOutside);
 
             // Attach ragdoll body
             internAI.RagdollInternBody = new RagdollInternBody(ragdollBody);
 
             // Plug ai on intern body
-            Plugin.LogDebug($"Adding AI \"{internAI.InternId}\" for body {internController.playerUsername}");
             internAI.enabled = false;
             internAI.NetworkObject.AutoObjectParentSync = false;
             internAI.transform.parent = objectParent.transform;
@@ -620,18 +694,20 @@ namespace LethalInternship.Managers
             // Remove dead bodies if exists
             if (internController.deadBody != null)
             {
-                UnityEngine.Object.Destroy(internController.deadBody.gameObject);
+                if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
+                {
+                    Object.Destroy(internController.deadBody.gameObject);
+                }
                 internController.deadBody = null;
             }
 
             // Switch suit
-            UnlockableSuit.SwitchSuitForPlayer(internController, suitID, false);
-            internAI.SuitID = suitID;
+            internAI.ChangeSuitIntern(internController.playerClientId, internAI.InternIdentity.SuitID.Value);
 
             // Show model replacement
             if (Plugin.IsModModelReplacementAPILoaded)
             {
-                HideShowModelReplacement(internController, show: true);
+                internAI.HideShowModelReplacement(show: true);
             }
 
             // Radar name update
@@ -645,7 +721,8 @@ namespace LethalInternship.Managers
                 }
             }
 
-            internAI.Init();
+            Plugin.LogDebug($"++ Identity spawned: {internIdentity.ToString()}");
+            internAI.Init((EnumSpawnAnimation)spawnParamsNetworkSerializable.enumSpawnAnimation);
         }
 
         /// <summary>
@@ -691,35 +768,24 @@ namespace LethalInternship.Managers
         {
             yield return null;
             int pos = 0;
-            for (int i = 0; i < NbInternsToDropShip; i++)
+            int nbInternsToDropShip = IdentityManager.Instance.GetNbIdentitiesToDrop();
+            for (int i = 0; i < nbInternsToDropShip; i++)
             {
-                if (pos >= 3)
+                if (pos > 3)
                 {
                     pos = 0;
                 }
                 Transform transform = spawnPositions[pos++];
-                SpawnInternServerRpc(transform.position, transform.eulerAngles.y, true);
-                yield return new WaitForSeconds(0.1f);
+                SpawnInternServerRpc(new SpawnInternsParamsNetworkSerializable()
+                {
+                    enumSpawnAnimation = (int)EnumSpawnAnimation.RagdollFromDropShipAndPlayerSpawnAnimation,
+                    SpawnPosition = transform.position,
+                    YRot = transform.eulerAngles.y,
+                    IsOutside = true
+                });
+
+                yield return new WaitForSeconds(0.3f);
             }
-            EndSpawnInternsFromDropShipServerRpc();
-        }
-
-        /// <summary>
-        /// Server side, call clients for indicating that all interns landed and no more are to drop
-        /// </summary>
-        [ServerRpc(RequireOwnership = false)]
-        private void EndSpawnInternsFromDropShipServerRpc()
-        {
-            EndSpawnInternsFromDropShipClientRpc();
-        }
-
-        /// <summary>
-        /// Client side, indicating that all interns landed and no more are to drop
-        /// </summary>
-        [ClientRpc]
-        private void EndSpawnInternsFromDropShipClientRpc()
-        {
-            NbInternsToDropShip = 0;
         }
 
         #endregion
@@ -804,42 +870,7 @@ namespace LethalInternship.Managers
                 return false;
             }
 
-            return NbInternsToDropShip > 0 && LandingStatusAllowed;
-        }
-
-        /// <summary>
-        /// Adds, while in space or on moon, the number of intern bought and ready to drop ship
-        /// </summary>
-        /// <remarks>Used on client side for quick update of terminal infos</remarks>
-        /// <param name="nbOrdered">Number of intern just ordered</param>
-        public void AddNewCommandOfInterns(int nbOrdered)
-        {
-            if (StartOfRound.Instance.inShipPhase)
-            {
-                // in space
-                NbInternsOwned += nbOrdered;
-                NbInternsToDropShip = NbInternsOwned;
-                Plugin.LogDebug($"In space NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
-            }
-            else
-            {
-                // on moon
-                NbInternsToDropShip += nbOrdered;
-                NbInternsOwned += nbOrdered;
-                Plugin.LogDebug($"On moon NbInternsOwned {NbInternsOwned}, NbInternsToDropShip {NbInternsToDropShip}");
-            }
-        }
-
-        /// <summary>
-        /// Update, while in space or on moon, the number of intern bought and ready to drop ship
-        /// </summary>
-        /// <remarks>Used when syncing (server, client) numbers of interns bought and to dropship</remarks>
-        /// <param name="nbInternsOwned">Number of interns bought</param>
-        /// <param name="nbInternToDropShip">Number of interns to dropship on next moon</param>
-        public void UpdateInternsOrdered(int nbInternsOwned, int nbInternToDropShip)
-        {
-            NbInternsOwned = nbInternsOwned;
-            NbInternsToDropShip = nbInternToDropShip;
+            return isAnInternScheduledToLand && LandingStatusAllowed;
         }
 
         /// <summary>
@@ -1086,27 +1117,7 @@ namespace LethalInternship.Managers
             return results.ToArray();
         }
 
-        /// <summary>
-        /// Get the closest point on the ship expanded (by <c>GetExpandedShipBounds()</c>) bounds from <c>fromPoint</c>
-        /// </summary>
-        /// <param name="fromPoint">Position of reference</param>
-        public Vector3 ShipBoundClosestPoint(Vector3 fromPoint)
-        {
-            return GetExpandedShipBounds().ClosestPoint(fromPoint);
-        }
-
-        /// <summary>
-        /// Get the expanded bounds of the ship by <c>Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE</c> as a struct <c>Bounds</c>
-        /// </summary>
-        /// <returns></returns>
-        public Bounds GetExpandedShipBounds()
-        {
-            Bounds shipBounds = new Bounds(StartOfRound.Instance.shipBounds.bounds.center, StartOfRound.Instance.shipBounds.bounds.size);
-            shipBounds.Expand(Const.SHIP_EXPANDING_BOUNDS_DIFFERENCE);
-            return shipBounds;
-        }
-
-        public void SetInternsInElevatorLateUpdate(StartOfRound instanceSOR)
+        public void SetInternsInElevatorLateUpdate()
         {
             foreach (InternAI internAI in AllInternAIs)
             {
@@ -1115,32 +1126,7 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
-                if (internAI.NpcController.Npc.isInElevator
-                    && !instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                    && internAI.NpcController.Npc.thisController.isGrounded)
-                {
-                    if (!internAI.AreHandsFree())
-                    {
-                        internAI.NpcController.Npc.SetItemInElevator(false, false, internAI.HeldItem);
-                    }
-                    internAI.NpcController.Npc.isInElevator = false;
-                    internAI.NpcController.Npc.isInHangarShipRoom = false;
-                }
-                else if (!internAI.NpcController.Npc.isInElevator
-                    && instanceSOR.shipBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                    && internAI.NpcController.Npc.thisController.isGrounded)
-                {
-                    internAI.NpcController.Npc.isInElevator = true;
-                    if (instanceSOR.shipInnerRoomBounds.bounds.Contains(internAI.NpcController.Npc.transform.position)
-                        && internAI.NpcController.Npc.thisController.isGrounded)
-                    {
-                        internAI.NpcController.Npc.isInHangarShipRoom = true;
-                    }
-                    else if (!internAI.AreHandsFree())
-                    {
-                        internAI.NpcController.Npc.SetItemInElevator(false, true, internAI.HeldItem);
-                    }
-                }
+                internAI.SetInternInElevator();
             }
         }
 
@@ -1159,6 +1145,7 @@ namespace LethalInternship.Managers
                 }
 
                 if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
+                    && internAI.State != null
                     && internAI.State.GetAIState() == EnumAIStates.ChillWithPlayer)
                 {
                     return true;
@@ -1192,6 +1179,67 @@ namespace LethalInternship.Managers
             return false;
         }
 
+        public int GetDamageFromSlimeIfIntern(PlayerControllerB player)
+        {
+            if (IsPlayerIntern(player))
+            {
+                return 5;
+            }
+
+            return 35;
+        }
+
+        private void EndOfRoundForInterns()
+        {
+            DictEnemyAINoiseListeners.Clear();
+            ListEnemyAINonNoiseListeners.Clear();
+
+            CountAliveAndDisableInterns();
+        }
+
+        /// <summary>
+        /// Count and disable the interns still alive
+        /// </summary>
+        /// <returns>Number of interns still alive</returns>
+        private void CountAliveAndDisableInterns()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            if (instanceSOR.currentLevel.levelID == 3)
+            {
+                return;
+            }
+
+            PlayerControllerB internController;
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || internAI.NpcController == null)
+                {
+                    continue;
+                }
+
+                internController = internAI.NpcController.Npc;
+                if (internController.isPlayerDead
+                    || !internController.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                internController.isPlayerControlled = false;
+                internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
+                DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
+                internController.transform.position = internController.playersManager.notSpawnedPosition.position;
+
+                if (Plugin.IsModModelReplacementAPILoaded)
+                {
+                    internAI.HideShowModelReplacement(show: false);
+                }
+
+                internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
+                instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
+            }
+        }
+
         #region SyncEndOfRoundInterns
 
         /// <summary>
@@ -1217,7 +1265,7 @@ namespace LethalInternship.Managers
                         continue;
                     }
 
-                    internAI.DropItemServerRpc();
+                    internAI.DropItem();
                 }
 
                 SyncEndOfRoundInternsFromServerToClientRpc();
@@ -1243,67 +1291,267 @@ namespace LethalInternship.Managers
         [ClientRpc]
         private void SyncEndOfRoundInternsFromServerToClientRpc()
         {
-            NbInternsOwned = CountAliveAndDisableInterns();
-            NbInternsToDropShip = NbInternsOwned;
-        }
-
-        /// <summary>
-        /// Count and disable the interns still alive
-        /// </summary>
-        /// <returns>Number of interns still alive</returns>
-        private int CountAliveAndDisableInterns()
-        {
-            StartOfRound instance = StartOfRound.Instance;
-            if (instance.currentLevel.levelID == 3)
-            {
-                return NbInternsOwned;
-            }
-
-            int alive = 0;
-            PlayerControllerB internController;
-            for (int i = IndexBeginOfInterns; i < instance.allPlayerScripts.Length; i++)
-            {
-                internController = instance.allPlayerScripts[i];
-                if (!internController.isPlayerDead && internController.isPlayerControlled)
-                {
-                    internController.isPlayerControlled = false;
-                    internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
-                    DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
-                    internController.transform.position = internController.playersManager.notSpawnedPosition.position;
-
-                    if (Plugin.IsModModelReplacementAPILoaded)
-                    {
-                        HideShowModelReplacement(internController, show: false);
-                    }
-
-                    instance.allPlayerObjects[i].SetActive(false);
-                    alive++;
-                }
-            }
-
-            // Alive and not landed interns
-            return alive + NbInternsToDropShip;
-        }
-
-        private void HideShowModelReplacement(PlayerControllerB playerController, bool show)
-        {
-            playerController.gameObject
-                .GetComponent<ModelReplacement.BodyReplacementBase>()?
-                .SetAvatarRenderers(show);
+            EndOfRoundForInterns();
         }
 
         #endregion
 
         #region Vehicle landing on map RPC
 
-        /// <summary>
-        /// Update the stopping the perfoming of emote
-        /// </summary>
-        [ClientRpc]
-        public void VehicleHasLandedClientRpc()
+        public void VehicleHasLanded()
         {
             VehicleController = Object.FindObjectOfType<VehicleController>();
             Plugin.LogDebug($"Vehicle has landed : {VehicleController}");
+        }
+
+        #endregion
+
+        #region Config RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncLoadedJsonIdentitiesServerRpc(ulong clientId)
+        {
+            Plugin.LogDebug($"Client {clientId} ask server/host {NetworkManager.LocalClientId} to SyncLoadedJsonIdentities");
+            ClientRpcParams.Send = new ClientRpcSendParams()
+            {
+                TargetClientIds = new ulong[] { clientId }
+            };
+
+            SyncLoadedJsonIdentitiesClientRpc(
+                new ConfigIdentitiesNetworkSerializable()
+                {
+                    ConfigIdentities = Plugin.Config.ConfigIdentities.configIdentities
+                },
+                ClientRpcParams);
+        }
+
+        [ClientRpc]
+        private void SyncLoadedJsonIdentitiesClientRpc(ConfigIdentitiesNetworkSerializable configIdentityNetworkSerializable,
+                                                       ClientRpcParams clientRpcParams = default)
+        {
+            if (IsOwner)
+            {
+                return;
+            }
+
+            Plugin.LogInfo($"Client {NetworkManager.LocalClientId} : sync json interns identities");
+            Plugin.LogDebug($"Loaded {configIdentityNetworkSerializable.ConfigIdentities.Length} identities from server");
+            foreach (ConfigIdentity configIdentity in configIdentityNetworkSerializable.ConfigIdentities)
+            {
+                Plugin.LogDebug($"{configIdentity.ToString()}");
+            }
+
+            Plugin.LogDebug($"Recreate identities for {configIdentityNetworkSerializable.ConfigIdentities.Length} interns");
+            IdentityManager.Instance.InitIdentities(configIdentityNetworkSerializable.ConfigIdentities);
+        }
+
+        #endregion
+
+        #region Voices
+
+        public void UpdateAllInternsVoiceEffects()
+        {
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.creatureVoice == null)
+                {
+                    continue;
+                }
+
+                internAI.UpdateInternVoiceEffects();
+            }
+        }
+
+        public bool DidAnInternJustTalkedClose(int idInternTryingToTalk)
+        {
+            InternAI internTryingToTalk = AllInternAIs[idInternTryingToTalk];
+
+            foreach (var internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || !internAI.IsSpawned
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                if (internAI == internTryingToTalk)
+                {
+                    continue;
+                }
+
+                if (internAI.InternIdentity.Voice.IsTalking()
+                    && (internAI.NpcController.Npc.transform.position - internTryingToTalk.NpcController.Npc.transform.position).sqrMagnitude < VoicesConst.DISTANCE_HEAR_OTHER_INTERNS * VoicesConst.DISTANCE_HEAR_OTHER_INTERNS)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void SyncPlayAudioIntern(int internID, string smallPathAudioClip)
+        {
+            AllInternAIs[internID].PlayAudioServerRpc(smallPathAudioClip, Plugin.Config.Talkativeness.Value);
+        }
+
+        public void PlayAudibleNoiseForIntern(int internID,
+                                              Vector3 noisePosition,
+                                              float noiseRange = 10f,
+                                              float noiseLoudness = 0.5f,
+                                              int noiseID = 0)
+        {
+            InternAI internAI = AllInternAIs[internID];
+            bool noiseIsInsideClosedShip = internAI.NpcController.Npc.isInHangarShipRoom && internAI.NpcController.Npc.playersManager.hangarDoorsClosed;
+            internAI.NpcController.PlayAudibleNoiseIntern(noisePosition,
+                                                          noiseRange,
+                                                          noiseLoudness,
+                                                          timesPlayedInSameSpot: 0,
+                                                          noiseIsInsideClosedShip,
+                                                          noiseID);
+        }
+
+        #endregion
+
+        #region Animations culling
+
+        private void UpdateAnimationsCulling()
+        {
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+            {
+                return;
+            }
+
+            if (timerNoAnimationAfterLag > 0f)
+            {
+                timerNoAnimationAfterLag += Time.deltaTime;
+            }
+
+            timerAnimationCulling += Time.deltaTime;
+            if (timerAnimationCulling < 0.05f)
+            {
+                return;
+            }
+
+            Array.Fill(internsInFOV, null);
+
+            Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
+            Vector3 playerPos = StartOfRound.Instance.localPlayerController.transform.position;
+            int baseLayer = StartOfRound.Instance.localPlayerController.gameObject.layer;
+            StartOfRound.Instance.localPlayerController.gameObject.layer = 0;
+
+            int index = 0;
+            Vector3 internBodyPos;
+            Vector3 vectorPlayerToIntern;
+            foreach (InternAI? internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || internAI.isEnemyDead
+                    || internAI.NpcController == null
+                    || !internAI.NpcController.Npc.isPlayerControlled
+                    || internAI.NpcController.Npc.isPlayerDead)
+                {
+                    continue;
+                }
+
+                // Cut animation before deciding which intern can animate
+                internAI.NpcController.ShouldAnimate = false;
+
+                if (timerNoAnimationAfterLag > 3f)
+                {
+                    timerNoAnimationAfterLag = 0f;
+                }
+                if (timerNoAnimationAfterLag > 0f)
+                {
+                    continue;
+                }
+                // Stop animation if we are losing frames
+                if (timerNoAnimationAfterLag <= 0f && Time.deltaTime > 0.125f)
+                {
+                    timerNoAnimationAfterLag += timerAnimationCulling;
+                    continue;
+                }
+
+                if (!internAI.NpcController.IsMoving())
+                {
+                    continue;
+                }
+
+                internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
+                vectorPlayerToIntern = internBodyPos - localPlayerCamera.transform.position;
+                if (Vector3.Angle(localPlayerCamera.transform.forward, vectorPlayerToIntern) < localPlayerCamera.fieldOfView * 0.81f)
+                {
+                    // Intern in FOV
+                    internsInFOV[index++] = internAI;
+                }
+            }
+
+            index = 0;
+            var orderedInternInFOV = internsInFOV.Where(x => x != null)
+                                                 .OrderBy(x => (x.NpcController.Npc.transform.position - playerPos).sqrMagnitude);
+            foreach (InternAI? internAI in orderedInternInFOV)
+            {
+                if (index >= Plugin.Config.MaxAnimatedInterns.Value)
+                {
+                    break;
+                }
+
+                internAI.NpcController.Npc.gameObject.layer = 0;
+                internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
+                vectorPlayerToIntern = internBodyPos - localPlayerCamera.transform.position;
+
+                bool collideWithAnotherPlayer = false;
+                RaycastHit[] raycastHits = new RaycastHit[5];
+                Ray ray = new Ray(localPlayerCamera.transform.position, vectorPlayerToIntern);
+                int raycastResults = Physics.RaycastNonAlloc(ray, raycastHits, vectorPlayerToIntern.magnitude, StartOfRound.Instance.playersMask);
+                for (int i = 0; i < raycastResults; i++)
+                {
+                    RaycastHit hit = raycastHits[i];
+                    if (hit.collider != null
+                        && hit.collider.tag == "Player")
+                    {
+                        collideWithAnotherPlayer = true;
+                        break;
+                    }
+                }
+
+                if (!collideWithAnotherPlayer)
+                {
+                    internAI.NpcController.ShouldAnimate = true;
+                    index++;
+                }
+
+                internAI.NpcController.Npc.gameObject.layer = baseLayer;
+            }
+
+            StartOfRound.Instance.localPlayerController.gameObject.layer = baseLayer;
+            timerAnimationCulling = 0f;
+        }
+
+        #endregion
+
+        #region BunkbedMod RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void UpdateReviveCountServerRpc(int id)
+        {
+            UpdateReviveCountClientRpc(id);
+        }
+
+        [ClientRpc]
+        private void UpdateReviveCountClientRpc(int id)
+        {
+            BunkbedRevive.BunkbedController.UpdateReviveCount(id);
         }
 
         #endregion

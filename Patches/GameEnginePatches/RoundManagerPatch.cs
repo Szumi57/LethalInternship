@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using System.Collections.Generic;
+using LethalInternship.Constants;
 
 namespace LethalInternship.Patches.GameEnginePatches
 {
@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPrefix]
         public static bool LoadNewLevel_Postfix(RoundManager __instance)
         {
-            if (!Const.SPAWN_BUSH_WOLVES_FOR_DEBUG)
+            if (!DebugConst.SPAWN_BUSH_WOLVES_FOR_DEBUG)
             {
                 return true;
             }
@@ -30,7 +30,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         [HarmonyPrefix]
         static void GenerateNewFloor_Postfix(RoundManager __instance)
         {
-            if (!Const.SPAWN_MINESHAFT_FOR_DEBUG)
+            if (!DebugConst.SPAWN_MINESHAFT_FOR_DEBUG)
             {
                 return;
             }

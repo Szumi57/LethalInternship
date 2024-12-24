@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using System;
 using System.Collections.Generic;
@@ -38,17 +39,33 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 return;
             }
 
-            if (other.CompareTag("Player"))
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null
+                && enemyAICollisionDetect.mainScript != null
+                && enemyAICollisionDetect.mainScript.IsOwner
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
-                PlayerControllerB player = other.gameObject.GetComponent<PlayerControllerB>();
-                if (InternManager.Instance.IsPlayerInternOwnerLocal(player))
+                InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
+                if (internAI != null
+                    && internAI.IsOwner)
                 {
-                    if (!player.isPlayerDead)
+                    ___localPlayerOnMine = true;
+                    ___pressMineDebounceTimer = 0.5f;
+                    __instance.PressMineServerRpc();
+
+                    // Audio
+                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
                     {
-                        ___localPlayerOnMine = true;
-                        ___pressMineDebounceTimer = 0.5f;
-                        __instance.PressMineServerRpc();
-                    }
+                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        CanTalkIfOtherInternTalk = true,
+                        WaitForCooldown = false,
+                        CutCurrentVoiceStateToTalk = true,
+                        CanRepeatVoiceState = false,
+
+                        ShouldSync = false,
+                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                        AllowSwearing = Plugin.Config.AllowSwearing.Value
+                    });
                 }
             }
         }
@@ -75,16 +92,35 @@ namespace LethalInternship.Patches.MapHazardsPatches
             {
                 return;
             }
-            if (other.CompareTag("Player"))
+
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null
+                && enemyAICollisionDetect.mainScript != null
+                && enemyAICollisionDetect.mainScript.IsOwner
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
             {
-                PlayerControllerB player = other.gameObject.GetComponent<PlayerControllerB>();
-                if (InternManager.Instance.IsPlayerInternOwnerLocal(player))
+                InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
+                if (internAI != null
+                    && internAI.IsOwner)
                 {
-                    if (!player.isPlayerDead)
+                    ___localPlayerOnMine = false;
+
+                    // Audio
+                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
                     {
-                        ___localPlayerOnMine = false;
-                        TriggerMineOnLocalClientByExiting_ReversePatch(__instance);
-                    }
+                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        CanTalkIfOtherInternTalk = true,
+                        WaitForCooldown = false,
+                        CutCurrentVoiceStateToTalk = true,
+                        CanRepeatVoiceState = true,
+
+                        ShouldSync = false,
+                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                        AllowSwearing = Plugin.Config.AllowSwearing.Value
+                    });
+
+                    // Boom
+                    TriggerMineOnLocalClientByExiting_ReversePatch(__instance);
                 }
             }
         }
@@ -123,7 +159,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             List<ulong> internsAlreadyExploded = new List<ulong>();
             for (int i = 0; i < array.Length; i++)
             {
-                Plugin.LogDebug($"array {i} {array[i].name}");
+                Plugin.LogDebug($"SpawnExplosion OverlapSphere array {i} {array[i].name}");
                 float distanceFromExplosion = Vector3.Distance(explosionPosition, array[i].transform.position);
                 if (distanceFromExplosion > 4f
                     && Physics.Linecast(explosionPosition, array[i].transform.position + Vector3.up * 0.3f, out _, 256, QueryTriggerInteraction.Ignore))

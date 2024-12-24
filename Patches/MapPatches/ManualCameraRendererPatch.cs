@@ -36,6 +36,8 @@ namespace LethalInternship.Patches.MapPatches
                 if (internAI != null)
                 {
                     if (!Plugin.Config.RadarEnabled.Value
+                        || internAI.NpcController.Npc.isPlayerDead
+                        || !internAI.NpcController.Npc.isPlayerControlled
                         || internAI.RagdollInternBody.IsRagdollBodyHeld())
                     {
                         __result = GetRadarTargetIndexPlusOne_ReversePatch(__instance, __result);
