@@ -1,6 +1,6 @@
 ﻿namespace LethalInternship.Enums
 {
-    public enum EnumOptionInternNames
+    public enum EnumOptionNames
     {
         Default,
         DefaultCustomList,

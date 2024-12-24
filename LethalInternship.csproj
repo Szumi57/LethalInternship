@@ -6,7 +6,7 @@
     <AssemblyName>LethalInternship</AssemblyName>
     <Product>LethalInternship</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>0.18.3</Version>
+    <Version>0.19.0</Version>
   </PropertyGroup>
 
   <!-- Project Properties -->
@@ -51,6 +51,8 @@
     viewing Private Information in stack traces.
     -->
     <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=./</PathMap>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>True</Optimize>
@@ -60,6 +62,14 @@
     <Optimize>True</Optimize>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Assets\Audio\Voices\DefaultVoices.zip" />
+    <None Remove="Configs\ConfigIdentities.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Audio\Voices\DefaultVoices.zip" />
+    <EmbeddedResource Include="Configs\ConfigIdentities.json" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
@@ -96,6 +106,9 @@
     <Reference Include="BetterEmotes">
       <HintPath>lib\mods\BetterEmotes.dll</HintPath>
     </Reference>
+    <Reference Include="BunkbedRevive">
+      <HintPath>lib\mods\BunkbedRevive.dll</HintPath>
+    </Reference>
     <Reference Include="com.sigurd.csync">
       <HintPath>lib\mods\com.sigurd.csync.dll</HintPath>
     </Reference>
@@ -125,6 +138,9 @@
     </Reference>
     <Reference Include="Unity.Animation.Rigging">
       <HintPath>lib\Unity.Animation.Rigging.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>lib\Unity.Collections.dll</HintPath>
     </Reference>
     <Reference Include="Unity.InputSystem">
       <HintPath>lib\Unity.InputSystem.dll</HintPath>

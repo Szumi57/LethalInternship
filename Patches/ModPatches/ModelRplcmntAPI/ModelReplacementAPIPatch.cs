@@ -1,9 +1,10 @@
-﻿using HarmonyLib;
-using LethalInternship.Utils;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
+using LethalInternship.AI;
+using LethalInternship.Managers;
 using ModelReplacement;
-using System.Collections.Generic;
+using System;
 using System.Linq;
-using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
@@ -11,49 +12,86 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
     internal class ModelReplacementAPIPatch
     {
         [HarmonyPatch("SetPlayerModelReplacement")]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> SetPlayerModelReplacement_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        [HarmonyPrefix]
+        static bool SetPlayerModelReplacement_Prefix(PlayerControllerB player, Type type)
         {
-            var startIndex = -1;
-            var codes = new List<CodeInstruction>(instructions);
-
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 23; i++)
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
             {
-                if (codes[i].ToString().StartsWith("call static bool ModelReplacement.ModelReplacementAPI::get_IsLan()") // 21
-                    && codes[i + 23].ToString().StartsWith("ldarg.0 NULL")) // 44
+                return true;
+            }
+
+            if (!type.IsSubclassOf(typeof(BodyReplacementBase)))
+            {
+                return true;
+            }
+
+            int currentSuitID = player.currentSuitID;
+            string unlockableName = StartOfRound.Instance.unlockablesList.unlockables[currentSuitID].unlockableName;
+
+            string suitNameToReplace = string.Empty;
+            bool shouldAddNewBodyReplacement = true;
+            BodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.Select(x => (BodyReplacementBase)x).ToArray();
+            //Plugin.LogDebug($"{player.playerUsername} SetPlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
+            foreach (BodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
+            {
+                if (BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
                 {
-                    startIndex = i;
-                    break;
+                    continue;
+                }
+
+                if (bodyReplacementBase.GetType() == type
+                    && bodyReplacementBase.suitName == unlockableName)
+                {
+                    shouldAddNewBodyReplacement = false;
+                }
+                else
+                {
+                    Plugin.LogInfo($"Patch LethalInternship, intern {player.playerUsername}, Model Replacement change detected {bodyReplacementBase.GetType()} => {type}, changing model.");
+                    suitNameToReplace = bodyReplacementBase.suitName;
+                    internAI.ListModelReplacement.Remove(bodyReplacementBase);
+                    bodyReplacementBase.IsActive = false;
+                    UnityEngine.Object.Destroy(bodyReplacementBase);
+                    shouldAddNewBodyReplacement = true;
                 }
             }
-            if (startIndex > -1)
+
+            if (shouldAddNewBodyReplacement && !internAI.NpcController.Npc.isPlayerDead)
             {
-                Label labelToJumpTo = generator.DefineLabel();
-                codes[startIndex + 23].labels.Add(labelToJumpTo);
+                Plugin.LogInfo($"Patch LethalInternship, intern {player.playerUsername}, Suit Change detected {suitNameToReplace} => {currentSuitID} {unlockableName}, Replacing {type}.");
+                BodyReplacementBase bodyReplacementBaseToAdd = (BodyReplacementBase)player.gameObject.AddComponent(type);
+                bodyReplacementBaseToAdd.suitName = unlockableName;
+                internAI.ListModelReplacement.Add(bodyReplacementBaseToAdd);
+            }
 
-                // Adds dummy line for label that land here
-                codes.Insert(startIndex + 1, new CodeInstruction(codes[startIndex].opcode, codes[startIndex].operand));
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes[startIndex].operand = null;
-                startIndex++;
+            return false;
+        }
 
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+        [HarmonyPatch("RemovePlayerModelReplacement")]
+        [HarmonyPrefix]
+        static bool RemovePlayerModelReplacement_Prefix(PlayerControllerB player)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            BodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.Select(x => (BodyReplacementBase)x).ToArray();
+            //Plugin.LogDebug($"RemovePlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
+            foreach (BodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
+            {
+                if (BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
                 {
-                    new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsPlayerInternMethod),
-                    new CodeInstruction(OpCodes.Brtrue, labelToJumpTo),
-                };
-                codes.InsertRange(startIndex, codesToAdd);
+                    continue;
+                }
 
-                startIndex = -1;
-            }
-            else
-            {
-                Plugin.LogError($"LethalInternship.Patches.ModPatches.ModelRplcmntAPI.ModelReplacementAPIPatch.SetPlayerModelReplacement_Transpiler could not bypass is lan and player steam id 0 when intern.");
+                internAI.ListModelReplacement.Remove(bodyReplacementBase);
+                bodyReplacementBase.IsActive = false;
+                UnityEngine.Object.Destroy(bodyReplacementBase);
             }
 
-            return codes.AsEnumerable();
+            return false;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -26,7 +28,20 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             Plugin.LogDebug("Initialize managers...");
 
-            GameObject objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
+            GameObject objectManager;
+
+            // MonoBehaviours
+            objectManager = new GameObject("InputManager");
+            objectManager.AddComponent<InputManager>();
+
+            objectManager = new GameObject("AudioManager");
+            objectManager.AddComponent<AudioManager>();
+
+            objectManager = new GameObject("IdentityManager");
+            objectManager.AddComponent<IdentityManager>();
+
+            // NetworkBehaviours
+            objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
                 objectManager.GetComponent<NetworkObject>().Spawn();
@@ -38,14 +53,11 @@ namespace LethalInternship.Patches.GameEnginePatches
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
 
-            objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
+            objectManager = Object.Instantiate(PluginManager.Instance.InternManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
             {
                 objectManager.GetComponent<NetworkObject>().Spawn();
             }
-
-            objectManager = new GameObject("InputManager");
-            objectManager.AddComponent<InputManager>();
 
             Plugin.LogDebug("... Managers started");
         }
@@ -59,6 +71,14 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InternManager.Instance.SyncEndOfRoundInterns();
         }
+
+        #region Reverse patches
+
+        [HarmonyPatch("GetPlayerSpawnPosition")]
+        [HarmonyReversePatch]
+        public static Vector3 GetPlayerSpawnPosition_ReversePatch(object instance, int playerNum, bool simpleTeleport) => throw new NotImplementedException("Stub LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch.GetPlayerSpawnPosition_ReversePatch");
+
+        #endregion
 
         #region Transpilers
 
@@ -400,7 +420,7 @@ namespace LethalInternship.Patches.GameEnginePatches
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
 
-            if (Const.TEST_MORE_THAN_X_PLAYER_BYPASS)
+            if (DebugConst.TEST_MORE_THAN_X_PLAYER_BYPASS)
             {
                 // ----------------------------------------------------------------------
                 for (var i = 0; i < codes.Count - 11; i++)
@@ -462,13 +482,15 @@ namespace LethalInternship.Patches.GameEnginePatches
         /// <param name="__instance"></param>
         [HarmonyPatch("OnPlayerConnectedClientRpc")]
         [HarmonyPostfix]
-        static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance)
+        static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance, ulong clientId)
         {
             // Sync save file
-            if (!__instance.IsServer && !__instance.IsHost)
+            if (!__instance.IsServer 
+                && !__instance.IsHost
+                && __instance.NetworkManager.LocalClientId == clientId)
             {
-                ulong clientId = __instance.NetworkManager.LocalClientId;
-                SaveManager.Instance.SyncLoadedSaveInfosServerRpc(clientId);
+                InternManager.Instance.SyncLoadedJsonIdentitiesServerRpc(clientId);
+                SaveManager.Instance.SyncCurrentValuesServerRpc(clientId);
             }
         }
 
@@ -480,7 +502,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 && __instance.shipDoorsEnabled 
                 && !__instance.suckingPlayersOutOfShip)
             {
-                InternManager.Instance.SetInternsInElevatorLateUpdate(__instance);
+                InternManager.Instance.SetInternsInElevatorLateUpdate();
             }
         }
 
@@ -493,76 +515,20 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InputManager.Instance.RemoveEventHandlers();
         }
+
+        [HarmonyPatch("UpdatePlayerVoiceEffects")]
+        [HarmonyPostfix]
+        static void UpdatePlayerVoiceEffects_PostFix()
+        {
+            InternManager.Instance.UpdateAllInternsVoiceEffects();
+        }
+
+        [HarmonyPatch("FirePlayersAfterDeadlineClientRpc")]
+        [HarmonyPostfix]
+        static void FirePlayersAfterDeadlineClientRpc_PostFix()
+        {
+            // Reset after fired
+            InternManager.Instance.ResetIdentities();
+        }
     }
-
-    //[HarmonyPatch(typeof(EnemyAICollisionDetect))] // make sure Harmony inspects the class
-    //class MyPatches
-    //{
-    //    [HarmonyPatch("OnTriggerStay")]
-    //    [HarmonyPrefix]
-    //    static void Prefix(Collider other)
-    //    {
-    //        if (other.CompareTag("Player"))
-    //        { 
-    //            Plugin.LogDebug($"intern? {other.gameObject.GetComponent<InternAI>()}");
-    //        }
-    //    }
-
-    //    //[HarmonyPatch("CheckBoundsForPlayers")]
-    //    //[HarmonyPostfix]
-    //    //static void Postfix(System.Diagnostics.Stopwatch __state)
-    //    //{
-    //    //    __state.Stop();
-    //    //    var elapsedMs = __state.Elapsed.TotalMilliseconds;
-    //    //    Plugin.LogDebug($"ShowerTrigger: {elapsedMs}ms");
-    //    //}
-    //}
-
-    //[HarmonyPatch] // make sure Harmony inspects the class
-    //class MyPatches
-    //{
-    //    static IEnumerable<MethodBase> TargetMethods()
-    //    {
-    //        var a = AccessTools.GetTypesFromAssembly(typeof(StartOfRound).Assembly)
-    //            .SelectMany(type => type.GetMethods())
-    //            .Where(method => //method.ReturnType != typeof(void) &&
-    //                            !method.DeclaringType.Name.Contains("BaseServer`3")&&
-    //                            !method.DeclaringType.Name.Contains("BaseClient`3") &&
-    //                            method.Name.Contains("Update"));
-    //        foreach(var method in a)
-    //        {
-    //            Plugin.LogDebug($"{method.DeclaringType.Name}.{method.Name}");
-    //        }
-
-    //        return AccessTools.GetTypesFromAssembly(typeof(StartOfRound).Assembly)
-    //            .SelectMany(type => type.GetMethods())
-    //            .Where(method => //method.ReturnType != typeof(void) &&
-    //                            !method.DeclaringType.Name.Contains("BaseServer`3") && 
-    //                            !method.DeclaringType.Name.Contains("BaseClient`3") &&
-    //                            method.Name.Contains("Update"))
-    //            .Cast<MethodBase>();
-    //    }
-
-    //    // prefix all methods in someAssembly with a non-void return type and beginning with "Player"
-    //    static void Prefix(out System.Diagnostics.Stopwatch __state)
-    //    {
-    //        __state = System.Diagnostics.Stopwatch.StartNew();
-    //    }
-
-    //    static void Postfix(MethodBase __originalMethod, System.Diagnostics.Stopwatch __state)
-    //    {
-    //        __state.Stop();
-    //        var elapsedMs = __state.Elapsed.TotalMilliseconds;
-    //        string name = __originalMethod.FullDescription();
-    //        if (!name.Contains("GrabbableObject"))
-    //        {
-    //            if(elapsedMs > 0.5)
-    //            {
-    //        Plugin.LogDebug($"Method {name}: {elapsedMs}ms");
-    //            }
-
-    //        }
-
-    //    }
-    //}
 }

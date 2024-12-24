@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using UnityEngine;
 
@@ -35,6 +36,11 @@ namespace LethalInternship.AI.AIStates
             }
         }
 
+        public GetCloseToPlayerState(InternAI ai, PlayerControllerB targetPlayer) : this(ai)
+        {
+            ai.targetPlayer = targetPlayer;
+        }
+
         /// <summary>
         /// <inheritdoc cref="AIState.DoAI"/>
         /// </summary>
@@ -66,13 +72,6 @@ namespace LethalInternship.AI.AIStates
             {
                 // Target is not available anymore
                 ai.State = new SearchingForPlayerState(this);
-                return;
-            }
-
-            // Target in ship, wait outside
-            if (ai.IsPlayerInShipBoundsExpanded(ai.targetPlayer))
-            {
-                ai.State = new PlayerInShipState(this);
                 return;
             }
 
@@ -144,6 +143,23 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+        }
+
+        public override void TryPlayCurrentStateVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.FollowingPlayer,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = false,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
         }
     }
 }

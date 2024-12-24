@@ -1,7 +1,9 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.AI.AIStates;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
+using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
@@ -14,6 +16,9 @@ using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
 using Object = UnityEngine.Object;
+using Quaternion = UnityEngine.Quaternion;
+using Random = System.Random;
+using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.AI
@@ -51,39 +56,42 @@ namespace LethalInternship.AI
         /// </summary>
         public NpcController NpcController = null!;
         public RagdollInternBody RagdollInternBody = null!;
-
-        public string InternId = "Not initialized";
-        public bool AlreadyNamed = false;
-        public int SuitID = 0;
-        public bool AlreadySuited = false;
-        public int MaxHealth = Const.DEFAULT_INTERN_MAX_HEALTH;
-
+        public InternIdentity InternIdentity = null!;
+        public AudioSource InternVoice = null!;
         /// <summary>
         /// Currently held item by intern
         /// </summary>
         public GrabbableObject? HeldItem = null!;
-        /// <summary>
-        /// Used for not teleporting too much
-        /// </summary>
-        public float TimeSinceTeleporting { get; set; }
+        public Collider InternBodyCollider = null!;
 
+        public int InternId = -1;
+        public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
+        public float TimeSinceTeleporting = 0f;
+
+        public List<Component> ListModelReplacement = null!;
+
+        private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
+        private Dictionary<string, Component> dictComponentByCollider = null!;
 
         private DeadBodyInfo ragdollBodyDeadBodyInfo = null!;
 
         private Coroutine grabObjectCoroutine = null!;
+        private Coroutine? spawnAnimationCoroutine = null!;
+        public bool AnimationCoroutineRagdollingRunning = false;
 
         private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
-        private bool isDestinationChanged;
-        private float timeSinceStuck;
+        private bool hasDestinationChanged = true;
         private float updateDestinationIntervalInternAI;
-        private float timerCheckDoor;
         private float healthRegenerateTimerMax;
+        private float timerCheckDoor;
 
         public LineRendererUtil LineRendererUtil = null!;
+
+        private RaycastHit GroundHit;
 
         private void Awake()
         {
@@ -127,7 +135,7 @@ namespace LethalInternship.AI
                 Plugin.LogError(string.Format("Error when initializing intern variables for {0} : {1}", gameObject.name, arg));
             }
 
-            Plugin.LogDebug("InternAI started");
+            //Plugin.LogDebug("InternAI started");
         }
 
         /// <summary>
@@ -136,49 +144,125 @@ namespace LethalInternship.AI
         /// <remarks>
         /// This method is used as an initialization and re-initialization too.
         /// </remarks>
-        public void Init()
+        public void Init(EnumSpawnAnimation enumSpawnAnimation)
         {
-            // Ladders
-            laddersInteractTrigger = RefreshLaddersList();
-
             // Entrances
             entrancesTeleportArray = Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
 
             // Doors
             doorLocksArray = Object.FindObjectsOfType<DoorLock>(includeInactive: false);
 
+            // Important colliders
+            InitImportantColliders();
+
             // Grabbableobject
-            HoarderBugAI.RefreshGrabbableObjectsInMapList();
+            InternManager.Instance.RegisterItems();
 
             // Init controller
             this.NpcController.Awake();
 
+            // Refresh billboard position
+            StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
+
             // Health
-            MaxHealth = Plugin.Config.InternMaxHealth.Value;
+            MaxHealth = InternIdentity.HpMax;
             NpcController.Npc.health = MaxHealth;
             healthRegenerateTimerMax = 100f / (float)MaxHealth;
             NpcController.Npc.healthRegenerateTimer = healthRegenerateTimerMax;
 
             // AI init
             this.ventAnimationFinished = true;
-            this.transform.position = NpcController.Npc.transform.position;
-            if (agent != null)
-            {
-                agent.Warp(NpcController.Npc.transform.position);
-                agent.speed = Const.AGENT_SPEED;
-                agent.enabled = false;
-            }
-            this.serverPosition = transform.position;
             this.isEnemyDead = false;
             this.enabled = true;
-
             addPlayerVelocityToDestination = 3f;
+
+            // Body collider
+            InternBodyCollider = NpcController.Npc.GetComponentInChildren<Collider>();
+
+            // Intern voice
+            InitInternVoiceComponent();
+            UpdateInternVoiceEffects();
 
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(6, this.transform);
 
-            // Init state
-            InitStateToSearchingNoTarget();
+            TeleportAgentAIAndBody(NpcController.Npc.transform.position);
+            StateControllerMovement = EnumStateControllerMovement.FollowAgent;
+
+            // Spawn animation
+            spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
+        }
+
+        private void InitInternVoiceComponent()
+        {
+            if (this.creatureVoice == null)
+            {
+                foreach (var component in this.gameObject.GetComponentsInChildren<AudioSource>())
+                {
+                    if (component.name == "CreatureVoice")
+                    {
+                        this.creatureVoice = component;
+                        break;
+                    }
+                }
+            }
+            if (this.creatureVoice == null)
+            {
+                Plugin.LogWarning($"Could not initialize intern {this.InternId} {NpcController.Npc.playerUsername} voice !");
+                return;
+            }
+
+            NpcController.Npc.currentVoiceChatAudioSource = this.creatureVoice;
+            this.InternVoice = NpcController.Npc.currentVoiceChatAudioSource;
+            this.InternVoice.enabled = true;
+            InternIdentity.Voice.InternID = this.InternId;
+            InternIdentity.Voice.CurrentAudioSource = this.InternVoice;
+
+            // OccludeAudio
+            NpcController.OccludeAudioComponent = creatureVoice.GetComponent<OccludeAudio>();
+
+            // AudioLowPassFilter
+            AudioLowPassFilter? audioLowPassFilter = creatureVoice.GetComponent<AudioLowPassFilter>();
+            if (audioLowPassFilter == null)
+            {
+                audioLowPassFilter = creatureVoice.gameObject.AddComponent<AudioLowPassFilter>();
+            }
+            NpcController.AudioLowPassFilterComponent = audioLowPassFilter;
+
+            // AudioHighPassFilter
+            AudioHighPassFilter? audioHighPassFilter = creatureVoice.GetComponent<AudioHighPassFilter>();
+            if (audioHighPassFilter == null)
+            {
+                audioHighPassFilter = creatureVoice.gameObject.AddComponent<AudioHighPassFilter>();
+            }
+            NpcController.AudioHighPassFilterComponent = audioHighPassFilter;
+
+            // AudioMixerGroup
+            if ((int)NpcController.Npc.playerClientId >= SoundManager.Instance.playerVoiceMixers.Length)
+            {
+                // Because of morecompany, playerVoiceMixers gets somehow resized down
+                InternManager.Instance.ResizePlayerVoiceMixers(InternManager.Instance.AllEntitiesCount);
+            }
+            this.InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
+        }
+
+        private void FixedUpdate()
+        {
+            UpdateSurfaceRayCast();
+        }
+
+        private void UpdateSurfaceRayCast()
+        {
+            NpcController.IsTouchingGround = Physics.Raycast(new Ray(NpcController.Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
+                                                             out GroundHit,
+                                                             2.5f,
+                                                             StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+
+            // Update current material standing on
+            if (NpcController.IsTouchingGround)
+            {
+                NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[GroundHit.collider.tag];
+            }
         }
 
         /// <summary>
@@ -190,6 +274,9 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Update()
         {
+            // Update identity
+            InternIdentity.Hp = NpcController.Npc.isPlayerDead ? 0 : NpcController.Npc.health;
+
             // Not owner no AI
             if (!IsOwner)
             {
@@ -204,23 +291,19 @@ namespace LethalInternship.AI
 
             if (NpcController == null
                 || !NpcController.Npc.gameObject.activeSelf
-                || !NpcController.Npc.isPlayerControlled)
+                || !NpcController.Npc.isPlayerControlled
+                || isEnemyDead
+                || NpcController.Npc.isPlayerDead)
             {
+                // Intern dead or
                 // Not controlled we do nothing
                 SetAgent(enabled: false);
                 return;
             }
 
-            // Intern dead
-            if (isEnemyDead
-                || NpcController.Npc.isPlayerDead)
-            {
-                SetAgent(enabled: false);
-                return;
-            }
-
             // No AI calculation if in special animation
-            if (inSpecialAnimation)
+            if (inSpecialAnimation
+                || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
             {
                 SetAgent(enabled: false);
                 return;
@@ -234,21 +317,13 @@ namespace LethalInternship.AI
                 return;
             }
 
-            // Update the position of the AI to be the one from the body
-            // The AI always tries to move and the body follows
-            // But the AI still need to go back to the body current position each game loop
-            // Otherwise the AI just do not stop and goes too far
+            // Update movement
+            float x;
+            float z;
             if (NpcController.HasToMove)
             {
-                if (NpcController.Npc.isCrouching
-                    || NpcController.Npc.isMovementHindered > 0)
-                {
-                    agent.speed = Const.AGENT_SPEED_CROUCH;
-                }
-                else
-                {
-                    agent.speed = Const.AGENT_SPEED;
-                }
+                Vector2 vector2 = (new Vector2(NpcController.MoveVector.x, NpcController.MoveVector.z));
+                agent.speed = 1f * vector2.magnitude;
 
                 if (!NpcController.Npc.isClimbingLadder
                     && !NpcController.Npc.inSpecialInteractAnimation
@@ -258,11 +333,53 @@ namespace LethalInternship.AI
                     NpcController.SetTurnBodyTowardsDirectionWithPosition(this.transform.position);
                 }
 
-                agent.nextPosition = NpcController.Npc.thisController.transform.position;
+                x = Mathf.Lerp(NpcController.Npc.transform.position.x, this.transform.position.x, 0.075f);
+                z = Mathf.Lerp(NpcController.Npc.transform.position.z, this.transform.position.z, 0.075f);
             }
             else
             {
-                this.transform.position = NpcController.Npc.thisController.transform.position;
+                SetAgent(enabled: false);
+                x = Mathf.Lerp(NpcController.Npc.transform.position.x + NpcController.MoveVector.x * Time.deltaTime, this.transform.position.x, 0.075f);
+                z = Mathf.Lerp(NpcController.Npc.transform.position.z + NpcController.MoveVector.z * Time.deltaTime, this.transform.position.z, 0.075f);
+            }
+
+            // Movement free (falling from bridge, jetpack, tulip snake taking off...)
+            bool shouldFreeMovement = ShouldFreeMovement();
+
+            // Update position
+            if (shouldFreeMovement
+                || StateControllerMovement == EnumStateControllerMovement.Free)
+            {
+                StateControllerMovement = EnumStateControllerMovement.Free;
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} falling ! NpcController.Npc.transform.position {NpcController.Npc.transform.position} MoveVector {NpcController.MoveVector}");
+                NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
+            }
+            else if (StateControllerMovement == EnumStateControllerMovement.FollowAgent)
+            {
+                Vector3 aiPosition = this.transform.position;
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} --> y {(NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y)} MoveVector {NpcController.MoveVector}");
+                NpcController.Npc.transform.position = new Vector3(x,
+                                                                   aiPosition.y,
+                                                                   z); ;
+                this.transform.position = aiPosition;
+                NpcController.Npc.ResetFallGravity();
+            }
+
+            // Is still falling ?
+            if (StateControllerMovement == EnumStateControllerMovement.Free
+                && NpcController.IsTouchingGround
+                && !shouldFreeMovement)
+            {
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= touch ground GroundHit.point {NpcController.GroundHit.point}");
+                StateControllerMovement = EnumStateControllerMovement.FollowAgent;
+                TeleportAgentAIAndBody(GroundHit.point);
+                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= NpcController.Npc.transform.position {NpcController.Npc.transform.position}");
+            }
+
+            // No AI when falling
+            if (StateControllerMovement == EnumStateControllerMovement.Free)
+            {
+                return;
             }
 
             // Update interval timer for AI calculation
@@ -290,7 +407,9 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void DoAIInterval()
         {
-            if (isEnemyDead || NpcController.Npc.isPlayerDead || StartOfRound.Instance.allPlayersDead)
+            if (isEnemyDead
+                || NpcController.Npc.isPlayerDead
+                || State == null)
             {
                 return;
             }
@@ -298,156 +417,158 @@ namespace LethalInternship.AI
             // Do the AI calculation behaviour for the current state
             State.DoAI();
 
-            // Check if the body is stuck somehow, and try to unstuck it in various ways
-            CheckIfStuck();
+            // Doors
+            OpenDoorIfNeeded();
+
+            // Copy movement
+            FollowCrouchStateIfCan();
+
+            // Voice
+            State.TryPlayCurrentStateVoiceAudio();
         }
 
-        private void SetAgent(bool enabled)
+        public void UpdateController()
+        {
+            if (RagdollInternBody != null
+                && RagdollInternBody.IsRagdollBodyHeld())
+            {
+                return;
+            }
+
+            if (NpcController.IsControllerInCruiser)
+            {
+                return;
+            }
+
+            NpcController.Update();
+        }
+
+        private void LateUpdate()
+        {
+            // Update voice position
+            InternVoice.transform.position = NpcController.Npc.gameplayCamera.transform.position;
+        }
+
+        private bool ShouldFreeMovement()
+        {
+            if (NpcController.IsTouchingGround
+                && dictComponentByCollider.TryGetValue(GroundHit.collider.name, out Component component))
+            {
+                BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
+                if (bridgeTrigger != null
+                    && bridgeTrigger.fallenBridgeColliders[0].enabled)
+                {
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {GroundHit.collider.name}");
+                    return true;
+                }
+            }
+
+            if (NpcController.Npc.externalForces.y > 7.1f)
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} externalForces.y {NpcController.Npc.externalForces.y}");
+                return true;
+            }
+
+            return false;
+        }
+
+        private void FollowCrouchStateIfCan()
+        {
+            if (State != null
+                && State.GetAIState() == EnumAIStates.Panik
+                && NpcController.Npc.isCrouching)
+            {
+                NpcController.OrderToToggleCrouch();
+            }
+
+            if (Plugin.Config.FollowCrouchWithPlayer
+                && targetPlayer != null)
+            {
+                if (targetPlayer.isCrouching
+                    && !NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+                else if (!targetPlayer.isCrouching
+                        && NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+            }
+        }
+
+        public override void OnCollideWithPlayer(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                PlayerControllerB componentPlayer = other.GetComponent<PlayerControllerB>();
+                if (componentPlayer != null
+                    && !InternManager.Instance.IsPlayerIntern(componentPlayer))
+                {
+                    NpcController.NearEntitiesPushVector += Vector3.Normalize((NpcController.Npc.transform.position - other.transform.position) * 100f) * 1.2f;
+                }
+            }
+        }
+
+        public override void OnCollideWithEnemy(Collider other, EnemyAI collidedEnemy)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            if (collidedEnemy == null
+                || collidedEnemy.GetType() == typeof(InternAI)
+                || collidedEnemy.GetType() == typeof(FlowerSnakeEnemy))
+            {
+                return;
+            }
+
+            if ((NpcController.Npc.transform.position - other.transform.position).sqrMagnitude < collidedEnemy.enemyType.pushPlayerDistance * collidedEnemy.enemyType.pushPlayerDistance)
+            {
+                NpcController.NearEntitiesPushVector += Vector3.Normalize((NpcController.Npc.transform.position - other.transform.position) * 100f) * collidedEnemy.enemyType.pushPlayerForce;
+            }
+
+            // Enemy collide with the intern collider
+            collidedEnemy.OnCollideWithPlayer(InternBodyCollider);
+        }
+
+        public override void DetectNoise(Vector3 noisePosition, float noiseLoudness, int timesPlayedInOneSpot = 0, int noiseID = 0)
+        {
+            if (NpcController == null
+                || !NpcController.Npc.gameObject.activeSelf
+                || !NpcController.Npc.isPlayerControlled
+                || isEnemyDead
+                || NpcController.Npc.isPlayerDead
+                || State == null)
+            {
+                return;
+            }
+
+            // Player voice = 75 ?
+            if (noiseID != 75)
+            {
+                return;
+            }
+
+            // Make the intern stop talking for some time
+            InternIdentity.Voice.TryStopAudioFadeOut();
+
+            if (IsOwner)
+            {
+                InternIdentity.Voice.SetNewRandomCooldownAudio();
+            }
+
+            Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} detected noise noisePosition {noisePosition}, noiseLoudness {noiseLoudness}, timesPlayedInOneSpot {timesPlayedInOneSpot}, noiseID {noiseID}");
+            // Player heard
+            State.PlayerHeard(noisePosition);
+        }
+
+        public void SetAgent(bool enabled)
         {
             if (agent != null)
             {
                 agent.enabled = enabled;
-            }
-        }
-
-        /// <summary>
-        /// Check if the intern is blocked in his path, by doors, ladders,
-        /// something is front of him, a hole
-        /// </summary>
-        /// <remarks>
-        /// Method that still need polishing and testing.<br/>
-        /// - Using raycast to check if something is in front of legs, torso, head<br/>
-        /// - For checking holes, we check if the AI, the brain is not going too far from the body<br/>
-        /// - If the body does not move too much for some time, we try to teleport the intern to its destination
-        /// </remarks>
-        private void CheckIfStuck()
-        {
-            if (!NpcController.HasToMove)
-            {
-                return;
-            }
-
-            if (NpcController.Npc.jetpackControls
-                || NpcController.Npc.isClimbingLadder)
-            {
-                return;
-            }
-
-            if (NpcController.IsJumping || NpcController.IsFallingFromJump)
-            {
-                return;
-            }
-
-            // Doors
-            if (OpenDoorIfNeeded())
-            {
-                return;
-            }
-
-            // Check for stuck
-            bool legsFreeCheck1 = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                 NpcController.Npc.thisController.transform.position + new Vector3(0, 0.4f, 0),
-                                                                 NpcController.Npc.thisController.transform.forward,
-                                                                 0.5f);
-            bool legsFreeCheck2 = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                 NpcController.Npc.thisController.transform.position + new Vector3(0, 0.6f, 0),
-                                                                 NpcController.Npc.thisController.transform.forward,
-                                                                 0.5f);
-            bool legsFreeCheck = legsFreeCheck1 && legsFreeCheck2;
-
-            bool headFreeCheck = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                NpcController.Npc.thisController.transform.position + new Vector3(0, 2.2f, 0),
-                                                                NpcController.Npc.thisController.transform.forward,
-                                                                0.5f);
-            bool headFreeWhenJumpingCheck = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                           NpcController.Npc.thisController.transform.position + new Vector3(0, 3f, 0),
-                                                                           NpcController.Npc.thisController.transform.forward,
-                                                                           0.5f);
-            if (!legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck)
-            {
-                bool canMoveCheckWhileJump = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                            NpcController.Npc.thisController.transform.position + new Vector3(0, 1.8f, 0),
-                                                                            NpcController.Npc.thisController.transform.forward,
-                                                                            0.5f);
-                if (canMoveCheckWhileJump)
-                {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} !legsFreeCheck && headFreeCheck && headFreeWhenJumpingCheck && canMoveCheckWhileJump -> jump");
-                    PlayerControllerBPatch.JumpPerformed_ReversePatch(NpcController.Npc, new UnityEngine.InputSystem.InputAction.CallbackContext());
-                }
-            }
-            else if (legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck))
-            {
-                if (!NpcController.Npc.isCrouching)
-                {
-                    bool canMoveCheckWhileCrouch = !RayUtil.RayCastForwardAndDraw(LineRendererUtil.GetLineRenderer(),
-                                                                                  NpcController.Npc.thisController.transform.position + new Vector3(0, 1f, 0),
-                                                                                  NpcController.Npc.thisController.transform.forward,
-                                                                                  0.5f);
-                    if (canMoveCheckWhileCrouch)
-                    {
-                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} legsFreeCheck && (!headFreeCheck || !headFreeWhenJumpingCheck) && canMoveCheckWhileCrouch -> crouch  (unsprint too)");
-                        NpcController.OrderToStopSprint();
-                        NpcController.OrderToToggleCrouch();
-                    }
-                }
-            }
-            else if (legsFreeCheck && headFreeCheck)
-            {
-                if (NpcController.Npc.isCrouching)
-                {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} uncrouch");
-                    NpcController.OrderToToggleCrouch();
-                }
-            }
-
-            // Check for hole
-            if ((this.transform.position - NpcController.Npc.transform.position).sqrMagnitude > Const.DISTANCE_CHECK_FOR_HOLES * Const.DISTANCE_CHECK_FOR_HOLES)
-            {
-                // Ladders ?
-                bool isUsingLadder = UseLadderIfNeeded();
-
-                if (isUsingLadder)
-                {
-                    timeSinceStuck = 0f;
-                    return;
-                }
-
-                if (!isOutside)
-                {
-                    if (Time.timeSinceLevelLoad - TimeSinceTeleporting > Const.WAIT_TIME_TO_TELEPORT)
-                    {
-                        TimeSinceTeleporting = Time.timeSinceLevelLoad;
-                        NpcController.Npc.transform.position = this.transform.position;
-                        Plugin.LogDebug($"{NpcController.Npc.playerUsername}============ HOLE ???? dist {(this.transform.position - NpcController.Npc.transform.position).magnitude}");
-                    }
-                }
-                else
-                {
-                    this.transform.position = NpcController.Npc.thisController.transform.position;
-                }
-            }
-
-            // If stuck only teleport if no player can see the intern
-            // And the destination of the intern
-            if (timeSinceStuck > Const.TIMER_STUCK_TOO_MUCH)
-            {
-                timeSinceStuck = 0f;
-                CheckAndBringCloserTeleportIntern(1f);
-            }
-
-            // Controller stuck in world ?
-            if (NpcController.Npc.isMovementHindered == 0
-                && NpcController.Npc.thisController.velocity.sqrMagnitude < 0.15f * 0.15f)
-            {
-                timeSinceStuck += AIIntervalTime;
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername} TimeSinceStuck {timeSinceStuck}, vel {NpcController.Npc.thisController.velocity.sqrMagnitude}");
-            }
-            else
-            {
-                if (timeSinceStuck - AIIntervalTime >= 0f)
-                {
-                    timeSinceStuck -= AIIntervalTime;
-                }
             }
         }
 
@@ -463,7 +584,7 @@ namespace LethalInternship.AI
             if (previousWantedDestination != position)
             {
                 previousWantedDestination = position;
-                isDestinationChanged = true;
+                hasDestinationChanged = true;
                 destination = position;
             }
         }
@@ -475,20 +596,31 @@ namespace LethalInternship.AI
         {
             NpcController.OrderToMove();
 
-            if (!isDestinationChanged)
+            if (!hasDestinationChanged)
             {
                 return;
             }
 
-            if (agent.isActiveAndEnabled && agent.isOnNavMesh && !isEnemyDead && !NpcController.Npc.isPlayerDead)
+            if (agent.isActiveAndEnabled
+                && agent.isOnNavMesh
+                && !isEnemyDead
+                && !NpcController.Npc.isPlayerDead
+                && !StartOfRound.Instance.shipIsLeaving)
             {
                 if (!this.SetDestinationToPosition(destination, checkForPath: true))
                 {
-                    destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
+                    try
+                    {
+                        destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
+                    }
+                    catch (Exception e)
+                    {
+                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} ChooseClosestNodeToPosition error : {e.Message} , InnerException : {e.InnerException}");
+                    }
                 }
                 agent.SetDestination(destination);
+                hasDestinationChanged = false;
             }
-            isDestinationChanged = false;
         }
 
         public void StopMoving()
@@ -496,7 +628,6 @@ namespace LethalInternship.AI
             if (NpcController.HasToMove)
             {
                 NpcController.OrderToStopMoving();
-                TeleportIntern(NpcController.Npc.thisController.transform.position);
             }
         }
 
@@ -706,19 +837,9 @@ namespace LethalInternship.AI
                 }
 
                 // Nothing in between to break line of sight ?
-                if (IsPlayerInShipBoundsExpanded(instanceSOR.allPlayerScripts[i]))
+                if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
-                    if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMask))
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (Physics.Linecast(thisInternCamera.position, cameraPlayerPosition, instanceSOR.collidersAndRoomMaskAndDefault))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 Vector3 vectorInternToPlayer = cameraPlayerPosition - thisInternCamera.position;
@@ -787,19 +908,6 @@ namespace LethalInternship.AI
                     continue;
                 }
 
-                // Force collision with enemy if close enough
-                // todo : see why collision of intern so big, it prevents normal collision with enemies
-                // todo : make the distance different for some enemies ?
-                if (sqrDistanceToEnemy < Const.COLLISION_RANGE * Const.COLLISION_RANGE)
-                {
-                    Collider internCollider = NpcController.Npc.GetComponentInChildren<Collider>();
-                    if (internCollider != null)
-                    {
-                        spawnedEnemy.OnCollideWithPlayer(internCollider);
-                        break;
-                    }
-                }
-
                 // Obstructed
                 if (Physics.Linecast(thisInternCamera.position, positionEnemy, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
@@ -839,25 +947,25 @@ namespace LethalInternship.AI
         /// </summary>
         /// <param name="enemy">Enemy to check</param>
         /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
-        private float? GetFearRangeForEnemies(EnemyAI enemy)
+        public float? GetFearRangeForEnemies(EnemyAI enemy)
         {
             //Plugin.LogDebug($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
             switch (enemy.enemyType.enemyName)
             {
                 case "Crawler":
                 case "Bunker Spider":
-                case "Spring":
                 case "MouthDog":
                 case "ForestGiant":
                 case "Butler Bees":
-                    return 30f;
+                    return 20f;
 
                 case "Nutcracker":
                 case "Red Locust Bees":
+                case "Blob":
+                case "ImmortalSnail":
                     return 10f;
 
                 case "Earth Leviathan":
-                case "Blob":
                 case "Clay Surgeon":
                 case "Flowerman":
                 case "Bush Wolf":
@@ -867,13 +975,24 @@ namespace LethalInternship.AI
                     return 2f;
 
                 case "Centipede":
-                    return 0.3f;
+                    return 1f;
+
+                case "Spring":
+                    if (enemy.currentBehaviourStateIndex > 0)
+                    {
+                        // Mad
+                        return 20f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
 
                 case "Butler":
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -884,7 +1003,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -895,7 +1014,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -929,7 +1048,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 30f;
+                        return 20f;
                     }
                     else
                     {
@@ -951,20 +1070,6 @@ namespace LethalInternship.AI
         public void ReParentIntern(Transform newParent)
         {
             NpcController.ReParentNotSpawnedTransform(newParent);
-        }
-
-        /// <summary>
-        /// Is the target player in the ship or outside but close to the ship ?
-        /// </summary>
-        /// <returns></returns>
-        public bool IsPlayerInShipBoundsExpanded(PlayerControllerB player)
-        {
-            if (player == null)
-            {
-                return false;
-            }
-
-            return player.isInElevator || InternManager.Instance.GetExpandedShipBounds().Contains(player.transform.position);
         }
 
         /// <summary>
@@ -997,11 +1102,11 @@ namespace LethalInternship.AI
         {
             string indicator;
             int sizePercentage = Math.Clamp((int)(100f + 2.5f * (StartOfRound.Instance.localPlayerController.transform.position - NpcController.Npc.transform.position).sqrMagnitude),
-                                 100, 1000);
+                                 100, 800);
 
             if (IsOwner)
             {
-                indicator = State.GetBillboardStateIndicator();
+                indicator = State == null ? string.Empty : State.GetBillboardStateIndicator();
             }
             else
             {
@@ -1256,6 +1361,20 @@ namespace LethalInternship.AI
                     continue;
                 }
 
+                // Object on ship
+                if (grabbableObject.isInElevator
+                    || grabbableObject.isInShipRoom)
+                {
+                    continue;
+                }
+
+                // Object in cruiser vehicle
+                if (grabbableObject.transform.parent != null
+                    && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
+                {
+                    continue;
+                }
+
                 // Object in a container mod of some sort ?
                 if (Plugin.IsModCustomItemBehaviourLibraryLoaded)
                 {
@@ -1316,11 +1435,19 @@ namespace LethalInternship.AI
             }
 
             if (grabbableObject.isHeld
-                || grabbableObject.isInShipRoom
                 || !grabbableObject.grabbable
                 || grabbableObject.deactivated)
             {
                 return false;
+            }
+
+            RagdollGrabbableObject? ragdollGrabbableObject = grabbableObject as RagdollGrabbableObject;
+            if (ragdollGrabbableObject != null)
+            {
+                if (!ragdollGrabbableObject.grabbableToEnemies)
+                {
+                    return false;
+                }
             }
 
             // Item just dropped, should wait a bit before grab it again
@@ -1330,13 +1457,6 @@ namespace LethalInternship.AI
                 {
                     return false;
                 }
-            }
-
-            // Item dropped to close the the ship
-            if ((grabbableObject.transform.position - InternManager.Instance.ShipBoundClosestPoint(grabbableObject.transform.position)).sqrMagnitude
-                    < Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT * Const.DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT)
-            {
-                return false;
             }
 
             // Is item too close to entrance (with config option enabled)
@@ -1358,7 +1478,7 @@ namespace LethalInternship.AI
             if (IsOwner
                 && this.PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
             {
-                Plugin.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
+                //Plugin.LogDebug($"object {grabbableObject.name} pathfind is not reachable");
                 return false;
             }
 
@@ -1378,6 +1498,55 @@ namespace LethalInternship.AI
                 {
                     DictJustDroppedItems.Remove(item.Key);
                 }
+            }
+        }
+
+        public void SetInternInElevator()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+
+            if (this.NpcController == null)
+            {
+                return;
+            }
+
+            if (this.RagdollInternBody != null
+                && this.RagdollInternBody.IsRagdollBodyHeld())
+            {
+                return;
+            }
+
+            bool wasInHangarShipRoom = this.NpcController.Npc.isInHangarShipRoom;
+            if (!this.NpcController.Npc.isInElevator
+                && instanceSOR.shipBounds.bounds.Contains(this.NpcController.Npc.transform.position))
+            {
+                this.NpcController.Npc.isInElevator = true;
+            }
+
+            if (this.NpcController.Npc.isInElevator
+                && !wasInHangarShipRoom
+                && instanceSOR.shipInnerRoomBounds.bounds.Contains(this.NpcController.Npc.transform.position))
+            {
+                this.NpcController.Npc.isInHangarShipRoom = true;
+            }
+            else if (this.NpcController.Npc.isInElevator
+                && !instanceSOR.shipBounds.bounds.Contains(this.NpcController.Npc.transform.position))
+            {
+                this.NpcController.Npc.isInElevator = false;
+                this.NpcController.Npc.isInHangarShipRoom = false;
+                wasInHangarShipRoom = false;
+
+                if (!this.AreHandsFree())
+                {
+                    this.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, this.HeldItem);
+                }
+            }
+
+            if (wasInHangarShipRoom != this.NpcController.Npc.isInHangarShipRoom
+                && !this.NpcController.Npc.isInHangarShipRoom
+                && !this.AreHandsFree())
+            {
+                this.NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, this.HeldItem);
             }
         }
 
@@ -1427,6 +1596,160 @@ namespace LethalInternship.AI
         {
             return CustomItemBehaviourLibrary.AbstractItems.ContainerBehaviour.CheckIfItemInContainer(grabbableObject);
         }
+
+        private void InitImportantColliders()
+        {
+            if (dictComponentByCollider == null)
+            {
+                dictComponentByCollider = new Dictionary<string, Component>();
+            }
+            else
+            {
+                dictComponentByCollider.Clear();
+            }
+
+            BridgeTrigger[] bridgeTriggers = Object.FindObjectsOfType<BridgeTrigger>(includeInactive: false);
+            for (int i = 0; i < bridgeTriggers.Length; i++)
+            {
+                Component[] bridgePhysicsPartsContainerComponents = bridgeTriggers[i].bridgePhysicsPartsContainer.gameObject.GetComponentsInChildren<Transform>();
+                for (int j = 0; j < bridgePhysicsPartsContainerComponents.Length; j++)
+                {
+                    if (bridgePhysicsPartsContainerComponents[j].name == "Mesh")
+                    {
+                        continue;
+                    }
+                    dictComponentByCollider.Add(bridgePhysicsPartsContainerComponents[j].name, bridgeTriggers[i]);
+                }
+            }
+
+            foreach (var a in dictComponentByCollider)
+            {
+                Plugin.LogDebug($"dictComponentByCollider {a.Key} {a.Value}");
+                //ComponentUtil.ListAllComponents(((BridgeTrigger)a.Value).bridgePhysicsPartsContainer.gameObject);
+            }
+        }
+
+        public void HideShowModelReplacement(bool show)
+        {
+            NpcController.Npc.gameObject
+                .GetComponent<ModelReplacement.BodyReplacementBase>()?
+                .SetAvatarRenderers(show);
+        }
+
+        public void HideShowReplacementModelOnlyBody(bool show)
+        {
+            NpcController.Npc.thisPlayerModel.enabled = show;
+            NpcController.Npc.thisPlayerModelLOD1.enabled = show;
+            NpcController.Npc.thisPlayerModelLOD2.enabled = show;
+
+            int layer = show ? 0 : 31;
+            NpcController.Npc.thisPlayerModel.gameObject.layer = layer;
+            NpcController.Npc.thisPlayerModelLOD1.gameObject.layer = layer;
+            NpcController.Npc.thisPlayerModelLOD2.gameObject.layer = layer;
+            NpcController.Npc.thisPlayerModelArms.gameObject.layer = layer;
+
+            ModelReplacement.BodyReplacementBase? bodyReplacement = NpcController.Npc.gameObject.GetComponent<ModelReplacement.BodyReplacementBase>();
+            if (bodyReplacement == null)
+            {
+                HideShowLevelStickerBetaBadge(show);
+                return;
+            }
+
+            GameObject? model = bodyReplacement.replacementModel;
+            if (model == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
+            {
+                renderer.enabled = show;
+            }
+        }
+
+        public void HideShowLevelStickerBetaBadge(bool show)
+        {
+            MeshRenderer[] componentsInChildren = NpcController.Npc.gameObject.GetComponentsInChildren<MeshRenderer>();
+            (from x in componentsInChildren
+             where x.gameObject.name == "LevelSticker"
+             select x).First<MeshRenderer>().enabled = show;
+            (from x in componentsInChildren
+             where x.gameObject.name == "BetaBadge"
+             select x).First<MeshRenderer>().enabled = show;
+        }
+
+        #region Voices
+
+        public void UpdateInternVoiceEffects()
+        {
+            PlayerControllerB internController = this.NpcController.Npc;
+            int internPlayerClientID = (int)internController.playerClientId;
+            PlayerControllerB spectatedPlayerScript;
+            if (GameNetworkManager.Instance.localPlayerController.isPlayerDead && GameNetworkManager.Instance.localPlayerController.spectatedPlayerScript != null)
+            {
+                spectatedPlayerScript = GameNetworkManager.Instance.localPlayerController.spectatedPlayerScript;
+            }
+            else
+            {
+                spectatedPlayerScript = GameNetworkManager.Instance.localPlayerController;
+            }
+
+            bool walkieTalkie = internController.speakingToWalkieTalkie
+                                && spectatedPlayerScript.holdingWalkieTalkie
+                                && internController != spectatedPlayerScript;
+
+            AudioLowPassFilter audioLowPassFilter = this.NpcController.AudioLowPassFilterComponent;
+            OccludeAudio occludeAudio = this.NpcController.OccludeAudioComponent;
+            audioLowPassFilter.enabled = true;
+            occludeAudio.overridingLowPass = (walkieTalkie || internController.voiceMuffledByEnemy);
+            this.NpcController.AudioHighPassFilterComponent.enabled = walkieTalkie;
+            if (!walkieTalkie)
+            {
+                this.creatureVoice.spatialBlend = 1f;
+                this.creatureVoice.bypassListenerEffects = false;
+                this.creatureVoice.bypassEffects = false;
+                this.creatureVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[internPlayerClientID];
+                audioLowPassFilter.lowpassResonanceQ = 1f;
+            }
+            else
+            {
+                this.creatureVoice.spatialBlend = 0f;
+                if (GameNetworkManager.Instance.localPlayerController.isPlayerDead)
+                {
+                    this.creatureVoice.panStereo = 0f;
+                    this.creatureVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[internPlayerClientID];
+                    this.creatureVoice.bypassListenerEffects = false;
+                    this.creatureVoice.bypassEffects = false;
+                }
+                else
+                {
+                    this.creatureVoice.panStereo = 0.4f;
+                    this.creatureVoice.bypassListenerEffects = false;
+                    this.creatureVoice.bypassEffects = false;
+                    this.creatureVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[internPlayerClientID];
+                }
+                occludeAudio.lowPassOverride = 4000f;
+                audioLowPassFilter.lowpassResonanceQ = 3f;
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness)
+        {
+            PlayAudioClientRpc(smallPathAudioClip, enumTalkativeness);
+        }
+
+        [ClientRpc]
+        private void PlayAudioClientRpc(string smallPathAudioClip, int enumTalkativeness)
+        {
+            if (enumTalkativeness == Plugin.Config.Talkativeness.Value
+                || InternIdentity.Voice.CanPlayAudioAfterCooldown())
+            {
+                AudioManager.Instance.PlayAudio(smallPathAudioClip, InternIdentity.Voice);
+            }
+        }
+
+        #endregion
 
         #region TeleportIntern RPC
 
@@ -1481,7 +1804,7 @@ namespace LethalInternship.AI
         public void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false)
         {
             // teleport body
-            TeleportAgentAndBody(pos);
+            TeleportAgentAIAndBody(pos);
 
             // Set AI outside or inside dungeon
             if (!setOutside.HasValue)
@@ -1512,26 +1835,22 @@ namespace LethalInternship.AI
         /// Teleport the brain and body of intern
         /// </summary>
         /// <param name="pos"></param>
-        private void TeleportAgentAndBody(Vector3 pos)
+        private void TeleportAgentAIAndBody(Vector3 pos)
         {
             Vector3 navMeshPosition = RoundManager.Instance.GetNavMeshPosition(pos, default, 2.7f);
             serverPosition = navMeshPosition;
-            // Teleport body
             NpcController.Npc.transform.position = navMeshPosition;
 
-            if (IsOwner)
+            if (agent == null
+                || !agent.enabled)
             {
-                // Teleport agent and AI
-                if (!agent.isActiveAndEnabled || !agent.Warp(NpcController.Npc.transform.position))
-                {
-                    agent.enabled = false;
-                    this.transform.position = NpcController.Npc.transform.position;
-                    agent.enabled = true;
-                }
+                this.transform.position = navMeshPosition;
             }
             else
             {
+                agent.enabled = false;
                 this.transform.position = navMeshPosition;
+                agent.enabled = true;
             }
 
             // For CullFactory mod
@@ -1568,22 +1887,37 @@ namespace LethalInternship.AI
 
         private void TeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)
         {
-            TeleportIntern(pos);
+            if (enteringVehicle)
+            {
+                if (agent != null)
+                {
+                    agent.enabled = false;
+                }
+                NpcController.Npc.transform.position = pos;
+                StateControllerMovement = EnumStateControllerMovement.Fixed;
+            }
+            else
+            {
+                TeleportIntern(pos);
+                StateControllerMovement = EnumStateControllerMovement.FollowAgent;
+            }
 
-            NpcController.InternAIInCruiser = enteringVehicle;
+            NpcController.IsControllerInCruiser = enteringVehicle;
 
-            if (NpcController.InternAIInCruiser)
+            if (NpcController.IsControllerInCruiser)
             {
                 if (networkBehaviourReferenceVehicle.TryGet(out VehicleController vehicleController))
                 {
                     // Attach intern to vehicle
-                    Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} enters vehicle");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} enters vehicle");
                     this.ReParentIntern(vehicleController.transform);
                 }
+
+                this.StopSinkingState();
             }
             else
             {
-                Plugin.LogDebug($"intern #{NpcController.Npc.playerClientId} exits vehicle");
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} exits vehicle");
                 this.ReParentIntern(NpcController.Npc.playersManager.playersContainer);
             }
         }
@@ -1649,18 +1983,19 @@ namespace LethalInternship.AI
 
         private void AssignTargetAndSetMovingTo(ulong playerid)
         {
-            SetMovingTowardsTargetPlayer(StartOfRound.Instance.allPlayerScripts[playerid]);
+            PlayerControllerB targetPlayer = StartOfRound.Instance.allPlayerScripts[playerid];
+            SetMovingTowardsTargetPlayer(targetPlayer);
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
 
-            if (NpcController.InternAIInCruiser)
+            if (NpcController.IsControllerInCruiser)
             {
-                this.State = new PlayerInCruiserState(this, Object.FindObjectOfType<VehicleController>());
+                this.State = new PlayerInCruiserState(this, this.GetVehicleCruiserTargetPlayerIsIn());
             }
             else if (this.State == null
-                    || this.State.GetAIState() == EnumAIStates.SearchingForPlayer)
+                || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
             {
-                this.State = new GetCloseToPlayerState(this);
+                this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
         }
 
@@ -1718,14 +2053,36 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (IsClientOwnerOfIntern())
+            bool flag = this.NpcController.Npc.currentFootstepSurfaceIndex == 8 && ((base.IsOwner && this.NpcController.IsTouchingGround) || isPlayerGrounded);
+            if (this.NpcController.Npc.bleedingHeavily || flag)
+            {
+                this.NpcController.Npc.DropBlood(Vector3.down, this.NpcController.Npc.bleedingHeavily, flag);
+            }
+            this.NpcController.Npc.timeSincePlayerMoving = 0f;
+
+            if (base.IsOwner)
             {
                 // Only update if not owner
                 return;
             }
 
-            PlayerControllerBPatch.UpdatePlayerPositionClientRpc_ReversePatch(NpcController.Npc,
-                                                                              newPos, inElevator, isInShip, exhausted, isPlayerGrounded);
+            this.NpcController.Npc.isExhausted = exhausted;
+            this.NpcController.Npc.isInElevator = inElevator;
+            this.NpcController.Npc.isInHangarShipRoom = isInShip;
+
+            if (!this.AreHandsFree()
+                && this.HeldItem != null
+                && this.HeldItem.isInShipRoom != isInShip)
+            {
+                this.HeldItem.isInElevator = inElevator;
+                this.NpcController.Npc.SetItemInElevator(droppedInShipRoom: isInShip, droppedInElevator: inElevator, this.HeldItem);
+            }
+
+            this.NpcController.Npc.oldPlayerPosition = this.NpcController.Npc.serverPlayerPosition;
+            if (!this.NpcController.Npc.inVehicleAnimation)
+            {
+                this.NpcController.Npc.serverPlayerPosition = newPos;
+            }
         }
 
         #endregion
@@ -1838,8 +2195,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            PlayerControllerBPatch.UpdatePlayerAnimationClientRpc_ReversePatch(NpcController.Npc,
-                                                                               animationState, animationSpeed);
+            NpcController.ApplyUpdateInternAnimationsNotOwner(animationState, animationSpeed);
         }
 
         #endregion
@@ -1918,7 +2274,7 @@ namespace LethalInternship.AI
 
         #endregion
 
-        #region SyncBodyPosition RPC
+        #region SyncDeadBodyPosition RPC
 
         /// <summary>
         /// Server side, call the clients to update the dead body of the intern
@@ -1942,6 +2298,22 @@ namespace LethalInternship.AI
 
         #endregion
 
+        #region SyncFaceUnderwater
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncSetFaceUnderwaterServerRpc(bool isUnderwater)
+        {
+            SyncSetFaceUnderwaterClientRpc(isUnderwater);
+        }
+
+        [ClientRpc]
+        private void SyncSetFaceUnderwaterClientRpc(bool isUnderwater)
+        {
+            NpcController.Npc.isUnderwater = isUnderwater;
+        }
+
+        #endregion
+
         #region Grab item RPC
 
         /// <summary>
@@ -1953,14 +2325,14 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -1985,14 +2357,14 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InterAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GrabItem for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -2093,32 +2465,14 @@ namespace LethalInternship.AI
         #region Drop item RPC
 
         /// <summary>
-        /// Server side, call clients to make the intern drop the held item on their side, to sync everyone
-        /// </summary>
-        [ServerRpc(RequireOwnership = false)]
-        public void DropItemServerRpc()
-        {
-            DropItemClientRpc();
-        }
-
-        /// <summary>
-        /// Client side, make the intern drop the held item
-        /// </summary>
-        [ClientRpc]
-        private void DropItemClientRpc()
-        {
-            DropItem();
-        }
-
-        /// <summary>
         /// Make the intern drop his item like an enemy, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
         public void DropItem()
         {
-            Plugin.LogDebug($"Try to drop item on client #{NetworkManager.LocalClientId}");
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} Try to drop item on client #{NetworkManager.LocalClientId}");
             if (this.HeldItem == null)
             {
-                Plugin.LogError($"Try to drop not held item on client #{NetworkManager.LocalClientId}");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} Try to drop not held item on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
@@ -2150,16 +2504,41 @@ namespace LethalInternship.AI
                         placePosition = StartOfRound.Instance.propsContainer.InverseTransformPoint(placePosition);
                     }
                     int floorYRot2 = (int)base.transform.localEulerAngles.y;
-                    SetObjectAsNoLongerHeld(grabbableObject, NpcController.Npc.isInElevator, NpcController.Npc.isInHangarShipRoom, placePosition, floorYRot2);
+
+                    // on client
+                    SetObjectAsNoLongerHeld(grabbableObject,
+                                            this.NpcController.Npc.isInElevator,
+                                            this.NpcController.Npc.isInHangarShipRoom,
+                                            placePosition,
+                                            floorYRot2);
+                    // for other clients
+                    SetObjectAsNoLongerHeldServerRpc(new DropItemNetworkSerializable()
+                    {
+                        DroppedInElevator = this.NpcController.Npc.isInElevator,
+                        DroppedInShipRoom = this.NpcController.Npc.isInHangarShipRoom,
+                        FloorYRot = floorYRot2,
+                        GrabbedObject = grabbableObject.NetworkObject,
+                        TargetFloorPosition = placePosition
+                    });
                 }
                 else
                 {
+                    // on client
                     PlaceGrabbableObject(grabbableObject, parentObjectTo.transform, placePosition, matchRotationOfParent);
+
+                    // for other clients
+                    PlaceGrabbableObjectServerRpc(new PlaceItemNetworkSerializable()
+                    {
+                        GrabbedObject = grabbableObject.NetworkObject,
+                        MatchRotationOfParent = matchRotationOfParent,
+                        ParentObject = parentObjectTo,
+                        PlacePositionOffset = placePosition
+                    });
                 }
             }
             else
             {
-                bool droppedInElevator = NpcController.Npc.isInElevator;
+                bool droppedInElevator = this.NpcController.Npc.isInElevator;
                 Vector3 targetFloorPosition;
                 if (!NpcController.Npc.isInElevator)
                 {
@@ -2196,28 +2575,26 @@ namespace LethalInternship.AI
                     }
                 }
                 int floorYRot = (int)base.transform.localEulerAngles.y;
-                SetObjectAsNoLongerHeld(grabbableObject, droppedInElevator, NpcController.Npc.isInHangarShipRoom, targetFloorPosition, floorYRot);
+
+                // on client
+                SetObjectAsNoLongerHeld(grabbableObject,
+                                        droppedInElevator,
+                                        this.NpcController.Npc.isInHangarShipRoom,
+                                        targetFloorPosition,
+                                        floorYRot);
+
+                // for other clients
+                SetObjectAsNoLongerHeldServerRpc(new DropItemNetworkSerializable()
+                {
+                    DroppedInElevator = droppedInElevator,
+                    DroppedInShipRoom = this.NpcController.Npc.isInHangarShipRoom,
+                    FloorYRot = floorYRot,
+                    GrabbedObject = grabbableObject.NetworkObject,
+                    TargetFloorPosition = targetFloorPosition
+                });
             }
 
-            grabbableObject.DiscardItem();
 
-            this.SetSpecialGrabAnimationBool(false, grabbableObject);
-            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
-            NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
-
-            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
-            this.HeldItem = null;
-            NpcController.Npc.isHoldingObject = false;
-            NpcController.Npc.currentlyHeldObjectServer = null;
-            NpcController.Npc.twoHanded = false;
-            NpcController.Npc.twoHandedAnimation = false;
-            NpcController.GrabbedObjectValidated = false;
-
-            float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
-            NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
-
-            SyncBatteryInternServerRpc(grabbableObject.NetworkObject, (int)(grabbableObject.insertedBattery.charge * 100f));
-            Plugin.LogDebug($"intern dropped {grabbableObject}");
         }
 
         private Vector3 DropItemAheadOfPlayer(GrabbableObject grabbableObject, PlayerControllerB player)
@@ -2240,7 +2617,49 @@ namespace LethalInternship.AI
             return itemFloorPosition;
         }
 
-        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject, bool droppedInElevator, bool droppedInShipRoom, Vector3 targetFloorPosition, int floorYRot = -1)
+        [ServerRpc(RequireOwnership = false)]
+        private void SetObjectAsNoLongerHeldServerRpc(DropItemNetworkSerializable dropItemNetworkSerializable)
+        {
+            NetworkObject networkObject;
+            if (dropItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            {
+                SetObjectAsNoLongerHeldClientRpc(dropItemNetworkSerializable);
+            }
+            else
+            {
+                Plugin.LogError($"Intern {this.NpcController.Npc.playerUsername} on client #{NetworkManager.LocalClientId} (server) drop item : Object was not thrown because it does not exist on the server.");
+            }
+        }
+
+        [ClientRpc]
+        private void SetObjectAsNoLongerHeldClientRpc(DropItemNetworkSerializable dropItemNetworkSerializable)
+        {
+            if (this.HeldItem == null)
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} held item already dropped, on client #{NetworkManager.LocalClientId}");
+                return;
+            }
+
+            NetworkObject networkObject;
+            if (dropItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            {
+                SetObjectAsNoLongerHeld(networkObject.GetComponent<GrabbableObject>(),
+                                        dropItemNetworkSerializable.DroppedInElevator,
+                                        dropItemNetworkSerializable.DroppedInShipRoom,
+                                        dropItemNetworkSerializable.TargetFloorPosition,
+                                        dropItemNetworkSerializable.FloorYRot);
+            }
+            else
+            {
+                Plugin.LogError($"Intern {this.NpcController.Npc.playerUsername} on client #{NetworkManager.LocalClientId} drop item : The server did not have a reference to the held object");
+            }
+        }
+
+        private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject,
+                                             bool droppedInElevator,
+                                             bool droppedInShipRoom,
+                                             Vector3 targetFloorPosition,
+                                             int floorYRot = -1)
         {
             grabbableObject.heldByPlayerOnServer = false;
             grabbableObject.parentObject = null;
@@ -2252,6 +2671,7 @@ namespace LethalInternship.AI
             {
                 grabbableObject.transform.SetParent(NpcController.Npc.playersManager.propsContainer, true);
             }
+
             NpcController.Npc.SetItemInElevator(droppedInShipRoom, droppedInElevator, grabbableObject);
             grabbableObject.EnablePhysics(true);
             grabbableObject.EnableItemMeshes(true);
@@ -2261,10 +2681,69 @@ namespace LethalInternship.AI
             grabbableObject.startFallingPosition = grabbableObject.transform.parent.InverseTransformPoint(grabbableObject.transform.position);
             grabbableObject.targetFloorPosition = targetFloorPosition;
             grabbableObject.floorYRot = floorYRot;
+
+            EndDropItem(grabbableObject);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void PlaceGrabbableObjectServerRpc(PlaceItemNetworkSerializable placeItemNetworkSerializable)
+        {
+            NetworkObject networkObject;
+            NetworkObject networkObject2;
+            if (placeItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null)
+                && placeItemNetworkSerializable.ParentObject.TryGet(out networkObject2, null))
+            {
+                PlaceGrabbableObjectClientRpc(placeItemNetworkSerializable);
+                return;
+            }
+
+            NetworkObject networkObject3;
+            if (!placeItemNetworkSerializable.GrabbedObject.TryGet(out networkObject3, null))
+            {
+                Plugin.LogError($"Object placement not synced to clients, missing reference to a network object: placing object with id: {placeItemNetworkSerializable.GrabbedObject.NetworkObjectId}; intern {NpcController.Npc.playerUsername}");
+                return;
+            }
+            NetworkObject networkObject4;
+            if (!placeItemNetworkSerializable.ParentObject.TryGet(out networkObject4, null))
+            {
+                Plugin.LogError($"Object placement not synced to clients, missing reference to a network object: parent object with id: {placeItemNetworkSerializable.ParentObject.NetworkObjectId}; intern {NpcController.Npc.playerUsername}");
+            }
+        }
+
+        [ClientRpc]
+        private void PlaceGrabbableObjectClientRpc(PlaceItemNetworkSerializable placeItemNetworkSerializable)
+        {
+            NetworkObject networkObject;
+            if (placeItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            {
+                GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+                NetworkObject networkObject2;
+                if (placeItemNetworkSerializable.ParentObject.TryGet(out networkObject2, null))
+                {
+                    this.PlaceGrabbableObject(grabbableObject,
+                                              networkObject2.transform,
+                                              placeItemNetworkSerializable.PlacePositionOffset,
+                                              placeItemNetworkSerializable.MatchRotationOfParent);
+                }
+                else
+                {
+                    Plugin.LogError($"Reference to parent object when placing was missing. object: {grabbableObject} placed by intern #{NpcController.Npc.playerUsername}");
+                }
+            }
+            else
+            {
+                Plugin.LogError("The server did not have a reference to the held object (when attempting to PLACE object on client.)");
+            }
         }
 
         private void PlaceGrabbableObject(GrabbableObject placeObject, Transform parentObject, Vector3 positionOffset, bool matchRotationOfParent)
         {
+            if (this.HeldItem == null)
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername} held item already placed, on client #{NetworkManager.LocalClientId}");
+                return;
+            }
+
             PlayerPhysicsRegion componentInChildren = parentObject.GetComponentInChildren<PlayerPhysicsRegion>();
             if (componentInChildren != null && componentInChildren.allowDroppingItems)
             {
@@ -2292,6 +2771,30 @@ namespace LethalInternship.AI
                 placeObject.fallTime = 1.1f;
             }
             placeObject.OnPlaceObject();
+
+            EndDropItem(placeObject);
+        }
+
+        private void EndDropItem(GrabbableObject grabbableObject)
+        {
+            grabbableObject.DiscardItem();
+            this.SetSpecialGrabAnimationBool(false, grabbableObject);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
+            NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
+
+            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
+            this.HeldItem = null;
+            NpcController.Npc.isHoldingObject = false;
+            NpcController.Npc.currentlyHeldObjectServer = null;
+            NpcController.Npc.twoHanded = false;
+            NpcController.Npc.twoHandedAnimation = false;
+            NpcController.GrabbedObjectValidated = false;
+
+            float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
+            NpcController.Npc.carryWeight = Mathf.Clamp(NpcController.Npc.carryWeight - weightToLose, 1f, 10f);
+
+            SyncBatteryIntern(grabbableObject, (int)(grabbableObject.insertedBattery.charge * 100f));
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername} dropped {grabbableObject}, on client #{NetworkManager.LocalClientId}");
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -2316,6 +2819,11 @@ namespace LethalInternship.AI
                 return;
             }
 
+            SyncBatteryIntern(grabbableObject, charge);
+        }
+
+        private void SyncBatteryIntern(GrabbableObject grabbableObject, int charge)
+        {
             float num = (float)charge / 100f;
             grabbableObject.insertedBattery = new Battery(num <= 0f, num);
             grabbableObject.ChargeBatteries();
@@ -2330,14 +2838,14 @@ namespace LethalInternship.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId}: Failed to get network object from network object reference (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                Plugin.LogError($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {this.InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -2480,6 +2988,12 @@ namespace LethalInternship.AI
 
         #region Damage intern RPC
 
+        public override void HitEnemy(int force = 1, PlayerControllerB playerWhoHit = null!, bool playHitSFX = false, int hitID = -1)
+        {
+            // The HitEnemy function works with player controller instead
+            return;
+        }
+
         /// <summary>
         /// Sync the damage taken by the intern between server and clients
         /// </summary>
@@ -2494,7 +3008,7 @@ namespace LethalInternship.AI
                                      bool fallDamage = false,
                                      Vector3 force = default)
         {
-            Plugin.LogDebug($"SyncDamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug($"SyncDamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -2564,7 +3078,7 @@ namespace LethalInternship.AI
                                   bool fallDamage,
                                   Vector3 force)
         {
-            Plugin.LogDebug(@$"DamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId},
+            Plugin.LogDebug(@$"DamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername},
                             damageNumber {damageNumber}, causeOfDeath {causeOfDeath}, deathAnimation {deathAnimation}, fallDamage {fallDamage}, force {force}");
             if (NpcController.Npc.isPlayerDead)
             {
@@ -2621,6 +3135,20 @@ namespace LethalInternship.AI
                 {
                     NpcController.Npc.movementAudio.PlayOneShot(StartOfRound.Instance.fallDamageSFX, 1f);
                 }
+
+                // Audio, already in client rpc method so no sync necessary
+                this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                {
+                    VoiceState = EnumVoicesState.Hit,
+                    CanTalkIfOtherInternTalk = true,
+                    WaitForCooldown = false,
+                    CutCurrentVoiceStateToTalk = true,
+                    CanRepeatVoiceState = true,
+
+                    ShouldSync = false,
+                    IsInternInside = NpcController.Npc.isInsideFactory,
+                    AllowSwearing = Plugin.Config.AllowSwearing.Value
+                });
             }
 
             NpcController.Npc.takingFallDamage = false;
@@ -2677,7 +3205,13 @@ namespace LethalInternship.AI
 
         #endregion
 
-        #region Kill player RPC
+        #region Kill intern RPC
+
+        public override void KillEnemy(bool destroy = false)
+        {
+            // The kill function works with player controller instead
+            return;
+        }
 
         /// <summary>
         /// Sync the action to kill intern between server and clients
@@ -2692,7 +3226,7 @@ namespace LethalInternship.AI
                                    int deathAnimation = 0,
                                    Vector3 positionOffset = default(Vector3))
         {
-            Plugin.LogDebug($"SyncKillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            Plugin.LogDebug($"SyncKillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -2800,7 +3334,7 @@ namespace LethalInternship.AI
                                 int deathAnimation,
                                 Vector3 positionOffset)
         {
-            Plugin.LogDebug(@$"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}
+            Plugin.LogDebug(@$"KillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}
                             bodyVelocity {bodyVelocity}, spawnBody {spawnBody}, causeOfDeath {causeOfDeath}, deathAnimation {deathAnimation}, positionOffset {positionOffset}");
             if (NpcController.Npc.isPlayerDead)
             {
@@ -2836,10 +3370,7 @@ namespace LethalInternship.AI
             NpcController.Npc.fallValue = 0f;
             NpcController.Npc.fallValueUncapped = 0f;
             NpcController.Npc.takingFallDamage = false;
-            NpcController.Npc.isSinking = false;
-            NpcController.Npc.isUnderwater = false;
-            PatchesUtil.FieldInfoWasUnderwaterLastFrame.SetValue(NpcController.Npc, false);
-            NpcController.Npc.sourcesCausingSinking = 0;
+            StopSinkingState();
             NpcController.Npc.sinkingValue = 0f;
             NpcController.Npc.hinderedMultiplier = 1f;
             NpcController.Npc.isMovementHindered = 0;
@@ -2852,6 +3383,10 @@ namespace LethalInternship.AI
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
                 ResizeRagdoll(NpcController.Npc.deadBody.transform);
+                // Replace body position or else disappear with shotgun or knife (don't know why)
+                NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
+                // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
+                NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -2863,13 +3398,15 @@ namespace LethalInternship.AI
                 this.DropItem();
             }
             NpcController.Npc.DisableJetpackControlsLocally();
+            NpcController.IsControllerInCruiser = false;
             this.isEnemyDead = true;
-            if (this.agent != null
-                && this.agent.isActiveAndEnabled)
+            this.InternIdentity.Hp = 0;
+            if (this.agent != null)
             {
                 this.agent.enabled = false;
             }
-            Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId}");
+            this.InternIdentity.Voice.StopAudioFadeOut();
+            Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
 
             // Compat with revive company mod
             if (Plugin.IsModReviveCompanyLoaded)
@@ -2929,19 +3466,23 @@ namespace LethalInternship.AI
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: false, disableLocalArms: false);
             NpcController.Npc.transform.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
 
+            StopSinkingState();
+            NpcController.Npc.ResetFallGravity();
+            NpcController.OrderToStopMoving();
+
             // Set intern to brain dead
-            State = new BrainDeadState(State);
+            State = new BrainDeadState(this);
         }
 
-        private void InstantiateDeadBodyInfo(PlayerControllerB playerGrabberController)
+        private void InstantiateDeadBodyInfo(PlayerControllerB playerReference, Vector3 bodyVelocity = default)
         {
             float num = 1.32f;
             int deathAnimation = 0;
 
             Transform parent = null!;
-            if (playerGrabberController.isInElevator)
+            if (playerReference.isInElevator)
             {
-                parent = playerGrabberController.playersManager.elevatorTransform;
+                parent = playerReference.playersManager.elevatorTransform;
             }
 
             Vector3 position = NpcController.Npc.thisPlayerBody.position + Vector3.up * num;
@@ -2959,13 +3500,19 @@ namespace LethalInternship.AI
             ragdollBodyDeadBodyInfo.transform.rotation = rotation;
             ragdollBodyDeadBodyInfo.transform.parent = parent;
 
-            if (playerGrabberController.physicsParent != null)
+            if (playerReference.physicsParent != null)
             {
-                ragdollBodyDeadBodyInfo.SetPhysicsParent(playerGrabberController.physicsParent);
+                ragdollBodyDeadBodyInfo.SetPhysicsParent(playerReference.physicsParent);
             }
 
-            ragdollBodyDeadBodyInfo.parentedToShip = playerGrabberController.isInElevator;
+            ragdollBodyDeadBodyInfo.parentedToShip = playerReference.isInElevator;
             ragdollBodyDeadBodyInfo.playerObjectId = (int)NpcController.Npc.playerClientId;
+
+            Rigidbody[] componentsInChildren = ragdollBodyDeadBodyInfo.gameObject.GetComponentsInChildren<Rigidbody>();
+            for (int i = 0; i < componentsInChildren.Length; i++)
+            {
+                componentsInChildren[i].velocity = bodyVelocity;
+            }
 
             // Scale ragdoll (without stretching the body parts)
             ResizeRagdoll(ragdollBodyDeadBodyInfo.transform);
@@ -3025,15 +3572,25 @@ namespace LethalInternship.AI
 
         public void SyncReleaseIntern(PlayerControllerB playerGrabberController)
         {
+            // Make the pos slightly different so the interns separate on teleport
+            Random randomInstance = new Random();
+            Vector3 randomPos = new Vector3(playerGrabberController.transform.position.x + (float)randomInstance.NextDouble() * 0.1f,
+                                            playerGrabberController.transform.position.y,
+                                            playerGrabberController.transform.position.z + (float)randomInstance.NextDouble() * 0.1f);
+
             if (IsServer)
             {
                 ReleaseInternClientRpc(playerGrabberController.playerClientId,
-                                       playerGrabberController.transform.position, !playerGrabberController.isInsideFactory, isUsingEntrance: false);
+                                       randomPos,
+                                       !playerGrabberController.isInsideFactory,
+                                       isUsingEntrance: false);
             }
             else
             {
                 ReleaseInternServerRpc(playerGrabberController.playerClientId,
-                                       playerGrabberController.transform.position, !playerGrabberController.isInsideFactory, isUsingEntrance: false);
+                                       randomPos,
+                                       !playerGrabberController.isInsideFactory,
+                                       isUsingEntrance: false);
             }
         }
 
@@ -3069,16 +3626,206 @@ namespace LethalInternship.AI
                 HeldItem.EnableItemMeshes(enable: true);
             }
 
-            RagdollInternBody.SetReleased();
+            RagdollInternBody.Hide();
 
             // Enable model
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
 
-            // Set intern to brain dead
-            State = new ChillWithPlayerState(State);
+            // Set intern to chill
+            State = new ChillWithPlayerState(this);
+        }
 
-            // Unsubscribe from events to prevent double trigger
-            PlayerControllerBPatch.OnDisable_ReversePatch(NpcController.Npc);
+        #endregion
+
+        #region Spawn animation
+
+        public bool IsSpawningAnimationRunning()
+        {
+            return spawnAnimationCoroutine != null;
+        }
+
+        public Coroutine BeginInternSpawnAnimation(EnumSpawnAnimation enumSpawnAnimation)
+        {
+            switch (enumSpawnAnimation)
+            {
+                case EnumSpawnAnimation.None:
+                    return StartCoroutine(CoroutineNoSpawnAnimation());
+
+                case EnumSpawnAnimation.OnlyPlayerSpawnAnimation:
+                    return StartCoroutine(CoroutineOnlyPlayerSpawnAnimation());
+
+                case EnumSpawnAnimation.RagdollFromDropShipAndPlayerSpawnAnimation:
+                    return StartCoroutine(CoroutineFromDropShipAndPlayerSpawnAnimation());
+
+                default:
+                    return StartCoroutine(CoroutineNoSpawnAnimation());
+            }
+        }
+
+        private IEnumerator CoroutineNoSpawnAnimation()
+        {
+            if (!IsOwner)
+            {
+                spawnAnimationCoroutine = null;
+                yield break;
+            }
+
+            // Change ai state
+            SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+
+            spawnAnimationCoroutine = null;
+            yield break;
+        }
+
+        private IEnumerator CoroutineOnlyPlayerSpawnAnimation()
+        {
+            if (!IsOwner)
+            {
+                // Wait for spawn player animation
+                yield return new WaitForSeconds(3f);
+                NpcController.Npc.inSpecialInteractAnimation = false;
+                spawnAnimationCoroutine = null;
+                yield break;
+            }
+
+            UpdateInternSpecialAnimationValue(specialAnimation: true, timed: 0f, climbingLadder: false);
+            NpcController.Npc.inSpecialInteractAnimation = true;
+            NpcController.Npc.playerBodyAnimator.ResetTrigger("SpawnPlayer");
+            NpcController.Npc.playerBodyAnimator.SetTrigger("SpawnPlayer");
+
+            yield return new WaitForSeconds(3f);
+
+            NpcController.Npc.inSpecialInteractAnimation = false;
+
+            // Change ai state
+            SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+
+            spawnAnimationCoroutine = null;
+            yield break;
+        }
+
+        private IEnumerator CoroutineFromDropShipAndPlayerSpawnAnimation()
+        {
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                // Wait for model replacement to add its component
+                yield return new WaitForEndOfFrame();
+                // Wait for  model replacement to init replacement models
+                yield return new WaitForEndOfFrame();
+            }
+
+            AnimationCoroutineRagdollingRunning = true;
+            PlayerControllerB closestPlayer = GetClosestIrlPlayer();
+
+            // Spawn ragdoll
+            InstantiateDeadBodyInfo(closestPlayer, GetRandomPushForce(InternManager.Instance.ItemDropShipPos + new Vector3(0, -1f, 0), NpcController.Npc.transform.position, 4f));
+            RagdollInternBody.SetFreeRagdoll(ragdollBodyDeadBodyInfo);
+
+            // Hide intern
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                HideShowReplacementModelOnlyBody(show: false);
+            }
+            else
+            {
+                InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: false, disableLocalArms: false);
+                HideShowLevelStickerBetaBadge(show: false);
+            }
+
+            yield return null;
+
+            // Voice
+            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.Hit,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = false,
+                IsInternInside = NpcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
+
+            // Wait in ragdoll state
+            yield return new WaitForSeconds(2.5f);
+            // End of ragdoll wait
+
+            AnimationCoroutineRagdollingRunning = false;
+
+            // Enable model
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                HideShowReplacementModelOnlyBody(show: true);
+            }
+            else
+            {
+                InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
+                HideShowLevelStickerBetaBadge(show: true);
+            }
+
+            // Hide ragdoll
+            RagdollInternBody.Hide();
+
+            if (!IsOwner)
+            {
+                // Wait for spawn player animation
+                yield return new WaitForSeconds(3f);
+                NpcController.Npc.inSpecialInteractAnimation = false;
+                spawnAnimationCoroutine = null;
+                yield break;
+            }
+
+            DeadBodyInfo? deadBodyInfo = RagdollInternBody.GetDeadBodyInfo();
+            TeleportAgentAIAndBody(deadBodyInfo == null ? NpcController.Npc.transform.position : deadBodyInfo.transform.position);
+            UpdateInternSpecialAnimationValue(specialAnimation: true, timed: 0f, climbingLadder: false);
+            NpcController.Npc.inSpecialInteractAnimation = true;
+            NpcController.Npc.playerBodyAnimator.ResetTrigger("SpawnPlayer");
+            NpcController.Npc.playerBodyAnimator.SetTrigger("SpawnPlayer");
+
+            // Wait in spawn player animation
+            yield return new WaitForSeconds(3f);
+
+            NpcController.Npc.inSpecialInteractAnimation = false;
+            UpdateInternSpecialAnimationValue(specialAnimation: false, timed: 0f, climbingLadder: false);
+
+            // Change ai state
+            SyncAssignTargetAndSetMovingTo(closestPlayer);
+
+            spawnAnimationCoroutine = null;
+            yield break;
+        }
+
+        private PlayerControllerB GetClosestIrlPlayer()
+        {
+            PlayerControllerB closest = null!;
+            for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+            {
+                PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
+                if (!player.isPlayerControlled
+                    || player.isPlayerDead)
+                {
+                    continue;
+                }
+
+                if (closest == null
+                   || (player.transform.position - this.NpcController.Npc.transform.position).sqrMagnitude < (closest.transform.position - this.NpcController.Npc.transform.position).sqrMagnitude)
+                {
+                    closest = player;
+                }
+            }
+
+            return closest;
+        }
+
+        private Vector3 GetRandomPushForce(Vector3 origin, Vector3 point, float forceMean)
+        {
+            point.y += UnityEngine.Random.Range(2f, 4f);
+
+            //DrawUtil.DrawWhiteLine(LineRendererUtil.GetLineRenderer(), new Ray(origin, point - origin), Vector3.Distance(point, origin));
+            float force = UnityEngine.Random.Range(forceMean * 0.5f, forceMean * 1.5f);
+            return Vector3.Normalize(point - origin) * force / Vector3.Distance(point, origin);
         }
 
         #endregion
@@ -3219,10 +3966,21 @@ namespace LethalInternship.AI
             }
             else
             {
-                NpcController.Npc.statusEffectAudio.Stop();
-                NpcController.Npc.isSinking = false;
-                NpcController.Npc.voiceMuffledByEnemy = false;
+                StopSinkingState();
             }
+        }
+
+        public void StopSinkingState()
+        {
+            NpcController.Npc.isSinking = false;
+            NpcController.Npc.statusEffectAudio.Stop();
+            NpcController.Npc.voiceMuffledByEnemy = false;
+            NpcController.Npc.sourcesCausingSinking = 0;
+            NpcController.Npc.isMovementHindered = 0;
+            NpcController.Npc.hinderedMultiplier = 1f;
+
+            NpcController.Npc.isUnderwater = false;
+            NpcController.Npc.underwaterCollider = null;
         }
 
         #endregion
@@ -3312,8 +4070,32 @@ namespace LethalInternship.AI
         [ClientRpc]
         private void ChangeSuitInternClientRpc(ulong idInternController, int suitID)
         {
-            UnlockableSuit.SwitchSuitForPlayer(StartOfRound.Instance.allPlayerScripts[idInternController], suitID, playAudio: false);
-            StartOfRound.Instance.allPlayerScripts[idInternController].thisPlayerModelArms.enabled = false;
+            ChangeSuitIntern(idInternController, suitID, playAudio: true);
+        }
+
+        public void ChangeSuitIntern(ulong idInternController, int suitID, bool playAudio = false)
+        {
+            if (suitID > StartOfRound.Instance.unlockablesList.unlockables.Count())
+            {
+                suitID = 0;
+            }
+
+            PlayerControllerB internController = StartOfRound.Instance.allPlayerScripts[idInternController];
+
+            UnlockableSuit.SwitchSuitForPlayer(internController, suitID, playAudio);
+            internController.thisPlayerModelArms.enabled = false;
+            StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
+            InternIdentity.SuitID = suitID;
+
+            Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}: {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
+        }
+
+        private IEnumerator Wait2EndOfFrameToRefreshBillBoard()
+        {
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            NpcController.RefreshBillBoardPosition();
+            yield break;
         }
 
         #endregion

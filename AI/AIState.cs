@@ -33,7 +33,7 @@ namespace LethalInternship.AI
         protected GrabbableObject? targetItem;
 
         protected Coroutine? panikCoroutine;
-        protected Transform? enemyTransform;
+        protected EnemyAI? currentEnemy;
 
         /// <summary>
         /// Constructor from another state
@@ -45,7 +45,7 @@ namespace LethalInternship.AI
             this.targetItem = oldState.targetItem;
 
             this.panikCoroutine = oldState.panikCoroutine;
-            this.enemyTransform = oldState.enemyTransform;
+            this.currentEnemy = oldState.currentEnemy;
         }
 
         /// <summary>
@@ -72,6 +72,10 @@ namespace LethalInternship.AI
         /// Apply the behaviour according to the type of state <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see>.<br/>
         /// </summary>
         public abstract void DoAI();
+
+        public abstract void TryPlayCurrentStateVoiceAudio();
+
+        public virtual void PlayerHeard(Vector3 noisePosition) { }
 
         /// <summary>
         /// Get the <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see> of current State

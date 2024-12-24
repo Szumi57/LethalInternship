@@ -1,7 +1,8 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.AI;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches
@@ -21,30 +22,56 @@ namespace LethalInternship.Patches.MapHazardsPatches
         [HarmonyPostfix]
         public static void OnTriggerStay_Postfix(ref QuicksandTrigger __instance, Collider other)
         {
-            if (!__instance.isWater && !other.gameObject.CompareTag("Player"))
+            InternAI? internAI = null;
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null
+                && enemyAICollisionDetect.mainScript != null
+                && enemyAICollisionDetect.mainScript.IsOwner
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
+            {
+                internAI = enemyAICollisionDetect.mainScript as InternAI;
+            }
+
+            if (internAI == null)
             {
                 return;
             }
 
-            PlayerControllerB internController = other.gameObject.GetComponent<PlayerControllerB>();
-            if (!InternManager.Instance.IsPlayerInternOwnerLocal(internController))
+            if (internAI.NpcController.IsControllerInCruiser)
             {
                 return;
             }
 
-            if (__instance.isWater && !internController.isUnderwater)
+            PlayerControllerB internController = internAI.NpcController.Npc;
+            if (__instance.isWater && internController.underwaterCollider == null)
             {
                 internController.underwaterCollider = __instance.gameObject.GetComponent<Collider>();
-                internController.isUnderwater = true;
             }
             internController.statusEffectAudioIndex = __instance.audioClipIndex;
             if (internController.isSinking)
             {
+                if (!__instance.isWater)
+                {
+                    // Audio
+                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    {
+                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        CanTalkIfOtherInternTalk = true,
+                        WaitForCooldown = false,
+                        CutCurrentVoiceStateToTalk = true,
+                        CanRepeatVoiceState = true,
+
+                        ShouldSync = false,
+                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                        AllowSwearing = Plugin.Config.AllowSwearing.Value
+                    });
+                }
                 return;
             }
 
-            if (internController.CheckConditionsForSinkingInQuicksand())
+            if (internAI.NpcController.CheckConditionsForSinkingInQuicksandIntern())
             {
+                // Being sinking
                 internController.sourcesCausingSinking++;
                 internController.isMovementHindered++;
                 Plugin.LogDebug($"playerScript {internController.playerClientId} ++isMovementHindered {internController.isMovementHindered}");
@@ -58,7 +85,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
             else
             {
-                StopSinkingIntern(internController, __instance.movementHinderance, __instance.isWater);
+                internAI.StopSinkingState();
             }
         }
 
@@ -71,18 +98,27 @@ namespace LethalInternship.Patches.MapHazardsPatches
         [HarmonyPostfix]
         public static void OnExit_Postfix(ref QuicksandTrigger __instance, Collider other)
         {
-            if (!other.CompareTag("Player"))
+            InternAI? internAI = null;
+            EnemyAICollisionDetect enemyAICollisionDetect = other.gameObject.GetComponent<EnemyAICollisionDetect>();
+            if (enemyAICollisionDetect != null
+                && enemyAICollisionDetect.mainScript != null
+                && enemyAICollisionDetect.mainScript.IsOwner
+                && !enemyAICollisionDetect.mainScript.isEnemyDead)
+            {
+                internAI = enemyAICollisionDetect.mainScript as InternAI;
+            }
+
+            if (internAI == null)
             {
                 return;
             }
 
-            PlayerControllerB internController = other.gameObject.GetComponent<PlayerControllerB>();
-            if (!InternManager.Instance.IsPlayerInternOwnerLocal(internController))
+            if (internAI.NpcController.IsControllerInCruiser)
             {
                 return;
             }
 
-            StopSinkingIntern(internController, __instance.movementHinderance, __instance.isWater);
+            internAI.StopSinkingState();
         }
 
         /// <summary>
@@ -95,26 +131,14 @@ namespace LethalInternship.Patches.MapHazardsPatches
         [HarmonyPrefix]
         public static bool StopSinkingLocalPlayer_Prefix(QuicksandTrigger __instance, PlayerControllerB playerScript)
         {
-            if (!InternManager.Instance.IsPlayerInternOwnerLocal(playerScript))
+            InternAI? internAI = InternManager.Instance.GetInternAIIfLocalIsOwner((int)playerScript.playerClientId);
+            if (internAI == null)
             {
                 return true;
             }
 
-            StopSinkingIntern(playerScript, __instance.movementHinderance, __instance.isWater);
+            internAI.StopSinkingState();
             return false;
-        }
-
-        private static void StopSinkingIntern(PlayerControllerB internController, float movementHinderance, bool isWater)
-        {
-            internController.sourcesCausingSinking = Mathf.Clamp(internController.sourcesCausingSinking - 100, 0, 100);
-            internController.isMovementHindered = Mathf.Clamp(internController.isMovementHindered - 100, 0, 100);
-            internController.hinderedMultiplier = Mathf.Clamp(internController.hinderedMultiplier / movementHinderance, 1f, 100f);
-            if (internController.isMovementHindered == 0 && isWater)
-            {
-                internController.isUnderwater = false;
-            }
-
-            Plugin.LogDebug($"playerScript {internController.playerClientId} --playerScript.isMovementHindered {internController.isMovementHindered}");
         }
     }
 }

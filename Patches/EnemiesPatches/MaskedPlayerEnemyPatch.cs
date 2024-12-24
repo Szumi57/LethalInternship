@@ -1,16 +1,38 @@
 ﻿using HarmonyLib;
+using LethalInternship.AI;
+using LethalInternship.Managers;
 using LethalInternship.Utils;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
 
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(MaskedPlayerEnemy))]
     internal class MaskedPlayerEnemyPatch
     {
+        [HarmonyPatch("FinishKillAnimation")]
+        [HarmonyPrefix]
+        static bool FinishKillAnimation_PreFix(MaskedPlayerEnemy __instance)
+        {
+            if (__instance.inSpecialAnimationWithPlayer == null)
+            {
+                return true;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.inSpecialAnimationWithPlayer.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            if (internAI.NpcController.EnemyInAnimationWith == __instance)
+            {
+                internAI.NpcController.EnemyInAnimationWith = null;
+            }
+            return true;
+        }
+
         [HarmonyPatch("KillPlayerAnimationClientRpc")]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> KillPlayerAnimationClientRpc_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -71,6 +93,24 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
 
             return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("KillPlayerAnimationClientRpc")]
+        [HarmonyPostfix]
+        static void KillPlayerAnimationClientRpc_PostFix(MaskedPlayerEnemy __instance)
+        {
+            if (__instance.inSpecialAnimationWithPlayer == null)
+            {
+                return;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.inSpecialAnimationWithPlayer.playerClientId);
+            if (internAI == null)
+            {
+                return;
+            }
+
+            internAI.NpcController.EnemyInAnimationWith = __instance;
         }
     }
 }

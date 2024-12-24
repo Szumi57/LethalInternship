@@ -1,5 +1,63 @@
 # Changelog
 
+## 2024-12-24 - Voices and road to Beta !
+
+Now that I have a clear view of what is left to add to this mod,</br>
+I can say that we are 1 or updates away from beta !</br>
+I still need to add orders and configurable option with terminal, for now you can use lethal config for the client only configs.</br>
+In beta I won't be adding new stuff (unless some exceptions) and it will be only bug fixing and mod compatibility.
+
+Hope you will like this new update, there's a lot changed under the hood but unfortunately not so much to show...</br>
+Expect for the voices of course !!</br>
+A big thanks to **Mathew Kelly** and his incredible voice acting, there's more than 700 (!!) voice lines for those little guys.</br>
+Chilling with you, following, founding loot, panicking, you name it, there's a voice line for every state of mind !</br>
+You may know him as **Dragon-V0942** from [FurAffinity](https://www.furaffinity.net/user/dragon-v0942), and you can find some of his voice acting works on youtube [(Voice acting example)](https://www.youtube.com/watch?v=5LGVz-ONeKE).
+
+For now let's check what's changed !
+
+## 0.19.0 [Alpha] - 2024-12-24 
+### Added
+- **Voices**</br>
+More than 700 voice lines added for every state of the interns. Voices made by **Mathew Kelly**/**Dragon-V0942**</br>
+The interns do not talk when a player is talking, and they tend to avoid talking while other interns talk (unless panicking, getting hurt, that kind of stuff).
+</br>
+After lauching the game once you can find the audio folder in Your_profile_folder\BepInEx\plugins\Szumi57-LethalInternship\Szumi57-LethalInternship\Audio\Voices.</br>
+From here you can find the voice folder named "Mathew_kelly" and inside, the voice lines organized by state (chilling, entering cruiser, running from monster).</br>
+If you want to add you own voices, you will need to respect this tree. Add a new folder next to "Mathew_kelly" with the same sub folders hierarchy.</br>
+But be aware if there is an update of this mod, the audio folder gets deleted, so keep a copy of you work (of course).</br>
+But how do you link that folder to an intern ? That bring us to the next point :
+- **Identities**</br>
+The interns have now a name, a suit, a voice, and all that makes his identity.</br>
+Identities can be found in a new config file at Your_profile_folder\BepInEx\config\LethalInternship\ConfigIdentitiesDefault.json</br>
+If you want to make your own file, name it 'ConfigIdentitiesUser.json' and the default one will be ignored. Details can be found in the default json.</br>
+To link the voice folder to the intern, simply change the "VoiceFolder" property in the identity you want.
+- **New terminal page : Status**</br>
+With this new way of working, interns can be tracked on your terminal with the keywork 'status' (while being in the 'lethalIntership program' page).</br>
+You can see the list of all the interns and their status : name, hp, to dropped on moon, dead.</br>
+You can buy specific interns by typing 'buy Mathew kelly' for example or quicker : 'bu math'.</br>
+If they are dead, they can will be resurrected (only in while the ship is in orbit tho).</br>
+If all identities are dead, buying more will make a default intern on the fly.
+### More additions
+- A spawn animation for interns, the dropship is pretty crammed so when the door opens... well I'll let you find out.
+- New configs : volume multiplier, taklativeness, swear words
+- New config : randomness of identities when buying them
+- New config : maximum animated interns at once (see performance fixes below)
+- Noise detection : they can hear you now and try to find you if they are lost while hearing you.
+- New logo ! made by... **Mathew Kelly**/**Dragon-V0942** (can this guy ever stop ?)
+- Compatibility with reviving mods : 'Revive company', 'Bunkbed revives' and 'Zaprillator', so many ways to revive those little guys.
+### Changed
+- The interns can follow you in the ship now, but not in orbit (next update maybe).
+- Their whole movement got reworked (that took quite a while), they move like monsters now, following ai pathways, not falling in holes. No more ladder animation for the moment though sorry.
+- Made the blob monster only doing 5 damage to interns, they are quite dumb when it comes to avoid him, so at least they don't die in 2 hits now.
+### Fixed
+- Performances fixes, found that the sound of their footstep what quite taxing on the framerate so I fixed that.</br>
+Limit the number of animated interns too (see config), thanks @BetaSigmaOmega on Github, issue [#51](https://github.com/Szumi57/LethalInternship/issues/51).
+- Fix death by shotgun or knife and grabbing interns corpses bug, thanks @Timofey1337png on GitHub, issue [#56](https://github.com/Szumi57/LethalInternship/issues/56)
+- Fixed saving interns already bought but kept the money when reloading. 
+- Fixed compat with ImmortalSnail, they fear him now, thanks @AdamHarney on Github, issue [#57](https://github.com/Szumi57/LethalInternship/issues/57).
+- Fixed items dropped in ship not getting registred by the host.
+- Fix compat with 'Always hear talkies', fix but more like not crashing, it's just not functionnal in intern hands.
+
 ## 0.18.3 [Alpha] - 2024-10-27
 ### Hotfixed
 - Fix v66 joining bug "... while syncing objects! The file may be corrupted.", thanks @Timofey1337png on Github, (issue [#52](https://github.com/Szumi57/LethalInternship/issues/52)).

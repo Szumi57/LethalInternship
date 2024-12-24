@@ -1,4 +1,6 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.AI;
+using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.Managers;
 using System;
 using UnityEngine;
@@ -10,29 +12,39 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// </summary>
     internal class ConfirmCancelPurchasePage : TerminalState
     {
-        private static readonly EnumTerminalStates STATE = EnumTerminalStates.ConfirmCancelPurchase;
-        /// <summary>
-        /// <inheritdoc cref="TerminalState.GetTerminalState"/>
-        /// </summary>
-        public override EnumTerminalStates GetTerminalState() { return STATE; }
-
-        private int NbOrdered;
+        private int nbOrdered;
+        private int idIdentityChosen = -1;
 
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalState)"/>
         /// </summary>
         public ConfirmCancelPurchasePage(TerminalState oldState, int nbOrdered) : base(oldState)
         {
+            CurrentState = EnumTerminalStates.ConfirmCancelPurchase;
+
+            int nbIdentitiesAvailable = IdentityManager.Instance.GetNbIdentitiesAvailable();
+            if (nbOrdered > nbIdentitiesAvailable)
+            {
+                // nbIdentitiesAvailable == 0 alreay check before arriving here
+                nbOrdered = nbIdentitiesAvailable;
+            }
+
             int internPrice = Plugin.Config.InternPrice.Value;
             if (internPrice <= 0)
             {
-                this.NbOrdered = nbOrdered;
+                this.nbOrdered = nbOrdered;
             }
             else
             {
                 int maxOrder = (int)Math.Floor((float)TerminalManager.Instance.GetTerminal().groupCredits / (float)internPrice);
-                this.NbOrdered = nbOrdered < maxOrder ? nbOrdered : maxOrder;
+                this.nbOrdered = nbOrdered < maxOrder ? nbOrdered : maxOrder;
             }
+        }
+
+        public ConfirmCancelPurchasePage(TerminalState oldState, int nbOrdered, int idIdentityChosen)
+            : this(oldState, nbOrdered)
+        {
+            this.idIdentityChosen = idIdentityChosen;
         }
 
         /// <summary>
@@ -49,26 +61,40 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             TerminalManager instanceTM = TerminalManager.Instance;
 
             if (terminalParser.IsMatchWord(firstWord, instanceTM.CommandIntershipProgram)
-                || terminalParser.IsMatchWord(firstWord, Const.STRING_CANCEL_COMMAND)
-                || terminalParser.IsMatchWord(firstWord, Const.STRING_BACK_COMMAND))
+                || terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_CANCEL_COMMAND)
+                || terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_BACK_COMMAND))
             {
                 // get back to info page
                 terminalParser.TerminalState = new InfoPage(this);
                 return true;
             }
 
-            if (terminalParser.IsMatchWord(firstWord, Const.STRING_CONFIRM_COMMAND))
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_CONFIRM_COMMAND))
             {
-                InternManager instanceIM = InternManager.Instance;
-
                 // Confirm
-                int newCredits = instanceTM.GetTerminal().groupCredits - (Plugin.Config.InternPrice.Value * this.NbOrdered);
-                instanceIM.AddNewCommandOfInterns(this.NbOrdered);
+                int newCredits = instanceTM.GetTerminal().groupCredits - (Plugin.Config.InternPrice.Value * this.nbOrdered);
                 instanceTM.GetTerminal().groupCredits = newCredits;
 
-                instanceTM.UpdatePurchaseAndCreditsServerRpc(instanceIM.NbInternsOwned, instanceIM.NbInternsToDropShip, newCredits);
+                if (idIdentityChosen == -1)
+                {
+                    instanceTM.BuyRandomInternsServerRpc(newCredits, this.nbOrdered);
+                }
+                else
+                {
+                    instanceTM.BuySpecificInternServerRpc(newCredits, idIdentityChosen);
+                }
 
-                terminalParser.TerminalState = new InfoPage(this);
+                if (instanceTM.IsServer)
+                {
+                    terminalParser.TerminalState = new InfoPage(this);
+                }
+                else
+                {
+                    int diffNbInternAvailable = -this.nbOrdered;
+                    int diffNbInternToDrop = this.nbOrdered;
+
+                    terminalParser.TerminalState = new InfoPage(this, diffNbInternAvailable, diffNbInternToDrop);
+                }
                 return true;
             }
 
@@ -87,18 +113,30 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             }
             terminalNode.clearPreviousText = true;
 
-            int internsAvailable = InternManager.Instance.NbInternsPurchasable;
+            int internsAvailable = IdentityManager.Instance.GetNbIdentitiesAvailable();
             string textIfTooMuchOrdered = string.Empty;
-            if (this.NbOrdered > internsAvailable)
+            if (this.nbOrdered > internsAvailable)
             {
-                textIfTooMuchOrdered = Const.TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM;
-                this.NbOrdered = internsAvailable;
+                textIfTooMuchOrdered = TerminalConst.TEXT_CONFIRM_CANCEL_PURCHASE_MAXIMUM;
+                this.nbOrdered = internsAvailable;
             }
 
-            terminalNode.displayText = string.Format(Const.TEXT_CONFIRM_CANCEL_PURCHASE,
-                                                     this.NbOrdered,
-                                                     textIfTooMuchOrdered,
-                                                     Plugin.Config.InternPrice.Value * this.NbOrdered);
+            if (idIdentityChosen < 0)
+            {
+                terminalNode.displayText = string.Format(TerminalConst.TEXT_CONFIRM_CANCEL_PURCHASE,
+                                                         this.nbOrdered,
+                                                         textIfTooMuchOrdered,
+                                                         Plugin.Config.InternPrice.Value * this.nbOrdered);
+            }
+            else
+            {
+                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idIdentityChosen];
+                string textRevivedIntern = internIdentity.Alive ? string.Empty : TerminalConst.TEXT_CONFIRM_CANCEL_REVIVE_INTERN;
+                terminalNode.displayText = string.Format(TerminalConst.TEXT_CONFIRM_CANCEL_SPECIFIC_PURCHASE,
+                                                         internIdentity.Name,
+                                                         textRevivedIntern,
+                                                         Plugin.Config.InternPrice.Value * this.nbOrdered);
+            }
 
             return terminalNode;
         }

@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Managers;
 using LethalInternship.Utils;
 using System.Collections.Generic;
@@ -35,6 +36,18 @@ namespace LethalInternship.Patches.NpcPatches
                     Plugin.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
                     newOwnerClientId = internAI.OwnerClientId;
                 }
+            }
+
+            return true;
+        }
+
+        [HarmonyPatch("HitEnemyOnLocalClient")]
+        [HarmonyPrefix]
+        static bool HitEnemyOnLocalClient(EnemyAI __instance)
+        {
+            if (__instance.GetType() == typeof(InternAI))
+            {
+                return false;
             }
 
             return true;
@@ -252,7 +265,7 @@ namespace LethalInternship.Patches.NpcPatches
         static void TargetClosestPlayer_PostFix(EnemyAI __instance, ref bool __result, float bufferDistance, bool requireLineOfSight, float viewWidth)
         {
             PlayerControllerB playerTargetted = __instance.targetPlayer;
-            
+
             for (int i = InternManager.Instance.IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
             {
                 PlayerControllerB intern = StartOfRound.Instance.allPlayerScripts[i];

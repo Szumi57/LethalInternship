@@ -1,4 +1,5 @@
-﻿using LethalInternship.Enums;
+﻿using LethalInternship.Constants;
+using LethalInternship.Enums;
 using UnityEngine;
 
 namespace LethalInternship.AI.AIStates
@@ -46,7 +47,6 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            Plugin.LogDebug($"{ai.NpcController.Npc.playerUsername} try to grab {this.targetItem.name}");
             float sqrMagDistanceItem = (this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude;
             // Close enough to item for grabbing, attempt to grab
             if (sqrMagDistanceItem < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Plugin.Config.InternSizeScale.Value)
@@ -81,6 +81,23 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.OrderMoveToDestination();
+        }
+
+        public override void TryPlayCurrentStateVoiceAudio()
+        {
+            // Talk if no one is talking close
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.FoundLoot,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = npcController.Npc.isInsideFactory,
+                AllowSwearing = Plugin.Config.AllowSwearing.Value
+            });
         }
 
         public override string GetBillboardStateIndicator()

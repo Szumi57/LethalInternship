@@ -2,6 +2,7 @@
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
+using LethalInternship.Constants;
 using LethalInternship.Inputs;
 using LethalInternship.Managers;
 using LethalInternship.Patches.EnemiesPatches;
@@ -10,7 +11,10 @@ using LethalInternship.Patches.MapHazardsPatches;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.ModPatches.AdditionalNetworking;
 using LethalInternship.Patches.ModPatches.BetterEmotes;
+using LethalInternship.Patches.ModPatches.BunkbedRevive;
+using LethalInternship.Patches.ModPatches.ButteryFixes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
+using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.LethalProgression;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
@@ -21,6 +25,7 @@ using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
 using LethalInternship.Patches.ModPatches.TooManyEmotes;
+using LethalInternship.Patches.ModPatches.Zaprillator;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
 using LethalInternship.Patches.TerminalPatches;
@@ -47,6 +52,8 @@ namespace LethalInternship
     [BepInDependency(LethalCompanyInputUtils.LethalCompanyInputUtilsPlugin.ModId, BepInDependency.DependencyFlags.HardDependency)]
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.BUNKBEDREVIVE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.ZAPRILLATOR_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.MOREEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BETTEREMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.TOOMANYEMOTES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -58,29 +65,35 @@ namespace LethalInternship
     [BepInDependency(Const.RESERVEDITEMSLOTCORE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALPROGRESSION_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.QUICKBUYMENU_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.BUTTERYFIXES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
         public static AssetBundle ModAssets = null!;
+        internal static string DirectoryName = null!;
 
         internal static EnemyType InternNPCPrefab = null!;
         internal static int PluginIrlPlayersCount = 0;
 
+        internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
         internal static LethalInternshipInputs InputActionsInstance = null!;
 
-        internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
         internal static bool IsModCustomItemBehaviourLibraryLoaded = false;
         internal static bool IsModMoreCompanyLoaded = false;
-        
-        private static new ManualLogSource Logger = null!;
+        internal static bool IsModReviveCompanyLoaded = false;
+        internal static bool IsModBunkbedReviveLoaded = false;
+
         private readonly Harmony _harmony = new(ModGUID);
 
         private void Awake()
         {
+            var bundleName = "internnpcmodassets";
+            DirectoryName = Path.GetDirectoryName(Info.Location);
+
             Logger = base.Logger;
 
             Config = new Configs.Config(base.Config);
@@ -89,8 +102,8 @@ namespace LethalInternship
             // This should be ran before Network Prefabs are registered.
             InitializeNetworkBehaviours();
 
-            var bundleName = "internnpcmodassets";
-            ModAssets = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Info.Location), bundleName));
+            // Load mod assets from unity
+            ModAssets = AssetBundle.LoadFromFile(Path.Combine(DirectoryName, bundleName));
             if (ModAssets == null)
             {
                 Logger.LogError($"Failed to load custom assets.");
@@ -108,7 +121,7 @@ namespace LethalInternship
                                                                .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
                                                                                             //&& x.name != "ScanNode"
                                                                                             //&& x.name != "MapDot"
-                                                                                            //&& x.name != "Collision"
+                                                                                            && x.name != "Collision"
                                                                                             && x.name != "TurnCompass"
                                                                                             && x.name != "CreatureSFX"
                                                                                             && x.name != "CreatureVoice"
@@ -141,6 +154,7 @@ namespace LethalInternship
         private void PatchBaseGame()
         {
             // Game engine
+            _harmony.PatchAll(typeof(AudioMixerPatch));
             _harmony.PatchAll(typeof(DebugPatch));
             _harmony.PatchAll(typeof(GameNetworkManagerPatch));
             _harmony.PatchAll(typeof(HUDManagerPatch));
@@ -198,19 +212,19 @@ namespace LethalInternship
 
             // Terminal
             _harmony.PatchAll(typeof(TerminalPatch));
-
-            //_harmony.PatchAll(typeof(MyPatches));
         }
 
         private void PatchOtherMods()
         {
             // -----------------------
             // Are these mods loaded ?
-            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModTooManyEmotesLoaded = IsModLoaded(Const.TOOMANYEMOTES_GUID);
             IsModModelReplacementAPILoaded = IsModLoaded(Const.MODELREPLACEMENT_GUID);
             IsModCustomItemBehaviourLibraryLoaded = IsModLoaded(Const.CUSTOMITEMBEHAVIOURLIBRARY_GUID);
             IsModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
+            IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
+            IsModBunkbedReviveLoaded = IsModLoaded(Const.BUNKBEDREVIVE_GUID);
+
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
             bool isModLethalPhonesLoaded = IsModLoaded(Const.LETHALPHONES_GUID);
@@ -219,6 +233,9 @@ namespace LethalInternship
             bool isModReservedItemSlotCoreLoaded = IsModLoaded(Const.RESERVEDITEMSLOTCORE_GUID);
             bool isModLethalProgressionLoaded = IsModLoaded(Const.LETHALPROGRESSION_GUID);
             bool isModQuickBuyLoaded = IsModLoaded(Const.QUICKBUYMENU_GUID);
+            bool isModLCAlwaysHearWalkieModLoaded = IsModLoaded(Const.LCALWAYSHEARWALKIEMOD_GUID);
+            bool isModZaprillatorLoaded = IsModLoaded(Const.ZAPRILLATOR_GUID);
+            bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
 
             // -------------------
             // Read the preloaders
@@ -265,6 +282,7 @@ namespace LethalInternship
                 _harmony.PatchAll(typeof(BodyReplacementBasePatch));
                 _harmony.PatchAll(typeof(ModelReplacementPlayerControllerBPatchPatch));
                 _harmony.PatchAll(typeof(ModelReplacementAPIPatch));
+                _harmony.PatchAll(typeof(ManagerBasePatch));
             }
             if (isModLethalPhonesLoaded)
             {
@@ -296,6 +314,15 @@ namespace LethalInternship
                                null,
                                new HarmonyMethod(typeof(ReviveCompanyPlayerControllerBPatchPatch), nameof(ReviveCompanyPlayerControllerBPatchPatch.SetHoverTipAndCurrentInteractTriggerPatch_Transpiler)));
             }
+            if (IsModBunkbedReviveLoaded)
+            {
+                _harmony.PatchAll(typeof(BunkbedControllerPatch));
+            }
+            if (isModZaprillatorLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("Zaprillator.Behaviors.RevivablePlayer"), "IShockableWithGun.StopShockingWithGun"),
+                               new HarmonyMethod(typeof(RevivablePlayerPatch), nameof(RevivablePlayerPatch.StopShockingWithGun_Prefix)));
+            }
             if (isModReservedItemSlotCoreLoaded)
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ReservedItemSlotCore.Patches.PlayerPatcher"), "InitializePlayerControllerLate"),
@@ -321,6 +348,18 @@ namespace LethalInternship
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("QuickBuyMenu.Plugin"), "RunQuickBuy"),
                                new HarmonyMethod(typeof(QuickBuyMenuPatch), nameof(QuickBuyMenuPatch.RunQuickBuy_Prefix)));
+            }
+            if (isModLCAlwaysHearWalkieModLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("LCAlwaysHearWalkieMod.Patches.PlayerControllerBPatch"), "alwaysHearWalkieTalkiesPatch"),
+                               null,
+                               null,
+                               new HarmonyMethod(typeof(LCAlwaysHearActiveWalkiePatch), nameof(LCAlwaysHearActiveWalkiePatch.alwaysHearWalkieTalkiesPatch_Transpiler)));
+            }
+            if (isModButteryFixesLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ButteryFixes.Patches.Player.BodyPatches"), "DeadBodyInfoPostStart"),
+                               new HarmonyMethod(typeof(BodyPatchesPatch), nameof(BodyPatchesPatch.DeadBodyInfoPostStart_Prefix)));
             }
         }
 

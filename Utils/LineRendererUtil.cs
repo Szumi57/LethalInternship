@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using LethalInternship.Constants;
 using UnityEngine;
 
 namespace LethalInternship.Utils
@@ -20,7 +21,7 @@ namespace LethalInternship.Utils
 
         public LineRenderer? GetLineRenderer()
         {
-            if (!Const.DRAW_LINES)
+            if (!DebugConst.DRAW_LINES)
             {
                 return null;
             }

@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.AI;
 using LethalInternship.Managers;
 
 namespace LethalInternship.Patches.EnemiesPatches
@@ -17,26 +18,19 @@ namespace LethalInternship.Patches.EnemiesPatches
         [HarmonyPrefix]
         static bool ReactToThreat_PreFix(Threat closestThreat)
         {
-            if (closestThreat.type != ThreatType.Player)
-            {
-                // continue with base game method
-                return true;
-            }
-
             PlayerControllerB playerController = closestThreat.threatScript.GetThreatTransform().gameObject.GetComponent<PlayerControllerB>();
-            if (playerController == null)
+            if (playerController != null)
             {
-                // continue with base game method
-                return true;
+                if (InternManager.Instance.IsPlayerIntern(playerController))
+                {
+                    // Stop reacting to threat if intern
+                    return false;
+                }
             }
 
-            if (InternManager.Instance.IsPlayerIntern(playerController))
-            {
-                // Stop reacting to threat if intern
-                return false;
-            }
-
-            return true;
+            // Intern true, continue with base game method
+            // Else stop reacting to threat
+            return closestThreat.threatScript.GetThreatTransform().gameObject.GetComponent<InternAI>() == null;
         }
     }
 }

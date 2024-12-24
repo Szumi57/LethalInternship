@@ -85,11 +85,11 @@ namespace LethalInternship.Patches.MapPatches
             InternManager.Instance.SpawnInternsFromDropShip(__instance.itemSpawnPositions);
         }
 
-        [HarmonyPatch("DeliverVehicleOnServer")]
+        [HarmonyPatch("ShipLandedAnimationEvent")]
         [HarmonyPostfix]
-        static void DeliverVehicleOnServer_PostFix()
+        static void ShipLandedAnimationEvent_PostFix(ref ItemDropship __instance)
         {
-            InternManager.Instance.VehicleHasLandedClientRpc();
+            InternManager.Instance.ItemDropShipPos = __instance.transform.position;
         }
     }
 }
