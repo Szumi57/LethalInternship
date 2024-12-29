@@ -99,7 +99,6 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             return codes.AsEnumerable();
         }
 
-
         [HarmonyPatch("RemovePlayerModelReplacement")]
         [HarmonyPrefix]
         static bool RemovePlayerModelReplacement_Prefix(PlayerControllerB player)

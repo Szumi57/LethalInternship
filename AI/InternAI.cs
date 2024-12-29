@@ -3696,6 +3696,7 @@ namespace LethalInternship.AI
             yield return new WaitForSeconds(3f);
 
             NpcController.Npc.inSpecialInteractAnimation = false;
+            UpdateInternSpecialAnimationValue(specialAnimation: false, timed: 0f, climbingLadder: false);
 
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());

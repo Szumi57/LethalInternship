@@ -410,7 +410,7 @@ namespace LethalInternship.Managers
 
         private void RemovePlayerModelReplacement(PlayerControllerB internController)
         {
-            ModelReplacement.ModelReplacementAPI.RemovePlayerModelReplacement(internController);
+            Object.DestroyImmediate(internController.GetComponent<ModelReplacement.BodyReplacementBase>());
         }
 
         private void RemoveCosmetics(PlayerControllerB internController)
@@ -692,10 +692,14 @@ namespace LethalInternship.Managers
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
 
             // Remove dead bodies if exists
-            if (internController.deadBody != null)
+            if (internController.deadBody != null) 
             {
                 if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
                 {
+                    if (Plugin.IsModModelReplacementAPILoaded)
+                    {
+                        RemovePlayerModelReplacement(internController);
+                    }
                     Object.Destroy(internController.deadBody.gameObject);
                 }
                 internController.deadBody = null;
