@@ -725,7 +725,7 @@ namespace LethalInternship.Managers
                 }
             }
 
-            Plugin.LogDebug($"++ Identity spawned: {internIdentity.ToString()}");
+            Plugin.LogDebug($"++ Intern with body {internController.playerClientId} with identity spawned: {internIdentity.ToString()}");
             internAI.Init((EnumSpawnAnimation)spawnParamsNetworkSerializable.enumSpawnAnimation);
         }
 

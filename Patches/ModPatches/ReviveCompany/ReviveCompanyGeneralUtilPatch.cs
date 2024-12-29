@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
 using OPJosMod.ReviveCompany;
@@ -54,6 +55,7 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             }
 
             // Respawn intern
+            Plugin.LogDebug($"revive playerId {playerId}; intern {internAI.NpcController.Npc.playerClientId} {internAI.NpcController.Npc.playerUsername}");
             InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity,
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                             {
@@ -71,6 +73,24 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
         [HarmonyPostfix]
         static void GetClosestDeadBody_PostFix(ref RagdollGrabbableObject __result)
         {
+            PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
+            Ray interactRay = new Ray(player.gameplayCamera.transform.position, player.gameplayCamera.transform.forward);
+            if (Physics.Raycast(interactRay, out RaycastHit hit, player.grabDistance, 1073742656) 
+                && hit.collider.gameObject.layer != 8 && hit.collider.gameObject.layer != 30)
+            {
+                // Check if we are pointing to a ragdoll body of intern (not grabbable)
+                if (hit.collider.tag == "PhysicsProp")
+                {
+                    RagdollGrabbableObject? ragdoll = hit.collider.gameObject.GetComponent<RagdollGrabbableObject>();
+                    if (ragdoll == null)
+                    {
+                        return;
+                    }
+
+                    __result = ragdoll;
+                }
+            }
+
             if (__result != null && __result.ragdoll == null)
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.

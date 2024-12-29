@@ -286,6 +286,13 @@ namespace LethalInternship.AI
                 }
 
                 SetAgent(enabled: false);
+
+                if (State == null
+                    || State.GetAIState() != EnumAIStates.BrainDead)
+                {
+                    State = new BrainDeadState(this);
+                }
+
                 return;
             }
 
@@ -3407,6 +3414,7 @@ namespace LethalInternship.AI
                 this.agent.enabled = false;
             }
             this.InternIdentity.Voice.StopAudioFadeOut();
+            this.State = new BrainDeadState(this);
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
 
             // Compat with revive company mod
