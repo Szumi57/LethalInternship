@@ -4,7 +4,9 @@ using LethalInternship.AI;
 using LethalInternship.Managers;
 using ModelReplacement;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
@@ -66,6 +68,37 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
             return false;
         }
+
+        [HarmonyPatch("RemovePlayerModelReplacement")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> FixOpenBodyCamTranspilerRemovePlayerModelReplacement_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            for (var i = 0; i < codes.Count - 1; i++)
+            {
+                if (codes[i].ToString() == "call virtual void ModelReplacement.Monobehaviors.ManagerBase::ReportBodyReplacementRemoval()"
+                    && codes[i + 1].ToString() == "call NULL")
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                codes[startIndex + 1].opcode = OpCodes.Call;
+                codes[startIndex + 1].operand = SymbolExtensions.GetMethodInfo(() => new ViewStateManager().UpdateModelReplacement());
+                startIndex = -1;
+            }
+            else
+            {
+                Plugin.LogInfo($"LethalInternship.Patches.ModPatches.ModelRplcmntAPI.ModelReplacementAPIPatch.FixOpenBodyCamTranspilerRemovePlayerModelReplacement_Transpiler, could not find call null line, ignoring fix.");
+            }
+
+            return codes.AsEnumerable();
+        }
+
 
         [HarmonyPatch("RemovePlayerModelReplacement")]
         [HarmonyPrefix]
