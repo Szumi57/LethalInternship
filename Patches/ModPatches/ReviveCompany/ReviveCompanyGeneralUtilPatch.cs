@@ -28,6 +28,12 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
                 return false;
             }
 
+            GlobalVariables.RemainingRevives--;
+            if (GlobalVariables.RemainingRevives < 100)
+            {
+                HUDManager.Instance.DisplayTip(internAI.NpcController.Npc.playerUsername + " was revived", string.Format("{0} revives remain!", GlobalVariables.RemainingRevives), false, false, "LC_Tip1");
+            }
+
             Vector3 revivePos = internAI.NpcController.Npc.transform.position;
             float yRot = internAI.NpcController.Npc.transform.rotation.eulerAngles.y;
             bool isInsideFactory = false;
@@ -45,12 +51,6 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
                         yRot = closestAlivePlayer.transform.rotation.eulerAngles.y;
                     }
                 }
-            }
-
-            GlobalVariables.RemainingRevives--;
-            if (GlobalVariables.RemainingRevives < 100)
-            {
-                HUDManager.Instance.DisplayTip(internAI.NpcController.Npc.playerUsername + " was revived", string.Format("{0} revives remain!", GlobalVariables.RemainingRevives), false, false, "LC_Tip1");
             }
 
             // Respawn intern

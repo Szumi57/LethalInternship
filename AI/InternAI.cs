@@ -1993,7 +1993,8 @@ namespace LethalInternship.AI
                 this.State = new PlayerInCruiserState(this, this.GetVehicleCruiserTargetPlayerIsIn());
             }
             else if (this.State == null
-                || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
+                || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer
+                || (this.State.GetAIState() == EnumAIStates.GetCloseToPlayer && this.targetPlayer != this))
             {
                 this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
