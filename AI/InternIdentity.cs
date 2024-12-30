@@ -10,6 +10,8 @@ namespace LethalInternship.AI
         public string Name { get; set; }
         public int? SuitID { get; set; }
         public InternVoice Voice { get; set; }
+        public DeadBodyInfo? DeadBody { get; set; }
+        public object? BodyReplacementBase { get; set; }
 
         public int HpMax { get; set; }
         public int Hp { get; set; }

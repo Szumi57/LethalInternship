@@ -2001,7 +2001,7 @@ namespace LethalInternship.AI
             }
             else if (this.State == null
                 || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer
-                || (this.State.GetAIState() == EnumAIStates.GetCloseToPlayer && this.targetPlayer != this))
+                || (this.State.GetAIState() == EnumAIStates.GetCloseToPlayer && this.targetPlayer != targetPlayer))
             {
                 this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
@@ -2222,16 +2222,8 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            UpdateInternSpecialAnimation(specialAnimation, timed, climbingLadder);
 
-            if (IsServer)
-            {
-                UpdateInternSpecialAnimationClientRpc(specialAnimation, timed, climbingLadder);
-            }
-            else
-            {
-                UpdateInternSpecialAnimationServerRpc(specialAnimation, timed, climbingLadder);
-            }
+            UpdateInternSpecialAnimationServerRpc(specialAnimation, timed, climbingLadder);
         }
 
         /// <summary>
@@ -2240,7 +2232,7 @@ namespace LethalInternship.AI
         /// <param name="specialAnimation">Is in special animation ?</param>
         /// <param name="timed">Wait time of the special animation to end</param>
         /// <param name="climbingLadder">Is climbing ladder ?</param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void UpdateInternSpecialAnimationServerRpc(bool specialAnimation, float timed, bool climbingLadder)
         {
             UpdateInternSpecialAnimationClientRpc(specialAnimation, timed, climbingLadder);
@@ -2255,11 +2247,6 @@ namespace LethalInternship.AI
         [ClientRpc]
         private void UpdateInternSpecialAnimationClientRpc(bool specialAnimation, float timed, bool climbingLadder)
         {
-            if (IsClientOwnerOfIntern())
-            {
-                return;
-            }
-
             UpdateInternSpecialAnimation(specialAnimation, timed, climbingLadder);
         }
 
@@ -3395,6 +3382,7 @@ namespace LethalInternship.AI
                 NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
                 // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
                 NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
+                this.InternIdentity.DeadBody = NpcController.Npc.deadBody;
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;

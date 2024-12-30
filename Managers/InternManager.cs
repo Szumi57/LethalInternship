@@ -410,7 +410,12 @@ namespace LethalInternship.Managers
 
         private void RemovePlayerModelReplacement(PlayerControllerB internController)
         {
-            Object.DestroyImmediate(internController.GetComponent<ModelReplacement.BodyReplacementBase>());
+            RemovePlayerModelReplacement(internController.GetComponent<ModelReplacement.BodyReplacementBase>());
+        }
+
+        private void RemovePlayerModelReplacement(object bodyReplacementBase)
+        {
+            Object.DestroyImmediate((ModelReplacement.BodyReplacementBase)bodyReplacementBase);
         }
 
         private void RemoveCosmetics(PlayerControllerB internController)
@@ -691,17 +696,24 @@ namespace LethalInternship.Managers
             // Unsuscribe from events to prevent double trigger
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
 
-            // Remove dead bodies if exists
-            if (internController.deadBody != null) 
+            // Destroy dead body of identity
+            if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
             {
-                if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
+                if (Plugin.IsModModelReplacementAPILoaded
+                    && internIdentity.BodyReplacementBase != null)
                 {
-                    if (Plugin.IsModModelReplacementAPILoaded)
-                    {
-                        RemovePlayerModelReplacement(internController);
-                    }
-                    Object.Destroy(internController.deadBody.gameObject);
+                    RemovePlayerModelReplacement(internIdentity.BodyReplacementBase);
+                    internIdentity.BodyReplacementBase = null;
                 }
+                if (internIdentity.DeadBody != null)
+                {
+                    Object.Destroy(internIdentity.DeadBody.gameObject);
+                    internIdentity.DeadBody = null;
+                }
+            }
+            // Remove deadbody on controller
+            if (internController.deadBody != null)
+            {
                 internController.deadBody = null;
             }
 
@@ -1556,6 +1568,26 @@ namespace LethalInternship.Managers
         private void UpdateReviveCountClientRpc(int id)
         {
             BunkbedRevive.BunkbedController.UpdateReviveCount(id);
+        }
+
+        #endregion
+
+        #region ReviveCompany mod RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void UpdateReviveCompanyRemainingRevivesServerRpc(string identityName)
+        {
+            UpdateReviveCompanyRemainingRevivesClientRpc(identityName);
+        }
+
+        [ClientRpc]
+        private void UpdateReviveCompanyRemainingRevivesClientRpc(string identityName)
+        {
+            OPJosMod.ReviveCompany.GlobalVariables.RemainingRevives--;
+            if (OPJosMod.ReviveCompany.GlobalVariables.RemainingRevives < 100)
+            {
+                HUDManager.Instance.DisplayTip(identityName + " was revived", string.Format("{0} revives remain!", OPJosMod.ReviveCompany.GlobalVariables.RemainingRevives), false, false, "LC_Tip1");
+            }
         }
 
         #endregion

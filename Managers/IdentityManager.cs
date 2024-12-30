@@ -177,6 +177,12 @@ namespace LethalInternship.Managers
             }
         }
 
+        public InternIdentity? FindIdentityFromBodyName(string bodyName)
+        {
+            string name = bodyName.Replace("Body of ", "");
+            return InternIdentities.FirstOrDefault(x => x.Name == name);
+        }
+
         public int GetNbIdentitiesAvailable()
         {
             return Plugin.Config.MaxInternsAvailable - InternIdentities.FilterToDropOrSpawnedAlive().Count();
