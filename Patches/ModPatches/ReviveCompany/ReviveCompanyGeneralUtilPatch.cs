@@ -15,11 +15,16 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
         [HarmonyPrefix]
         static bool RevivePlayer_Prefix(int playerId)
         {
+            if (!InternManager.Instance.IsIdPlayerIntern(playerId))
+            {
+                return true;
+            }
+
             // Identity and body are not sync, need to find the identity to revive not the body
             RagdollGrabbableObject? ragdollGrabbableObjectToRevive = GetRagdollGrabbableObjectLookingAt();
             if (ragdollGrabbableObjectToRevive == null)
             {
-                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern {playerId}, could not find body.");
+                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern, could not find body.");
                 return false;
             }
 
@@ -27,14 +32,13 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             InternIdentity? internIdentity = IdentityManager.Instance.FindIdentityFromBodyName(name);
             if (internIdentity == null)
             {
-                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern {playerId}, could not find identity, name on body: {name}.");
-                return false;
+                return true;
             }
 
             // Get the same logic as the mod at the beginning
             if (internIdentity.Alive)
             {
-                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern {playerId} \"{internIdentity.Name}\", intern is already alive! do nothing more");
+                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern \"{internIdentity.Name}\", intern is already alive! do nothing more");
                 return false;
             }
 
@@ -51,7 +55,7 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
             bool isInsideFactory = playerReviving.isInsideFactory;
 
             // Respawn intern
-            Plugin.LogDebug($"Reviving playerId {playerId}; intern {internIdentity.Name}");
+            Plugin.LogDebug($"Reviving intern {internIdentity.Name}");
             InternManager.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                             {

@@ -1570,6 +1570,13 @@ namespace LethalInternship.Managers
             BunkbedRevive.BunkbedController.UpdateReviveCount(id);
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncGroupCreditsForNotOwnerTerminalServerRpc(int newGroupCredits, int numItemsInShip)
+        {
+            Terminal terminalScript = TerminalManager.Instance.GetTerminal();
+            terminalScript.SyncGroupCreditsServerRpc(newGroupCredits, numItemsInShip);
+        }
+
         #endregion
 
         #region ReviveCompany mod RPC
