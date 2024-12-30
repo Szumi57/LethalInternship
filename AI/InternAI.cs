@@ -259,7 +259,8 @@ namespace LethalInternship.AI
                                                              StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
 
             // Update current material standing on
-            if (NpcController.IsTouchingGround)
+            if (NpcController.IsTouchingGround
+                && InternManager.Instance.DictTagSurfaceIndex.ContainsKey(GroundHit.collider.tag))
             {
                 NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[GroundHit.collider.tag];
             }
@@ -463,6 +464,7 @@ namespace LethalInternship.AI
             {
                 BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                 if (bridgeTrigger != null
+                    && bridgeTrigger.fallenBridgeColliders.Length > 0
                     && bridgeTrigger.fallenBridgeColliders[0].enabled)
                 {
                     Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {GroundHit.collider.name}");
@@ -1624,7 +1626,11 @@ namespace LethalInternship.AI
                     {
                         continue;
                     }
-                    dictComponentByCollider.Add(bridgePhysicsPartsContainerComponents[j].name, bridgeTriggers[i]);
+
+                    if (!dictComponentByCollider.ContainsKey(bridgePhysicsPartsContainerComponents[j].name))
+                    {
+                        dictComponentByCollider.Add(bridgePhysicsPartsContainerComponents[j].name, bridgeTriggers[i]);
+                    }
                 }
             }
 
