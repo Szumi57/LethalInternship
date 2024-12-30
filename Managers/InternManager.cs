@@ -1205,6 +1205,12 @@ namespace LethalInternship.Managers
             return 35;
         }
 
+        public int MaxHealthPercent(int percentage, int maxHealth)
+        {
+            int healthPercent = (int)(((double)percentage / (double)100) * (double)maxHealth);
+            return healthPercent < 1 ? 1 : healthPercent;
+        }
+
         private void EndOfRoundForInterns()
         {
             DictEnemyAINoiseListeners.Clear();

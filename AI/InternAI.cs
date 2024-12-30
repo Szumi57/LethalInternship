@@ -653,10 +653,9 @@ namespace LethalInternship.AI
             this.targetPlayer = null;
         }
 
-        public int MaxHealthPercent(int percentage)
+        private int MaxHealthPercent(int percentage)
         {
-            int healthPercent = (int)(((double)percentage / (double)100) * (double)MaxHealth);
-            return healthPercent < 1 ? 1 : healthPercent;
+            return InternManager.Instance.MaxHealthPercent(percentage, MaxHealth);
         }
 
         public void CheckAndBringCloserTeleportIntern(float percentageOfDestination)

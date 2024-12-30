@@ -32,7 +32,7 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
             // Get the same logic as the mod at the beginning
             if (internIdentity.Alive)
             {
-                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern \"{internIdentity.Name}\", intern is already alive! do nothing more");
+                Plugin.LogError($"BunkbedRevive with LethalInternship: error when trying to revive intern \"{internIdentity.Name}\", intern is already alive! do nothing more");
                 return false;
             }
 
