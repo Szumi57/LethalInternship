@@ -1,7 +1,17 @@
 # Changelog
 
-## 2024-12-24 - Voices and road to Beta !
+## 0.19.1 [Alpha] - 2024-12-30
+### Hotadded
+- Suit column in status page in the lethalIntership program menu
+### Hotfixed
+- Fix AI state not being reset when not owning intern or when the intern dies, resulting in strange behaviours, thanks @Mathew Kelly on Discord.
+- Fixes for the revive mods not working correctly (revive company, bunkbed revive, zapprilator), thanks @Mathew Kelly on Discord.
+- Fix black mesa not working with interns and other small fixes.
+### HotStillNeedToFix
+- Compat peepers, lethalMin mods
+- Again some things not working well with the Bracken/Flowerman
 
+## 2024-12-24 - Voices and road to Beta !
 Now that I have a clear view of what is left to add to this mod,</br>
 I can say that we are 1 or updates away from beta !</br>
 I still need to add orders and configurable option with terminal, for now you can use lethal config for the client only configs.</br>
@@ -21,7 +31,7 @@ For now let's check what's changed !
 More than 700 voice lines added for every state of the interns. Voices made by **Mathew Kelly**/**Dragon-V0942**</br>
 The interns do not talk when a player is talking, and they tend to avoid talking while other interns talk (unless panicking, getting hurt, that kind of stuff).
 </br>
-After lauching the game once you can find the audio folder in Your_profile_folder\BepInEx\plugins\Szumi57-LethalInternship\Szumi57-LethalInternship\Audio\Voices.</br>
+After launching the game once you can find the audio folder in Your_profile_folder\BepInEx\plugins\Szumi57-LethalInternship\Szumi57-LethalInternship\Audio\Voices.</br>
 From here you can find the voice folder named "Mathew_kelly" and inside, the voice lines organized by state (chilling, entering cruiser, running from monster).</br>
 If you want to add you own voices, you will need to respect this tree. Add a new folder next to "Mathew_kelly" with the same sub folders hierarchy.</br>
 But be aware if there is an update of this mod, the audio folder gets deleted, so keep a copy of you work (of course).</br>
