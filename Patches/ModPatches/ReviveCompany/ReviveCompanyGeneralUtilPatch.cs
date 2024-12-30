@@ -15,46 +15,48 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
         [HarmonyPrefix]
         static bool RevivePlayer_Prefix(int playerId)
         {
-            InternAI? internAI = InternManager.Instance.GetInternAI(playerId);
-            if (internAI == null)
+            if (!InternManager.Instance.IsIdPlayerIntern(playerId))
+            {
+                return true;
+            }
+
+            // Identity and body are not sync, need to find the identity to revive not the body
+            RagdollGrabbableObject? ragdollGrabbableObjectToRevive = GetRagdollGrabbableObjectLookingAt();
+            if (ragdollGrabbableObjectToRevive == null)
+            {
+                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern, could not find body.");
+                return false;
+            }
+
+            string name = ragdollGrabbableObjectToRevive.ragdoll.gameObject.GetComponentInChildren<ScanNodeProperties>().headerText;
+            InternIdentity? internIdentity = IdentityManager.Instance.FindIdentityFromBodyName(name);
+            if (internIdentity == null)
             {
                 return true;
             }
 
             // Get the same logic as the mod at the beginning
-            if (!internAI.isEnemyDead || !internAI.NpcController.Npc.isPlayerDead)
+            if (internIdentity.Alive)
             {
-                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern {playerId} \"{internAI.NpcController.Npc.playerUsername}\", intern is already alive! do nothing more");
+                Plugin.LogError($"Revive company with LethalInternship: error when trying to revive intern \"{internIdentity.Name}\", intern is already alive! do nothing more");
                 return false;
             }
 
-            Vector3 revivePos = internAI.NpcController.Npc.transform.position;
-            float yRot = internAI.NpcController.Npc.transform.rotation.eulerAngles.y;
-            bool isInsideFactory = false;
-            if (internAI.NpcController.Npc.deadBody != null)
-            {
-                revivePos = internAI.NpcController.Npc.deadBody.transform.position;
+            // Update remaining revives
+            InternManager.Instance.UpdateReviveCompanyRemainingRevivesServerRpc(internIdentity.Name);
 
-                PlayerControllerB closestAlivePlayer = GeneralUtil.GetClosestAlivePlayer(internAI.NpcController.Npc.deadBody.transform.position);
-                if (closestAlivePlayer != null)
-                {
-                    isInsideFactory = closestAlivePlayer.isInsideFactory;
-                    if (Vector3.Distance(revivePos, closestAlivePlayer.transform.position) > 7f)
-                    {
-                        revivePos = closestAlivePlayer.transform.position;
-                        yRot = closestAlivePlayer.transform.rotation.eulerAngles.y;
-                    }
-                }
-            }
-
-            GlobalVariables.RemainingRevives--;
-            if (GlobalVariables.RemainingRevives < 100)
+            PlayerControllerB playerReviving = GameNetworkManager.Instance.localPlayerController;
+            Vector3 revivePos = ragdollGrabbableObjectToRevive.transform.position;
+            float yRot = playerReviving.transform.rotation.eulerAngles.y;
+            if (Vector3.Distance(revivePos, playerReviving.transform.position) > 7f)
             {
-                HUDManager.Instance.DisplayTip(internAI.NpcController.Npc.playerUsername + " was revived", string.Format("{0} revives remain!", GlobalVariables.RemainingRevives), false, false, "LC_Tip1");
+                revivePos = playerReviving.transform.position;
             }
+            bool isInsideFactory = playerReviving.isInsideFactory;
 
             // Respawn intern
-            InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity,
+            Plugin.LogDebug($"Reviving intern {internIdentity.Name}");
+            InternManager.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                             {
                                                                 ShouldDestroyDeadBody = true,
@@ -71,12 +73,37 @@ namespace LethalInternship.Patches.ModPatches.ReviveCompany
         [HarmonyPostfix]
         static void GetClosestDeadBody_PostFix(ref RagdollGrabbableObject __result)
         {
+            __result = GetRagdollGrabbableObjectLookingAt();
+
             if (__result != null && __result.ragdoll == null)
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 __result = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
             }
+        }
+
+        private static RagdollGrabbableObject GetRagdollGrabbableObjectLookingAt()
+        {
+            PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
+            Ray interactRay = new Ray(player.gameplayCamera.transform.position, player.gameplayCamera.transform.forward);
+            if (Physics.Raycast(interactRay, out RaycastHit hit, player.grabDistance, 1073742656)
+                && hit.collider.gameObject.layer != 8 && hit.collider.gameObject.layer != 30)
+            {
+                // Check if we are pointing to a ragdoll body of intern (not grabbable)
+                if (hit.collider.tag == "PhysicsProp")
+                {
+                    RagdollGrabbableObject? ragdoll = hit.collider.gameObject.GetComponent<RagdollGrabbableObject>();
+                    if (ragdoll == null)
+                    {
+                        return null!;
+                    }
+
+                    return ragdoll;
+                }
+            }
+
+            return null!;
         }
     }
 }

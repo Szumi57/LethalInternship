@@ -26,6 +26,7 @@ namespace LethalInternship.Utils
         public static readonly MethodInfo IndexBeginOfInternsMethod = SymbolExtensions.GetMethodInfo(() => IndexBeginOfInterns());
         public static readonly MethodInfo IsPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerIntern(new PlayerControllerB()));
         public static readonly MethodInfo IsIdPlayerInternMethod = SymbolExtensions.GetMethodInfo(() => IsIdPlayerIntern(new int()));
+        public static readonly MethodInfo IsRagdollPlayerIdInternMethod = SymbolExtensions.GetMethodInfo(() => IsRagdollPlayerIdIntern(new RagdollGrabbableObject()));
         public static readonly MethodInfo IsPlayerInternOwnerLocalMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternOwnerLocal(new PlayerControllerB()));
         public static readonly MethodInfo IsAnInternAiOwnerOfObjectMethod = SymbolExtensions.GetMethodInfo(() => IsAnInternAiOwnerOfObject((GrabbableObject)new object()));
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
@@ -164,6 +165,10 @@ namespace LethalInternship.Utils
         private static bool IsIdPlayerIntern(int id)
         {
             return InternManager.Instance.IsIdPlayerIntern(id);
+        }
+        private static bool IsRagdollPlayerIdIntern(RagdollGrabbableObject ragdollGrabbableObject)
+        {
+            return InternManager.Instance.IsIdPlayerIntern((int)ragdollGrabbableObject.ragdoll.playerScript.playerClientId);
         }
         private static bool IsPlayerInternOwnerLocal(PlayerControllerB player)
         {

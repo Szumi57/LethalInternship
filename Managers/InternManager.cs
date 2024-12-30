@@ -410,7 +410,12 @@ namespace LethalInternship.Managers
 
         private void RemovePlayerModelReplacement(PlayerControllerB internController)
         {
-            ModelReplacement.ModelReplacementAPI.RemovePlayerModelReplacement(internController);
+            RemovePlayerModelReplacement(internController.GetComponent<ModelReplacement.BodyReplacementBase>());
+        }
+
+        private void RemovePlayerModelReplacement(object bodyReplacementBase)
+        {
+            Object.DestroyImmediate((ModelReplacement.BodyReplacementBase)bodyReplacementBase);
         }
 
         private void RemoveCosmetics(PlayerControllerB internController)
@@ -691,13 +696,24 @@ namespace LethalInternship.Managers
             // Unsuscribe from events to prevent double trigger
             PlayerControllerBPatch.OnDisable_ReversePatch(internController);
 
-            // Remove dead bodies if exists
+            // Destroy dead body of identity
+            if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
+            {
+                if (Plugin.IsModModelReplacementAPILoaded
+                    && internIdentity.BodyReplacementBase != null)
+                {
+                    RemovePlayerModelReplacement(internIdentity.BodyReplacementBase);
+                    internIdentity.BodyReplacementBase = null;
+                }
+                if (internIdentity.DeadBody != null)
+                {
+                    Object.Destroy(internIdentity.DeadBody.gameObject);
+                    internIdentity.DeadBody = null;
+                }
+            }
+            // Remove deadbody on controller
             if (internController.deadBody != null)
             {
-                if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
-                {
-                    Object.Destroy(internController.deadBody.gameObject);
-                }
                 internController.deadBody = null;
             }
 
@@ -721,7 +737,7 @@ namespace LethalInternship.Managers
                 }
             }
 
-            Plugin.LogDebug($"++ Identity spawned: {internIdentity.ToString()}");
+            Plugin.LogDebug($"++ Intern with body {internController.playerClientId} with identity spawned: {internIdentity.ToString()}");
             internAI.Init((EnumSpawnAnimation)spawnParamsNetworkSerializable.enumSpawnAnimation);
         }
 
@@ -1189,6 +1205,12 @@ namespace LethalInternship.Managers
             return 35;
         }
 
+        public int MaxHealthPercent(int percentage, int maxHealth)
+        {
+            int healthPercent = (int)(((double)percentage / (double)100) * (double)maxHealth);
+            return healthPercent < 1 ? 1 : healthPercent;
+        }
+
         private void EndOfRoundForInterns()
         {
             DictEnemyAINoiseListeners.Clear();
@@ -1552,6 +1574,33 @@ namespace LethalInternship.Managers
         private void UpdateReviveCountClientRpc(int id)
         {
             BunkbedRevive.BunkbedController.UpdateReviveCount(id);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncGroupCreditsForNotOwnerTerminalServerRpc(int newGroupCredits, int numItemsInShip)
+        {
+            Terminal terminalScript = TerminalManager.Instance.GetTerminal();
+            terminalScript.SyncGroupCreditsServerRpc(newGroupCredits, numItemsInShip);
+        }
+
+        #endregion
+
+        #region ReviveCompany mod RPC
+
+        [ServerRpc(RequireOwnership = false)]
+        public void UpdateReviveCompanyRemainingRevivesServerRpc(string identityName)
+        {
+            UpdateReviveCompanyRemainingRevivesClientRpc(identityName);
+        }
+
+        [ClientRpc]
+        private void UpdateReviveCompanyRemainingRevivesClientRpc(string identityName)
+        {
+            OPJosMod.ReviveCompany.GlobalVariables.RemainingRevives--;
+            if (OPJosMod.ReviveCompany.GlobalVariables.RemainingRevives < 100)
+            {
+                HUDManager.Instance.DisplayTip(identityName + " was revived", string.Format("{0} revives remain!", OPJosMod.ReviveCompany.GlobalVariables.RemainingRevives), false, false, "LC_Tip1");
+            }
         }
 
         #endregion

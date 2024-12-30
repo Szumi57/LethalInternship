@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Enums;
 using System.Collections.Generic;
+using System.Linq;
 using Random = System.Random;
 
 namespace LethalInternship.AI
@@ -10,12 +11,27 @@ namespace LethalInternship.AI
         public string Name { get; set; }
         public int? SuitID { get; set; }
         public InternVoice Voice { get; set; }
+        public DeadBodyInfo? DeadBody { get; set; }
+        public object? BodyReplacementBase { get; set; }
 
         public int HpMax { get; set; }
         public int Hp { get; set; }
         public EnumStatusIdentity Status { get; set; }
 
         public bool Alive { get { return Hp > 0; } }
+        public string Suit
+        {
+            get
+            {
+                if (!SuitID.HasValue)
+                {
+                    return "";
+                }
+
+                string suitName = SuitID.Value > StartOfRound.Instance.unlockablesList.unlockables.Count() ? "Not found" : StartOfRound.Instance.unlockablesList.unlockables[SuitID.Value].unlockableName;
+                return $"{SuitID.Value}: {suitName}";
+            }
+        }
 
         public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
         {
@@ -37,7 +53,7 @@ namespace LethalInternship.AI
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suitID {(SuitID.HasValue ? SuitID.Value : "'Not set yet'")}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suit {Suit}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', Voice : {{{Voice.ToString()}}}";
         }
 
         public int GetRandomSuitID()

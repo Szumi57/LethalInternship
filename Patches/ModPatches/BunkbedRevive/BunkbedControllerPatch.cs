@@ -22,10 +22,18 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
             }
 
             int playerClientId = (int)ragdollGrabbableObject.ragdoll.playerScript.playerClientId;
-            InternAI? internAI = InternManager.Instance.GetInternAI(playerClientId);
-            if (internAI == null)
+            string name = ragdollGrabbableObject.ragdoll.gameObject.GetComponentInChildren<ScanNodeProperties>().headerText;
+            InternIdentity? internIdentity = IdentityManager.Instance.FindIdentityFromBodyName(name);
+            if (internIdentity == null)
             {
                 return true;
+            }
+
+            // Get the same logic as the mod at the beginning
+            if (internIdentity.Alive)
+            {
+                Plugin.LogError($"BunkbedRevive with LethalInternship: error when trying to revive intern \"{internIdentity.Name}\", intern is already alive! do nothing more");
+                return false;
             }
 
             int reviveCost = BunkbedController.GetReviveCost();
@@ -43,9 +51,9 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
             }
             Terminal terminalScript = TerminalManager.Instance.GetTerminal();
             terminalScript.groupCredits -= reviveCost;
-            terminalScript.SyncGroupCreditsServerRpc(terminalScript.groupCredits, terminalScript.numberOfItemsInDropship);
+            InternManager.Instance.SyncGroupCreditsForNotOwnerTerminalServerRpc(terminalScript.groupCredits, terminalScript.numberOfItemsInDropship);
 
-            InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity,
+            InternManager.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                             {
                                                                 ShouldDestroyDeadBody = true,
@@ -54,10 +62,10 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
                                                                 YRot = 0,
                                                                 IsOutside = true
                                                             });
-            InternManager.Instance.UpdateReviveCountServerRpc(playerClientId + Plugin.PluginIrlPlayersCount);
+            InternManager.Instance.UpdateReviveCountServerRpc(internIdentity.IdIdentity + Plugin.PluginIrlPlayersCount);
             GameNetworkManager.Instance.localPlayerController?.DespawnHeldObject();
 
-            HUDManagerPatch.DisplayGlobalNotification_ReversePatch(HUDManager.Instance, $"{internAI.NpcController.Npc.playerUsername} has been revived");
+            HUDManagerPatch.DisplayGlobalNotification_ReversePatch(HUDManager.Instance, $"{internIdentity.Name} has been revived");
             return false;
         }
 
@@ -65,6 +73,13 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
         [HarmonyPostfix]
         static void Update_PostFix(InteractTrigger ___interactTrigger)
         {
+            if (StartOfRound.Instance == null 
+                || GameNetworkManager.Instance == null 
+                || GameNetworkManager.Instance.localPlayerController == null)
+            {
+                return;
+            }
+
             RagdollGrabbableObject? ragdollGrabbableObject = GetHeldBody_ReversePatch(BunkbedController.Instance);
             if (ragdollGrabbableObject == null)
             {

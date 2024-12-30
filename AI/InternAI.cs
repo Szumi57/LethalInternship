@@ -259,7 +259,8 @@ namespace LethalInternship.AI
                                                              StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
 
             // Update current material standing on
-            if (NpcController.IsTouchingGround)
+            if (NpcController.IsTouchingGround
+                && InternManager.Instance.DictTagSurfaceIndex.ContainsKey(GroundHit.collider.tag))
             {
                 NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[GroundHit.collider.tag];
             }
@@ -286,6 +287,13 @@ namespace LethalInternship.AI
                 }
 
                 SetAgent(enabled: false);
+
+                if (State == null
+                    || State.GetAIState() != EnumAIStates.BrainDead)
+                {
+                    State = new BrainDeadState(this);
+                }
+
                 return;
             }
 
@@ -456,6 +464,7 @@ namespace LethalInternship.AI
             {
                 BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                 if (bridgeTrigger != null
+                    && bridgeTrigger.fallenBridgeColliders.Length > 0
                     && bridgeTrigger.fallenBridgeColliders[0].enabled)
                 {
                     Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {GroundHit.collider.name}");
@@ -646,10 +655,9 @@ namespace LethalInternship.AI
             this.targetPlayer = null;
         }
 
-        public int MaxHealthPercent(int percentage)
+        private int MaxHealthPercent(int percentage)
         {
-            int healthPercent = (int)(((double)percentage / (double)100) * (double)MaxHealth);
-            return healthPercent < 1 ? 1 : healthPercent;
+            return InternManager.Instance.MaxHealthPercent(percentage, MaxHealth);
         }
 
         public void CheckAndBringCloserTeleportIntern(float percentageOfDestination)
@@ -1618,7 +1626,11 @@ namespace LethalInternship.AI
                     {
                         continue;
                     }
-                    dictComponentByCollider.Add(bridgePhysicsPartsContainerComponents[j].name, bridgeTriggers[i]);
+
+                    if (!dictComponentByCollider.ContainsKey(bridgePhysicsPartsContainerComponents[j].name))
+                    {
+                        dictComponentByCollider.Add(bridgePhysicsPartsContainerComponents[j].name, bridgeTriggers[i]);
+                    }
                 }
             }
 
@@ -1993,7 +2005,8 @@ namespace LethalInternship.AI
                 this.State = new PlayerInCruiserState(this, this.GetVehicleCruiserTargetPlayerIsIn());
             }
             else if (this.State == null
-                || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer)
+                || this.State.GetAIState() != EnumAIStates.GetCloseToPlayer
+                || (this.State.GetAIState() == EnumAIStates.GetCloseToPlayer && this.targetPlayer != targetPlayer))
             {
                 this.State = new GetCloseToPlayerState(this, targetPlayer);
             }
@@ -2214,16 +2227,8 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            UpdateInternSpecialAnimation(specialAnimation, timed, climbingLadder);
 
-            if (IsServer)
-            {
-                UpdateInternSpecialAnimationClientRpc(specialAnimation, timed, climbingLadder);
-            }
-            else
-            {
-                UpdateInternSpecialAnimationServerRpc(specialAnimation, timed, climbingLadder);
-            }
+            UpdateInternSpecialAnimationServerRpc(specialAnimation, timed, climbingLadder);
         }
 
         /// <summary>
@@ -2232,7 +2237,7 @@ namespace LethalInternship.AI
         /// <param name="specialAnimation">Is in special animation ?</param>
         /// <param name="timed">Wait time of the special animation to end</param>
         /// <param name="climbingLadder">Is climbing ladder ?</param>
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void UpdateInternSpecialAnimationServerRpc(bool specialAnimation, float timed, bool climbingLadder)
         {
             UpdateInternSpecialAnimationClientRpc(specialAnimation, timed, climbingLadder);
@@ -2247,11 +2252,6 @@ namespace LethalInternship.AI
         [ClientRpc]
         private void UpdateInternSpecialAnimationClientRpc(bool specialAnimation, float timed, bool climbingLadder)
         {
-            if (IsClientOwnerOfIntern())
-            {
-                return;
-            }
-
             UpdateInternSpecialAnimation(specialAnimation, timed, climbingLadder);
         }
 
@@ -3387,6 +3387,7 @@ namespace LethalInternship.AI
                 NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
                 // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
                 NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
+                this.InternIdentity.DeadBody = NpcController.Npc.deadBody;
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -3406,6 +3407,7 @@ namespace LethalInternship.AI
                 this.agent.enabled = false;
             }
             this.InternIdentity.Voice.StopAudioFadeOut();
+            this.State = new BrainDeadState(this);
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
 
             // Compat with revive company mod
@@ -3696,6 +3698,7 @@ namespace LethalInternship.AI
             yield return new WaitForSeconds(3f);
 
             NpcController.Npc.inSpecialInteractAnimation = false;
+            UpdateInternSpecialAnimationValue(specialAnimation: false, timed: 0f, climbingLadder: false);
 
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());

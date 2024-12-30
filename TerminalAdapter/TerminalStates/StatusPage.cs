@@ -54,9 +54,9 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
             terminalNode.clearPreviousText = true;
 
             StringBuilder sb = new StringBuilder();
-            sb.Append($"{"Name",-30} {"Hp",-3} {"Status",-6}");
+            sb.Append($"{"Name",-20} {"Hp",-3} {"Status",-7}  {"Suit", -4}");
             sb.AppendLine();
-            sb.Append($"---------------------------------------------------");
+            sb.Append($"---------------------------------------------------"); // 51
             foreach (InternIdentity identity in IdentityManager.Instance.InternIdentities)
             {
                 if (identity == null)
@@ -82,12 +82,26 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
                     status = "dead";
                 }
 
+                string? identityName = identity.Name.Truncate(19);
+                string? suit = identity.Suit.Truncate(16);
+
                 sb.AppendLine();
-                sb.Append($"{identity.Name,-30} {identity.Hp,-3} {status}");
+                sb.Append($"{identityName,-20} {identity.Hp,-3} {status, -7}  {suit}");
             }
             terminalNode.displayText = string.Format(TerminalConst.TEXT_STATUS, sb.ToString());
 
             return terminalNode;
+        }
+    }
+
+    public static class StringExt
+    {
+        // https://stackoverflow.com/questions/2776673/how-do-i-truncate-a-net-string
+        public static string? Truncate(this string? value, int maxLength, string truncationSuffix = "…")
+        {
+            return value?.Length > maxLength
+                ? value.Substring(0, maxLength) + truncationSuffix
+                : value;
         }
     }
 }

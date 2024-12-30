@@ -17,31 +17,40 @@ namespace LethalInternship.Patches.ModPatches.Zaprillator
                 return true;
             }
 
-            InternAI? internAI = InternManager.Instance.GetInternAI((int)____ragdoll.ragdoll.playerScript.playerClientId);
-            if (internAI == null)
+            if (!____bodyShocked)
+            {
+                return false;
+            }
+
+            if (____shockedBy == null
+                || !____shockedBy.IsOwner)
+            {
+                return false;
+            }
+
+            string name = ____ragdoll.ragdoll.gameObject.GetComponentInChildren<ScanNodeProperties>().headerText;
+            InternIdentity? internIdentity = IdentityManager.Instance.FindIdentityFromBodyName(name);
+            if (internIdentity == null)
             {
                 return true;
             }
 
-            if (!____bodyShocked)
+            // Get the same logic as the mod at the beginning
+            if (internIdentity.Alive)
             {
+                Plugin.LogError($"Zaprillator with LethalInternship: error when trying to revive intern \"{internIdentity.Name}\", intern is already alive! do nothing more");
                 return false;
             }
 
             ____bodyShocked = false;
             RoundManager.Instance.FlickerLights();
 
-            if (____shockedBy == null)
-            {
-                return false;
-            }
-
-            var restoreHealth = internAI.MaxHealthPercent(Mathf.RoundToInt(____batteryLevel * 100));
+            var restoreHealth = InternManager.Instance.MaxHealthPercent(Mathf.RoundToInt(____batteryLevel * 100), internIdentity.HpMax);
             ____shockedBy.UseUpBatteries();
             ____shockedBy.SyncBatteryServerRpc(0);
             ____shockedBy = null!;
 
-            InternManager.Instance.SpawnThisInternServerRpc(internAI.InternIdentity.IdIdentity,
+            InternManager.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
                                                             new NetworkSerializers.SpawnInternsParamsNetworkSerializable()
                                                             {
                                                                 ShouldDestroyDeadBody = true,

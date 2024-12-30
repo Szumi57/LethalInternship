@@ -64,9 +64,23 @@ namespace LethalInternship.AI.AIStates
 
             // Try to find the closest player to target
             player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (player != null)
+            if (player != null) // new target
             {
-                // new target
+                // Play voice
+                ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                {
+                    VoiceState = EnumVoicesState.LostAndFound,
+                    CanTalkIfOtherInternTalk = true,
+                    WaitForCooldown = false,
+                    CutCurrentVoiceStateToTalk = true,
+                    CanRepeatVoiceState = false,
+
+                    ShouldSync = true,
+                    IsInternInside = npcController.Npc.isInsideFactory,
+                    AllowSwearing = Plugin.Config.AllowSwearing.Value
+                });
+
+                // Assign to new target
                 StopSearchingWanderCoroutine();
                 ai.SyncAssignTargetAndSetMovingTo(player);
                 if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionSuitChange.AutomaticSameAsPlayer)

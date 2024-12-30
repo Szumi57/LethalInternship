@@ -45,17 +45,16 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             if (__instance.controller.deadBody != null
                 && !ListBodyReplacementOnDeadBodies.Contains(__instance))
             {
-                //Dict[__instance] = __instance.controller.deadBody;
                 ListBodyReplacementOnDeadBodies.Add(__instance);
                 __instance.viewState.ReportBodyReplacementRemoval();
                 __instance.cosmeticAvatar = __instance.ragdollAvatar;
                 CreateAndParentRagdoll_ReversePatch(__instance, __instance.controller.deadBody);
+                internAI.InternIdentity.BodyReplacementBase = __instance;
             }
 
-
-            if (ListBodyReplacementOnDeadBodies.Contains(__instance))//___replacementDeadBody && __instance.controller.deadBody == null)
+            if (ListBodyReplacementOnDeadBodies.Contains(__instance))
             {
-                //Plugin.LogDebug($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} only ragdoll update");
+                //Plugin.LogDebug($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} only ragdoll update, {__instance.controller.deadBody}");
                 __instance.ragdollAvatar.Update();
                 return false;
             }

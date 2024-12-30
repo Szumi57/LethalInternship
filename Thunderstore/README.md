@@ -28,23 +28,49 @@ These passionate workers are available in a new section of your shop.
 <br/>But replaceable, less life points and can carry only one object at a time.
 <br/>Be patient, they are learning, just like you not so long ago. 
 
+## Things you can do
+- To enter the menu, type 'LethalInternship program' or 'pro' or 'in', you should arrive to the info page.
+- From there you can buy intern with 'buy' command or 'buy nameOfIntern' if you know the name of the one you want.
+- Type 'Status' to see check all of the available intern status.
+- You can revive intern by buying them specifically while in orbit.
+- You can revive intern with other mods like 'Revive company', 'Bunkbed revives' and 'Zaprillator'</br>
+</br>
+While they are spawned: 
+- You can give them item with [G]
+- Make them drop item with [G]
+- Grab the intern with you [A], to go faster or useful on some map where the AI pathfind is not the best
+- Change the suit of the intern by the one you're wearing with \[X]
+- All input are configurable.
+
+## Configuration files
+Lots of configs are available for you, so go check them !</br>
+Mod is compatible with InputUtils so you can change your inputs !</br>
+There's also a config file for the identities of the interns (a name, a suit, a voice) </br>
+Identities can be found in a new config file at Your_profile_folder\BepInEx\config\LethalInternship\ConfigIdentitiesDefault.json</br>
+If you want to make your own file, name it 'ConfigIdentitiesUser.json' and the default one will be ignored. Details can be found in the default json.</br>
+To link the voice folder to the intern, simply change the "VoiceFolder" property in the identity you want.
+
+## Fully voices interns
+A big thanks to **Mathew Kelly** and his incredible voice acting, there's more than 700 (!!) voice lines for those little guys.</br>
+Chilling with you, following, founding loot, panicking, you name it, there's a voice line for every state of mind !</br>
+You may know him as **Dragon-V0942** from [FurAffinity](https://www.furaffinity.net/user/dragon-v0942), and you can find some of his voice acting works on youtube [(Voice acting example)](https://www.youtube.com/watch?v=5LGVz-ONeKE).
+</br>
+</br>
+Some AI voices should be added next update (0.20.0)
+
+## Have fun with cosmetic mods !
+This mod is compatible with ModelReplacementAPI and all of its users (tooManySuits, MoreSuits, ThiccCompany, etc...).
+It is also compatible with the emotes mod, emote in front of intern and they will copy your dance moves !
+
 ## On a more serious note
 This mod is very alpha and I still need to do a lot of polishing.
 <br/>I'm just happy to share this project with you, in hope that you find it fun and enjoyable.
 
 ## Things to add
-- Voice lines, I still need to figure out how to implement all of this and find someone or use AI.
-- Make the intern go inside the ship. Will take some time, it is not easy at the moment.
-- More suits and animations (using the other mods)
 - Orders, a system to control the interns in some way. Can take some time to implement that too.
 
 ## Bug to fix
-- Sand spider web trap not working for interns
-- Nutcracker ignoring interns
-- v60 stuff mineshaft elevator to fix
-- Item in player hand disapearing when intern climb ladders -> conflit with mod BetterLadders
-- Compatibility with mods 'Sehelitar's Zaprillator', 'bunkbedrevive'
-- Compatibility with modded maps, for environmental hazards damages
-- Intern not owned by player cannot take damage from said player
-- Body of intern just disappears when shot by shotgun
-- Only on march, with more than 6 interns, if they get close to the front door of the ship, massive framerate drop (why ???)
+- Sand spider web trap not working for interns.
+- Nutcracker ignoring interns.
+- Compatibility with modded maps, for environmental hazards damages.
+- Compat with Peepers mod, LethalMin mod.
