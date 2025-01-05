@@ -1634,11 +1634,11 @@ namespace LethalInternship.AI
                 }
             }
 
-            foreach (var a in dictComponentByCollider)
-            {
-                Plugin.LogDebug($"dictComponentByCollider {a.Key} {a.Value}");
-                //ComponentUtil.ListAllComponents(((BridgeTrigger)a.Value).bridgePhysicsPartsContainer.gameObject);
-            }
+            //foreach (var a in dictComponentByCollider)
+            //{
+            //    Plugin.LogDebug($"dictComponentByCollider {a.Key} {a.Value}");
+            //    ComponentUtil.ListAllComponents(((BridgeTrigger)a.Value).bridgePhysicsPartsContainer.gameObject);
+            //}
         }
 
         public void HideShowModelReplacement(bool show)
