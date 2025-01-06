@@ -71,7 +71,6 @@
     <None Remove="Assets\Images\info_page.png" />
     <None Remove="Assets\Images\interns_example.png" />
     <None Remove="Assets\Images\interns_suits.png" />
-    <None Remove="Assets\Images\Lethal-internship-logo---by-Dragon-V0942.png" />
     <None Remove="Assets\Images\Lethal-internship-logo.png" />
     <None Remove="Assets\Images\menu.png" />
     <None Remove="Assets\Images\status_page.png" />
@@ -86,7 +85,6 @@
     <EmbeddedResource Include="Assets\Images\info_page.png" />
     <EmbeddedResource Include="Assets\Images\interns_example.png" />
     <EmbeddedResource Include="Assets\Images\interns_suits.png" />
-    <EmbeddedResource Include="Assets\Images\Lethal-internship-logo---by-Dragon-V0942.png" />
     <EmbeddedResource Include="Assets\Images\Lethal-internship-logo.png" />
     <EmbeddedResource Include="Assets\Images\menu.png" />
     <EmbeddedResource Include="Assets\Images\status_page.png" />
