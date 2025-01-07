@@ -545,7 +545,7 @@ namespace LethalInternship.AI
                 if (Npc.sinkingValue >= 1f)
                 {
                     Plugin.LogDebug($"SyncKillIntern from sinkingValue for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
-                    this.InternAIController.SyncKillIntern(Vector3.zero, false, CauseOfDeath.Suffocation, 0, default);
+                    Npc.KillPlayer(Vector3.zero, spawnBody: false, CauseOfDeath.Suffocation, 0, default);
                 }
                 else if (Npc.sinkingValue > 0.5f)
                 {
@@ -834,16 +834,16 @@ namespace LethalInternship.AI
                             if (Npc.averageVelocity > 17f)
                             {
                                 TimeSinceTakingGravityDamage = 0f;
-                                this.InternAIController.SyncDamageIntern(Mathf.Clamp(85, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                Npc.DamagePlayer(Mathf.Clamp(85, 20, 100), hasDamageSFX: false, callRPC: false, CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                             }
                             else if (Npc.averageVelocity > 9f)
                             {
-                                this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                Npc.DamagePlayer(Mathf.Clamp(30, 20, 100), hasDamageSFX: false, callRPC: false, CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                 TimeSinceTakingGravityDamage = 0.35f;
                             }
                             else if (num8 > 60f && Npc.averageVelocity > 6f)
                             {
-                                this.InternAIController.SyncDamageIntern(Mathf.Clamp(30, 20, 100), CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
+                                Npc.DamagePlayer(Mathf.Clamp(30, 20, 100), hasDamageSFX: false, callRPC: false, CauseOfDeath.Gravity, 0, true, Vector3.ClampMagnitude(Npc.velocityLastFrame, 50f));
                                 TimeSinceTakingGravityDamage = 0f;
                             }
                         }
@@ -2194,7 +2194,7 @@ namespace LethalInternship.AI
                 {
                     this.drowningTimer = 1f;
                     Plugin.LogDebug($"SyncKillIntern from drowning for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
-                    InternAIController.SyncKillIntern(Vector3.zero, true, CauseOfDeath.Drowning, 0, default);
+                    Npc.KillPlayer(Vector3.zero, spawnBody: true, CauseOfDeath.Drowning, 0, default);
                 }
             }
             else

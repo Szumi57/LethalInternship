@@ -29,6 +29,7 @@ namespace LethalInternship.Constants
         public const string CUSTOMITEMBEHAVIOURLIBRARY_GUID = "com.github.WhiteSpike.CustomItemBehaviourLibrary";
         public const string LCALWAYSHEARWALKIEMOD_GUID = "suskitech.LCAlwaysHearActiveWalkie";
         public const string BUTTERYFIXES_GUID = "butterystancakes.lethalcompany.butteryfixes";
+        public const string PEEPERS_GUID = "x753.Peepers";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 

@@ -24,7 +24,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 InternAI? internAI = enemyAICollisionDetect.mainScript as InternAI;
                 if (internAI != null)
                 {
-                    internAI.SyncKillIntern(Vector3.down * 17f, true, CauseOfDeath.Crushing, 0, default(Vector3));
+                    internAI.NpcController.Npc.KillPlayer(Vector3.down * 17f, spawnBody: true, CauseOfDeath.Crushing, 0, default(Vector3));
                 }
             }
         }

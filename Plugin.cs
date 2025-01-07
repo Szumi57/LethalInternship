@@ -20,6 +20,7 @@ using LethalInternship.Patches.ModPatches.LethalProgression;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
+using LethalInternship.Patches.ModPatches.Peepers;
 using LethalInternship.Patches.ModPatches.QuickBuy;
 using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
@@ -66,6 +67,7 @@ namespace LethalInternship
     [BepInDependency(Const.LETHALPROGRESSION_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.QUICKBUYMENU_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BUTTERYFIXES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.PEEPERS_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -236,6 +238,7 @@ namespace LethalInternship
             bool isModLCAlwaysHearWalkieModLoaded = IsModLoaded(Const.LCALWAYSHEARWALKIEMOD_GUID);
             bool isModZaprillatorLoaded = IsModLoaded(Const.ZAPRILLATOR_GUID);
             bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
+            bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
 
             // -------------------
             // Read the preloaders
@@ -361,6 +364,10 @@ namespace LethalInternship
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("ButteryFixes.Patches.Player.BodyPatches"), "DeadBodyInfoPostStart"),
                                new HarmonyMethod(typeof(BodyPatchesPatch), nameof(BodyPatchesPatch.DeadBodyInfoPostStart_Prefix)));
             }
+            if (isModPeepersLoaded)
+            {
+                _harmony.PatchAll(typeof(PeeperAttachHitboxPatch));
+            }
         }
 
         private bool IsModLoaded(string modGUID)
@@ -370,6 +377,11 @@ namespace LethalInternship
             {
                 LogInfo($"Mod compatibility loaded for mod : GUID {modGUID}");
             }
+
+            //foreach (var a in Chainloader.PluginInfos)
+            //{
+            //    LogDebug($"{a.Key}");
+            //}
 
             return ret;
         }

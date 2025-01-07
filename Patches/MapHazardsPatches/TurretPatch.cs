@@ -115,12 +115,12 @@ namespace LethalInternship.Patches.MapHazardsPatches
             // intern
             if (player.health > 50)
             {
-                internAI.SyncDamageIntern(50, CauseOfDeath.Gunshots, 0, false, default);
+                player.DamagePlayer(50, hasDamageSFX: false, callRPC: false, CauseOfDeath.Gunshots, 0, false, default);
             }
             else
             {
                 Plugin.LogDebug($"SyncKillIntern from turret for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
-                internAI.SyncKillIntern(turret.aimPoint.forward * 40f, true, CauseOfDeath.Gunshots, 0, default);
+                internAI.NpcController.Npc.KillPlayer(turret.aimPoint.forward * 40f, spawnBody: true, CauseOfDeath.Gunshots, 0, default);
             }
 
             return null;

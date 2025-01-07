@@ -70,7 +70,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
             if (flag)
             {
-                internAI.SyncKillIntern(Vector3.up * 15f, true, CauseOfDeath.Mauling, 8, default);
+                playerController.KillPlayer(Vector3.up * 15f, spawnBody: true, CauseOfDeath.Mauling, 8, default);
                 __instance.DoKillPlayerAnimationServerRpc((int)__instance.targetPlayer.playerClientId);
             }
         }
