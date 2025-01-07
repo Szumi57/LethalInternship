@@ -87,4 +87,3 @@ This mod is very alpha and I still need some polishing.
 - Sand spider web trap not working for interns.
 - Nutcracker ignoring interns.
 - Compatibility with modded maps, for environmental hazards damages.
-- Compat with Peepers mod, LethalMin mod.
