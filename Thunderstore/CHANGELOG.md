@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.4 [Alpha] - 2025-01-07
+### Fixed
+- Images in thunderstore page readme - 2nd try.
+
+## 0.19.3 [Alpha] - 2025-01-07
+### Fixed
+- Images in thunderstore page readme.
+
 ## 0.19.2 [Alpha] - 2025-01-07
 ### Changed
 - Updated readme with images
