@@ -159,10 +159,13 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 Plugin.LogDebug($"SyncDamageIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.SyncDamageIntern(damageNumber, causeOfDeath, deathAnimation, fallDamage, force);
-                return false;
+                
+                // Still do the vanilla damage player, for other mods prefixes (ex: peepers)
+                // The damage will be ignored because the intern playerController is not owned because not spawned
+                return true;
             }
 
-            if (DebugConst.INVULNERABILITY)
+            if (DebugConst.NO_DAMAGE)
             {
                 // Bootleg invulnerability
                 Plugin.LogDebug($"Bootleg invulnerability (return false)");
@@ -185,6 +188,10 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 Plugin.LogDebug($"SyncDamageInternFromOtherClient called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.DamageInternFromOtherClientServerRpc(damageAmount, hitDirection, playerWhoHit);
+
+                // Send vanilla damage player, for other mods prefixes (ex: peepers)
+                // The damage function will be ignored because the intern playerController is not owned because not spawned
+                internAI.NpcController.Npc.DamagePlayer(damageAmount, hasDamageSFX: false, callRPC: false, CauseOfDeath.Bludgeoning, deathAnimation: 0, fallDamage: false, default(Vector3));
                 return false;
             }
 
@@ -210,11 +217,14 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 Plugin.LogDebug($"SyncKillIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, Intern #{internAI.InternId}");
                 internAI.SyncKillIntern(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
-                return false;
+
+                // Send vanilla kill player, for other mods prefixes (ex: peepers)
+                // The kill function will be ignored because the intern playerController is not owned because not spawned
+                return true;
             }
 
             // A player is killed 
-            if (DebugConst.INVINCIBILITY)
+            if (DebugConst.NO_DEATH)
             {
                 // Bootleg invincibility
                 Plugin.LogDebug($"Bootleg invincibility");

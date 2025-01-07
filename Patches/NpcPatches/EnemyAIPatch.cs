@@ -31,11 +31,14 @@ namespace LethalInternship.Patches.NpcPatches
             if (newOwnerClientId > Const.INTERN_ACTUAL_ID_OFFSET)
             {
                 InternAI? internAI = InternManager.Instance.GetInternAI((int)(newOwnerClientId - Const.INTERN_ACTUAL_ID_OFFSET));
-                if (internAI != null)
+                if (internAI == null)
                 {
-                    Plugin.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
-                    newOwnerClientId = internAI.OwnerClientId;
+                    Plugin.LogDebug($"Could not find intern with id : {(int)(newOwnerClientId - Const.INTERN_ACTUAL_ID_OFFSET)}, aborting ChangeOwnershipOfEnemy.");
+                    return false;
                 }
+
+                Plugin.LogDebug($"ChangeOwnershipOfEnemy not on intern but on intern owner : {internAI.OwnerClientId}");
+                newOwnerClientId = internAI.OwnerClientId;
             }
 
             return true;

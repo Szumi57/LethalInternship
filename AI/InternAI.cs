@@ -1392,6 +1392,15 @@ namespace LethalInternship.AI
                     }
                 }
 
+                // Is a pickmin (LethalMin mod) holding the object ?
+                if (Plugin.IsModLethalMinLoaded)
+                {
+                    if (IsGrabbableObjectHeldByPikminMod(grabbableObject))
+                    {
+                        continue;
+                    }
+                }
+
                 // Grabbable object ?
                 if (!IsGrabbableObjectGrabbable(grabbableObject))
                 {
@@ -1605,6 +1614,28 @@ namespace LethalInternship.AI
             return CustomItemBehaviourLibrary.AbstractItems.ContainerBehaviour.CheckIfItemInContainer(grabbableObject);
         }
 
+        private bool IsGrabbableObjectHeldByPikminMod(GrabbableObject grabbableObject)
+        {
+            List<LethalMin.PikminItem> listPickMinItems = LethalMin.PikminManager.GetPikminItemsInMap();
+            if (listPickMinItems == null
+                || listPickMinItems.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var item in listPickMinItems)
+            {
+                if(item != null
+                    && item.Root == grabbableObject
+                    && item.PikminOnItem > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void InitImportantColliders()
         {
             if (dictComponentByCollider == null)
@@ -1634,11 +1665,11 @@ namespace LethalInternship.AI
                 }
             }
 
-            foreach (var a in dictComponentByCollider)
-            {
-                Plugin.LogDebug($"dictComponentByCollider {a.Key} {a.Value}");
-                //ComponentUtil.ListAllComponents(((BridgeTrigger)a.Value).bridgePhysicsPartsContainer.gameObject);
-            }
+            //foreach (var a in dictComponentByCollider)
+            //{
+            //    Plugin.LogDebug($"dictComponentByCollider {a.Key} {a.Value}");
+            //    ComponentUtil.ListAllComponents(((BridgeTrigger)a.Value).bridgePhysicsPartsContainer.gameObject);
+            //}
         }
 
         public void HideShowModelReplacement(bool show)
@@ -2997,6 +3028,10 @@ namespace LethalInternship.AI
         /// <summary>
         /// Sync the damage taken by the intern between server and clients
         /// </summary>
+        /// <remarks>
+        /// Better to call <see cref="PlayerControllerB.DamagePlayer"><c>PlayerControllerB.DamagePlayer</c></see> so prefixes from other mods can activate. (ex : peepers)
+        /// The base game function will be ignored because the intern playerController is not owned because not spawned
+        /// </remarks>
         /// <param name="damageNumber"></param>
         /// <param name="causeOfDeath"></param>
         /// <param name="deathAnimation"></param>
@@ -3009,6 +3044,7 @@ namespace LethalInternship.AI
                                      Vector3 force = default)
         {
             Plugin.LogDebug($"SyncDamageIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
+
             if (NpcController.Npc.isPlayerDead)
             {
                 return;
@@ -3135,6 +3171,10 @@ namespace LethalInternship.AI
                 {
                     NpcController.Npc.movementAudio.PlayOneShot(StartOfRound.Instance.fallDamageSFX, 1f);
                 }
+                else
+                {
+                    NpcController.Npc.movementAudio.PlayOneShot(StartOfRound.Instance.damageSFX, 1f);
+                }
 
                 // Audio, already in client rpc method so no sync necessary
                 this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
@@ -3216,6 +3256,10 @@ namespace LethalInternship.AI
         /// <summary>
         /// Sync the action to kill intern between server and clients
         /// </summary>
+        /// <remarks>
+        /// Better to call <see cref="PlayerControllerB.KillPlayer"><c>PlayerControllerB.KillPlayer</c></see> so prefixes from other mods can activate. (ex : peepers)
+        /// The base game function will be ignored because the intern playerController is not owned because not spawned
+        /// </remarks>
         /// <param name="bodyVelocity"></param>
         /// <param name="spawnBody">Should a body be spawned ?</param>
         /// <param name="causeOfDeath"></param>
@@ -3227,6 +3271,7 @@ namespace LethalInternship.AI
                                    Vector3 positionOffset = default(Vector3))
         {
             Plugin.LogDebug($"SyncKillIntern for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{this.InternId} {NpcController.Npc.playerUsername}");
+
             if (NpcController.Npc.isPlayerDead)
             {
                 return;

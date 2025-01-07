@@ -193,12 +193,12 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 {
                     Vector3 vector = Vector3.Normalize(internController.gameplayCamera.transform.position - explosionPosition) * 80f / Vector3.Distance(internController.gameplayCamera.transform.position, explosionPosition);
                     Plugin.LogDebug($"SyncKillIntern from explosion for LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
-                    internAI.SyncKillIntern(vector, true, CauseOfDeath.Blast, 0, default);
+                    internController.KillPlayer(vector, spawnBody: true, CauseOfDeath.Blast, 0, default);
                 }
                 else if (distanceFromExplosion < damageRange)
                 {
                     Vector3 vector = Vector3.Normalize(internController.gameplayCamera.transform.position - explosionPosition) * 80f / Vector3.Distance(internController.gameplayCamera.transform.position, explosionPosition);
-                    internAI.SyncDamageIntern(nonLethalDamage, CauseOfDeath.Blast, 0, false, vector * 0.6f);
+                    internController.DamagePlayer(nonLethalDamage, hasDamageSFX: false, callRPC: false, CauseOfDeath.Blast, 0, false, vector * 0.6f);
                 }
 
                 internsAlreadyExploded.Add(internController.playerClientId);

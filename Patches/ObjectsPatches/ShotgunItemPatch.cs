@@ -62,7 +62,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                         damage = 20;
                     }
 
-                    internAI.SyncDamageIntern(damage, CauseOfDeath.Gunshots, 0, false, __instance.shotgunRayPoint.forward * 30f);
+                    internController.DamagePlayer(damage, hasDamageSFX: false, callRPC: false, CauseOfDeath.Gunshots, 0, false, __instance.shotgunRayPoint.forward * 30f);
                 }
             }
         }

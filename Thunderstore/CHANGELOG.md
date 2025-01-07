@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.19.2 [Alpha] - 2025-01-07
+### Changed
+- Updated readme with images
+### Fixed
+- Attempt to fix issues [#60](https://github.com/Szumi57/LethalInternship/issues/60) and [#61](https://github.com/Szumi57/LethalInternship/issues/61) when loading identities from config file fails.</br>
+Now the game loads but no identities are loaded, you can still buy default interns with command 'buy #number'. Thanks @sailorcandymilk and @wzb2002 on Github.
+- Compatibility with peepers and LethalMin
+- Fix method GetRandomSuit sometimes crashing.
+
 ## 0.19.1 [Alpha] - 2024-12-30
 ### Hotadded
 - Suit column in status page in the lethalIntership program menu

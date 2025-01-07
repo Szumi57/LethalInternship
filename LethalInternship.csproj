@@ -6,7 +6,7 @@
     <AssemblyName>LethalInternship</AssemblyName>
     <Product>LethalInternship</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>0.19.1</Version>
+    <Version>0.19.2</Version>
   </PropertyGroup>
 
   <!-- Project Properties -->
@@ -64,10 +64,30 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\Audio\Voices\DefaultVoices.zip" />
+    <None Remove="Assets\Images\buy4.png" />
+    <None Remove="Assets\Images\buy_mathew.png" />
+    <None Remove="Assets\Images\folder_configs.png" />
+    <None Remove="Assets\Images\folder_config_user.png" />
+    <None Remove="Assets\Images\info_page.png" />
+    <None Remove="Assets\Images\interns_example.png" />
+    <None Remove="Assets\Images\interns_suits.png" />
+    <None Remove="Assets\Images\Lethal-internship-logo.png" />
+    <None Remove="Assets\Images\menu.png" />
+    <None Remove="Assets\Images\status_page.png" />
     <None Remove="Configs\ConfigIdentities.json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Audio\Voices\DefaultVoices.zip" />
+    <EmbeddedResource Include="Assets\Images\buy4.png" />
+    <EmbeddedResource Include="Assets\Images\buy_mathew.png" />
+    <EmbeddedResource Include="Assets\Images\folder_configs.png" />
+    <EmbeddedResource Include="Assets\Images\folder_config_user.png" />
+    <EmbeddedResource Include="Assets\Images\info_page.png" />
+    <EmbeddedResource Include="Assets\Images\interns_example.png" />
+    <EmbeddedResource Include="Assets\Images\interns_suits.png" />
+    <EmbeddedResource Include="Assets\Images\Lethal-internship-logo.png" />
+    <EmbeddedResource Include="Assets\Images\menu.png" />
+    <EmbeddedResource Include="Assets\Images\status_page.png" />
     <EmbeddedResource Include="Configs\ConfigIdentities.json" />
   </ItemGroup>
 
@@ -130,8 +150,14 @@
     <Reference Include="MoreCompany">
       <HintPath>lib\mods\MoreCompany.dll</HintPath>
     </Reference>
+    <Reference Include="NoteBoxz.LethalMin">
+      <HintPath>lib\mods\NoteBoxz.LethalMin.dll</HintPath>
+    </Reference>
     <Reference Include="OPJosMod">
       <HintPath>lib\mods\ReviveCompany.dll</HintPath>
+    </Reference>
+    <Reference Include="Peepers">
+      <HintPath>lib\mods\Peepers.dll</HintPath>
     </Reference>
     <Reference Include="TooManyEmotes">
       <HintPath>lib\mods\TooManyEmotes.dll</HintPath>

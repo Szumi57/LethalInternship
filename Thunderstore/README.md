@@ -1,3 +1,4 @@
+![Lethal-internship-logo](Assets/Images/Lethal-internship-logo.png)
 # Lethal Internship
 
 Note from HR :
@@ -12,7 +13,10 @@ Note from HR :
 <br/>
 <br/>Great assets to the company_
 
+</br>![Lethal-internship-logo](Assets/Images/interns_example.png)</br>
+
 ## Cheap Interns and where to find them
+
 These passionate workers are available in a new section of your shop.
 <br/>Buy them in space or on the moon and they will be delivered to you like regular items with the dropship.
 <br/>
@@ -26,16 +30,22 @@ These passionate workers are available in a new section of your shop.
 <br/>
 <br/>**They are fragile**
 <br/>But replaceable, less life points and can carry only one object at a time.
-<br/>Be patient, they are learning, just like you not so long ago. 
+<br/>Be patient, they are learning, just like you not so long ago.
 
-## Things you can do
+## How to use the mod
+- A new entry should be present in your help page in the terminal :
+![menu](Assets/Images/menu.png)
 - To enter the menu, type 'LethalInternship program' or 'pro' or 'in', you should arrive to the info page.
-- From there you can buy intern with 'buy' command or 'buy nameOfIntern' if you know the name of the one you want.
+![info_page](Assets/Images/info_page.png)
+- From there you can buy intern with 'buy' command or 'buy nameOfIntern' if you know the name of the one you want.</br>
+![buy4](Assets/Images/buy4.png) or
+![buy_mathew](Assets/Images/buy_mathew.png)
 - Type 'Status' to see check all of the available intern status.
+![status_page](Assets/Images/status_page.png)
 - You can revive intern by buying them specifically while in orbit.
 - You can revive intern with other mods like 'Revive company', 'Bunkbed revives' and 'Zaprillator'</br>
 </br>
-While they are spawned: 
+While they are spawned, while pointing at them: </br>
 - You can give them item with [G]
 - Make them drop item with [G]
 - Grab the intern with you [A], to go faster or useful on some map where the AI pathfind is not the best
@@ -45,9 +55,11 @@ While they are spawned:
 ## Configuration files
 Lots of configs are available for you, so go check them !</br>
 Mod is compatible with InputUtils so you can change your inputs !</br>
-There's also a config file for the identities of the interns (a name, a suit, a voice) </br>
+There's also a config file for the identities of the interns (a name, a suit, a voice)</br>
+![folder_config](Assets/Images/folder_configs.png)</br>
 Identities can be found in a new config file at Your_profile_folder\BepInEx\config\LethalInternship\ConfigIdentitiesDefault.json</br>
 If you want to make your own file, name it 'ConfigIdentitiesUser.json' and the default one will be ignored. Details can be found in the default json.</br>
+![folder_config](Assets/Images/folder_config_user.png)</br>
 To link the voice folder to the intern, simply change the "VoiceFolder" property in the identity you want.
 
 ## Fully voices interns
@@ -62,8 +74,10 @@ Some AI voices should be added next update (0.20.0)
 This mod is compatible with ModelReplacementAPI and all of its users (tooManySuits, MoreSuits, ThiccCompany, etc...).
 It is also compatible with the emotes mod, emote in front of intern and they will copy your dance moves !
 
+</br>![Lethal-internship-logo](Assets/Images/interns_suits.png)</br>
+
 ## On a more serious note
-This mod is very alpha and I still need to do a lot of polishing.
+This mod is very alpha and I still need some polishing.
 <br/>I'm just happy to share this project with you, in hope that you find it fun and enjoyable.
 
 ## Things to add
@@ -73,4 +87,3 @@ This mod is very alpha and I still need to do a lot of polishing.
 - Sand spider web trap not working for interns.
 - Nutcracker ignoring interns.
 - Compatibility with modded maps, for environmental hazards damages.
-- Compat with Peepers mod, LethalMin mod.

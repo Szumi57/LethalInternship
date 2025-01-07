@@ -25,11 +25,11 @@ namespace LethalInternship.Patches.MapPatches
         [HarmonyPatch("DamagePlayerInVehicle")]
         [HarmonyPostfix]
         static void DamagePlayerInVehicle_PostFix(VehicleController __instance,
-                                                  Vector3 vel, 
+                                                  Vector3 vel,
                                                   float magnitude)
         {
             PlayerControllerB internController;
-            foreach(InternAI internAI in InternManager.Instance.GetInternsAIOwnedByLocal())
+            foreach (InternAI internAI in InternManager.Instance.GetInternsAIOwnedByLocal())
             {
                 internController = internAI.NpcController.Npc;
 
@@ -38,7 +38,7 @@ namespace LethalInternship.Patches.MapPatches
                     if (__instance.physicsRegion.physicsTransform == internController.physicsParent
                         && internController.overridePhysicsParent == null)
                     {
-                        internAI.SyncDamageIntern(10, CauseOfDeath.Inertia, 0, false, vel);
+                        internController.DamagePlayer(10, hasDamageSFX: false, callRPC: false, CauseOfDeath.Inertia, 0, false, vel);
                         internController.externalForceAutoFade += vel;
                     }
                     return;
@@ -46,22 +46,22 @@ namespace LethalInternship.Patches.MapPatches
 
                 if (magnitude > 28f)
                 {
-                    internAI.SyncKillIntern(vel, true, CauseOfDeath.Inertia, 0, __instance.transform.up * 0.77f);
+                    internController.KillPlayer(vel, spawnBody: true, CauseOfDeath.Inertia, 0, __instance.transform.up * 0.77f);
                     return;
                 }
 
                 if (magnitude <= 24f)
                 {
-                    internAI.SyncDamageIntern(30, CauseOfDeath.Inertia, 0, false, vel);
+                    internController.DamagePlayer(30, hasDamageSFX: false, callRPC: false, CauseOfDeath.Inertia, 0, false, vel);
                     return;
                 }
 
                 if (internController.health < 20)
                 {
-                    internAI.SyncKillIntern(vel, true, CauseOfDeath.Inertia, 0, __instance.transform.up * 0.77f);
+                    internController.KillPlayer(vel, spawnBody: true, CauseOfDeath.Inertia, 0, __instance.transform.up * 0.77f);
                     return;
                 }
-                internAI.SyncDamageIntern(40, CauseOfDeath.Inertia, 0, false, vel);
+                internController.DamagePlayer(40, hasDamageSFX: false, callRPC: false, CauseOfDeath.Inertia, 0, false, vel);
             }
         }
 
@@ -72,13 +72,10 @@ namespace LethalInternship.Patches.MapPatches
         [HarmonyPostfix]
         static void DestroyCar_PostFix()
         {
-            PlayerControllerB internController;
             foreach (InternAI internAI in InternManager.Instance.GetInternsAIOwnedByLocal())
             {
-                internController = internAI.NpcController.Npc;
-
                 Plugin.LogDebug($"DestroyCar Killing intern #{internAI.InternId}");
-                internAI.SyncKillIntern(Vector3.up * 27f + 20f * Random.insideUnitSphere, true, CauseOfDeath.Blast, 6, Vector3.up * 1.5f);
+                internAI.NpcController.Npc.KillPlayer(Vector3.up * 27f + 20f * Random.insideUnitSphere, spawnBody: true, CauseOfDeath.Blast, 6, Vector3.up * 1.5f);
             }
         }
     }

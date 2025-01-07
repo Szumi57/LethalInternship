@@ -78,9 +78,19 @@ namespace LethalInternship.AI
                 }
             }
 
+            if (indexesSpawnedUnlockables.Count == 0)
+            {
+                return 0;
+            }
+
             //Plugin.LogDebug($"indexesSpawnedUnlockables.Count {indexesSpawnedUnlockables.Count}");
             Random randomInstance = new Random();
             int randomIndex = randomInstance.Next(0, indexesSpawnedUnlockables.Count);
+            if (randomIndex >= indexesSpawnedUnlockables.Count)
+            {
+                return 0;
+            }
+
             return indexesSpawnedUnlockables[randomIndex];
         }
     }

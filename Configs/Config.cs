@@ -233,7 +233,7 @@ namespace LethalInternship.Configs
             NumberFormatInfo nfi = new NumberFormatInfo();
             nfi.NumberDecimalSeparator = ",";
 
-            if(float.TryParse(VolumeMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(VolumeMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }
@@ -251,13 +251,20 @@ namespace LethalInternship.Configs
 
         private void CopyDefaultConfigIdentitiesJson()
         {
-            string directoryPath = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID);
-            Directory.CreateDirectory(directoryPath);
-
-            string json = ReadJsonResource("LethalInternship.Configs.ConfigIdentities.json");
-            using (StreamWriter outputFile = new StreamWriter(Utility.CombinePaths(directoryPath, ConfigConst.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
+            try
             {
-                outputFile.WriteLine(json);
+                string directoryPath = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID);
+                Directory.CreateDirectory(directoryPath);
+
+                string json = ReadJsonResource("LethalInternship.Configs.ConfigIdentities.json");
+                using (StreamWriter outputFile = new StreamWriter(Utility.CombinePaths(directoryPath, ConfigConst.FILE_NAME_CONFIG_IDENTITIES_DEFAULT)))
+                {
+                    outputFile.WriteLine(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error while CopyDefaultConfigIdentitiesJson ! {ex}");
             }
         }
 
@@ -277,28 +284,52 @@ namespace LethalInternship.Configs
         private void ReadAndLoadConfigIdentitiesFromUser()
         {
             string json;
+            string path = "No path yet";
 
-            // Try to read user config file
-            string path = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, ConfigConst.FILE_NAME_CONFIG_IDENTITIES_USER);
-            if (File.Exists(path))
+            try
             {
-                using (StreamReader r = new StreamReader(path))
+                path = Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, ConfigConst.FILE_NAME_CONFIG_IDENTITIES_USER);
+                // Try to read user config file
+                if (File.Exists(path))
                 {
-                    json = r.ReadToEnd();
+                    Plugin.Logger.LogInfo("User identities file found ! Reading...");
+                    using (StreamReader r = new StreamReader(path))
+                    {
+                        json = r.ReadToEnd();
+                    }
+
+                    ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
+                    if (ConfigIdentities.configIdentities == null)
+                    {
+                        Plugin.Logger.LogWarning($"Failed to read identities from file at {path}");
+                    }
                 }
+                else
+                {
+                    Plugin.Logger.LogInfo("No user identities file found. Reading default identities...");
+                    path = "LethalInternship.Configs.ConfigIdentities.json";
+                    json = ReadJsonResource(path);
+                    ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.Logger.LogError($"Error while ReadAndLoadConfigIdentitiesFromUser ! {e}");
+                json = "No json, see exception above.";
+            }
+
+            if (ConfigIdentities.configIdentities == null)
+            {
+                Plugin.Logger.LogWarning($"A problem occured while retrieving identities from config file ! continuing with no identities... json used : \n{json}");
+                ConfigIdentities = new ConfigIdentities() { configIdentities = new ConfigIdentity[0] };
             }
             else
             {
-                path = "LethalInternship.Configs.ConfigIdentities.json";
-                json = ReadJsonResource(path);
-            }
-
-            ConfigIdentities = JsonUtility.FromJson<ConfigIdentities>(json);
-
-            LogDebugInConfig($"Loaded {ConfigIdentities.configIdentities.Length} identities from file : {path}");
-            foreach (ConfigIdentity configIdentity in ConfigIdentities.configIdentities)
-            {
-                LogDebugInConfig($"{configIdentity.ToString()}");
+                Plugin.Logger.LogInfo($"Loaded {ConfigIdentities.configIdentities.Length} identities from file : {path}");
+                foreach (ConfigIdentity configIdentity in ConfigIdentities.configIdentities)
+                {
+                    LogDebugInConfig($"{configIdentity.ToString()}");
+                }
             }
         }
     }
