@@ -1392,6 +1392,15 @@ namespace LethalInternship.AI
                     }
                 }
 
+                // Is a pickmin (LethalMin mod) holding the object ?
+                if (Plugin.IsModLethalMinLoaded)
+                {
+                    if (IsGrabbableObjectHeldByPikminMod(grabbableObject))
+                    {
+                        continue;
+                    }
+                }
+
                 // Grabbable object ?
                 if (!IsGrabbableObjectGrabbable(grabbableObject))
                 {
@@ -1603,6 +1612,28 @@ namespace LethalInternship.AI
         private bool IsGrabbableObjectInContainerMod(GrabbableObject grabbableObject)
         {
             return CustomItemBehaviourLibrary.AbstractItems.ContainerBehaviour.CheckIfItemInContainer(grabbableObject);
+        }
+
+        private bool IsGrabbableObjectHeldByPikminMod(GrabbableObject grabbableObject)
+        {
+            List<LethalMin.PikminItem> listPickMinItems = LethalMin.PikminManager.GetPikminItemsInMap();
+            if (listPickMinItems == null
+                || listPickMinItems.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var item in listPickMinItems)
+            {
+                if(item != null
+                    && item.Root == grabbableObject
+                    && item.PikminOnItem > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void InitImportantColliders()

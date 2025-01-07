@@ -68,6 +68,7 @@ namespace LethalInternship
     [BepInDependency(Const.QUICKBUYMENU_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BUTTERYFIXES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.PEEPERS_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.LETHALMIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -88,6 +89,7 @@ namespace LethalInternship
         internal static bool IsModMoreCompanyLoaded = false;
         internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModBunkbedReviveLoaded = false;
+        internal static bool IsModLethalMinLoaded = false;
 
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -226,6 +228,7 @@ namespace LethalInternship
             IsModMoreCompanyLoaded = IsModLoaded(Const.MORECOMPANY_GUID);
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModBunkbedReviveLoaded = IsModLoaded(Const.BUNKBEDREVIVE_GUID);
+            IsModLethalMinLoaded = IsModLoaded(Const.LETHALMIN_GUID);
 
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);

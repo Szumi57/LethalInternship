@@ -150,6 +150,9 @@
     <Reference Include="MoreCompany">
       <HintPath>lib\mods\MoreCompany.dll</HintPath>
     </Reference>
+    <Reference Include="NoteBoxz.LethalMin">
+      <HintPath>lib\mods\NoteBoxz.LethalMin.dll</HintPath>
+    </Reference>
     <Reference Include="OPJosMod">
       <HintPath>lib\mods\ReviveCompany.dll</HintPath>
     </Reference>
