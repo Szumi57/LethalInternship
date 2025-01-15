@@ -6,7 +6,7 @@ using TooManyEmotes.Patches;
 namespace LethalInternship.Patches.ModPatches.TooManyEmotes
 {
     [HarmonyPatch(typeof(ThirdPersonEmoteController))]
-    internal class ThirdPersonEmoteControllerPatch
+    public class ThirdPersonEmoteControllerPatch
     {
         [HarmonyPatch("UseFreeCamWhileEmoting")]
         [HarmonyPrefix]

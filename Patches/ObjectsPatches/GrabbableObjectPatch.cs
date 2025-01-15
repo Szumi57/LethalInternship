@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 namespace LethalInternship.Patches.ObjectsPatches
 {
     [HarmonyPatch(typeof(GrabbableObject))]
-    internal class GrabbableObjectPatch
+    public class GrabbableObjectPatch
     {
         [HarmonyPatch("SetControlTipsForItem")]
         [HarmonyPrefix]

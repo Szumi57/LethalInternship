@@ -18,7 +18,7 @@ namespace LethalInternship.Patches.GameEnginePatches
     /// </summary>
     [HarmonyPatch(typeof(HUDManager))]
     [HarmonyAfter(Const.BETTER_EXP_GUID)]
-    internal class HUDManagerPatch
+    public class HUDManagerPatch
     {
         #region Reverse patches
 

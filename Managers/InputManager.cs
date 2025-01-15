@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 
 namespace LethalInternship.Managers
 {
-    internal class InputManager : MonoBehaviour
+    public class InputManager : MonoBehaviour
     {
         public static InputManager Instance { get; private set; } = null!;
 

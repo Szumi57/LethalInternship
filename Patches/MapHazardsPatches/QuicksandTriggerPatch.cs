@@ -11,7 +11,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
     /// Patch for the <c>QuicksandTrigger</c>
     /// </summary>
     [HarmonyPatch(typeof(QuicksandTrigger))]
-    internal class QuicksandTriggerPatch
+    public class QuicksandTriggerPatch
     {
         /// <summary>
         /// Patch for making quicksand works with intern, when entering

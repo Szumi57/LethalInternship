@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ModPatches.AdditionalNetworking
 {
-    internal class AdditionalNetworkingPatch
+    public class AdditionalNetworkingPatch
     {
         public static IEnumerable<CodeInstruction> Start_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {

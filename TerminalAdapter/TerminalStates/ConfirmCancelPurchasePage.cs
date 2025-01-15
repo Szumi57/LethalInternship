@@ -10,7 +10,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// <summary>
     /// Page/State to confirm or cancel after the purchase of an intern
     /// </summary>
-    internal class ConfirmCancelPurchasePage : TerminalState
+    public class ConfirmCancelPurchasePage : TerminalState
     {
         private int nbOrdered;
         private int idIdentityChosen = -1;

@@ -7,7 +7,7 @@ namespace LethalInternship.TerminalAdapter
     /// <summary>
     /// Abstract state main class for the <c>TerminalState</c>
     /// </summary>
-    internal abstract class TerminalState
+    public abstract class TerminalState
     {
         private EnumTerminalStates currentState;
         protected EnumTerminalStates CurrentState

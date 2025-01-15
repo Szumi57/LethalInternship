@@ -3,7 +3,7 @@
     /// <summary>
     /// Enumeration for the different terminal state, for navigating in the menu LethalInternship on the terminal
     /// </summary>
-    internal enum EnumTerminalStates
+    public enum EnumTerminalStates
     {
         Error,
         WaitForMainCommand,

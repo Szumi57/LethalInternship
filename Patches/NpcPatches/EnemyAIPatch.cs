@@ -15,7 +15,7 @@ namespace LethalInternship.Patches.NpcPatches
     /// Patch for the internAI
     /// </summary>
     [HarmonyPatch(typeof(EnemyAI))]
-    internal class EnemyAIPatch
+    public class EnemyAIPatch
     {
         /// <summary>
         /// Patch for intercepting when ownership of an enemy changes.<br/>

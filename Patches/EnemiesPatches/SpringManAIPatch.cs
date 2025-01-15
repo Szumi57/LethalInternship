@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patch for <c>SpringManAI</c>
     /// </summary>
     [HarmonyPatch(typeof(SpringManAI))]
-    internal class SpringManAIPatch
+    public class SpringManAIPatch
     {
         /// <summary>
         /// Make the sping man use all array of player + interns to target

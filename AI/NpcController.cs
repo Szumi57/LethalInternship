@@ -16,7 +16,7 @@ using Random = UnityEngine.Random;
 
 namespace LethalInternship.AI
 {
-    internal class NpcController
+    public class NpcController
     {
         public PlayerControllerB Npc { get; set; } = null!;
 

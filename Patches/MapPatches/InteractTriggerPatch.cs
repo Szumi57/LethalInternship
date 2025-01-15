@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.MapPatches
     /// Patch for <c>InteractTrigger</c>
     /// </summary>
     [HarmonyPatch(typeof(InteractTrigger))]
-    internal class InteractTriggerPatch
+    public class InteractTriggerPatch
     {
         /// <summary>
         /// Patch for not making the intern able to cancel the ladder animation of a player already on the ladder 

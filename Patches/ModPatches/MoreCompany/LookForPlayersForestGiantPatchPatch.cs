@@ -4,7 +4,7 @@ using MoreCompany;
 namespace LethalInternship.Patches.ModPatches.MoreCompany
 {
     [HarmonyPatch(typeof(LookForPlayersForestGiantPatch))]
-    internal class LookForPlayersForestGiantPatchPatch
+    public class LookForPlayersForestGiantPatchPatch
     {
         [HarmonyPatch("Prefix")]
         [HarmonyPrefix]

@@ -15,7 +15,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patch for <c>BushWolfEnemy</c>
     /// </summary>
     [HarmonyPatch(typeof(BushWolfEnemy))]
-    internal class BushWolfEnemyPatch
+    public class BushWolfEnemyPatch
     {
         /// <summary>
         /// Patch for making the bush wolf be able to kill an intern

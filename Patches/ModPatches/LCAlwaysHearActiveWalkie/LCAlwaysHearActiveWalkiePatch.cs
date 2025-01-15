@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie
 {
-    internal class LCAlwaysHearActiveWalkiePatch
+    public class LCAlwaysHearActiveWalkiePatch
     {
         public static IEnumerable<CodeInstruction> alwaysHearWalkieTalkiesPatch_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {

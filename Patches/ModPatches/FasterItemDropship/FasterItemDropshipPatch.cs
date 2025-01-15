@@ -7,7 +7,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.ModPatches.FasterItemDropship
 {
     [HarmonyPatch(typeof(ItemDropship))]
-    internal class FasterItemDropshipPatch
+    public class FasterItemDropshipPatch
     {
         private static float previousShipTimer = 0f;
         private static bool previousFirstOrder = true;

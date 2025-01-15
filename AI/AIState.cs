@@ -6,7 +6,7 @@ namespace LethalInternship.AI
     /// <summary>
     /// Abstract state main class for the <c>AIState</c>
     /// </summary>
-    internal abstract class AIState
+    public abstract class AIState
     {
         protected InternAI ai;
 

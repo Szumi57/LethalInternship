@@ -19,7 +19,7 @@ namespace LethalInternship.Patches.NpcPatches
     /// Patch for <c>PlayerControllerB</c>
     /// </summary>
     [HarmonyPatch(typeof(PlayerControllerB))]
-    internal class PlayerControllerBPatch
+    public class PlayerControllerBPatch
     {
         #region Prefixes
 

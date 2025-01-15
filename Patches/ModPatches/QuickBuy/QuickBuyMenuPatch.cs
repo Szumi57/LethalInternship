@@ -2,7 +2,7 @@
 
 namespace LethalInternship.Patches.ModPatches.QuickBuy
 {
-    internal class QuickBuyMenuPatch
+    public class QuickBuyMenuPatch
     {
         public static bool RunQuickBuy_Prefix(Terminal __0, ref TerminalNode __result)
         {

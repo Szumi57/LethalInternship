@@ -9,7 +9,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patch for the <c>BaboonBirdAI</c>
     /// </summary>
     [HarmonyPatch(typeof(BaboonBirdAI))]
-    internal class BaboonBirdAIPatch
+    public class BaboonBirdAIPatch
     {
         /// <summary>
         /// Patch to make the baboon not feel threatened by intern

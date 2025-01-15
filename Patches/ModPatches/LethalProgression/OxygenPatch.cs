@@ -3,7 +3,7 @@ using LethalInternship.Managers;
 
 namespace LethalInternship.Patches.ModPatches.LethalProgression
 {
-    internal class OxygenPatch
+    public class OxygenPatch
     {
         public static bool EnteredWater_Prefix(PlayerControllerB __0)
         {

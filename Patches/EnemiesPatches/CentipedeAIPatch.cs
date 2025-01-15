@@ -8,7 +8,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patches for <c>CentipedeAI</c>
     /// </summary>
     [HarmonyPatch(typeof(CentipedeAI))]
-    internal class CentipedeAIPatch
+    public class CentipedeAIPatch
     {
         /// <summary>
         /// Patch for making the centipede hurt the intern

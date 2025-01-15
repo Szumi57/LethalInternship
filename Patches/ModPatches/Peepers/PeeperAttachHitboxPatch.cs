@@ -7,7 +7,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.ModPatches.Peepers
 {
     [HarmonyPatch(typeof(PeeperAttachHitbox))]
-    internal class PeeperAttachHitboxPatch
+    public class PeeperAttachHitboxPatch
     {
         [HarmonyPatch("OnTriggerEnter")]
         [HarmonyPostfix]

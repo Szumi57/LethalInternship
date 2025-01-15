@@ -3,7 +3,7 @@ using LethalInternship.Managers;
 
 namespace LethalInternship.Patches.ModPatches.ReservedItemSlotCore
 {
-    internal class PlayerPatcherPatch
+    public class PlayerPatcherPatch
     {
         public static bool InitializePlayerControllerLate_Prefix(PlayerControllerB __0)
         {

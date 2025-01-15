@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
     [HarmonyPatch(typeof(PhoneBehavior))]
-    internal class PhoneBehaviorPatch
+    public class PhoneBehaviorPatch
     {
         [HarmonyPatch("UpdatePlayerVoices")]
         [HarmonyTranspiler]

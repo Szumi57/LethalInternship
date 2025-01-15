@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace LethalInternship.Patches.ModPatches.Zaprillator
 {
-    internal class RevivablePlayerPatch
+    public class RevivablePlayerPatch
     {
         public static bool StopShockingWithGun_Prefix(RagdollGrabbableObject ____ragdoll,
                                                       ref bool ____bodyShocked,

@@ -8,7 +8,7 @@ using Label = System.Reflection.Emit.Label;
 
 namespace LethalInternship.Patches.ModPatches.ReviveCompany
 {
-    internal class ReviveCompanyPlayerControllerBPatchPatch
+    public class ReviveCompanyPlayerControllerBPatchPatch
     {
         private static readonly MethodInfo IsGrabbableObjectEqualsToNullMethod = SymbolExtensions.GetMethodInfo(() => PatchesUtil.IsGrabbableObjectEqualsToNull((GrabbableObject)new object()));
 

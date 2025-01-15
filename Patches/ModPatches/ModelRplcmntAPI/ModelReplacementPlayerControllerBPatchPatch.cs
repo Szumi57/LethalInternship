@@ -5,7 +5,7 @@ using ModelReplacement.Monobehaviors;
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
     [HarmonyPatch(typeof(ModelReplacement.Patches.PlayerControllerBPatch))]
-    internal class ModelReplacementPlayerControllerBPatchPatch
+    public class ModelReplacementPlayerControllerBPatchPatch
     {
         [HarmonyPatch("StartPatch")]
         [HarmonyPrefix]

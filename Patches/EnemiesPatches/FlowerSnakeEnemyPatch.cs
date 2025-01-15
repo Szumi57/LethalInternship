@@ -12,7 +12,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patches for <c>FlowerSnakeEnemy</c>
     /// </summary>
     [HarmonyPatch(typeof(FlowerSnakeEnemy))]
-    internal class FlowerSnakeEnemyPatch
+    public class FlowerSnakeEnemyPatch
     {
         /// <summary>
         /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>

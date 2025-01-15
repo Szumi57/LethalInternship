@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patches for the <c>ButlerBeesEnemyAI</c>
     /// </summary>
     [HarmonyPatch(typeof(ButlerBeesEnemyAI))]
-    internal class ButlerBeesEnemyAIPatch
+    public class ButlerBeesEnemyAIPatch
     {
         /// <summary>
         /// Patch onCollide to check for player and intern

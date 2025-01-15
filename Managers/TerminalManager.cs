@@ -12,7 +12,7 @@ namespace LethalInternship.Managers
     /// <summary>
     /// Manager in charge of initializing the terminal parser (for adding LethalInternship pages to the terminal) and synchronize clients
     /// </summary>
-    internal class TerminalManager : NetworkBehaviour
+    public class TerminalManager : NetworkBehaviour
     {
         public static TerminalManager Instance { get; private set; } = null!;
 

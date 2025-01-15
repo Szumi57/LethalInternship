@@ -7,7 +7,7 @@ using System;
 namespace LethalInternship.Patches.MapPatches
 {
     [HarmonyPatch(typeof(ManualCameraRenderer))]
-    internal class ManualCameraRendererPatch
+    public class ManualCameraRendererPatch
     {
         [HarmonyPatch("GetRadarTargetIndexPlusOne")]
         [HarmonyReversePatch]

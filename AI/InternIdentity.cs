@@ -5,7 +5,7 @@ using Random = System.Random;
 
 namespace LethalInternship.AI
 {
-    internal class InternIdentity
+    public class InternIdentity
     {
         public int IdIdentity { get; }
         public string Name { get; set; }

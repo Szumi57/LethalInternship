@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patch for <c>SandWormAI</c>
     /// </summary>
     [HarmonyPatch(typeof(SandWormAI))]
-    internal class SandWormAIPatch
+    public class SandWormAIPatch
     {
         /// <summary>
         /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>

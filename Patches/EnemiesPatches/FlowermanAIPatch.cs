@@ -7,7 +7,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(FlowermanAI))]
-    internal class FlowermanAIPatch
+    public class FlowermanAIPatch
     {
         [HarmonyPatch("KillPlayerAnimationClientRpc")]
         [HarmonyTranspiler]

@@ -10,7 +10,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
     [HarmonyPatch(typeof(PlayerPhonePatch))]
-    internal class PlayerPhonePatchPatch
+    public class PlayerPhonePatchPatch
     {
         [HarmonyPatch("PlayerModelDisabled")]
         [HarmonyPrefix]

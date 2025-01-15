@@ -2,7 +2,7 @@
 
 namespace LethalInternship.AI.AIStates
 {
-    internal class BrainDeadState : AIState
+    public class BrainDeadState : AIState
     {
         public BrainDeadState(InternAI ai) : base(ai)
         {

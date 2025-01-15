@@ -7,7 +7,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(RadMechMissile))]
-    internal class RadMechMissilePatch
+    public class RadMechMissilePatch
     {
         [HarmonyPatch("CheckCollision")]
         [HarmonyTranspiler]

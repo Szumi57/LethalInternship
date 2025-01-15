@@ -12,7 +12,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patches for <c>ButlerEnemyAI</c>
     /// </summary>
     [HarmonyPatch(typeof(ButlerEnemyAI))]
-    internal class ButlerEnemyAIPatch
+    public class ButlerEnemyAIPatch
     {
         /// <summary>
         /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>

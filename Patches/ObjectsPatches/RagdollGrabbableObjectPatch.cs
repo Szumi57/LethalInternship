@@ -4,7 +4,7 @@ using LethalInternship.Constants;
 namespace LethalInternship.Patches.ObjectsPatches
 {
     [HarmonyPatch(typeof(RagdollGrabbableObject))]
-    internal class RagdollGrabbableObjectPatch
+    public class RagdollGrabbableObjectPatch
     {
         [HarmonyPatch("Update")]
         [HarmonyPrefix]

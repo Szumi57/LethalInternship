@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.MapPatches
     /// Patch for <c>VehicleController</c>
     /// </summary>
     [HarmonyPatch(typeof(VehicleController))]
-    internal class VehicleControllerPatch
+    public class VehicleControllerPatch
     {
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
