@@ -91,7 +91,7 @@ namespace LethalInternship.AI.AIStates
             }
 
             ai.SetDestinationToPositionInternAI(ai.destination);
-            ai.OrderMoveToDestination();
+            ai.NpcController.OrderToMove();
 
             if (!searchForPlayers.inProgress)
             {

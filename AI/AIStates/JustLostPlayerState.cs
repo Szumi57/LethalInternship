@@ -128,7 +128,7 @@ namespace LethalInternship.AI.AIStates
                 npcController.OrderToSprint();
             }
 
-            ai.OrderMoveToDestination();
+            ai.NpcController.OrderToMove();
             // Destination after path checking might be not the same now
             targetLastKnownPosition = ai.destination;
         }

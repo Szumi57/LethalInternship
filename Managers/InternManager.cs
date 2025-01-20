@@ -1125,6 +1125,8 @@ namespace LethalInternship.Managers
             {
                 internAI = GetInternAI((int)instanceSOR.allPlayerScripts[i].playerClientId);
                 if (internAI != null
+                    && internAI.NpcController != null
+                    && !internAI.NpcController.Npc.isPlayerDead
                     && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
                 {
                     results.Add(internAI);

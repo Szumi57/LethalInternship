@@ -70,6 +70,8 @@ namespace LethalInternship.AI
 
         public List<Component> ListModelReplacement = null!;
 
+        public LineRendererUtil LineRendererUtil = null!;
+
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -84,12 +86,9 @@ namespace LethalInternship.AI
 
         private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
-        private bool hasDestinationChanged = true;
         private float updateDestinationIntervalInternAI;
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
-
-        private LineRendererUtil LineRendererUtil = null!;
 
         private RaycastHit GroundHit;
 
@@ -585,51 +584,43 @@ namespace LethalInternship.AI
         /// Set the destination in <c>EnemyAI</c>, not on the agent
         /// </summary>
         /// <param name="position">the destination</param>
-        public void SetDestinationToPositionInternAI(Vector3 position)
+        public void SetDestinationToPositionInternAI(Vector3 position, bool forceChangeDestination = false, bool avoidLineOfSight = true, int offset = 0)
         {
             moveTowardsDestination = true;
             movingTowardsTargetPlayer = false;
 
-            if (previousWantedDestination != position)
+            if (previousWantedDestination != position
+                || forceChangeDestination)
             {
                 previousWantedDestination = position;
-                hasDestinationChanged = true;
-                destination = position;
+
+                if (agent.isActiveAndEnabled
+                    && agent.isOnNavMesh
+                    && !isEnemyDead
+                    && !NpcController.Npc.isPlayerDead
+                    && !StartOfRound.Instance.shipIsLeaving
+                    && TrySetDestinationToPosition(position, avoidLineOfSight, offset))
+                {
+                    agent.SetDestination(destination);
+                }
             }
         }
 
-        /// <summary>
-        /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
-        /// </summary>
-        public void OrderMoveToDestination(bool avoidLineOfSight = true)
+        public bool TrySetDestinationToPosition(Vector3 position, bool avoidLineOfSight, int offset)
         {
-            NpcController.OrderToMove();
-
-            if (!hasDestinationChanged)
+            if (!this.SetDestinationToPosition(position, checkForPath: true))
             {
-                return;
-            }
-
-            if (agent.isActiveAndEnabled
-                && agent.isOnNavMesh
-                && !isEnemyDead
-                && !NpcController.Npc.isPlayerDead
-                && !StartOfRound.Instance.shipIsLeaving)
-            {
-                if (!this.SetDestinationToPosition(destination, checkForPath: true))
+                try
                 {
-                    try
-                    {
-                        destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
-                    }
-                    catch (Exception e)
-                    {
-                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} ChooseClosestNodeToPosition error : {e.Message} , InnerException : {e.InnerException}");
-                    }
+                    destination = this.ChooseClosestNodeToPosition(position, avoidLineOfSight, offset).position;
                 }
-                agent.SetDestination(destination);
-                hasDestinationChanged = false;
+                catch (Exception e)
+                {
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} ChooseClosestNodeToPosition error : {e.Message} , InnerException : {e.InnerException}");
+                    return false;
+                }
             }
+            return true;
         }
 
         public void StopMoving()
@@ -1625,7 +1616,7 @@ namespace LethalInternship.AI
 
             foreach (var item in listPickMinItems)
             {
-                if(item != null
+                if (item != null
                     && item.Root == grabbableObject
                     && item.PikminOnItem > 0)
                 {

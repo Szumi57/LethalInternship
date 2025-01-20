@@ -159,7 +159,7 @@ namespace LethalInternship.Patches.NpcPatches
             {
                 Plugin.LogDebug($"SyncDamageIntern called from game code on LOCAL client #{internAI.NetworkManager.LocalClientId}, intern object: Intern #{internAI.InternId}");
                 internAI.SyncDamageIntern(damageNumber, causeOfDeath, deathAnimation, fallDamage, force);
-                
+
                 // Still do the vanilla damage player, for other mods prefixes (ex: peepers)
                 // The damage will be ignored because the intern playerController is not owned because not spawned
                 return true;
@@ -480,6 +480,20 @@ namespace LethalInternship.Patches.NpcPatches
                 return false;
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// See <see cref="StopHoldInteractionOnTrigger_PostFix"><c>StopHoldInteractionOnTrigger_PostFix</c></see>
+        /// </summary>
+        /// <param name="__state"></param>
+        /// <returns></returns>
+        [HarmonyPatch("StopHoldInteractionOnTrigger")]
+        [HarmonyPrefix]
+        static bool StopHoldInteractionOnTrigger_PreFix(out float __state)
+        {
+            __state = InputManager.Instance.CommandInternInputIsPressed ? HUDManager.Instance.holdFillAmount : 0;
+            // see postfix
             return true;
         }
 
@@ -887,7 +901,7 @@ namespace LethalInternship.Patches.NpcPatches
                 // Line Follow
                 if (intern.OwnerClientId != __instance.actualClientId)
                 {
-                    sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.LeadIntern)))
+                    sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.SuperviseCommandIntern)))
                         .AppendLine();
                 }
 
@@ -916,6 +930,20 @@ namespace LethalInternship.Patches.NpcPatches
             if (internAI != null)
             {
                 __result = internAI.transform;
+            }
+        }
+
+        /// <summary>
+        /// See <see cref="StopHoldInteractionOnTrigger_PreFix"><c>StopHoldInteractionOnTrigger_PreFix</c></see>
+        /// </summary>
+        /// <param name="__state"></param>
+        [HarmonyPatch("StopHoldInteractionOnTrigger")]
+        [HarmonyPostfix]
+        static void StopHoldInteractionOnTrigger_PostFix(float __state)
+        {
+            if (InputManager.Instance.CommandInternInputIsPressed)
+            {
+                HUDManager.Instance.holdFillAmount = __state;
             }
         }
 

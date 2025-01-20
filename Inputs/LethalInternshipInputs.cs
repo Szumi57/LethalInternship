@@ -8,8 +8,8 @@ namespace LethalInternship.Inputs
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        [InputAction(KeyboardControl.E, Name = "Lead Intern", GamepadPath = "<Gamepad>/dpad/up")]
-        public InputAction LeadIntern { get; set; }
+        [InputAction(KeyboardControl.E, Name = "Supervise intern / Command", GamepadPath = "<Gamepad>/dpad/up")]
+        public InputAction SuperviseCommandIntern { get; set; }
 
         [InputAction(KeyboardControl.G, Name = "Give/take item", GamepadControl = GamepadControl.ButtonEast)]
         public InputAction GiveTakeItem { get; set; }

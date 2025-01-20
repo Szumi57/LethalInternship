@@ -12,6 +12,7 @@
         ChillWithPlayer,
         FetchingObject,
         PlayerInCruiser,
-        Panik
+        Panik,
+        Waiting
     }
 }
