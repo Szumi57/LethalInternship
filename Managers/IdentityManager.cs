@@ -38,7 +38,7 @@ namespace LethalInternship.Managers
                 if (internIdentity != null
                     && internIdentity.Voice != null)
                 {
-                    internIdentity.Voice.ReduceCooldown(Time.deltaTime);
+                    internIdentity.Voice.CountTime(Time.deltaTime);
                 }
             }
         }

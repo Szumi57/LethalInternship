@@ -14,6 +14,7 @@ using LethalInternship.Patches.ModPatches.BetterEmotes;
 using LethalInternship.Patches.ModPatches.BunkbedRevive;
 using LethalInternship.Patches.ModPatches.ButteryFixes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
+using LethalInternship.Patches.ModPatches.HotdogScout;
 using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.LethalProgression;
@@ -69,6 +70,7 @@ namespace LethalInternship
     [BepInDependency(Const.BUTTERYFIXES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.PEEPERS_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALMIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.HOTDOGMODEL_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -242,6 +244,7 @@ namespace LethalInternship
             bool isModZaprillatorLoaded = IsModLoaded(Const.ZAPRILLATOR_GUID);
             bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
             bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
+            bool isModHotDogModelLoaded = IsModLoaded(Const.HOTDOGMODEL_GUID);
 
             // -------------------
             // Read the preloaders
@@ -370,6 +373,10 @@ namespace LethalInternship
             if (isModPeepersLoaded)
             {
                 _harmony.PatchAll(typeof(PeeperAttachHitboxPatch));
+            }
+            if (isModHotDogModelLoaded)
+            {
+                _harmony.PatchAll(typeof(JawMovementPatch));
             }
         }
 
