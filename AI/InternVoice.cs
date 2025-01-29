@@ -29,7 +29,7 @@ namespace LethalInternship.AI
 
         private int sampleDataLength = 1024;
         private float timerUpdateAmplitudeValue = 0.1f;
-	    private float[] clipSampleData;
+        private float[] clipSampleData;
         private float clipLoudness;
 
         public InternVoice(string voiceFolder, float volume, float voicePitch)
@@ -327,6 +327,11 @@ namespace LethalInternship.AI
         public float GetAmplitude()
         {
             // https://discussions.unity.com/t/how-do-i-get-the-current-volume-level-amplitude-of-playing-audio-not-the-set-volume-but-how-loud-it-is/162556/2
+            if (CurrentAudioSource == null)
+            {
+                return clipLoudness;
+            }
+
             if (timerUpdateAmplitudeValue < 0.1f)
             {
                 return clipLoudness;
