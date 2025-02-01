@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace LethalInternship.AI
 {
-    internal class RagdollInternBody
+    public class RagdollInternBody
     {
         private int idPlayerHolder = -1;
         private RagdollGrabbableObject ragdollGrabbableObject;

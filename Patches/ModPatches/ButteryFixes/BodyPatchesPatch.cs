@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LethalInternship.Patches.ModPatches.ButteryFixes
 {
-    internal class BodyPatchesPatch
+    public class BodyPatchesPatch
     {
         public static bool DeadBodyInfoPostStart_Prefix(DeadBodyInfo __0)
         {

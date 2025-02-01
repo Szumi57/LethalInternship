@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patches for the <c>MouthDogAI</c>
     /// </summary>
     [HarmonyPatch(typeof(MouthDogAI))]
-    internal class MouthDogAIPatch
+    public class MouthDogAIPatch
     {
         /// <summary>
         /// Patch to make mouthdog ignoring InternAI (does not ignore Intern body <c>PlayerController</c>)

@@ -7,7 +7,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(JesterAI))]
-    internal class JesterAIPatch
+    public class JesterAIPatch
     {
         [HarmonyPatch("KillPlayerServerRpc")]
         [HarmonyTranspiler]

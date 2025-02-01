@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace LethalInternship.TerminalAdapter.TerminalStates
 {
-    internal class StatusPage : TerminalState
+    public class StatusPage : TerminalState
     {
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalState)"/>

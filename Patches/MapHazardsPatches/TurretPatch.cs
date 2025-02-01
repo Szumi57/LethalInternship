@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
     /// Patch for the <c>Turret</c>
     /// </summary>
     [HarmonyPatch(typeof(Turret))]
-    internal class TurretPatch
+    public class TurretPatch
     {
         static MethodInfo DamagePlayersInLOSMethod = SymbolExtensions.GetMethodInfo(() => TurretPatch.DamagePlayersInLOS(new Turret()));
 

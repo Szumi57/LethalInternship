@@ -9,7 +9,7 @@ using Random = System.Random;
 
 namespace LethalInternship.AI
 {
-    internal class InternVoice
+    public class InternVoice
     {
         public int InternID { get; set; }
         public string VoiceFolder { get; set; }

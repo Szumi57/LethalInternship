@@ -9,7 +9,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.ModPatches.ReviveCompany
 {
     [HarmonyPatch(typeof(GeneralUtil))]
-    internal class ReviveCompanyGeneralUtilPatch
+    public class ReviveCompanyGeneralUtilPatch
     {
         [HarmonyPatch("RevivePlayer")]
         [HarmonyPrefix]

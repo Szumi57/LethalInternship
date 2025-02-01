@@ -3,7 +3,7 @@
     /// <summary>
     /// Enumeration of the state of the AI of the intern
     /// </summary>
-    internal enum EnumAIStates
+    public enum EnumAIStates
     {
         BrainDead,
         SearchingForPlayer,

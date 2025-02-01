@@ -11,7 +11,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
     [HarmonyPatch(typeof(ModelReplacementAPI))]
-    internal class ModelReplacementAPIPatch
+    public class ModelReplacementAPIPatch
     {
         [HarmonyPatch("SetPlayerModelReplacement")]
         [HarmonyPrefix]

@@ -9,7 +9,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
     [HarmonyPatch(typeof(BodyReplacementBase))]
-    internal class BodyReplacementBasePatch
+    public class BodyReplacementBasePatch
     {
         public static List<BodyReplacementBase> ListBodyReplacementOnDeadBodies = new List<BodyReplacementBase>();
 

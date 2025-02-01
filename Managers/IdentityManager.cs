@@ -10,7 +10,7 @@ using Random = System.Random;
 
 namespace LethalInternship.Managers
 {
-    internal class IdentityManager : MonoBehaviour
+    public class IdentityManager : MonoBehaviour
     {
         public static IdentityManager Instance { get; private set; } = null!;
 

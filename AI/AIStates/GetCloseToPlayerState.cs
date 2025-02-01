@@ -8,7 +8,7 @@ namespace LethalInternship.AI.AIStates
     /// <summary>
     /// State where the intern has a target player and wants to get close to him.
     /// </summary>
-    internal class GetCloseToPlayerState : AIState
+    public class GetCloseToPlayerState : AIState
     {
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>

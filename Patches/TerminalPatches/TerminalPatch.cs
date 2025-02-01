@@ -8,7 +8,7 @@ namespace LethalInternship.Patches.TerminalPatches
     /// Patches for the <c>Terminal</c>
     /// </summary>
     [HarmonyPatch(typeof(Terminal))]
-    internal class TerminalPatch
+    public class TerminalPatch
     {
         /// <summary>
         /// Patch add the text introducing the intern shop

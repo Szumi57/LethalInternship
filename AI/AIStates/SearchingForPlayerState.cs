@@ -13,7 +13,7 @@ namespace LethalInternship.AI.AIStates
     /// The owner of the intern in this state is the last one that owns it before changing to this state, 
     /// the host if no one, just after spawn for example.
     /// </remarks>
-    internal class SearchingForPlayerState : AIState
+    public class SearchingForPlayerState : AIState
     {
         private PlayerControllerB? player;
         private Coroutine searchingWanderCoroutine = null!;

@@ -34,7 +34,7 @@ namespace LethalInternship.AI
     /// Then the AI class use its methods to pilot the body using <c>NpcController</c>.
     /// The <c>NpcController</c> is set outside in <see cref="InternManager.InitInternSpawning"><c>InternManager.InitInternSpawning</c></see>.
     /// </remarks>
-    internal class InternAI : EnemyAI
+    public class InternAI : EnemyAI
     {
         /// <summary>
         /// Dictionnary of the recently dropped object on the ground.
@@ -89,7 +89,7 @@ namespace LethalInternship.AI
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
 
-        public LineRendererUtil LineRendererUtil = null!;
+        private LineRendererUtil LineRendererUtil = null!;
 
         private RaycastHit GroundHit;
 

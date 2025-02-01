@@ -12,7 +12,7 @@ namespace LethalInternship.AI.AIStates
     /// When close to the player, the chill state makes the intern stop moving and looking at him,
     /// check for items to grab or enemies to flee, waiting for the player to move. 
     /// </remarks>
-    internal class ChillWithPlayerState : AIState
+    public class ChillWithPlayerState : AIState
     {
         /// <summary>
         /// Represents the distance between the body of intern (<c>PlayerControllerB</c> position) and the target player (owner of intern), 

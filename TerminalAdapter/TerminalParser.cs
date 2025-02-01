@@ -11,7 +11,7 @@ namespace LethalInternship.TerminalAdapter
     /// Class used for holding the current state of the intern shop terminal pages<br/>
     /// and calling state method for parsing command and displaying current page.
     /// </summary>
-    internal class TerminalParser
+    public class TerminalParser
     {
         public TerminalState TerminalState = null!;
 

@@ -9,7 +9,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patch for <c>RedLocustBees</c>
     /// </summary>
     [HarmonyPatch(typeof(RedLocustBees))]
-    internal class RedLocustBeesPatch
+    public class RedLocustBeesPatch
     {
         /// <summary>
         /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>

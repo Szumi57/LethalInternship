@@ -8,7 +8,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.ModPatches.LethalPhones
 {
     [HarmonyPatch(typeof(PlayerPhone))]
-    internal class PlayerPhonePatchLI
+    public class PlayerPhonePatchLI
     {
         [HarmonyPatch("UpdatePhoneSanity")]
         [HarmonyPrefix]

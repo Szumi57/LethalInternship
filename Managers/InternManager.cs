@@ -44,7 +44,7 @@ namespace LethalInternship.Managers
     /// MoreCompany resize arrays in the same way, after each scene load, so quite a number of time, the manager execute after MoreCompany and resize the arrays to the
     /// right size : 4 + 28 + 16 (default for LethalInternship)<br/>
     /// </remarks>
-    internal class InternManager : NetworkBehaviour
+    public class InternManager : NetworkBehaviour
     {
         public static InternManager Instance { get; private set; } = null!;
 

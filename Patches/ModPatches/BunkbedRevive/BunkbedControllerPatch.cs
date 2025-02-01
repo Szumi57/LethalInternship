@@ -9,7 +9,7 @@ using System;
 namespace LethalInternship.Patches.ModPatches.BunkbedRevive
 {
     [HarmonyPatch(typeof(BunkbedController))]
-    internal class BunkbedControllerPatch
+    public class BunkbedControllerPatch
     {
         [HarmonyPatch("OnInteract")]
         [HarmonyPrefix]

@@ -7,7 +7,7 @@ using ModelReplacement.Monobehaviors;
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
     [HarmonyPatch(typeof(ManagerBase))]
-    internal class ManagerBasePatch
+    public class ManagerBasePatch
     {
         [HarmonyPatch("Update")]
         [HarmonyPrefix]

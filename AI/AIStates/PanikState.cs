@@ -10,7 +10,7 @@ namespace LethalInternship.AI.AIStates
     /// State where the intern just saw a dangerous enemy (see: <see cref="InternAI.GetFearRangeForEnemies"><c>InternAI.GetFearRangeForEnemies</c></see>).
     /// The intern try to flee by choosing a far away node from the enemy.
     /// </summary>
-    internal class PanikState : AIState
+    public class PanikState : AIState
     {
         /// <summary>
         /// Constructor for PanikState

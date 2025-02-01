@@ -9,7 +9,7 @@ namespace LethalInternship.AI.AIStates
     /// <summary>
     /// State where the intern cannot see the target player and try to reach his last known (seen) position
     /// </summary>
-    internal class JustLostPlayerState : AIState
+    public class JustLostPlayerState : AIState
     {
         private float lookingAroundTimer;
         private Coroutine lookingAroundCoroutine = null!;

@@ -3,7 +3,7 @@ using LethalInternship.Managers;
 
 namespace LethalInternship.Patches.ModPatches.LethalProgression
 {
-    internal class HPRegenPatch
+    public class HPRegenPatch
     {
         public static bool HPRegenUpdate_Prefix(PlayerControllerB __0)
         {

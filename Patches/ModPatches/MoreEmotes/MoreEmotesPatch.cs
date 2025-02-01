@@ -12,7 +12,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.ModPatches.MoreEmotes
 {
     [HarmonyPatch(typeof(EmotePatch))]
-    internal class MoreEmotesPatch
+    public class MoreEmotesPatch
     {
         [HarmonyPatch("StartPostfix")]
         [HarmonyPrefix]

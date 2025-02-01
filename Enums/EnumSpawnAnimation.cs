@@ -1,6 +1,6 @@
 ﻿namespace LethalInternship.Enums
 {
-    internal enum EnumSpawnAnimation
+    public enum EnumSpawnAnimation
     {
         None = 0,
         OnlyPlayerSpawnAnimation,

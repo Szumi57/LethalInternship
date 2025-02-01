@@ -10,7 +10,7 @@ namespace LethalInternship.Patches.GameEnginePatches
     /// </summary>
     [HarmonyPatch(typeof(NetworkSceneManager))]
     [HarmonyAfter(Const.MORECOMPANY_GUID)]
-    internal class NetworkSceneManagerPatch
+    public class NetworkSceneManagerPatch
     {
         /// <summary>
         /// Patch for populate the pool of interns at the start of the load scene

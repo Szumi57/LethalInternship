@@ -8,7 +8,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// <summary>
     /// Page/State to display error according to <see cref="EnumErrorTypeTerminalPage"><c>EnumErrorTypeTerminalPage</c></see>
     /// </summary>
-    internal class ErrorPage : TerminalState
+    public class ErrorPage : TerminalState
     {
         private readonly EnumErrorTypeTerminalPage enumErrorType;
 
