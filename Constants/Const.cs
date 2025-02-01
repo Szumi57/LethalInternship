@@ -32,6 +32,7 @@ namespace LethalInternship.Constants
         public const string PEEPERS_GUID = "x753.Peepers";
         public const string LETHALMIN_GUID = "NoteBoxz.LethalMin";
         public const string HOTDOGMODEL_GUID = "hotdogModel";
+        public const string MIPA_GUID = "Mipa";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
 

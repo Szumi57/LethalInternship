@@ -90,7 +90,7 @@ namespace LethalInternship.AI
 
         public bool IsTalking()
         {
-            return CurrentAudioSource.isPlaying || aboutToTalk;
+            return CurrentAudioSource != null && (CurrentAudioSource.isPlaying || aboutToTalk);
         }
 
         public void TryPlayVoiceAudio(PlayVoiceParameters parameters)

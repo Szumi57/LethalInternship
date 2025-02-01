@@ -18,6 +18,7 @@ using LethalInternship.Patches.ModPatches.HotdogScout;
 using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.LethalProgression;
+using LethalInternship.Patches.ModPatches.Mipa;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
@@ -245,6 +246,7 @@ namespace LethalInternship
             bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
             bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
             bool isModHotDogModelLoaded = IsModLoaded(Const.HOTDOGMODEL_GUID);
+            bool isModMipaLoaded = IsModLoaded(Const.MIPA_GUID);
 
             // -------------------
             // Read the preloaders
@@ -377,6 +379,10 @@ namespace LethalInternship
             if (isModHotDogModelLoaded)
             {
                 _harmony.PatchAll(typeof(JawMovementPatch));
+            }
+            if (isModMipaLoaded)
+            {
+                _harmony.PatchAll(typeof(SkinApplyPatch));
             }
         }
 

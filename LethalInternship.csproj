@@ -147,6 +147,9 @@
     <Reference Include="LethalPhones">
       <HintPath>lib\mods\LethalPhones.dll</HintPath>
     </Reference>
+    <Reference Include="Mipa">
+      <HintPath>lib\mods\Mipa.dll</HintPath>
+    </Reference>
     <Reference Include="ModelReplacementAPI">
       <HintPath>lib\mods\ModelReplacementAPI.dll</HintPath>
     </Reference>
