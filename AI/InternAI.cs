@@ -1110,7 +1110,7 @@ namespace LethalInternship.AI
         {
             string indicator;
             int sizePercentage = Math.Clamp((int)(100f + 2.5f * (StartOfRound.Instance.localPlayerController.transform.position - NpcController.Npc.transform.position).sqrMagnitude),
-                                 100, 800);
+                                 100, 500);
 
             if (IsOwner)
             {
@@ -2187,7 +2187,8 @@ namespace LethalInternship.AI
             }
 
             // Update state indicator
-            this.stateIndicatorServer = stateIndicator;
+            // Actually, too much cluter, indicator just for owner for now
+            //this.stateIndicatorServer = stateIndicator;
 
             // Update direction
             NpcController.SetTurnBodyTowardsDirection(direction);
