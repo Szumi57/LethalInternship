@@ -70,6 +70,9 @@ namespace LethalInternship.AI
 
         public List<Component> ListModelReplacement = null!;
 
+        public TimedTouchingGroundCheck TimedTouchingGroundCheck = null!;
+        public TimedAngleFOVWithLocalPlayerCheck TimedAngleFOVWithLocalPlayerCheck = null!;
+
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -90,8 +93,6 @@ namespace LethalInternship.AI
         private float timerCheckDoor;
 
         private LineRendererUtil LineRendererUtil = null!;
-
-        private RaycastHit GroundHit;
 
         private void Awake()
         {
@@ -191,6 +192,10 @@ namespace LethalInternship.AI
 
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
+
+            // Start timed calculation
+            TimedTouchingGroundCheck = new TimedTouchingGroundCheck();
+            TimedAngleFOVWithLocalPlayerCheck = new TimedAngleFOVWithLocalPlayerCheck();
         }
 
         private void InitInternVoiceComponent()
@@ -253,16 +258,16 @@ namespace LethalInternship.AI
 
         private void UpdateSurfaceRayCast()
         {
-            NpcController.IsTouchingGround = Physics.Raycast(new Ray(NpcController.Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
-                                                             out GroundHit,
-                                                             2.5f,
-                                                             StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+            NpcController.IsTouchingGround = TimedTouchingGroundCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position);
 
             // Update current material standing on
-            if (NpcController.IsTouchingGround
-                && InternManager.Instance.DictTagSurfaceIndex.ContainsKey(GroundHit.collider.tag))
+            if (NpcController.IsTouchingGround)
             {
-                NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[GroundHit.collider.tag];
+                RaycastHit groundRaycastHit = TimedTouchingGroundCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
+                if (InternManager.Instance.DictTagSurfaceIndex.ContainsKey(groundRaycastHit.collider.tag))
+                {
+                    NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[groundRaycastHit.collider.tag];
+                }
             }
         }
 
@@ -380,7 +385,7 @@ namespace LethalInternship.AI
             {
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= touch ground GroundHit.point {NpcController.GroundHit.point}");
                 StateControllerMovement = EnumStateControllerMovement.FollowAgent;
-                TeleportAgentAIAndBody(GroundHit.point);
+                TeleportAgentAIAndBody(TimedTouchingGroundCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).point);
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= NpcController.Npc.transform.position {NpcController.Npc.transform.position}");
             }
 
@@ -460,14 +465,14 @@ namespace LethalInternship.AI
         private bool ShouldFreeMovement()
         {
             if (NpcController.IsTouchingGround
-                && dictComponentByCollider.TryGetValue(GroundHit.collider.name, out Component component))
+                && dictComponentByCollider.TryGetValue(TimedTouchingGroundCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name, out Component component))
             {
                 BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                 if (bridgeTrigger != null
                     && bridgeTrigger.fallenBridgeColliders.Length > 0
                     && bridgeTrigger.fallenBridgeColliders[0].enabled)
                 {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {GroundHit.collider.name}");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {TimedTouchingGroundCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name}");
                     return true;
                 }
             }
@@ -1625,7 +1630,7 @@ namespace LethalInternship.AI
 
             foreach (var item in listPickMinItems)
             {
-                if(item != null
+                if (item != null
                     && item.Root == grabbableObject
                     && item.PikminOnItem > 0)
                 {
@@ -4193,5 +4198,96 @@ namespace LethalInternship.AI
         }
 
         #endregion
+    }
+
+    public class TimedTouchingGroundCheck
+    {
+        private bool isTouchingGround = true;
+        private RaycastHit groundHit;
+
+        private long timer = 100 * TimeSpan.TicksPerMillisecond;
+        private long lastTimeCalculate;
+
+        public bool IsTouchingGround(Vector3 internPosition)
+        {
+            if (!NeedToRecalculate())
+            {
+                return isTouchingGround;
+            }
+
+            CalculateTouchingGround(internPosition);
+            return isTouchingGround;
+        }
+
+        public RaycastHit GetGroundHit(Vector3 internPosition)
+        {
+            if (!NeedToRecalculate())
+            {
+                return groundHit;
+            }
+
+            CalculateTouchingGround(internPosition);
+            return groundHit;
+        }
+
+        private bool NeedToRecalculate()
+        {
+            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+            if (elapsedTime > timer)
+            {
+                lastTimeCalculate = DateTime.Now.Ticks;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private void CalculateTouchingGround(Vector3 internPosition)
+        {
+            isTouchingGround = Physics.Raycast(new Ray(internPosition + Vector3.up, -Vector3.up),
+                                               out groundHit,
+                                               2.5f,
+                                               StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+        }
+    }
+
+    public class TimedAngleFOVWithLocalPlayerCheck
+    {
+        private float angle;
+
+        private long timer = 500 * TimeSpan.TicksPerMillisecond;
+        private long lastTimeCalculate;
+
+        public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
+        {
+            if (!NeedToRecalculate())
+            {
+                return angle;
+            }
+
+            CalculateAngleFOVWithLocalPlayer(localPlayerCameraTransform, internBodyPos);
+            return angle;
+        }
+
+        private bool NeedToRecalculate()
+        {
+            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+            if (elapsedTime > timer)
+            {
+                lastTimeCalculate = DateTime.Now.Ticks;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private void CalculateAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
+        {
+            angle = Vector3.Angle(localPlayerCameraTransform.forward, internBodyPos - localPlayerCameraTransform.position);
+        }
     }
 }

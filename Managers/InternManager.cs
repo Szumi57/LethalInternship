@@ -1510,13 +1510,13 @@ namespace LethalInternship.Managers
                 }
 
                 internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
-                vectorPlayerToIntern = internBodyPos - localPlayerCamera.transform.position;
-                if (Vector3.Angle(localPlayerCamera.transform.forward, vectorPlayerToIntern) < localPlayerCamera.fieldOfView * 0.81f)
+                if (internAI.TimedAngleFOVWithLocalPlayerCheck.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internBodyPos) < localPlayerCamera.fieldOfView * 0.81f)
                 {
                     // Intern in FOV
                     internsInFOV[index++] = internAI;
                 }
             }
+
 
             index = 0;
             var orderedInternInFOV = internsInFOV.Where(x => x != null)
