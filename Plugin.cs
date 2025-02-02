@@ -93,6 +93,7 @@ namespace LethalInternship
         internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModBunkbedReviveLoaded = false;
         internal static bool IsModLethalMinLoaded = false;
+        internal static bool IsModMipaLoaded = false;
 
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -232,6 +233,7 @@ namespace LethalInternship
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModBunkbedReviveLoaded = IsModLoaded(Const.BUNKBEDREVIVE_GUID);
             IsModLethalMinLoaded = IsModLoaded(Const.LETHALMIN_GUID);
+            IsModMipaLoaded = IsModLoaded(Const.MIPA_GUID);
 
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
@@ -246,7 +248,6 @@ namespace LethalInternship
             bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
             bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
             bool isModHotDogModelLoaded = IsModLoaded(Const.HOTDOGMODEL_GUID);
-            bool isModMipaLoaded = IsModLoaded(Const.MIPA_GUID);
 
             // -------------------
             // Read the preloaders
@@ -380,7 +381,7 @@ namespace LethalInternship
             {
                 _harmony.PatchAll(typeof(JawMovementPatch));
             }
-            if (isModMipaLoaded)
+            if (IsModMipaLoaded)
             {
                 _harmony.PatchAll(typeof(SkinApplyPatch));
             }

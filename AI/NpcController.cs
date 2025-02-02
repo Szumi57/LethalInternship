@@ -7,7 +7,6 @@ using LethalInternship.Utils;
 using ModelReplacement;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -1318,6 +1317,10 @@ namespace LethalInternship.AI
             Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
         }
 
+        #endregion
+        
+        #region Footstep
+
         private void PlayFootstepIfCloseNoAnimation()
         {
             if (ShouldAnimate)
@@ -1417,23 +1420,75 @@ namespace LethalInternship.AI
 
         private void PlayFootstepSound()
         {
+            Npc.movementAudio.pitch = Random.Range(0.93f, 1.07f);
+            Npc.movementAudio.PlayOneShot(GetFootstepAudioClip(), GetFootstepVolumeScale());
+            //WalkieTalkie.TransmitOneShotAudio(this.movementAudio, StartOfRound.Instance.footstepSurfaces[this.currentFootstepSurfaceIndex].clips[num], num2);
+        }
+
+        private AudioClip GetFootstepAudioClip()
+        {
+            if (Plugin.IsModMipaLoaded)
+            {
+                return GetMipaFootstepAudioClip();
+            }
+            else
+            {
+                return GetDefaultFootstepAudioClip();
+            }
+        }
+
+        private AudioClip GetMipaFootstepAudioClip()
+        {
+            Mipa.MRMIPA_PLAYER_MODEL component = Npc.GetComponent<Mipa.MRMIPA_PLAYER_MODEL>();
+            if (component == null)
+            {
+                return GetDefaultFootstepAudioClip();
+            }
+
+            return component.GetFootstepClip();
+        }
+
+        private AudioClip GetDefaultFootstepAudioClip()
+        {
             AudioClip[] currentFootstepAudioClips = StartOfRound.Instance.footstepSurfaces[Npc.currentFootstepSurfaceIndex].clips;
             int currentFootstepAudioClip = Random.Range(0, currentFootstepAudioClips.Length);
             if (currentFootstepAudioClip == this.previousFootstepClip)
             {
                 currentFootstepAudioClip = (currentFootstepAudioClip + 1) % currentFootstepAudioClips.Length;
             }
-            Npc.movementAudio.pitch = Random.Range(0.93f, 1.07f);
-
-            float volumeScale = 0.9f;
-            if (animationHashLayers[0] != Const.SPRINTING_STATE_HASH)
-            {
-                volumeScale = 0.6f;
-            }
-
-            Npc.movementAudio.PlayOneShot(currentFootstepAudioClips[currentFootstepAudioClip], volumeScale);
             this.previousFootstepClip = currentFootstepAudioClip;
-            //WalkieTalkie.TransmitOneShotAudio(this.movementAudio, StartOfRound.Instance.footstepSurfaces[this.currentFootstepSurfaceIndex].clips[num], num2);
+
+            return currentFootstepAudioClips[currentFootstepAudioClip];
+        }
+
+        private float GetFootstepVolumeScale()
+        {
+            if (Plugin.IsModMipaLoaded)
+            {
+                return GetMipaFootstepVolumeScale();
+            }
+            else
+            {
+                return GetDefaultFootstepVolumeScale();
+            }
+        }
+
+        private float GetMipaFootstepVolumeScale()
+        {
+            if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
+            {
+                return 0.09f;
+            }
+            return 0.06f;
+        }
+
+        private float GetDefaultFootstepVolumeScale()
+        {
+            if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
+            {
+                return 0.9f;
+            }
+            return 0.6f;
         }
 
         #endregion
