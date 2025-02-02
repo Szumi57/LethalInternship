@@ -327,7 +327,8 @@ namespace LethalInternship.AI
         public float GetAmplitude()
         {
             // https://discussions.unity.com/t/how-do-i-get-the-current-volume-level-amplitude-of-playing-audio-not-the-set-volume-but-how-loud-it-is/162556/2
-            if (CurrentAudioSource == null)
+            if (CurrentAudioSource == null
+                || CurrentAudioSource.clip == null)
             {
                 return clipLoudness;
             }
