@@ -66,7 +66,7 @@ namespace LethalInternship.Constants
         public static readonly ConfigIdentity DEFAULT_CONFIG_IDENTITY = new ConfigIdentity()
         {
             name = DEFAULT_INTERN_NAME,
-            suitConfigOption = (int)EnumOptionSuitConfig.AutomaticSameAsPlayer,
+            suitConfigOption = (int)EnumOptionSuitConfig.Random,
             suitID = 0,
             voiceFolder = "Mathew_kelly",
             volume = 0.5f

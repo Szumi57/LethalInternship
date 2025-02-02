@@ -41,7 +41,7 @@ namespace LethalInternship.Configs
 
         // Behaviour       
         [SyncedEntryField] public SyncedEntry<bool> FollowCrouchWithPlayer;
-        [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
+        [SyncedEntryField] public SyncedEntry<bool> ChangeSuitAutoBehaviour;
         [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
@@ -131,12 +131,10 @@ namespace LethalInternship.Configs
                                                defaultVal: true,
                                                "Should the intern crouch like the player is crouching ?");
 
-            ChangeSuitBehaviour = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Options for changing interns suits",
-                                               defaultValue: (int)ConfigConst.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
-                                               new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
-                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Min(),
-                                                                                             Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Max())));
+            ChangeSuitAutoBehaviour = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Options for automaticaly switch suit",
+                                               defaultVal: false,
+                                               "Should the intern automatically switch to the same suit as the player when assigned to him ? (overrides identity config options)");
 
             TeleportWhenUsingLadders = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Teleport when using ladders",

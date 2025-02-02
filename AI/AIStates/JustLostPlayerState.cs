@@ -209,7 +209,7 @@ namespace LethalInternship.AI.AIStates
                 {
                     // new target
                     ai.SyncAssignTargetAndSetMovingTo(newTarget);
-                    if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionSuitChange.AutomaticSameAsPlayer)
+                    if (Plugin.Config.ChangeSuitAutoBehaviour.Value)
                     {
                         ai.ChangeSuitInternServerRpc(npcController.Npc.playerClientId, newTarget.currentSuitID);
                     }

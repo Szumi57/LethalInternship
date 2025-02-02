@@ -2,8 +2,7 @@
 {
     public enum EnumOptionSuitConfig
     {
-        AutomaticSameAsPlayer = 0,
-        Fixed,
+        Fixed = 0,
         Random
     }
 }

@@ -207,7 +207,7 @@ namespace LethalInternship.Managers
                 {
                     intern.SyncAssignTargetAndSetMovingTo(localPlayer);
 
-                    if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionSuitChange.AutomaticSameAsPlayer)
+                    if (Plugin.Config.ChangeSuitAutoBehaviour.Value)
                     {
                         intern.ChangeSuitInternServerRpc(player.playerClientId, localPlayer.currentSuitID);
                     }

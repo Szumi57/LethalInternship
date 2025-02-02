@@ -7,6 +7,7 @@ using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
+using LethalLib.Modules;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -514,7 +515,17 @@ namespace LethalInternship.Managers
 
             // Get an identity for the intern
             internAI.InternIdentity = IdentityManager.Instance.InternIdentities[spawnInternsParamsNetworkSerializable.InternIdentityID];
-            int suitID = internAI.InternIdentity.SuitID ?? internAI.InternIdentity.GetRandomSuitID();
+
+            // Choose suit
+            int suitID;
+            if (Plugin.Config.ChangeSuitAutoBehaviour.Value)
+            {
+                suitID = GameNetworkManager.Instance.localPlayerController.currentSuitID;
+            }
+            else
+            {
+                suitID = internAI.InternIdentity.SuitID ?? internAI.InternIdentity.GetRandomSuitID();
+            }
 
             // Spawn ragdoll dead bodies of intern
             NetworkObject networkObjectRagdollBody = SpawnRagdollBodies((int)StartOfRound.Instance.allPlayerScripts[indexNextPlayerObject].playerClientId);

@@ -78,8 +78,8 @@ namespace LethalInternship.Managers
             EnumOptionSuitConfig suitConfig;
             if (!Enum.IsDefined(typeof(EnumOptionSuitConfig), configIdentity.suitConfigOption))
             {
-                Plugin.LogWarning($"Could not get option for intern suit config in config file, value {configIdentity.suitConfigOption}, name {configIdentity.name}");
-                suitConfig = EnumOptionSuitConfig.AutomaticSameAsPlayer;
+                Plugin.LogWarning($"Could not get option for intern suit config in config file, value {configIdentity.suitConfigOption} for {configIdentity.name}, now using random suit.");
+                suitConfig = EnumOptionSuitConfig.Random;
             }
             else
             {
@@ -88,7 +88,6 @@ namespace LethalInternship.Managers
 
             switch (suitConfig)
             {
-                case EnumOptionSuitConfig.AutomaticSameAsPlayer:
                 case EnumOptionSuitConfig.Fixed:
                     suitID = configIdentity.suitID;
                     break;
@@ -96,7 +95,6 @@ namespace LethalInternship.Managers
                 case EnumOptionSuitConfig.Random:
                     suitID = null;
                     break;
-
             }
 
             // Voice
