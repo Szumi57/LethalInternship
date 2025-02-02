@@ -1421,7 +1421,7 @@ namespace LethalInternship.AI
         private void PlayFootstepSound()
         {
             Npc.movementAudio.pitch = Random.Range(0.93f, 1.07f);
-            Npc.movementAudio.PlayOneShot(GetFootstepAudioClip(), GetFootstepVolumeScale());
+            Npc.movementAudio.PlayOneShot(GetFootstepAudioClip(), GetFootstepVolumeScale() * Plugin.Config.GetVolumeFootstepMultiplierInterns());
             //WalkieTalkie.TransmitOneShotAudio(this.movementAudio, StartOfRound.Instance.footstepSurfaces[this.currentFootstepSurfaceIndex].clips[num], num2);
         }
 
@@ -1475,6 +1475,12 @@ namespace LethalInternship.AI
 
         private float GetMipaFootstepVolumeScale()
         {
+            Mipa.MRMIPA_PLAYER_MODEL component = Npc.GetComponent<Mipa.MRMIPA_PLAYER_MODEL>();
+            if (component == null)
+            {
+                return GetDefaultFootstepVolumeScale();
+            }
+
             if (animationHashLayers[0] == Const.SPRINTING_STATE_HASH)
             {
                 return 0.09f;

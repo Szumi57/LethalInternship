@@ -177,7 +177,7 @@ namespace LethalInternship.AI
 
             CurrentAudioSource.pitch = VoicePitch;
             CurrentAudioSource.clip = audioClip;
-            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, this.Volume * Plugin.Config.GetVolumeMultiplierInterns());
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, this.Volume * Plugin.Config.GetVolumeVoicesMultiplierInterns());
 
             SetCooldownAudio(audioClip.length + GetRandomCooldown());
         }

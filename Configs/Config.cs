@@ -54,9 +54,10 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
         // Voices
-        public ConfigEntry<string> VolumeMultiplierInterns;
+        public ConfigEntry<string> VolumeVoicesMultiplierInterns;
         public ConfigEntry<int> Talkativeness;
         public ConfigEntry<bool> AllowSwearing;
+        public ConfigEntry<string> VolumeFootstepMultiplierInterns;
 
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
@@ -178,10 +179,10 @@ namespace LethalInternship.Configs
                                                             "Should the intern his held item before teleporting ?");
 
             // Voices
-            VolumeMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Volume multiplier (Client only)",
-                                     defaultValue: VoicesConst.DEFAULT_VOLUME.ToString(),
-                                     "Volume multiplier of voices of interns");
+            VolumeVoicesMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                     "Voices volume multiplier (Client only)",
+                                     defaultValue: VoicesConst.DEFAULT_VOICES_VOLUME_MULTIPLIER.ToString(),
+                                     "Volume multiplier of voices of interns (min 0, max 1)");
 
             Talkativeness = cfg.Bind(ConfigConst.ConfigSectionVoices,
                                      "Talkativeness (Client only)",
@@ -194,6 +195,11 @@ namespace LethalInternship.Configs
                                      "Swear words (Client only)",
                                      defaultValue: false,
                                      "Allow the use of swear words in interns voice lines ?");
+
+            VolumeFootstepMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                                      "Footsteps volume multiplier (Client only)",
+                                                      defaultValue: VoicesConst.DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER.ToString(),
+                                                      "Volume multiplier of intern footsteps (min 0, max 1)");
 
             // Debug
             EnableDebugLog = cfg.Bind(ConfigConst.ConfigSectionDebug,
@@ -225,17 +231,30 @@ namespace LethalInternship.Configs
             return string.Format(TerminalConst.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
         }
 
-        public float GetVolumeMultiplierInterns()
+        public float GetVolumeVoicesMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
             NumberFormatInfo nfi = new NumberFormatInfo();
             nfi.NumberDecimalSeparator = ",";
 
-            if (float.TryParse(VolumeMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(VolumeVoicesMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }
-            return VoicesConst.DEFAULT_VOLUME;
+            return VoicesConst.DEFAULT_VOICES_VOLUME_MULTIPLIER;
+        }
+
+        public float GetVolumeFootstepMultiplierInterns()
+        {
+            // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
+            NumberFormatInfo nfi = new NumberFormatInfo();
+            nfi.NumberDecimalSeparator = ",";
+
+            if (float.TryParse(VolumeFootstepMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            {
+                return Mathf.Clamp(volume, 0f, 1f);
+            }
+            return VoicesConst.DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER;
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)
