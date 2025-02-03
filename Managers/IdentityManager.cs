@@ -209,6 +209,19 @@ namespace LethalInternship.Managers
                         .ToArray();
         }
 
+        public int[] GetIdentitiesSpawned()
+        {
+            if (InternIdentities == null)
+            {
+                return new int[0];
+            }
+
+            return InternIdentities
+                        .FilterSpawned()
+                        .Select(x => x.IdIdentity)
+                        .ToArray();
+        }
+
         public bool IsAnIdentityToDrop()
         {
             return InternIdentities.FilterToDropAlive().Any();
@@ -241,6 +254,11 @@ namespace LethalInternship.Managers
         public static IEnumerable<InternIdentity> FilterSpawnedAlive(this IEnumerable<InternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned && x.Alive);
+        }
+
+        public static IEnumerable<InternIdentity> FilterSpawned(this IEnumerable<InternIdentity> enumerable)
+        {
+            return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned);
         }
     }
 }
