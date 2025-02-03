@@ -380,7 +380,7 @@ namespace LethalInternship.AI
 
             // Is still falling ?
             if (StateControllerMovement == EnumStateControllerMovement.Free
-                && NpcController.IsTouchingGround
+                && TimedTouchingGroundCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position)
                 && !shouldFreeMovement)
             {
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= touch ground GroundHit.point {NpcController.GroundHit.point}");
@@ -464,7 +464,7 @@ namespace LethalInternship.AI
 
         private bool ShouldFreeMovement()
         {
-            if (NpcController.IsTouchingGround
+            if (TimedTouchingGroundCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position)
                 && dictComponentByCollider.TryGetValue(TimedTouchingGroundCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name, out Component component))
             {
                 BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
