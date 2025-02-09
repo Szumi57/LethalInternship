@@ -930,8 +930,12 @@ namespace LethalInternship.AI
 
                 // Fear range
                 float? fearRange = GetFearRangeForEnemies(spawnedEnemy);
-                if (!fearRange.HasValue
-                    || sqrDistanceToEnemy > fearRange * fearRange)
+                if (!fearRange.HasValue)
+                {
+                    continue;
+                }
+
+                if (sqrDistanceToEnemy > fearRange * fearRange)
                 {
                     continue;
                 }
@@ -967,17 +971,14 @@ namespace LethalInternship.AI
             switch (enemy.enemyType.enemyName)
             {
                 case "Crawler":
-                case "Bunker Spider":
                 case "MouthDog":
                 case "ForestGiant":
                 case "Butler Bees":
-                    return 20f;
-
                 case "Nutcracker":
                 case "Red Locust Bees":
                 case "Blob":
                 case "ImmortalSnail":
-                    return 10f;
+                    return 15f;
 
                 case "Earth Leviathan":
                 case "Clay Surgeon":
@@ -991,11 +992,22 @@ namespace LethalInternship.AI
                 case "Centipede":
                     return 1f;
 
+                case "Bunker Spider":
+                    if (enemy.currentBehaviourStateIndex == 2)
+                    {
+                        // Mad
+                        return 15f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
                 case "Spring":
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1006,7 +1018,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1017,7 +1029,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1028,7 +1040,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1039,7 +1051,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 30f;
+                        return 15f;
                     }
                     else
                     {
@@ -1050,7 +1062,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 10f;
+                        return 15f;
                     }
                     else
                     {
@@ -1062,7 +1074,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
