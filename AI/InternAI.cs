@@ -975,11 +975,11 @@ namespace LethalInternship.AI
                 case "ForestGiant":
                 case "Butler Bees":
                 case "Nutcracker":
-                case "Red Locust Bees":
                 case "Blob":
                 case "ImmortalSnail":
                     return 15f;
 
+                case "Red Locust Bees":
                 case "Earth Leviathan":
                 case "Clay Surgeon":
                 case "Flowerman":
