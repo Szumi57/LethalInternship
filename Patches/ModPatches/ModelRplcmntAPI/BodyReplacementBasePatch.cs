@@ -4,6 +4,7 @@ using LethalInternship.Managers;
 using ModelReplacement;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
@@ -35,10 +36,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 }
 
                 // Held intern with replacement body not null
-                __instance.avatar.Update();
-                __instance.shadowAvatar.Update();
-                __instance.ragdollAvatar.Update();
-                __instance.viewModelAvatar.Update();
+                UpdateModelReplacement(__instance);
                 return false;
             }
 
@@ -55,11 +53,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             if (ListBodyReplacementOnDeadBodies.Contains(__instance))
             {
                 //Plugin.LogDebug($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} only ragdoll update, {__instance.controller.deadBody}");
-                __instance.ragdollAvatar.Update();
+                UpdateModelReplacement(__instance);
                 return false;
             }
 
-            //Plugin.LogDebug($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} all update");
+            //Plugin.LogDebug($"----------------{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} all update");
             return true;
         }
 
@@ -67,5 +65,27 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPatch("CreateAndParentRagdoll")]
         [HarmonyReversePatch]
         public static void CreateAndParentRagdoll_ReversePatch(object instance, DeadBodyInfo bodyinfo) => throw new NotImplementedException("Stub LethalInternship.Patches.ModPatches.ModelRplcmntAPI.BodyReplacementBasePatch.CreateAndParentRagdoll_ReversePatch");
+
+        public static void CleanListBodyReplacementOnDeadBodies()
+        {
+            for (int i = 0; i < ListBodyReplacementOnDeadBodies.Count; i++)
+            {
+                var bodyReplacementBase = ListBodyReplacementOnDeadBodies[i];
+                if (!StartOfRound.Instance.shipBounds.bounds.Contains(bodyReplacementBase.deadBody.transform.position))
+                {
+                    ModelReplacementAPIPatch.RemoveInternModelReplacement(bodyReplacementBase.controller, forceRemove: true);
+                    ListBodyReplacementOnDeadBodies[i] = null!;
+                }
+            }
+            ListBodyReplacementOnDeadBodies = ListBodyReplacementOnDeadBodies.Where(x => x != null).ToList();
+        }
+
+        private static void UpdateModelReplacement(BodyReplacementBase bodyReplacement)
+        {
+            bodyReplacement.ragdollAvatar.Update();
+            bodyReplacement.avatar.Update();
+            bodyReplacement.shadowAvatar.Update();
+            bodyReplacement.viewModelAvatar.Update();
+        }
     }
 }

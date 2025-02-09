@@ -7,7 +7,6 @@ using LethalInternship.Enums;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
-using LethalLib.Modules;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1252,6 +1251,13 @@ namespace LethalInternship.Managers
                 }
 
                 internController = internAI.NpcController.Npc;
+
+                DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
+                if (Plugin.IsModModelReplacementAPILoaded)
+                {
+                    Patches.ModPatches.ModelRplcmntAPI.ModelReplacementAPIPatch.RemoveInternModelReplacement(internController);
+                }
+
                 if (internController.isPlayerDead
                     || !internController.isPlayerControlled)
                 {
@@ -1260,16 +1266,15 @@ namespace LethalInternship.Managers
 
                 internController.isPlayerControlled = false;
                 internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
-                DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
                 internController.transform.position = internController.playersManager.notSpawnedPosition.position;
-
-                if (Plugin.IsModModelReplacementAPILoaded)
-                {
-                    internAI.HideShowModelReplacement(show: false);
-                }
 
                 internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
                 instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
+            }
+
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                Patches.ModPatches.ModelRplcmntAPI.BodyReplacementBasePatch.CleanListBodyReplacementOnDeadBodies();
             }
         }
 

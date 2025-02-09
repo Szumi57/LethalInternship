@@ -45,6 +45,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 if (bodyReplacementBase.GetType() == type
                     && bodyReplacementBase.suitName == unlockableName)
                 {
+                    //Plugin.LogDebug($"{player.playerUsername} shouldAddNewBodyReplacement false");
                     shouldAddNewBodyReplacement = false;
                 }
                 else
@@ -58,6 +59,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 }
             }
 
+            //Plugin.LogDebug($"{player.playerUsername} shouldAddNewBodyReplacement {shouldAddNewBodyReplacement}");
             if (shouldAddNewBodyReplacement && !internAI.NpcController.Npc.isPlayerDead)
             {
                 Plugin.LogInfo($"Patch LethalInternship, intern {player.playerUsername}, Suit Change detected {suitNameToReplace} => {currentSuitID} {unlockableName}, Replacing {type}.");
@@ -103,17 +105,23 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPrefix]
         static bool RemovePlayerModelReplacement_Prefix(PlayerControllerB player)
         {
+            RemoveInternModelReplacement(player);
+            return false;
+        }
+
+        public static void RemoveInternModelReplacement(PlayerControllerB player, bool forceRemove = false)
+        {
             InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
-                return true;
+                return;
             }
 
             BodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.Select(x => (BodyReplacementBase)x).ToArray();
             //Plugin.LogDebug($"RemovePlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
             foreach (BodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
             {
-                if (BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
+                if (!forceRemove && BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
                 {
                     continue;
                 }
@@ -122,8 +130,6 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 bodyReplacementBase.IsActive = false;
                 UnityEngine.Object.Destroy(bodyReplacementBase);
             }
-
-            return false;
         }
     }
 }
