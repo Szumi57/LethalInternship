@@ -31,22 +31,31 @@ namespace LethalInternship.Patches.TerminalPatches
         static void ParsePlayerSentence_Postfix(ref Terminal __instance, ref TerminalNode __result)
         {
             string command = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
+            TerminalNode? lethalInternshipTerminalNode = TerminalManager.Instance.ParseLethalInternshipCommands(command, ref __instance);
 
-            if (__result != null
-                && __result != __instance.terminalNodes.specialNodes[10] // ParserError1 (TerminalNode)
-                && __result != __instance.terminalNodes.specialNodes[11] // ParserError2 (TerminalNode)
-                && __result != __instance.terminalNodes.specialNodes[12] // ParserError3 (TerminalNode)
-                && command != Plugin.Config.GetTitleInternshipProgram()) 
+            if (__result == null
+                || __result == __instance.terminalNodes.specialNodes[10] // ParserError1 (TerminalNode)
+                || __result == __instance.terminalNodes.specialNodes[11] // ParserError2 (TerminalNode)
+                || __result == __instance.terminalNodes.specialNodes[12] // ParserError3 (TerminalNode)
+                || command == Plugin.Config.GetTitleInternshipProgram())
+            {
+                // Parse lethalIntership command
+                if (lethalInternshipTerminalNode != null)
+                {
+                    __result = lethalInternshipTerminalNode;
+                }
+            }
+            else
             {
                 // Command valid parsed by base game
-                TerminalManager.Instance.ResetTerminalParser();
-                return;
-            }
+                if (TerminalManager.Instance.GetTerminalPage() != Enums.EnumTerminalStates.WaitForMainCommand
+                    && lethalInternshipTerminalNode != null)
+                {
+                    __result = lethalInternshipTerminalNode;
+                    return;
+                }
 
-            TerminalNode? lethalInternshipTerminalNode = TerminalManager.Instance.ParseLethalInternshipCommands(command, ref __instance);
-            if (lethalInternshipTerminalNode != null)
-            {
-                __result = lethalInternshipTerminalNode;
+                TerminalManager.Instance.ResetTerminalParser();
             }
         }
 
