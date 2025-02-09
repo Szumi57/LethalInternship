@@ -13,6 +13,7 @@
         Lost,
         LostAndFound,
         RunningFromMonster,
-        SteppedOnTrap
+        SteppedOnTrap,
+        Sinking
     }
 }

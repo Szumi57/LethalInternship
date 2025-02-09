@@ -55,7 +55,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
                     // Audio
                     internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
                     {
-                        VoiceState = EnumVoicesState.SteppedOnTrap,
+                        VoiceState = EnumVoicesState.Sinking,
                         CanTalkIfOtherInternTalk = true,
                         WaitForCooldown = false,
                         CutCurrentVoiceStateToTalk = true,
