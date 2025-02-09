@@ -493,6 +493,7 @@ namespace LethalInternship.AI
                 && NpcController.Npc.isCrouching)
             {
                 NpcController.OrderToToggleCrouch();
+                return;
             }
 
             if (Plugin.Config.FollowCrouchWithPlayer
@@ -3726,6 +3727,11 @@ namespace LethalInternship.AI
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
 
+            yield return null;
+
+            // Teleport again, cuz I don't know why the teleport does not work first time
+            TeleportAgentAIAndBody(GameNetworkManager.Instance.localPlayerController.transform.position);
+            
             spawnAnimationCoroutine = null;
             yield break;
         }
