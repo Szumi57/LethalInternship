@@ -173,6 +173,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(StartOfRoundPatch));
 
             // Npc
+            _harmony.PatchAll(typeof(EnemyAICollisionDetectPatch));
             _harmony.PatchAll(typeof(EnemyAIPatch));
             _harmony.PatchAll(typeof(PlayerControllerBPatch));
 
@@ -291,11 +292,15 @@ namespace LethalInternship
             }
             if (IsModModelReplacementAPILoaded)
             {
+                _harmony.PatchAll(typeof(AvatarUpdaterPatch));
                 _harmony.PatchAll(typeof(BodyReplacementBasePatch));
+                _harmony.PatchAll(typeof(ManagerBasePatch));
                 _harmony.PatchAll(typeof(ModelReplacementPlayerControllerBPatchPatch));
                 _harmony.PatchAll(typeof(ModelReplacementAPIPatch));
-                _harmony.PatchAll(typeof(ManagerBasePatch));
+                _harmony.PatchAll(typeof(ViewModelUpdaterPatch));
+                _harmony.PatchAll(typeof(ViewStateManagerPatch));
             }
+
             if (isModLethalPhonesLoaded)
             {
                 _harmony.PatchAll(typeof(PlayerPhonePatchPatch));

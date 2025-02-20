@@ -4,10 +4,13 @@ using LethalInternship.AI;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Patches.NpcPatches;
+using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static UnityEngine.ParticleSystem.PlaybackState;
+using UnityEngine.Profiling;
 
 namespace LethalInternship.Managers
 {
@@ -308,6 +311,10 @@ namespace LethalInternship.Managers
 
         private void ReleaseInterns_performed(InputAction.CallbackContext obj)
         {
+            FileInfo dumpFile = MonoProfiler.MonoProfilerPatcher.RunProfilerDump();
+            Plugin.LogDebug("-----------------------Saved profiler dump to " + dumpFile.FullName);
+
+
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
             {

@@ -67,6 +67,8 @@ namespace LethalInternship.Managers
         public VehicleController? VehicleController;
         public Vector3 ItemDropShipPos;
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
+        public TimedOrderedInternDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
+        public InternAI[] InternsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
 
@@ -80,13 +82,14 @@ namespace LethalInternship.Managers
 
         private float timerAnimationCulling;
         private float timerNoAnimationAfterLag;
-        private InternAI[] internsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
         private float timerIsAnInternScheduledToLand;
         private bool isAnInternScheduledToLand;
 
         private float timerRegisterAINoiseListener;
         private List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
         public Dictionary<string, int> DictTagSurfaceIndex = new Dictionary<string, int>();
+
+        private float timerSetInternInElevator;
 
         /// <summary>
         /// Initialize instance,
@@ -218,6 +221,8 @@ namespace LethalInternship.Managers
             {
                 DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
             }
+
+            OrderedInternDistanceListTimedCheck = new TimedOrderedInternDistanceListCheck();
         }
 
         private void Update()
@@ -1143,8 +1148,15 @@ namespace LethalInternship.Managers
             return results.ToArray();
         }
 
-        public void SetInternsInElevatorLateUpdate()
+        public void SetInternsInElevatorLateUpdate(float deltaTime)
         {
+            timerSetInternInElevator += deltaTime;
+            if (timerSetInternInElevator < 0.5f)
+            {
+                return;
+            }
+            timerSetInternInElevator = 0f;
+
             foreach (InternAI internAI in AllInternAIs)
             {
                 if (internAI == null)
@@ -1476,34 +1488,23 @@ namespace LethalInternship.Managers
             }
 
             timerAnimationCulling += Time.deltaTime;
-            if (timerAnimationCulling < 0.05f)
+            if (timerAnimationCulling < 0.01f)
             {
                 return;
             }
 
-            Array.Fill(internsInFOV, null);
+            Array.Fill(InternsInFOV, null);
 
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
-            Vector3 playerPos = StartOfRound.Instance.localPlayerController.transform.position;
-            int baseLayer = StartOfRound.Instance.localPlayerController.gameObject.layer;
-            StartOfRound.Instance.localPlayerController.gameObject.layer = 0;
-
             int index = 0;
             Vector3 internBodyPos;
-            Vector3 vectorPlayerToIntern;
-            foreach (InternAI? internAI in AllInternAIs)
+            List<InternAI> orderedInternDistanceList = OrderedInternDistanceListTimedCheck.GetOrderedInternDistanceList(AllInternAIs);
+            foreach (InternAI? internAI in orderedInternDistanceList)
             {
-                if (internAI == null
-                    || internAI.isEnemyDead
-                    || internAI.NpcController == null
-                    || !internAI.NpcController.Npc.isPlayerControlled
-                    || internAI.NpcController.Npc.isPlayerDead)
-                {
-                    continue;
-                }
-
                 // Cut animation before deciding which intern can animate
-                internAI.NpcController.ShouldAnimate = false;
+                internAI.NpcController.BodyInFOV = false;
+                internAI.NpcController.RankDistanceLocalPlayer = orderedInternDistanceList.Count;
+                internAI.NpcController.RankDistanceLocalPlayerInFOV = InternsInFOV.Length;
 
                 if (timerNoAnimationAfterLag > 3f)
                 {
@@ -1524,55 +1525,18 @@ namespace LethalInternship.Managers
                 {
                     continue;
                 }
-
+                internAI.NpcController.RankDistanceLocalPlayer = orderedInternDistanceList.IndexOf(internAI);
+                
                 internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
-                if (internAI.TimedAngleFOVWithLocalPlayerCheck.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internBodyPos) < localPlayerCamera.fieldOfView * 0.81f)
+                if (internAI.AngleFOVWithLocalPlayerTimedCheck.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internBodyPos) < localPlayerCamera.fieldOfView * 0.81f)
                 {
                     // Intern in FOV
-                    internsInFOV[index++] = internAI;
+                    internAI.NpcController.BodyInFOV = true;
+                    internAI.NpcController.RankDistanceLocalPlayerInFOV = index;
+                    InternsInFOV[index++] = internAI;
                 }
             }
 
-
-            index = 0;
-            var orderedInternInFOV = internsInFOV.Where(x => x != null)
-                                                 .OrderBy(x => (x.NpcController.Npc.transform.position - playerPos).sqrMagnitude);
-            foreach (InternAI? internAI in orderedInternInFOV)
-            {
-                if (index >= Plugin.Config.MaxAnimatedInterns.Value)
-                {
-                    break;
-                }
-
-                internAI.NpcController.Npc.gameObject.layer = 0;
-                internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
-                vectorPlayerToIntern = internBodyPos - localPlayerCamera.transform.position;
-
-                bool collideWithAnotherPlayer = false;
-                RaycastHit[] raycastHits = new RaycastHit[5];
-                Ray ray = new Ray(localPlayerCamera.transform.position, vectorPlayerToIntern);
-                int raycastResults = Physics.RaycastNonAlloc(ray, raycastHits, vectorPlayerToIntern.magnitude, StartOfRound.Instance.playersMask);
-                for (int i = 0; i < raycastResults; i++)
-                {
-                    RaycastHit hit = raycastHits[i];
-                    if (hit.collider != null
-                        && hit.collider.tag == "Player")
-                    {
-                        collideWithAnotherPlayer = true;
-                        break;
-                    }
-                }
-
-                if (!collideWithAnotherPlayer)
-                {
-                    internAI.NpcController.ShouldAnimate = true;
-                    index++;
-                }
-
-                internAI.NpcController.Npc.gameObject.layer = baseLayer;
-            }
-
-            StartOfRound.Instance.localPlayerController.gameObject.layer = baseLayer;
             timerAnimationCulling = 0f;
         }
 
@@ -1620,5 +1584,67 @@ namespace LethalInternship.Managers
         }
 
         #endregion
+
+        public class TimedOrderedInternDistanceListCheck
+        {
+            private List<InternAI> orderedInternDistanceList = null!;
+
+            private long timer = 200 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public List<InternAI> GetOrderedInternDistanceList(InternAI[] internAIs)
+            {
+                if (orderedInternDistanceList == null)
+                {
+                    orderedInternDistanceList = new List<InternAI>();
+                }
+
+                if (!NeedToRecalculate())
+                {
+                    return orderedInternDistanceList;
+                }
+
+                CalculateOrderedInternDistanceList(internAIs);
+                return orderedInternDistanceList;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateOrderedInternDistanceList(InternAI[] internAIs)
+            {
+                orderedInternDistanceList.Clear();
+
+                foreach (InternAI? internAI in internAIs)
+                {
+                    if (internAI == null
+                        || internAI.isEnemyDead
+                        || internAI.NpcController == null
+                        || !internAI.NpcController.Npc.isPlayerControlled
+                        || internAI.NpcController.Npc.isPlayerDead)
+                    {
+                        continue;
+                    }
+
+                    orderedInternDistanceList.Add(internAI);
+                }
+
+                orderedInternDistanceList = orderedInternDistanceList
+                                                .OrderBy(x => x.NpcController.SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(x.NpcController.Npc.transform.position))
+                                                .ToList();
+            }
+        }
+
     }
 }

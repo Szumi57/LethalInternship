@@ -8,6 +8,7 @@ using ModelReplacement;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -23,6 +24,9 @@ namespace LethalInternship.AI
 
         public bool HasToMove { get { return lastMoveVector.y > 0f; } }
         public bool IsControllerInCruiser;
+        public TimedGetBounds GetBoundsTimedCheck = null!;
+        public TimedSqrDistanceWithLocalPlayerCheck SqrDistanceWithLocalPlayerTimedCheck = null!;
+        public TimedUpdateBillboardLookAtCheck UpdateBillboardLookAtTimedCheck = null!;
 
         // Public variables to pass to patch
         public bool IsCameraDisabled;
@@ -51,8 +55,12 @@ namespace LethalInternship.AI
         public int PlayerMask;
         public bool IsTouchingGround;
         public EnemyAI? EnemyInAnimationWith;
-        public bool ShouldAnimate;
         public Vector3 NearEntitiesPushVector;
+
+        // Animations culling
+        public bool BodyInFOV;
+        public int RankDistanceLocalPlayer;
+        public int RankDistanceLocalPlayerInFOV;
 
         private InternAI InternAIController
         {
@@ -116,6 +124,7 @@ namespace LethalInternship.AI
 
         private float timerShowName;
         private float timerPlayFootstep;
+        private float timerBillboardText;
 
         public NpcController(PlayerControllerB npc)
         {
@@ -169,6 +178,10 @@ namespace LethalInternship.AI
             animationHashLayers = new int[Npc.playerBodyAnimator.layerCount];
             currentAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
             previousAnimationStateHash = new List<int>(new int[Npc.playerBodyAnimator.layerCount]);
+
+            GetBoundsTimedCheck = new TimedGetBounds();
+            SqrDistanceWithLocalPlayerTimedCheck = new TimedSqrDistanceWithLocalPlayerCheck();
+            UpdateBillboardLookAtTimedCheck = new TimedUpdateBillboardLookAtCheck();
         }
 
         /// <summary>
@@ -442,11 +455,11 @@ namespace LethalInternship.AI
 
                 if (Npc.isSprinting)
                 {
-                    sprintMultiplier = Mathf.Lerp(sprintMultiplier, 2.25f, Time.deltaTime * 1f);
+                    sprintMultiplier = 2.25f;
                 }
                 else
                 {
-                    sprintMultiplier = Mathf.Lerp(sprintMultiplier, 1f, 10f * Time.deltaTime);
+                    sprintMultiplier = 1f;
                 }
 
                 if (Npc.moveInputVector.y < 0.2f && Npc.moveInputVector.y > -0.2f && !Npc.inSpecialInteractAnimation)
@@ -560,14 +573,14 @@ namespace LethalInternship.AI
         {
             if (Npc.isCrouching)
             {
-                Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 0.72f, Npc.thisController.center.z), 8f * Time.deltaTime);
-                Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 1.5f, 8f * Time.deltaTime);
+                Npc.thisController.center = new Vector3(Npc.thisController.center.x, 0.72f, Npc.thisController.center.z);
+                Npc.thisController.height = 1.5f;
             }
             else
             {
                 CrouchMeter = Mathf.Max(CrouchMeter - Time.deltaTime * 2f, 0f);
-                Npc.thisController.center = Vector3.Lerp(Npc.thisController.center, new Vector3(Npc.thisController.center.x, 1.28f, Npc.thisController.center.z), 8f * Time.deltaTime);
-                Npc.thisController.height = Mathf.Lerp(Npc.thisController.height, 2.5f, 8f * Time.deltaTime);
+                Npc.thisController.center = new Vector3(Npc.thisController.center.x, 1.28f, Npc.thisController.center.z);
+                Npc.thisController.height = 2.5f;
             }
         }
 
@@ -697,7 +710,8 @@ namespace LethalInternship.AI
             {
                 num7 = 10f / Npc.carryWeight;
             }
-            walkForce = Vector3.MoveTowards(walkForce, Npc.transform.right * Npc.moveInputVector.x + Npc.transform.forward * Npc.moveInputVector.y, num7 * Time.deltaTime);
+
+            walkForce = Vector3.Lerp(walkForce, Npc.transform.right * Npc.moveInputVector.x + Npc.transform.forward * Npc.moveInputVector.y, num7 * Time.deltaTime);
             Vector3 vector2 = walkForce * num3 * sprintMultiplier + new Vector3(0f, Npc.fallValue, 0f) + NearEntitiesPushVector;
             vector2 += Npc.externalForces;
             if (Npc.externalForceAutoFade.magnitude > 0.05f)
@@ -900,50 +914,57 @@ namespace LethalInternship.AI
             //    Plugin.LogDebug($"layer {i}, {Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash}");
             //}
 
-            // Update the "what should be the animation state"
-            // Layer 0
-            if (Npc.isCrouching)
+            this.updatePlayerAnimationsInterval += Time.deltaTime;
+            if (Npc.inSpecialInteractAnimation || this.updatePlayerAnimationsInterval > 0.14f)
             {
-                if (IsWalking)
+                this.updatePlayerAnimationsInterval = 0f;
+
+                // Update the "what should be the animation state"
+                // Layer 0
+                if (Npc.isCrouching)
                 {
-                    animationHashLayers[0] = Const.CROUCHING_WALKING_STATE_HASH;
+                    if (IsWalking)
+                    {
+                        animationHashLayers[0] = Const.CROUCHING_WALKING_STATE_HASH;
+                    }
+                    else
+                    {
+                        animationHashLayers[0] = Const.CROUCHING_IDLE_STATE_HASH;
+                    }
+                }
+                else if (Npc.isSprinting)
+                {
+                    animationHashLayers[0] = Const.SPRINTING_STATE_HASH;
+                }
+                else if (IsWalking)
+                {
+                    animationHashLayers[0] = Const.WALKING_STATE_HASH;
                 }
                 else
                 {
-                    animationHashLayers[0] = Const.CROUCHING_IDLE_STATE_HASH;
+                    animationHashLayers[0] = Const.IDLE_STATE_HASH;
+                }
+
+                if (IsControllerInCruiser)
+                {
+                    animationHashLayers[0] = Const.IDLE_STATE_HASH;
+                }
+
+                // Other layers
+                for (int i = 1; i < Npc.playerBodyAnimator.layerCount; i++)
+                {
+                    animationHashLayers[i] = Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash;
+                }
+
+                if (NetworkManager.Singleton != null && Npc.playersManager.connectedPlayersAmount > 0)
+                {
+                    // Sync
+                    UpdateInternAnimationsToOtherClients(animationHashLayers);
                 }
             }
-            else if (Npc.isSprinting)
-            {
-                animationHashLayers[0] = Const.SPRINTING_STATE_HASH;
-            }
-            else if (IsWalking)
-            {
-                animationHashLayers[0] = Const.WALKING_STATE_HASH;
-            }
-            else
-            {
-                animationHashLayers[0] = Const.IDLE_STATE_HASH;
-            }
 
-            if (IsControllerInCruiser)
-            {
-                animationHashLayers[0] = Const.IDLE_STATE_HASH;
-            }
-
-            // Other layers
-            for (int i = 1; i < Npc.playerBodyAnimator.layerCount; i++)
-            {
-                animationHashLayers[i] = Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(i).fullPathHash;
-            }
-
-            if (NetworkManager.Singleton != null && Npc.playersManager.connectedPlayersAmount > 0)
-            {
-                // Sync
-                UpdateInternAnimationsToOtherClients(animationHashLayers);
-            }
-
-            if (ShouldAnimate)
+            if (BodyInFOV
+                && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value)
             {
                 if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
                 {
@@ -1008,7 +1029,8 @@ namespace LethalInternship.AI
             {
                 this.updatePlayerAnimationsInterval = 0f;
 
-                if (ShouldAnimate)
+                if (BodyInFOV
+                    && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value)
                 {
                     // If animation
                     // Update animation if current != previous
@@ -1068,13 +1090,14 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 0f, Time.deltaTime * 12f);
+                    //Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 0f, Time.deltaTime * 12f);
+                    Npc.specialAnimationWeight = 0f;
                 }
-                if (!Npc.localArmsMatchCamera)
-                {
-                    Npc.localArmsTransform.position = Npc.playerModelArmsMetarig.position + Npc.playerModelArmsMetarig.forward * -0.445f;
-                    Npc.playerModelArmsMetarig.rotation = Quaternion.Lerp(Npc.playerModelArmsMetarig.rotation, Npc.localArmsRotationTarget.rotation, 15f * Time.deltaTime);
-                }
+                //if (!Npc.localArmsMatchCamera)
+                //{
+                //    Npc.localArmsTransform.position = Npc.playerModelArmsMetarig.position + Npc.playerModelArmsMetarig.forward * -0.445f;
+                //    Npc.playerModelArmsMetarig.rotation = Quaternion.Lerp(Npc.playerModelArmsMetarig.rotation, Npc.localArmsRotationTarget.rotation, 15f * Time.deltaTime);
+                //}
             }
             else
             {
@@ -1083,8 +1106,9 @@ namespace LethalInternship.AI
                     CameraUp = Mathf.Lerp(CameraUp, 0f, 5f * Time.deltaTime);
                     Npc.gameplayCamera.transform.localEulerAngles = new Vector3(CameraUp, Npc.gameplayCamera.transform.localEulerAngles.y, Npc.gameplayCamera.transform.localEulerAngles.z);
                 }
-                Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 1f, Time.deltaTime * 20f);
-                Npc.playerModelArmsMetarig.localEulerAngles = new Vector3(-90f, 0f, 0f);
+                //Npc.specialAnimationWeight = Mathf.Lerp(Npc.specialAnimationWeight, 1f, Time.deltaTime * 20f);
+                Npc.specialAnimationWeight = 1f;
+                //Npc.playerModelArmsMetarig.localEulerAngles = new Vector3(-90f, 0f, 0f);
             }
         }
         /// <summary>
@@ -1114,7 +1138,15 @@ namespace LethalInternship.AI
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
 
-            Npc.meshContainer.position = Vector3.Lerp(Npc.transform.position, Npc.transform.position - Vector3.up * 2.8f, instanceSOR.playerSinkingCurve.Evaluate(Npc.sinkingValue));
+            if (Npc.sinkingValue > 0)
+            {
+                Npc.meshContainer.position = Vector3.Lerp(Npc.transform.position, Npc.transform.position - Vector3.up * 2.8f, instanceSOR.playerSinkingCurve.Evaluate(Npc.sinkingValue));
+            }
+            else
+            {
+                Npc.meshContainer.position = Npc.transform.position;
+            }
+
             if (Npc.isSinking && !Npc.inSpecialInteractAnimation && Npc.inAnimationWithEnemy == null)
             {
                 Npc.sinkingValue = Mathf.Clamp(Npc.sinkingValue + Time.deltaTime * Npc.sinkingSpeedMultiplier, 0f, 1f);
@@ -1144,7 +1176,7 @@ namespace LethalInternship.AI
             }
             else
             {
-                Npc.statusEffectAudio.volume = Mathf.Lerp(Npc.statusEffectAudio.volume, 1f, 4f * Time.deltaTime);
+                Npc.statusEffectAudio.volume = 1f;
             }
         }
         /// <summary>
@@ -1181,7 +1213,7 @@ namespace LethalInternship.AI
 
             if (Npc.isHoldingObject || Npc.isGrabbingObjectAnimation || Npc.inShockingMinigame)
             {
-                this.upperBodyAnimationsWeight = Mathf.Lerp(this.upperBodyAnimationsWeight, 1f, 25f * Time.deltaTime);
+                this.upperBodyAnimationsWeight = 1f;
                 if (Npc.twoHandedAnimation || Npc.inShockingMinigame)
                 {
                     Npc.playerBodyAnimator.SetLayerWeight(indexLayerHoldingItemsRightHand, Mathf.Abs(this.upperBodyAnimationsWeight - 1f));
@@ -1195,7 +1227,7 @@ namespace LethalInternship.AI
             }
             else
             {
-                this.upperBodyAnimationsWeight = Mathf.Lerp(this.upperBodyAnimationsWeight, 0f, 25f * Time.deltaTime);
+                this.upperBodyAnimationsWeight = 0f;
                 Npc.playerBodyAnimator.SetLayerWeight(indexLayerHoldingItemsRightHand, this.upperBodyAnimationsWeight);
                 Npc.playerBodyAnimator.SetLayerWeight(indexLayerHoldingItemsBothHands, this.upperBodyAnimationsWeight);
             }
@@ -1203,8 +1235,8 @@ namespace LethalInternship.AI
             Npc.playerBodyAnimator.SetLayerWeight(Npc.playerBodyAnimator.GetLayerIndex(Const.PLAYER_ANIMATION_WEIGHT_SPECIALANIMATIONS), Npc.specialAnimationWeight);
             if (Npc.inSpecialInteractAnimation && !Npc.inShockingMinigame)
             {
-                Npc.cameraLookRig1.weight = Mathf.Lerp(Npc.cameraLookRig1.weight, 0f, Time.deltaTime * 25f);
-                Npc.cameraLookRig2.weight = Mathf.Lerp(Npc.cameraLookRig1.weight, 0f, Time.deltaTime * 25f);
+                Npc.cameraLookRig1.weight = 0f;
+                Npc.cameraLookRig2.weight = 0f;
             }
             else
             {
@@ -1217,7 +1249,7 @@ namespace LethalInternship.AI
             }
             else
             {
-                this.exhaustionEffectLerp = Mathf.Lerp(this.exhaustionEffectLerp, 0f, 10f * Time.deltaTime);
+                this.exhaustionEffectLerp = 0f;
             }
             Npc.playerBodyAnimator.SetFloat(Const.PLAYER_ANIMATION_FLOAT_TIREDAMOUNT, this.exhaustionEffectLerp);
         }
@@ -1228,28 +1260,23 @@ namespace LethalInternship.AI
 
         private void UpdateInternAnimationsToOtherClients(int[] animationsStateHash)
         {
-            this.updatePlayerAnimationsInterval += Time.deltaTime;
-            if (Npc.inSpecialInteractAnimation || this.updatePlayerAnimationsInterval > 0.14f)
+            this.currentAnimationSpeed = Npc.playerBodyAnimator.GetFloat("animationSpeed");
+            for (int i = 0; i < animationsStateHash.Length; i++)
             {
-                this.updatePlayerAnimationsInterval = 0f;
-                this.currentAnimationSpeed = Npc.playerBodyAnimator.GetFloat("animationSpeed");
-                for (int i = 0; i < animationsStateHash.Length; i++)
+                this.currentAnimationStateHash[i] = animationsStateHash[i];
+                if (this.previousAnimationStateHash[i] != this.currentAnimationStateHash[i])
                 {
-                    this.currentAnimationStateHash[i] = animationsStateHash[i];
-                    if (this.previousAnimationStateHash[i] != this.currentAnimationStateHash[i])
-                    {
-                        this.previousAnimationStateHash[i] = this.currentAnimationStateHash[i];
-                        this.previousAnimationSpeed = this.currentAnimationSpeed;
-                        InternAIController.UpdateInternAnimationServerRpc(this.currentAnimationStateHash[i], this.currentAnimationSpeed);
-                        return;
-                    }
-                }
-
-                if (this.previousAnimationSpeed != this.currentAnimationSpeed)
-                {
+                    this.previousAnimationStateHash[i] = this.currentAnimationStateHash[i];
                     this.previousAnimationSpeed = this.currentAnimationSpeed;
-                    InternAIController.UpdateInternAnimationServerRpc(0, this.currentAnimationSpeed);
+                    InternAIController.UpdateInternAnimationServerRpc(this.currentAnimationStateHash[i], this.currentAnimationSpeed);
+                    return;
                 }
+            }
+
+            if (this.previousAnimationSpeed != this.currentAnimationSpeed)
+            {
+                this.previousAnimationSpeed = this.currentAnimationSpeed;
+                InternAIController.UpdateInternAnimationServerRpc(0, this.currentAnimationSpeed);
             }
         }
 
@@ -1260,7 +1287,8 @@ namespace LethalInternship.AI
                 Npc.playerBodyAnimator.SetFloat("animationSpeed", animationSpeed);
             }
 
-            if (ShouldAnimate)
+            if (BodyInFOV
+                && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value)
             {
                 if (animationState != 0 && Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != animationState)
                 {
@@ -1318,17 +1346,14 @@ namespace LethalInternship.AI
         }
 
         #endregion
-        
+
         #region Footstep
 
         private void PlayFootstepIfCloseNoAnimation()
         {
-            if (ShouldAnimate)
-            {
-                return;
-            }
-
-            if ((StartOfRound.Instance.localPlayerController.transform.position - Npc.transform.position).sqrMagnitude > 20f * 20f)
+            if (BodyInFOV
+                && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value
+                && SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(Npc.transform.position) > 20f * 20f)
             {
                 return;
             }
@@ -1374,7 +1399,7 @@ namespace LethalInternship.AI
                     PlayAudibleNoiseIntern(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
                 }
 
-                if ((StartOfRound.Instance.localPlayerController.transform.position - Npc.transform.position).sqrMagnitude < 20f * 20f)
+                if (RankDistanceLocalPlayer < Plugin.Config.MaxFootStepAudioInterns.Value)
                 {
                     PlayFootstepSound();
                 }
@@ -1508,8 +1533,6 @@ namespace LethalInternship.AI
         /// </remarks>
         public void LateUpdate()
         {
-            GameNetworkManager instanceGNM = GameNetworkManager.Instance;
-
             Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
 
             if (NetworkManager.Singleton == null)
@@ -1517,23 +1540,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            // Text billboard
-            Npc.usernameBillboardText.text = InternAIController.GetSizedBillboardStateIndicator();
-            if (timerShowName >= 0f)
-            {
-                timerShowName -= Time.deltaTime;
-                Npc.usernameBillboardText.text += $"\n{Npc.playerUsername}";
-
-                if (InternAIController.IsClientOwnerOfIntern())
-                {
-                    Npc.usernameBillboardText.text += $"\nv";
-                }
-            }
-
-            if (instanceGNM.localPlayerController != null)
-            {
-                Npc.usernameBillboard.LookAt(instanceGNM.localPlayerController.localVisorTargetPoint);
-            }
+            UpdateBillboard();
 
             // Physics regions
             //int priority = 0;
@@ -1584,7 +1591,7 @@ namespace LethalInternship.AI
 
                 if (Npc.isPlayerControlled && !Npc.isPlayerDead)
                 {
-                    if (instanceGNM != null)
+                    if (GameNetworkManager.Instance != null)
                     {
                         float distMaxBeforeUpdating;
                         if (Npc.inSpecialInteractAnimation)
@@ -1600,7 +1607,8 @@ namespace LethalInternship.AI
                             distMaxBeforeUpdating = 0.24f;
                         }
 
-                        if ((Npc.oldPlayerPosition - Npc.transform.localPosition).sqrMagnitude > distMaxBeforeUpdating || UpdatePositionForNewlyJoinedClient)
+                        if ((Npc.oldPlayerPosition - Npc.transform.localPosition).sqrMagnitude > distMaxBeforeUpdating * distMaxBeforeUpdating
+                            || UpdatePositionForNewlyJoinedClient)
                         {
                             UpdatePositionForNewlyJoinedClient = false;
                             if (!Npc.playersManager.newGameIsLoading)
@@ -1620,44 +1628,44 @@ namespace LethalInternship.AI
                     }
 
                     float num2 = 1f;
-                    if (Npc.drunkness > 0.02f)
-                    {
-                        num2 *= Mathf.Abs(StartOfRound.Instance.drunknessSpeedEffect.Evaluate(Npc.drunkness) - 1.25f);
-                    }
+                    //if (Npc.drunkness > 0.02f)
+                    //{
+                    //    num2 *= Mathf.Abs(StartOfRound.Instance.drunknessSpeedEffect.Evaluate(Npc.drunkness) - 1.25f);
+                    //}
                     if (Npc.isSprinting)
                     {
                         // Cut exhaustion for now
                         //Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * Npc.carryWeight * num2, 0f, 1f);
                     }
-                    else if (Npc.isMovementHindered > 0)
-                    {
-                        if (IsWalking)
-                        {
-                            Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * num2 * 0.5f, 0f, 1f);
-                        }
-                    }
+                    //else if (Npc.isMovementHindered > 0)
+                    //{
+                    //    if (IsWalking)
+                    //    {
+                    //        Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter - Time.deltaTime / Npc.sprintTime * num2 * 0.5f, 0f, 1f);
+                    //    }
+                    //}
                     else
                     {
-                        if (!IsWalking)
-                        {
-                            Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter + Time.deltaTime / (Npc.sprintTime + 4f) * num2, 0f, 1f);
-                        }
-                        else
-                        {
-                            Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter + Time.deltaTime / (Npc.sprintTime + 9f) * num2, 0f, 1f);
-                        }
-                        if (Npc.isExhausted && Npc.sprintMeter > 0.2f)
-                        {
-                            Npc.isExhausted = false;
-                        }
+                        //if (!IsWalking)
+                        //{
+                        Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter + Time.deltaTime / (Npc.sprintTime + 4f) * num2, 0f, 1f);
+                        //}
+                        //else
+                        //{
+                        //    Npc.sprintMeter = Mathf.Clamp(Npc.sprintMeter + Time.deltaTime / (Npc.sprintTime + 9f) * num2, 0f, 1f);
+                        //}
+                        //if (Npc.isExhausted && Npc.sprintMeter > 0.2f)
+                        //{
+                        //    Npc.isExhausted = false;
+                        //}
                     }
                 }
             }
-            if (!Npc.inSpecialInteractAnimation && Npc.localArmsMatchCamera)
-            {
-                Npc.localArmsTransform.position = Npc.cameraContainerTransform.transform.position + Npc.gameplayCamera.transform.up * -0.5f;
-                Npc.playerModelArmsMetarig.rotation = Npc.localArmsRotationTarget.rotation;
-            }
+            //if (!Npc.inSpecialInteractAnimation && Npc.localArmsMatchCamera)
+            //{
+            //    Npc.localArmsTransform.position = Npc.cameraContainerTransform.transform.position + Npc.gameplayCamera.transform.up * -0.5f;
+            //    Npc.playerModelArmsMetarig.rotation = Npc.localArmsRotationTarget.rotation;
+            //}
         }
 
         public void ReParentNotSpawnedTransform(Transform newParent)
@@ -1716,6 +1724,38 @@ namespace LethalInternship.AI
             }
 
             return true;
+        }
+
+        private void UpdateBillboard()
+        {
+            timerBillboardText += Time.deltaTime;
+            if (timerShowName >= 0f
+                || timerBillboardText > 0.5f)
+            {
+                timerBillboardText = 0f;
+
+                // Text billboard
+                StringBuilder sb = new StringBuilder();
+                sb.Append(InternAIController.GetSizedBillboardStateIndicator());
+                if (timerShowName >= 0f)
+                {
+                    timerShowName -= Time.deltaTime;
+
+                    sb.Append($"\n{Npc.playerUsername}");
+                    if (InternAIController.IsClientOwnerOfIntern())
+                    {
+                        sb.Append($"\nv");
+                    }
+                }
+                Npc.usernameBillboardText.text = sb.ToString();
+            }
+
+            if (GameNetworkManager.Instance.localPlayerController != null
+                && BodyInFOV)
+            {
+                UpdateBillboardLookAtTimedCheck.UpdateBillboardLookAt(Npc,
+                                                                      SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(Npc.transform.position) < 10f * 10f);
+            }
         }
 
         private bool IsRealPlayerClose(Vector3 thisPosition, float distance)
@@ -2318,16 +2358,146 @@ namespace LethalInternship.AI
 
         private Vector3 GetBillBoardPosition(GameObject bodyModel, Vector3 lastPosition)
         {
-            // Code from mod ModelReplacementAPI.BodyReplacementBase.GetBounds
-            IEnumerable<Bounds> source = from r in bodyModel.GetComponentsInChildren<SkinnedMeshRenderer>()
-                                         select r.bounds;
-            float yMax = (from x in source
-                          orderby x.size.y descending
-                          select x).First<Bounds>().size.y;
-
+            Bounds modelBounds = GetBoundsTimedCheck.GetBoundsModel(bodyModel);
             return new Vector3(lastPosition.x,
-                               yMax + 0.30f,
+                               (modelBounds.center.y - Npc.transform.position.y) + modelBounds.extents.y + 0.65f,
                                lastPosition.z);
+        }
+
+        public class TimedGetBounds
+        {
+            private Bounds bounds;
+            private GameObject? model;
+
+            private long timer = 10000 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public Bounds GetBoundsModel(GameObject model)
+            {
+                if (model == this.model
+                    && !NeedToRecalculate())
+                {
+                    return bounds;
+                }
+
+                this.model = model;
+                CalculateBoundsModel(model);
+                return bounds;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateBoundsModel(GameObject model)
+            {
+                // Shamelessly taken from ModelReplacementAPI, sorry, had to do optimizations with all these damn interns
+                bounds = default(Bounds);
+                IEnumerable<Bounds> enumerable = Enumerable.Select<SkinnedMeshRenderer, Bounds>(model.GetComponentsInChildren<SkinnedMeshRenderer>(), (SkinnedMeshRenderer r) => r.bounds);
+                float x3 = Enumerable.First<Bounds>(Enumerable.OrderByDescending<Bounds, float>(enumerable, (Bounds x) => x.max.x)).max.x;
+                float y = Enumerable.First<Bounds>(Enumerable.OrderByDescending<Bounds, float>(enumerable, (Bounds x) => x.max.y)).max.y;
+                float z = Enumerable.First<Bounds>(Enumerable.OrderByDescending<Bounds, float>(enumerable, (Bounds x) => x.max.z)).max.z;
+                float x2 = Enumerable.First<Bounds>(Enumerable.OrderBy<Bounds, float>(enumerable, (Bounds x) => x.min.x)).min.x;
+                float y2 = Enumerable.First<Bounds>(Enumerable.OrderBy<Bounds, float>(enumerable, (Bounds x) => x.min.y)).min.y;
+                float z2 = Enumerable.First<Bounds>(Enumerable.OrderBy<Bounds, float>(enumerable, (Bounds x) => x.min.z)).min.z;
+                bounds.SetMinMax(new Vector3(x2, y2, z2), new Vector3(x3, y, z));
+            }
+        }
+
+        public class TimedSqrDistanceWithLocalPlayerCheck
+        {
+            private float sqrDistance;
+
+            private long timer = 100 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public float GetSqrDistanceWithLocalPlayer(Vector3 internBodyPos)
+            {
+                if (!NeedToRecalculate())
+                {
+                    return sqrDistance;
+                }
+
+                if (StartOfRound.Instance == null
+                    || StartOfRound.Instance.localPlayerController == null)
+                {
+                    return sqrDistance;
+                }
+
+                CalculateSqrDistanceWithLocalPlayer(internBodyPos);
+                return sqrDistance;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateSqrDistanceWithLocalPlayer(Vector3 internBodyPos)
+            {
+                sqrDistance = (StartOfRound.Instance.localPlayerController.transform.position - internBodyPos).sqrMagnitude;
+            }
+        }
+
+        public class TimedUpdateBillboardLookAtCheck
+        {
+            private long timer = 100 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public void UpdateBillboardLookAt(PlayerControllerB player, bool forceUpdate)
+            {
+                if (!forceUpdate
+                    && !NeedToRecalculate())
+                {
+                    return;
+                }
+
+                if (StartOfRound.Instance == null
+                    || StartOfRound.Instance.localPlayerController == null)
+                {
+                    return;
+                }
+
+                CalculateUpdateBillboardLookAt(player);
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateUpdateBillboardLookAt(PlayerControllerB player)
+            {
+                player.usernameBillboard.LookAt(StartOfRound.Instance.localPlayerController.localVisorTargetPoint);
+            }
         }
     }
 }

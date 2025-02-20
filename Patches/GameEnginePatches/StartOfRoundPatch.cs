@@ -502,7 +502,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 && __instance.shipDoorsEnabled 
                 && !__instance.suckingPlayersOutOfShip)
             {
-                InternManager.Instance.SetInternsInElevatorLateUpdate();
+                InternManager.Instance.SetInternsInElevatorLateUpdate(Time.deltaTime);
             }
         }
 

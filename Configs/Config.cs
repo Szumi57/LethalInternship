@@ -28,8 +28,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> InternPrice;
         [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
         [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
-        public ConfigEntry<int> MaxAnimatedInterns;
-
+        
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
 
@@ -58,6 +57,11 @@ namespace LethalInternship.Configs
         public ConfigEntry<int> Talkativeness;
         public ConfigEntry<bool> AllowSwearing;
         public ConfigEntry<string> VolumeFootstepMultiplierInterns;
+
+        // Performance
+        public ConfigEntry<int> MaxDefaultModelAnimatedInterns;
+        public ConfigEntry<int> MaxModelReplacementModelAnimatedInterns;
+        public ConfigEntry<int> MaxFootStepAudioInterns;
 
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
@@ -93,12 +97,6 @@ namespace LethalInternship.Configs
                                        defaultValue: ConfigConst.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(ConfigConst.MIN_SIZE_SCALE_INTERN, ConfigConst.MAX_SIZE_SCALE_INTERN)));
-
-            MaxAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionMain,
-                                   "Max animated intern at once",
-                                   defaultValue: ConfigConst.MAX_INTERNS_AVAILABLE,
-                                   new ConfigDescription("Set the maximum of interns that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
-                                                         new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             CanSpectateInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                                      "Spectate interns",
@@ -200,6 +198,25 @@ namespace LethalInternship.Configs
                                                       "Footsteps volume multiplier (Client only)",
                                                       defaultValue: VoicesConst.DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER.ToString(),
                                                       "Volume multiplier of intern footsteps (min 0, max 1)");
+
+            // Performance
+            MaxDefaultModelAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
+                                                      "(Client only) Max animated intern with default model at the same time",
+                                                      defaultValue: ConfigConst.MAX_INTERNS_AVAILABLE,
+                                                      new ConfigDescription("Set the maximum of interns with default model that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
+                                                      new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
+
+            MaxModelReplacementModelAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
+                                                      "(Client only) Max animated intern with a replacement model at the same time",
+                                                      defaultValue: ConfigConst.DEFAULT_MAX_ANIMATIONS_MODELREPLACEMENT,
+                                                      new ConfigDescription("Set the maximum of interns with a replacement model (heavy on performance) that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
+                                                      new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
+
+            MaxFootStepAudioInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
+                                               "(Client only) Max number of intern making footstep sound at the same time",
+                                               defaultValue: ConfigConst.DEFAULT_MAX_FOOTSTEP_SOUND,
+                                               new ConfigDescription("Set the maximum number of intern making footstep sound at the same time (client only)",
+                                               new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             // Debug
             EnableDebugLog = cfg.Bind(ConfigConst.ConfigSectionDebug,

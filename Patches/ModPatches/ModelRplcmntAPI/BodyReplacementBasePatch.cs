@@ -84,8 +84,22 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         {
             bodyReplacement.ragdollAvatar.Update();
             bodyReplacement.avatar.Update();
-            bodyReplacement.shadowAvatar.Update();
-            bodyReplacement.viewModelAvatar.Update();
+            //bodyReplacement.shadowAvatar.Update(); // no shadow for interns
+            //bodyReplacement.viewModelAvatar.Update(); // No view model (1st person view) for interns
+        }
+
+        [HarmonyPatch("GetBounds")]
+        [HarmonyPrefix]
+        static bool GetBounds_Prefix(BodyReplacementBase __instance, GameObject model, ref Bounds __result)
+        {
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)__instance.controller.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            __result = internAI.NpcController.GetBoundsTimedCheck.GetBoundsModel(model);
+            return false;
         }
     }
 }
