@@ -74,7 +74,7 @@ namespace LethalInternship.Constants
             // voice pitch set after
         };
 
-        public static readonly int DEFAULT_MAX_ANIMATIONS_MODELREPLACEMENT = 5;
+        public static readonly int DEFAULT_MAX_ANIMATIONS_MODELREPLACEMENT = 6;
         public static readonly int DEFAULT_MAX_FOOTSTEP_SOUND = 7;
     }
 }

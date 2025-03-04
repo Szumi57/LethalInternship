@@ -2,15 +2,12 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Constants;
-using LethalInternship.Enums;
 using LethalInternship.Patches.NpcPatches;
 using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEngine.ParticleSystem.PlaybackState;
-using UnityEngine.Profiling;
 
 namespace LethalInternship.Managers
 {
@@ -311,9 +308,12 @@ namespace LethalInternship.Managers
 
         private void ReleaseInterns_performed(InputAction.CallbackContext obj)
         {
-            FileInfo dumpFile = MonoProfiler.MonoProfilerPatcher.RunProfilerDump();
-            Plugin.LogDebug("-----------------------Saved profiler dump to " + dumpFile.FullName);
-
+            // Profiler, does not concern intern logic
+            if (Plugin.IsModMonoProfilerLoaderLoaded)
+            {
+                DumpMonoProfilerFile();
+            }
+            // ---------------------------------------
 
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
@@ -333,6 +333,19 @@ namespace LethalInternship.Managers
             }
 
             HUDManager.Instance.ClearControlTips();
+        }
+
+        private void DumpMonoProfilerFile()
+        {
+            try
+            {
+                FileInfo dumpFile = MonoProfiler.MonoProfilerPatcher.RunProfilerDump();
+                Plugin.LogDebug("-----------------------Saved profiler dump to " + dumpFile.FullName);
+            }
+            catch
+            {
+                Plugin.LogDebug("Could not dump profiler file. Ignore if not wanted.");
+            }
         }
 
         private void ChangeSuitIntern_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
@@ -359,7 +372,7 @@ namespace LethalInternship.Managers
                     continue;
                 }
                 InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null 
+                if (intern == null
                     || intern.IsSpawningAnimationRunning())
                 {
                     continue;

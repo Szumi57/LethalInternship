@@ -67,8 +67,9 @@ namespace LethalInternship.Managers
         public VehicleController? VehicleController;
         public Vector3 ItemDropShipPos;
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
-        public TimedOrderedInternDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
-        public InternAI[] InternsInFOV = new InternAI[Plugin.Config.MaxInternsAvailable];
+        public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
+        public List<InternCullingBodyInfo> InternBodiesSpawned = null!;
+        public InternCullingBodyInfo[] OrderedInternBodiesInFOV = new InternCullingBodyInfo[Plugin.Config.MaxInternsAvailable];
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
 
@@ -222,12 +223,18 @@ namespace LethalInternship.Managers
                 DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
             }
 
-            OrderedInternDistanceListTimedCheck = new TimedOrderedInternDistanceListCheck();
+            OrderedInternDistanceListTimedCheck = new TimedOrderedInternBodiesDistanceListCheck();
+            InternBodiesSpawned = new List<InternCullingBodyInfo>();
         }
 
         private void Update()
         {
-            UpdateAnimationsCulling();
+            timerAnimationCulling += Time.deltaTime;
+            if (timerAnimationCulling > 0.01f)
+            {
+                timerAnimationCulling = 0;
+                UpdateAnimationsCulling();
+            }
 
             timerIsAnInternScheduledToLand += Time.deltaTime;
             if (timerIsAnInternScheduledToLand > 1f)
@@ -732,6 +739,9 @@ namespace LethalInternship.Managers
                 internController.deadBody = null;
             }
 
+            // Register body for animation culling
+            RegisterInternBodyForAnimationCulling(internController);
+
             // Switch suit
             internAI.ChangeSuitIntern(internController.playerClientId, internAI.InternIdentity.SuitID.Value);
 
@@ -752,6 +762,7 @@ namespace LethalInternship.Managers
                 }
             }
 
+            // Init intern
             Plugin.LogDebug($"++ Intern with body {internController.playerClientId} with identity spawned: {internIdentity.ToString()}");
             internAI.Init((EnumSpawnAnimation)spawnParamsNetworkSerializable.enumSpawnAnimation);
         }
@@ -1485,59 +1496,111 @@ namespace LethalInternship.Managers
             if (timerNoAnimationAfterLag > 0f)
             {
                 timerNoAnimationAfterLag += Time.deltaTime;
-            }
-
-            timerAnimationCulling += Time.deltaTime;
-            if (timerAnimationCulling < 0.01f)
-            {
-                return;
-            }
-
-            Array.Fill(InternsInFOV, null);
-
-            Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
-            int index = 0;
-            Vector3 internBodyPos;
-            List<InternAI> orderedInternDistanceList = OrderedInternDistanceListTimedCheck.GetOrderedInternDistanceList(AllInternAIs);
-            foreach (InternAI? internAI in orderedInternDistanceList)
-            {
-                // Cut animation before deciding which intern can animate
-                internAI.NpcController.BodyInFOV = false;
-                internAI.NpcController.RankDistanceLocalPlayer = orderedInternDistanceList.Count;
-                internAI.NpcController.RankDistanceLocalPlayerInFOV = InternsInFOV.Length;
-
                 if (timerNoAnimationAfterLag > 3f)
                 {
                     timerNoAnimationAfterLag = 0f;
                 }
-                if (timerNoAnimationAfterLag > 0f)
+                return;
+            }
+
+            if (timerNoAnimationAfterLag > 0f)
+            {
+                // No animation allowed
+                List<InternCullingBodyInfo> orderedInternBodiesDistanceListToDisable = OrderedInternDistanceListTimedCheck.GetOrderedInternDistanceList(InternBodiesSpawned);
+                foreach (InternCullingBodyInfo internCullingBodyInfo in orderedInternBodiesDistanceListToDisable)
                 {
-                    continue;
+                    // Cut animation
+                    internCullingBodyInfo.ResetBodyInfos();
                 }
-                // Stop animation if we are losing frames
-                if (timerNoAnimationAfterLag <= 0f && Time.deltaTime > 0.125f)
+                return;
+            }
+
+            // Stop animation if we are losing frames
+            if (timerNoAnimationAfterLag <= 0f && Time.deltaTime > 0.125f)
+            {
+                timerNoAnimationAfterLag += Time.deltaTime;
+                return;
+            }
+
+            Array.Fill(OrderedInternBodiesInFOV, null);
+
+            int indexAnyModel = 0;
+            int indexNoModelReplacement = 0;
+            int indexWithModelReplacement = 0;
+
+            int indexAnyModelInFOV = 0;
+            int indexNoModelReplacementInFOV = 0;
+            int indexWithModelReplacementInFOV = 0;
+
+            List<InternCullingBodyInfo> orderedInternBodiesDistanceList = OrderedInternDistanceListTimedCheck.GetOrderedInternDistanceList(InternBodiesSpawned);
+            foreach (InternCullingBodyInfo internCullingBodyInfo in orderedInternBodiesDistanceList)
+            {
+                // Cut animation before deciding which intern can animate
+                internCullingBodyInfo.ResetBodyInfos();
+
+                internCullingBodyInfo.RankDistanceAnyModel = indexAnyModel++;
+                if (internCullingBodyInfo.CheckIsInFOV())
                 {
-                    timerNoAnimationAfterLag += timerAnimationCulling;
-                    continue;
+                    if (internCullingBodyInfo.HasModelReplacement)
+                    {
+                        internCullingBodyInfo.RankDistanceWithModelReplacementInFOV = indexWithModelReplacementInFOV++;
+                    }
+                    else
+                    {
+                        internCullingBodyInfo.RankDistanceNoModelReplacementInFOV = indexNoModelReplacementInFOV++;
+                    }
+
+                    indexAnyModelInFOV++;
+                    internCullingBodyInfo.RankDistanceAnyModelInFOV = indexAnyModelInFOV;
+                    internCullingBodyInfo.BodyInFOV = true;
+                    OrderedInternBodiesInFOV[indexAnyModelInFOV] = internCullingBodyInfo;
                 }
 
-                if (!internAI.NpcController.IsMoving())
+                // In or not in FOV
+                if (internCullingBodyInfo.HasModelReplacement)
                 {
-                    continue;
+                    internCullingBodyInfo.RankDistanceWithModelReplacement = indexWithModelReplacement++;
                 }
-                internAI.NpcController.RankDistanceLocalPlayer = orderedInternDistanceList.IndexOf(internAI);
-                
-                internBodyPos = internAI.NpcController.Npc.transform.position + new Vector3(0, 1.7f, 0);
-                if (internAI.AngleFOVWithLocalPlayerTimedCheck.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internBodyPos) < localPlayerCamera.fieldOfView * 0.81f)
+                else
                 {
-                    // Intern in FOV
-                    internAI.NpcController.BodyInFOV = true;
-                    internAI.NpcController.RankDistanceLocalPlayerInFOV = index;
-                    InternsInFOV[index++] = internAI;
+                    internCullingBodyInfo.RankDistanceNoModelReplacement = indexNoModelReplacement++;
                 }
             }
 
             timerAnimationCulling = 0f;
+        }
+
+        public bool HasComponentModelReplacementAPI(GameObject gameObject)
+        {
+            return gameObject.GetComponent<ModelReplacement.BodyReplacementBase>();
+        }
+
+        public void RegisterInternBodyForAnimationCulling(Component internBody, bool hasModelReplacement = false)
+        {
+            // Clean
+            InternBodiesSpawned.RemoveAll(x => x.InternBody == null);
+
+            // Register
+            InternBodiesSpawned.Add(new InternCullingBodyInfo(internBody, hasModelReplacement));
+        }
+
+        public InternCullingBodyInfo? GetInternCullingBodyInfo(GameObject gameObject)
+        {
+            foreach (InternCullingBodyInfo internCullingBodyInfo in InternBodiesSpawned)
+            {
+                if (internCullingBodyInfo == null
+                    || internCullingBodyInfo.InternBody == null)
+                {
+                    continue;
+                }
+
+                if (internCullingBodyInfo.InternBody.gameObject == gameObject)
+                {
+                    return internCullingBodyInfo;
+                }
+            }
+
+            return null;
         }
 
         #endregion
@@ -1585,27 +1648,27 @@ namespace LethalInternship.Managers
 
         #endregion
 
-        public class TimedOrderedInternDistanceListCheck
+        public class TimedOrderedInternBodiesDistanceListCheck
         {
-            private List<InternAI> orderedInternDistanceList = null!;
+            private List<InternCullingBodyInfo> orderedInternBodiesDistanceList = null!;
 
             private long timer = 200 * TimeSpan.TicksPerMillisecond;
             private long lastTimeCalculate;
 
-            public List<InternAI> GetOrderedInternDistanceList(InternAI[] internAIs)
+            public List<InternCullingBodyInfo> GetOrderedInternDistanceList(List<InternCullingBodyInfo> internBodies)
             {
-                if (orderedInternDistanceList == null)
+                if (orderedInternBodiesDistanceList == null)
                 {
-                    orderedInternDistanceList = new List<InternAI>();
+                    orderedInternBodiesDistanceList = new List<InternCullingBodyInfo>();
                 }
 
                 if (!NeedToRecalculate())
                 {
-                    return orderedInternDistanceList;
+                    return orderedInternBodiesDistanceList;
                 }
 
-                CalculateOrderedInternDistanceList(internAIs);
-                return orderedInternDistanceList;
+                CalculateOrderedInternDistanceList(internBodies);
+                return orderedInternBodiesDistanceList;
             }
 
             private bool NeedToRecalculate()
@@ -1622,27 +1685,13 @@ namespace LethalInternship.Managers
                 }
             }
 
-            private void CalculateOrderedInternDistanceList(InternAI[] internAIs)
+            private void CalculateOrderedInternDistanceList(List<InternCullingBodyInfo> internBodies)
             {
-                orderedInternDistanceList.Clear();
-
-                foreach (InternAI? internAI in internAIs)
-                {
-                    if (internAI == null
-                        || internAI.isEnemyDead
-                        || internAI.NpcController == null
-                        || !internAI.NpcController.Npc.isPlayerControlled
-                        || internAI.NpcController.Npc.isPlayerDead)
-                    {
-                        continue;
-                    }
-
-                    orderedInternDistanceList.Add(internAI);
-                }
-
-                orderedInternDistanceList = orderedInternDistanceList
-                                                .OrderBy(x => x.NpcController.SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(x.NpcController.Npc.transform.position))
-                                                .ToList();
+                orderedInternBodiesDistanceList.Clear();
+                orderedInternBodiesDistanceList.AddRange(internBodies);
+                orderedInternBodiesDistanceList = orderedInternBodiesDistanceList
+                                                    .OrderBy(x => x.GetSqrDistanceWithLocalPlayer())
+                                                    .ToList();
             }
         }
 

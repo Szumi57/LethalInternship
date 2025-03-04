@@ -1,6 +1,4 @@
-﻿using LethalInternship.Enums;
-using LethalInternship.NetworkSerializers;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LethalInternship.Constants
 {
@@ -35,6 +33,7 @@ namespace LethalInternship.Constants
         public const string MIPA_GUID = "Mipa";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
+        public const string MONOPROFILERLOADER_DLLFILENAME = "MonoProfilerLoader.dll";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;

@@ -92,8 +92,6 @@ namespace LethalInternship.AI
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
 
-        private float timerRagdollUpdateModelReplacement;
-
         private LineRendererUtil LineRendererUtil = null!;
 
         private void Awake()
@@ -165,7 +163,7 @@ namespace LethalInternship.AI
             this.NpcController.Awake();
 
             // Refresh billboard position
-            StartCoroutine(WaitSecondsToRefreshBillBoard());
+            StartCoroutine(WaitSecondsForChangeSuitToApply());
 
             // Health
             MaxHealth = InternIdentity.HpMax;
@@ -195,7 +193,7 @@ namespace LethalInternship.AI
             // Start timed calculation
             IsTouchingGroundTimedCheck = new TimedTouchingGroundCheck();
             AngleFOVWithLocalPlayerTimedCheck = new TimedAngleFOVWithLocalPlayerCheck();
-            
+
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
         }
@@ -255,6 +253,12 @@ namespace LethalInternship.AI
 
         private void FixedUpdate()
         {
+            if (NpcController == null)
+            {
+                // Intern AI not init
+                return;
+            }
+
             UpdateSurfaceRayCast();
         }
 
@@ -282,6 +286,12 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Update()
         {
+            if (NpcController == null)
+            {
+                // Intern AI not init
+                return;
+            }
+
             // Update identity
             InternIdentity.Hp = NpcController.Npc.isPlayerDead ? 0 : NpcController.Npc.health;
 
@@ -304,8 +314,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (NpcController == null
-                || !NpcController.Npc.gameObject.activeSelf
+            if (!NpcController.Npc.gameObject.activeSelf
                 || !NpcController.Npc.isPlayerControlled
                 || isEnemyDead
                 || NpcController.Npc.isPlayerDead)
@@ -460,6 +469,12 @@ namespace LethalInternship.AI
 
         private void LateUpdate()
         {
+            if (NpcController == null)
+            {
+                // Intern AI not init
+                return;
+            }
+
             // Update voice position
             InternVoice.transform.position = NpcController.Npc.gameplayCamera.transform.position;
         }
@@ -1729,56 +1744,6 @@ namespace LethalInternship.AI
             (from x in componentsInChildren
              where x.gameObject.name == "BetaBadge"
              select x).First<MeshRenderer>().enabled = show;
-        }
-
-        public void UpdateRagdollModelReplacement(ModelReplacement.AvatarBodyUpdater.AvatarUpdater avatarBodyUpdater,
-                                           Vector3 rootPositionOffset,
-                                           Vector3 ragdollPos,
-                                           SkinnedMeshRenderer playerModelRenderer)
-        {
-            Transform avatarTransformFromBoneName = avatarBodyUpdater.GetAvatarTransformFromBoneName("spine");
-            Transform playerTransformFromBoneName = avatarBodyUpdater.GetPlayerTransformFromBoneName("spine");
-            avatarTransformFromBoneName.position = playerTransformFromBoneName.position + playerTransformFromBoneName.TransformVector(rootPositionOffset);
-
-            timerRagdollUpdateModelReplacement += Time.deltaTime;
-            if (timerRagdollUpdateModelReplacement > 10f) timerRagdollUpdateModelReplacement = 10f;
-
-            Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
-            Vector3 vect = ragdollPos - localPlayerCamera.transform.position;
-
-            // In distance ?
-            if (vect.sqrMagnitude > 2f * 2f)
-            {
-                Plugin.LogDebug("ragdoll too far");
-                return;
-            }
-
-            // In fov ?
-            if (Vector3.Angle(localPlayerCamera.transform.forward, vect) > localPlayerCamera.fieldOfView * 0.81f)
-            {
-                Plugin.LogDebug("ragdoll not in fov");
-                return;
-            }
-
-            if (timerRagdollUpdateModelReplacement < 0.2f)
-            {
-                return;
-            }
-            timerRagdollUpdateModelReplacement = 0f;
-
-            foreach (Transform transform in playerModelRenderer.bones)
-            {
-                Transform avatarTransformFromBoneName2 = avatarBodyUpdater.GetAvatarTransformFromBoneName(transform.name);
-                if (avatarTransformFromBoneName2 != null)
-                {
-                    avatarTransformFromBoneName2.rotation = transform.rotation;
-                    ModelReplacement.AvatarBodyUpdater.RotationOffset component = avatarTransformFromBoneName2.GetComponent<ModelReplacement.AvatarBodyUpdater.RotationOffset>();
-                    if (component != null)
-                    {
-                        avatarTransformFromBoneName2.rotation *= component.offset;
-                    }
-                }
-            }
         }
 
         #region Voices
@@ -3494,6 +3459,10 @@ namespace LethalInternship.AI
                 // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
                 NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
                 this.InternIdentity.DeadBody = NpcController.Npc.deadBody;
+
+                // Register body for animation culling
+                bool hasComponentModelReplacementAPI = Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
+                InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, hasComponentModelReplacementAPI);
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -3580,6 +3549,9 @@ namespace LethalInternship.AI
 
             // Set intern to brain dead
             State = new BrainDeadState(this);
+
+            // Register body for animation culling
+            InternManager.Instance.RegisterInternBodyForAnimationCulling(ragdollBodyDeadBodyInfo);
         }
 
         private void InstantiateDeadBodyInfo(PlayerControllerB playerReference, Vector3 bodyVelocity = default)
@@ -4178,12 +4150,18 @@ namespace LethalInternship.AI
         [ServerRpc(RequireOwnership = false)]
         public void ChangeSuitInternServerRpc(ulong idInternController, int suitID)
         {
+            ChangeSuitIntern(idInternController, suitID, playAudio: true);
             ChangeSuitInternClientRpc(idInternController, suitID);
         }
 
         [ClientRpc]
         private void ChangeSuitInternClientRpc(ulong idInternController, int suitID)
         {
+            if (IsServer)
+            {
+                return;
+            }
+
             ChangeSuitIntern(idInternController, suitID, playAudio: true);
         }
 
@@ -4198,16 +4176,24 @@ namespace LethalInternship.AI
 
             UnlockableSuit.SwitchSuitForPlayer(internController, suitID, playAudio);
             internController.thisPlayerModelArms.enabled = false;
-            StartCoroutine(WaitSecondsToRefreshBillBoard());
+            StartCoroutine(WaitSecondsForChangeSuitToApply());
             InternIdentity.SuitID = suitID;
 
             Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}: {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
         }
 
-        private IEnumerator WaitSecondsToRefreshBillBoard()
+        private IEnumerator WaitSecondsForChangeSuitToApply()
         {
             yield return new WaitForSeconds(0.2f);
+
             NpcController.RefreshBillBoardPosition();
+
+            InternCullingBodyInfo? internCullingBodyInfo = InternManager.Instance.GetInternCullingBodyInfo(NpcController.Npc.gameObject);
+            if (internCullingBodyInfo != null)
+            {
+                internCullingBodyInfo.HasModelReplacement = Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
+            }
+
             yield break;
         }
 

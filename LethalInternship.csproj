@@ -56,11 +56,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>True</Optimize>
-    <DebugType>full</DebugType>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>True</Optimize>
-    <DebugType>full</DebugType>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\Audio\Voices\DefaultVoices.zip" />
@@ -154,7 +154,7 @@
       <HintPath>lib\mods\ModelReplacementAPI.dll</HintPath>
     </Reference>
     <Reference Include="MonoProfilerLoader">
-      <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\SzumiDev\BepInEx\patchers\monoprofiler\MonoProfilerLoader.dll</HintPath>
+      <HintPath>lib\mods\MonoProfilerLoader.dll</HintPath>
     </Reference>
     <Reference Include="MoreCompany">
       <HintPath>lib\mods\MoreCompany.dll</HintPath>

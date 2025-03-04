@@ -94,6 +94,7 @@ namespace LethalInternship
         internal static bool IsModBunkbedReviveLoaded = false;
         internal static bool IsModLethalMinLoaded = false;
         internal static bool IsModMipaLoaded = false;
+        internal static bool IsModMonoProfilerLoaderLoaded = false;
 
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -259,6 +260,7 @@ namespace LethalInternship
             }
             // Are these preloaders loaded ?
             bool isModAdditionalNetworkingLoaded = IsPreLoaderLoaded(Const.ADDITIONALNETWORKING_DLLFILENAME, preloadersFileNames);
+            IsModMonoProfilerLoaderLoaded = IsPreLoaderLoaded(Const.MONOPROFILERLOADER_DLLFILENAME, preloadersFileNames);
 
             // -----------------------------
             // Compatibility with other mods
@@ -415,6 +417,11 @@ namespace LethalInternship
             {
                 LogInfo($"Mod compatibility loaded for preloader : {dllFileName}");
             }
+
+            //foreach (var a in fileNames)
+            //{
+            //    LogDebug($"{a}");
+            //}
 
             return ret;
         }

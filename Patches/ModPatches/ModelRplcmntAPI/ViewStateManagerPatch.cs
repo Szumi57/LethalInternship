@@ -22,6 +22,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 return true;
             }
 
+            // Disable base player model
             if (___controller.thisPlayerModel.enabled)
             {
                 __instance.SetPlayerRenderers(enabled: false, helmetShadow: false);
@@ -50,6 +51,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 return true;
             }
 
+            // Enable base player model
             if (!___controller.thisPlayerModel.enabled)
             {
                 __instance.SetPlayerRenderers(enabled: true, helmetShadow: true);

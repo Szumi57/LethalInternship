@@ -58,9 +58,7 @@ namespace LethalInternship.AI
         public Vector3 NearEntitiesPushVector;
 
         // Animations culling
-        public bool BodyInFOV;
-        public int RankDistanceLocalPlayer;
-        public int RankDistanceLocalPlayerInFOV;
+        public InternCullingBodyInfo InternCullingBodyInfo = null!;
 
         private InternAI InternAIController
         {
@@ -963,8 +961,7 @@ namespace LethalInternship.AI
                 }
             }
 
-            if (BodyInFOV
-                && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value)
+            if (ShouldAnimate())
             {
                 if (Npc.playerBodyAnimator.GetBool(Const.PLAYER_ANIMATION_BOOL_WALKING) != IsWalking)
                 {
@@ -1029,8 +1026,7 @@ namespace LethalInternship.AI
             {
                 this.updatePlayerAnimationsInterval = 0f;
 
-                if (BodyInFOV
-                    && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value)
+                if (ShouldAnimate())
                 {
                     // If animation
                     // Update animation if current != previous
@@ -1256,7 +1252,7 @@ namespace LethalInternship.AI
 
         #endregion
 
-        #region Animations
+        #region Animations and culling
 
         private void UpdateInternAnimationsToOtherClients(int[] animationsStateHash)
         {
@@ -1287,8 +1283,7 @@ namespace LethalInternship.AI
                 Npc.playerBodyAnimator.SetFloat("animationSpeed", animationSpeed);
             }
 
-            if (BodyInFOV
-                && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value)
+            if (ShouldAnimate())
             {
                 if (animationState != 0 && Npc.playerBodyAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash != animationState)
                 {
@@ -1345,15 +1340,40 @@ namespace LethalInternship.AI
             Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_SIDEWAYS, false);
         }
 
+        private bool ShouldAnimate()
+        {
+            if (InternCullingBodyInfo == null)
+            {
+                return false;
+            }
+
+            if (!InternCullingBodyInfo.BodyInFOV)
+            {
+                return false;
+            }
+
+            if (InternCullingBodyInfo.HasModelReplacement)
+            {
+                return InternCullingBodyInfo.RankDistanceWithModelReplacementInFOV < Plugin.Config.MaxModelReplacementModelAnimatedInterns.Value;
+            }
+            else
+            {
+                return InternCullingBodyInfo.RankDistanceNoModelReplacementInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value;
+            }
+        }
+
         #endregion
 
         #region Footstep
 
         private void PlayFootstepIfCloseNoAnimation()
         {
-            if (BodyInFOV
-                && RankDistanceLocalPlayerInFOV < Plugin.Config.MaxDefaultModelAnimatedInterns.Value
-                && SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(Npc.transform.position) > 20f * 20f)
+            if (ShouldAnimate())
+            {
+                return;
+            }
+
+            if (SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(Npc.transform.position) > 20f * 20f)
             {
                 return;
             }
@@ -1399,11 +1419,21 @@ namespace LethalInternship.AI
                     PlayAudibleNoiseIntern(Npc.transform.position, 17f, 0.4f, 0, noiseIsInsideClosedShip, 6);
                 }
 
-                if (RankDistanceLocalPlayer < Plugin.Config.MaxFootStepAudioInterns.Value)
+                if (ShouldPlayFootstepSound())
                 {
                     PlayFootstepSound();
                 }
             }
+        }
+
+        private bool ShouldPlayFootstepSound()
+        {
+            if (InternCullingBodyInfo == null)
+            {
+                return false;
+            }
+
+            return InternCullingBodyInfo.RankDistanceAnyModel < Plugin.Config.MaxFootStepAudioInterns.Value;
         }
 
         public void PlayAudibleNoiseIntern(Vector3 noisePosition,
@@ -1751,7 +1781,8 @@ namespace LethalInternship.AI
             }
 
             if (GameNetworkManager.Instance.localPlayerController != null
-                && BodyInFOV)
+                && InternCullingBodyInfo != null
+                && InternCullingBodyInfo.BodyInFOV)
             {
                 UpdateBillboardLookAtTimedCheck.UpdateBillboardLookAt(Npc,
                                                                       SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(Npc.transform.position) < 10f * 10f);

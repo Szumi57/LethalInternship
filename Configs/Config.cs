@@ -178,51 +178,51 @@ namespace LethalInternship.Configs
 
             // Voices
             VolumeVoicesMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Voices volume multiplier (Client only)",
+                                     "Voices volume multiplier",
                                      defaultValue: VoicesConst.DEFAULT_VOICES_VOLUME_MULTIPLIER.ToString(),
-                                     "Volume multiplier of voices of interns (min 0, max 1)");
+                                     "(Client only) Volume multiplier of voices of interns (min 0, max 1)");
 
             Talkativeness = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Talkativeness (Client only)",
+                                     "Talkativeness",
                                      defaultValue: (int)VoicesConst.DEFAULT_CONFIG_ENUM_TALKATIVENESS,
-                                     new ConfigDescription("0: No talking | 1: Shy | 2: Normal | 3: Talkative | 4: Can't stop talking",
+                                     new ConfigDescription("(Client only) 0: No talking | 1: Shy | 2: Normal | 3: Talkative | 4: Can't stop talking",
                                                      new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Min(),
                                                                                    Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Max())));
 
             AllowSwearing = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Swear words (Client only)",
+                                     "Swear words",
                                      defaultValue: false,
-                                     "Allow the use of swear words in interns voice lines ?");
+                                     "(Client only) Allow the use of swear words in interns voice lines ?");
 
             VolumeFootstepMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                                      "Footsteps volume multiplier (Client only)",
+                                                      "Footsteps volume multiplier",
                                                       defaultValue: VoicesConst.DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER.ToString(),
-                                                      "Volume multiplier of intern footsteps (min 0, max 1)");
+                                                      "(Client only) Volume multiplier of intern footsteps (min 0, max 1)");
 
             // Performance
             MaxDefaultModelAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
-                                                      "(Client only) Max animated intern with default model at the same time",
+                                                      "Max animated intern with default model at the same time",
                                                       defaultValue: ConfigConst.MAX_INTERNS_AVAILABLE,
-                                                      new ConfigDescription("Set the maximum of interns with default model that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
+                                                      new ConfigDescription("(Client only) Set the maximum of interns with default model that can be animated at the same time (if heavy lag occurs when looking at a lot of interns)",
                                                       new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             MaxModelReplacementModelAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
-                                                      "(Client only) Max animated intern with a replacement model at the same time",
+                                                      "Max animated intern with a replacement model at the same time",
                                                       defaultValue: ConfigConst.DEFAULT_MAX_ANIMATIONS_MODELREPLACEMENT,
-                                                      new ConfigDescription("Set the maximum of interns with a replacement model (heavy on performance) that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
+                                                      new ConfigDescription("(Client only) Set the maximum of interns with a replacement model (heavy on performance) that can be animated at the same time (if heavy lag occurs when looking at a lot of interns)",
                                                       new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             MaxFootStepAudioInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
-                                               "(Client only) Max number of intern making footstep sound at the same time",
+                                               "Max number of intern making footstep sound at the same time",
                                                defaultValue: ConfigConst.DEFAULT_MAX_FOOTSTEP_SOUND,
-                                               new ConfigDescription("Set the maximum number of intern making footstep sound at the same time (client only)",
+                                               new ConfigDescription("(Client only) Set the maximum number of intern making footstep sound at the same time",
                                                new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             // Debug
             EnableDebugLog = cfg.Bind(ConfigConst.ConfigSectionDebug,
-                                      "EnableDebugLog  (Client only)",
+                                      "EnableDebugLog",
                                       defaultValue: false,
-                                      "Enable the debug logs used for this mod.");
+                                      "(Client only) Enable the debug logs used for this mod.");
 
             ClearUnusedEntries(cfg);
             cfg.SaveOnConfigSet = true;
