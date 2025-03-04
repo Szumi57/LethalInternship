@@ -41,7 +41,7 @@ namespace LethalInternship.Configs
         // Behaviour       
         [SyncedEntryField] public SyncedEntry<bool> FollowCrouchWithPlayer;
         [SyncedEntryField] public SyncedEntry<bool> ChangeSuitAutoBehaviour;
-        [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
+        //[SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
@@ -135,10 +135,10 @@ namespace LethalInternship.Configs
                                                defaultVal: false,
                                                "Should the intern automatically switch to the same suit as the player when assigned to him ? (overrides identity config options)");
 
-            TeleportWhenUsingLadders = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Teleport when using ladders",
-                                               defaultVal: false,
-                                               "Should the intern just teleport and bypass any animations when using ladders ?");
+            //TeleportWhenUsingLadders = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+            //                                   "Teleport when using ladders",
+            //                                   defaultVal: false,
+            //                                   "Should the intern just teleport and bypass any animations when using ladders ?");
 
             GrabItemsNearEntrances = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Grab items near entrances",
@@ -172,9 +172,9 @@ namespace LethalInternship.Configs
 
             // Teleporters
             TeleportedInternDropItems = cfg.BindSyncedEntry(ConfigConst.ConfigSectionTeleporters,
-                                                            "Teleported intern drop item (not if the intern is grabbed by player)",
+                                                            "Teleported intern drop item (not if the intern is grabbed by player) (no use at the moment)",
                                                             defaultVal: true,
-                                                            "Should the intern his held item before teleporting ?");
+                                                            "(no use at the moment, in later update) Should the intern his held item before teleporting ?");
 
             // Voices
             VolumeVoicesMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,

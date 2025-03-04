@@ -1314,11 +1314,12 @@ namespace LethalInternship.AI
             }
 
             // Intern wants to use ladder
-            if (Plugin.Config.TeleportWhenUsingLadders.Value)
-            {
-                NpcController.Npc.transform.position = this.transform.position;
-                return true;
-            }
+            // Removing all that for the moment
+            //if (Plugin.Config.TeleportWhenUsingLadders.Value)
+            //{
+            //    NpcController.Npc.transform.position = this.transform.position;
+            //    return true;
+            //}
 
             // Try to use ladder
             if (NpcController.CanUseLadder(ladder))
