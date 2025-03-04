@@ -5,7 +5,7 @@ namespace LethalInternship.Utils
     /// <summary>
     /// Utilitary class to help with using rays
     /// </summary>
-    internal class RayUtil
+    public class RayUtil
     {
         public static void RayCastAndDrawFromPointWithColor(LineRenderer? lr, Vector3 origin, Vector3 endPoint, Color color)
         {

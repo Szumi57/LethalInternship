@@ -398,12 +398,6 @@ namespace LethalInternship
             {
                 _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "RevivePlayer"),
                                new HarmonyMethod(typeof(DefibrillatorScriptPatch), nameof(DefibrillatorScriptPatch.RevivePlayer_Prefix)));
-                //_harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "RevivePlayer"),
-                //               null,
-                //               null,
-                //               null,
-                //               null,
-                //               new HarmonyMethod(typeof(DefibrillatorScriptPatch), nameof(DefibrillatorScriptPatch.RevivePlayer_ReversePatch)));
             }
         }
 
