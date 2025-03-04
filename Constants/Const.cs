@@ -31,6 +31,7 @@ namespace LethalInternship.Constants
         public const string LETHALMIN_GUID = "NoteBoxz.LethalMin";
         public const string HOTDOGMODEL_GUID = "hotdogModel";
         public const string MIPA_GUID = "Mipa";
+        public const string USUALSCRAP_GUID = "Emil.UsualScrap";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
         public const string MONOPROFILERLOADER_DLLFILENAME = "MonoProfilerLoader.dll";

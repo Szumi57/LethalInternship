@@ -28,6 +28,7 @@ using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
 using LethalInternship.Patches.ModPatches.TooManyEmotes;
+using LethalInternship.Patches.ModPatches.UsualScrap;
 using LethalInternship.Patches.ModPatches.Zaprillator;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
@@ -250,6 +251,7 @@ namespace LethalInternship
             bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
             bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
             bool isModHotDogModelLoaded = IsModLoaded(Const.HOTDOGMODEL_GUID);
+            bool isModUsualScrapLoaded = IsModLoaded(Const.USUALSCRAP_GUID);
 
             // -------------------
             // Read the preloaders
@@ -391,6 +393,17 @@ namespace LethalInternship
             if (IsModMipaLoaded)
             {
                 _harmony.PatchAll(typeof(SkinApplyPatch));
+            }
+            if (isModUsualScrapLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "RevivePlayer"),
+                               new HarmonyMethod(typeof(DefibrillatorScriptPatch), nameof(DefibrillatorScriptPatch.RevivePlayer_Prefix)));
+                //_harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "RevivePlayer"),
+                //               null,
+                //               null,
+                //               null,
+                //               null,
+                //               new HarmonyMethod(typeof(DefibrillatorScriptPatch), nameof(DefibrillatorScriptPatch.RevivePlayer_ReversePatch)));
             }
         }
 
