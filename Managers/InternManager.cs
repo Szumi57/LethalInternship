@@ -1550,10 +1550,10 @@ namespace LethalInternship.Managers
                         internCullingBodyInfo.RankDistanceNoModelReplacementInFOV = indexNoModelReplacementInFOV++;
                     }
 
-                    indexAnyModelInFOV++;
                     internCullingBodyInfo.RankDistanceAnyModelInFOV = indexAnyModelInFOV;
                     internCullingBodyInfo.BodyInFOV = true;
                     OrderedInternBodiesInFOV[indexAnyModelInFOV] = internCullingBodyInfo;
+                    indexAnyModelInFOV++;
                 }
 
                 // In or not in FOV
@@ -1580,8 +1580,16 @@ namespace LethalInternship.Managers
             // Clean
             InternBodiesSpawned.RemoveAll(x => x.InternBody == null);
 
-            // Register
-            InternBodiesSpawned.Add(new InternCullingBodyInfo(internBody, hasModelReplacement));
+            // Register or re-init
+            InternCullingBodyInfo? internCullingBodyInfo = InternBodiesSpawned.FirstOrDefault(x => x.InternBody == internBody);
+            if (internCullingBodyInfo == null)
+            {
+                InternBodiesSpawned.Add(new InternCullingBodyInfo(internBody, hasModelReplacement));
+            }
+            else
+            {
+                internCullingBodyInfo.Init(hasModelReplacement);
+            }
         }
 
         public InternCullingBodyInfo? GetInternCullingBodyInfo(GameObject gameObject)

@@ -27,6 +27,11 @@ namespace LethalInternship.AI
         {
             InternBody = internBody;
 
+            Init(hasModelReplacement);
+        }
+
+        public void Init(bool hasModelReplacement)
+        {
             BodyInFOV = false;
             HasModelReplacement = hasModelReplacement;
             ResetBodyInfos();
