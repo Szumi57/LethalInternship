@@ -105,7 +105,13 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPrefix]
         static bool RemovePlayerModelReplacement_Prefix(PlayerControllerB player)
         {
-            RemoveInternModelReplacement(player);
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                return true;
+            }
+
+            RemoveInternModelReplacement(internAI);
             return false;
         }
 
@@ -117,6 +123,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 return;
             }
 
+            RemoveInternModelReplacement(internAI, forceRemove);
+        }
+
+        public static void RemoveInternModelReplacement(InternAI internAI, bool forceRemove = false)
+        {
             BodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.Select(x => (BodyReplacementBase)x).ToArray();
             //Plugin.LogDebug($"RemovePlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
             foreach (BodyReplacementBase bodyReplacementBase in bodiesReplacementBase)

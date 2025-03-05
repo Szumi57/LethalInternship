@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.19.5 [Alpha] - 2025-04-03
+## 0.19.6 [Alpha] - 2025-03-05
+### HotFixed
+- Fix not being able for the player to switch back to vanilla suit after switching to suit with custom model, thanks @DravenXD on GitHub, (issue [#72](https://github.com/Szumi57/LethalInternship/issues/72))
+- Fix indexOutOfRange exception and softlock when leaving moon, thanks @MathewKelly on Discord.
+
+## 0.19.5 [Alpha] - 2025-03-04
 ### Added
 - Config option for footstep loudness, suggestion from @dezzyfox55 on GitHub, (issue [#68](https://github.com/Szumi57/LethalInternship/issues/68))
 - Lots of optimizations under the hood, the most noticeable, added new config section : Performance</br>
@@ -9,7 +14,7 @@
 	- "Max number of intern making footstep sound at the same time", decide how many footstep from intern you can hear at the same time, over 10 is not very useful, playing a sound has a cost performance wise, default to 7
 
 ### Changed
-- Thanks to @MathewKelly, the voice files are now only 16 MB now (down from 80).
+- Thanks to @MathewKelly, the voice files are now only 16 MB (down from 80).
 - Changed the config "Options for automatically switch suit", now it's a boolean, choose if you want your interns to automatically switch to your suit when assigned to you.</br>
 If you want the interns to have random suit, it's on the identities config json (see mod main page for info).
 - (technical) Publified every class in the dll, so other modders have easier time to patch this mod if wanted/needed.
@@ -20,14 +25,14 @@ If you want the interns to have random suit, it's on the identities config json 
 - Fix conflict with model that have jaw movement, thanks @DropDaDeuce on GitHub, (issue [#63](https://github.com/Szumi57/LethalInternship/issues/63))
 - Fix severe framedrops with some model replacement, conflict with mipa models, thanks @DropDaDeuce on GitHub, (issue [#66](https://github.com/Szumi57/LethalInternship/issues/66))
 - Fix a conflict with the page 'status' in terminal with the mode LethalLevelLoader, thanks @KyberCrow on GitHub, (issue [#69](https://github.com/Szumi57/LethalInternship/issues/69))
-- Fix model of interns dying still appearing static next to the corpse, thanks @AdamHarney on GitHub, (issue [#70](https://github.com/Szumi57/LethalInternship/issues/70))
+- Fix model of interns dying still appearing static next to the corpse, thanks @AdamHarney, @Timofey1337png and @NotAVerb on GitHub, (issue [#70](https://github.com/Szumi57/LethalInternship/issues/70), [#56](https://github.com/Szumi57/LethalInternship/issues/56))
 - Fix compat with the defibrillator of the mod UsualScrap.
 - Fix lag when player is up in the air and the pathfind of interns causes extreme lag, thanks @battleforce404 on GitHub, (issue [#71](https://github.com/Szumi57/LethalInternship/issues/71))
 - Fix use of right voice when intern sink to his demise, thanks @MathewKelly.
-- Fix intern staying crouch when danger near by and player still crouched.
+- Fix intern staying crouched when danger near by and player still crouched.
 - Fix dead interns on terminal view on next moon.
-- Fix interns scared too much of spider if she is not hunting.
-- Fix name above head following intern size when using unique models with mods.
+- Fix interns scared too much of the spider if she is not hunting.
+- Fix name above head not following intern height when using unique models with mods.
 
 ## 0.19.4 [Alpha] - 2025-01-07
 ### Fixed
