@@ -16,7 +16,7 @@ namespace LethalInternship.Patches.GameEnginePatches
     /// Patches for <c>StartOfRound</c>
     /// </summary>
     [HarmonyPatch(typeof(StartOfRound))]
-    internal class StartOfRoundPatch
+    public class StartOfRoundPatch
     {
         /// <summary>
         /// Load the managers if the client is host/server
@@ -502,7 +502,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 && __instance.shipDoorsEnabled 
                 && !__instance.suckingPlayersOutOfShip)
             {
-                InternManager.Instance.SetInternsInElevatorLateUpdate();
+                InternManager.Instance.SetInternsInElevatorLateUpdate(Time.deltaTime);
             }
         }
 

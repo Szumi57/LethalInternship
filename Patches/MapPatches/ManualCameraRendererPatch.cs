@@ -3,11 +3,12 @@ using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Managers;
 using System;
+using System.Linq;
 
 namespace LethalInternship.Patches.MapPatches
 {
     [HarmonyPatch(typeof(ManualCameraRenderer))]
-    internal class ManualCameraRendererPatch
+    public class ManualCameraRendererPatch
     {
         [HarmonyPatch("GetRadarTargetIndexPlusOne")]
         [HarmonyReversePatch]
@@ -22,38 +23,50 @@ namespace LethalInternship.Patches.MapPatches
         static void GetRadarTargetIndexPlusOne_PostFix(ManualCameraRenderer __instance,
                                                        ref int __result)
         {
-            InternAI? internAI;
-            for (int i = 0; i < __instance.radarTargets.Count; i++)
+            TransformAndName radarTarget = __instance.radarTargets[__result];
+            if (radarTarget == null)
+            {
+                return;
+            }
+
+            PlayerControllerB controller = radarTarget.transform.gameObject.GetComponent<PlayerControllerB>();
+            if (controller == null)
             {
                 // radar target can have radar booster in it
-                PlayerControllerB controller = __instance.radarTargets[__result].transform.gameObject.GetComponent<PlayerControllerB>();
-                if (controller == null)
+                return;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)controller.playerClientId);
+            if (internAI == null)
+            {
+                if ((int)controller.playerClientId >= InternManager.Instance.IndexBeginOfInterns)
                 {
-                    continue;
+                    // actually intern but invalid
+                    __result = GetRadarTargetIndexPlusOne_ReversePatch(__instance, __result);
+                    return;
                 }
 
-                internAI = InternManager.Instance.GetInternAI((int)controller.playerClientId);
-                if (internAI != null)
-                {
-                    if (!Plugin.Config.RadarEnabled.Value
-                        || internAI.NpcController.Npc.isPlayerDead
-                        || !internAI.NpcController.Npc.isPlayerControlled
-                        || internAI.RagdollInternBody.IsRagdollBodyHeld())
-                    {
-                        __result = GetRadarTargetIndexPlusOne_ReversePatch(__instance, __result);
-                    }
-                    else
-                    {
-                        // valid intern
-                        break;
-                    }
-                }
-                else
-                {
-                    // player
-                    break;
-                }
+                // player
+                return;
             }
+
+            // Intern
+            if (!Plugin.Config.RadarEnabled)
+            {
+                __result = GetRadarTargetIndexPlusOne_ReversePatch(__instance, __result);
+                return;
+            }
+
+            int[] idsIdentitiesSpawned = IdentityManager.Instance.GetIdentitiesSpawned();
+            if (idsIdentitiesSpawned.Contains(internAI.InternIdentity.IdIdentity))
+            {
+                // valid intern
+                return;
+            }
+
+            // intern not valid
+            __result = 0;
+            return;
         }
 
         [HarmonyPatch("GetRadarTargetIndexMinusOne")]
@@ -61,29 +74,50 @@ namespace LethalInternship.Patches.MapPatches
         static void GetRadarTargetIndexMinusOne_PostFix(ManualCameraRenderer __instance,
                                                        ref int __result)
         {
-            InternAI? internAI;
-            for (int i = 0; i < __instance.radarTargets.Count; i++)
+            TransformAndName radarTarget = __instance.radarTargets[__result];
+            if (radarTarget == null)
             {
-                internAI = InternManager.Instance.GetInternAI((int)__instance.radarTargets[__result].transform.gameObject.GetComponent<PlayerControllerB>().playerClientId);
-                if (internAI != null)
-                {
-                    if (!Plugin.Config.RadarEnabled.Value
-                        || internAI.RagdollInternBody.IsRagdollBodyHeld())
-                    {
-                        __result = GetRadarTargetIndexMinusOne_ReversePatch(__instance, __result);
-                    }
-                    else
-                    {
-                        // valid intern
-                        break;
-                    }
-                }
-                else
-                {
-                    // player
-                    break;
-                }
+                return;
             }
+
+            PlayerControllerB controller = radarTarget.transform.gameObject.GetComponent<PlayerControllerB>();
+            if (controller == null)
+            {
+                // radar target can have radar booster in it
+                return;
+            }
+
+            InternAI? internAI = InternManager.Instance.GetInternAI((int)controller.playerClientId);
+            if (internAI == null)
+            {
+                if ((int)controller.playerClientId >= InternManager.Instance.IndexBeginOfInterns)
+                {
+                    // actually intern but invalid
+                    __result = GetRadarTargetIndexMinusOne_ReversePatch(__instance, __result);
+                    return;
+                }
+
+                // player
+                return;
+            }
+
+            // Intern
+            if (!Plugin.Config.RadarEnabled)
+            {
+                __result = GetRadarTargetIndexMinusOne_ReversePatch(__instance, __result);
+                return;
+            }
+
+            int[] idsIdentitiesSpawned = IdentityManager.Instance.GetIdentitiesSpawned();
+            if (idsIdentitiesSpawned.Contains(internAI.InternIdentity.IdIdentity))
+            {
+                // valid intern
+                return;
+            }
+
+            // intern not valid
+            __result = 0;
+            return;
         }
     }
 }

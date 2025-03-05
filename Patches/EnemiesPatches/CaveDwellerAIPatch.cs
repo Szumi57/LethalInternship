@@ -9,7 +9,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(CaveDwellerAI))]
-    internal class CaveDwellerAIPatch
+    public class CaveDwellerAIPatch
     {
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyPrefix]

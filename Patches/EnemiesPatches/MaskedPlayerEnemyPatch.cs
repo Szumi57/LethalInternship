@@ -9,7 +9,7 @@ using System.Reflection.Emit;
 namespace LethalInternship.Patches.EnemiesPatches
 {
     [HarmonyPatch(typeof(MaskedPlayerEnemy))]
-    internal class MaskedPlayerEnemyPatch
+    public class MaskedPlayerEnemyPatch
     {
         [HarmonyPatch("FinishKillAnimation")]
         [HarmonyPrefix]

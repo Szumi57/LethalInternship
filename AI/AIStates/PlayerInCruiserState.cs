@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 
 namespace LethalInternship.AI.AIStates
 {
-    internal class PlayerInCruiserState : AIState
+    public class PlayerInCruiserState : AIState
     {
         private VehicleController? vehicleController;
 

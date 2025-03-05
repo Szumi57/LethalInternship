@@ -6,7 +6,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// <summary>
     /// Page/State default, waiting for the right command to display <c>InfoPage</c>
     /// </summary>
-    internal class WaitForMainCommandPage : TerminalState
+    public class WaitForMainCommandPage : TerminalState
     {
         /// <summary>
         /// <inheritdoc cref="TerminalState(TerminalParser)"/>

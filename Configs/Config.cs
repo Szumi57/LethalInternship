@@ -28,8 +28,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<int> InternPrice;
         [SyncedEntryField] public SyncedEntry<int> InternMaxHealth;
         [SyncedEntryField] public SyncedEntry<float> InternSizeScale;
-        public ConfigEntry<int> MaxAnimatedInterns;
-
+        
         [SyncedEntryField] public SyncedEntry<string> TitleInHelpMenu;
         [SyncedEntryField] public SyncedEntry<string> SubTitleInHelpMenu;
 
@@ -41,8 +40,8 @@ namespace LethalInternship.Configs
 
         // Behaviour       
         [SyncedEntryField] public SyncedEntry<bool> FollowCrouchWithPlayer;
-        [SyncedEntryField] public SyncedEntry<int> ChangeSuitBehaviour;
-        [SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
+        [SyncedEntryField] public SyncedEntry<bool> ChangeSuitAutoBehaviour;
+        //[SyncedEntryField] public SyncedEntry<bool> TeleportWhenUsingLadders;
         [SyncedEntryField] public SyncedEntry<bool> GrabItemsNearEntrances;
         [SyncedEntryField] public SyncedEntry<bool> GrabBeesNest;
         [SyncedEntryField] public SyncedEntry<bool> GrabDeadBodies;
@@ -54,9 +53,15 @@ namespace LethalInternship.Configs
         [SyncedEntryField] public SyncedEntry<bool> TeleportedInternDropItems;
 
         // Voices
-        public ConfigEntry<string> VolumeMultiplierInterns;
+        public ConfigEntry<string> VolumeVoicesMultiplierInterns;
         public ConfigEntry<int> Talkativeness;
         public ConfigEntry<bool> AllowSwearing;
+        public ConfigEntry<string> VolumeFootstepMultiplierInterns;
+
+        // Performance
+        public ConfigEntry<int> MaxDefaultModelAnimatedInterns;
+        public ConfigEntry<int> MaxModelReplacementModelAnimatedInterns;
+        public ConfigEntry<int> MaxFootStepAudioInterns;
 
         // Debug
         public ConfigEntry<bool> EnableDebugLog;
@@ -93,12 +98,6 @@ namespace LethalInternship.Configs
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(ConfigConst.MIN_SIZE_SCALE_INTERN, ConfigConst.MAX_SIZE_SCALE_INTERN)));
 
-            MaxAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionMain,
-                                   "Max animated intern at once",
-                                   defaultValue: ConfigConst.MAX_INTERNS_AVAILABLE,
-                                   new ConfigDescription("Set the maximum of interns that can be animated at the same time (if heavy lag occurs when looking at a lot of interns) (client only)",
-                                                         new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
-
             CanSpectateInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                                      "Spectate interns",
                                                      defaultVal: false,
@@ -131,17 +130,15 @@ namespace LethalInternship.Configs
                                                defaultVal: true,
                                                "Should the intern crouch like the player is crouching ?");
 
-            ChangeSuitBehaviour = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Options for changing interns suits",
-                                               defaultValue: (int)ConfigConst.DEFAULT_CONFIG_ENUM_INTERN_SUIT_CHANGE,
-                                               new ConfigDescription("0: Change manually | 1: Automatically change with the same suit as player | 2: Random available suit when the intern spawn",
-                                                               new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Min(),
-                                                                                             Enum.GetValues(typeof(EnumOptionSuitChange)).Cast<int>().Max())));
-
-            TeleportWhenUsingLadders = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Teleport when using ladders",
+            ChangeSuitAutoBehaviour = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Options for automaticaly switch suit",
                                                defaultVal: false,
-                                               "Should the intern just teleport and bypass any animations when using ladders ?");
+                                               "Should the intern automatically switch to the same suit as the player when assigned to him ? (overrides identity config options)");
+
+            //TeleportWhenUsingLadders = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+            //                                   "Teleport when using ladders",
+            //                                   defaultVal: false,
+            //                                   "Should the intern just teleport and bypass any animations when using ladders ?");
 
             GrabItemsNearEntrances = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Grab items near entrances",
@@ -175,33 +172,57 @@ namespace LethalInternship.Configs
 
             // Teleporters
             TeleportedInternDropItems = cfg.BindSyncedEntry(ConfigConst.ConfigSectionTeleporters,
-                                                            "Teleported intern drop item (not if the intern is grabbed by player)",
+                                                            "Teleported intern drop item (not if the intern is grabbed by player) (no use at the moment)",
                                                             defaultVal: true,
-                                                            "Should the intern his held item before teleporting ?");
+                                                            "(no use at the moment, in later update) Should the intern his held item before teleporting ?");
 
             // Voices
-            VolumeMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Volume multiplier (Client only)",
-                                     defaultValue: VoicesConst.DEFAULT_VOLUME.ToString(),
-                                     "Volume multiplier of voices of interns");
+            VolumeVoicesMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                     "Voices volume multiplier",
+                                     defaultValue: VoicesConst.DEFAULT_VOICES_VOLUME_MULTIPLIER.ToString(),
+                                     "(Client only) Volume multiplier of voices of interns (min 0, max 1)");
 
             Talkativeness = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Talkativeness (Client only)",
+                                     "Talkativeness",
                                      defaultValue: (int)VoicesConst.DEFAULT_CONFIG_ENUM_TALKATIVENESS,
-                                     new ConfigDescription("0: No talking | 1: Shy | 2: Normal | 3: Talkative | 4: Can't stop talking",
+                                     new ConfigDescription("(Client only) 0: No talking | 1: Shy | 2: Normal | 3: Talkative | 4: Can't stop talking",
                                                      new AcceptableValueRange<int>(Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Min(),
                                                                                    Enum.GetValues(typeof(EnumTalkativeness)).Cast<int>().Max())));
 
             AllowSwearing = cfg.Bind(ConfigConst.ConfigSectionVoices,
-                                     "Swear words (Client only)",
+                                     "Swear words",
                                      defaultValue: false,
-                                     "Allow the use of swear words in interns voice lines ?");
+                                     "(Client only) Allow the use of swear words in interns voice lines ?");
+
+            VolumeFootstepMultiplierInterns = cfg.Bind(ConfigConst.ConfigSectionVoices,
+                                                      "Footsteps volume multiplier",
+                                                      defaultValue: VoicesConst.DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER.ToString(),
+                                                      "(Client only) Volume multiplier of intern footsteps (min 0, max 1)");
+
+            // Performance
+            MaxDefaultModelAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
+                                                      "Max animated intern with default model at the same time",
+                                                      defaultValue: ConfigConst.MAX_INTERNS_AVAILABLE,
+                                                      new ConfigDescription("(Client only) Set the maximum of interns with default model that can be animated at the same time (if heavy lag occurs when looking at a lot of interns)",
+                                                      new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
+
+            MaxModelReplacementModelAnimatedInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
+                                                      "Max animated intern with a replacement model at the same time",
+                                                      defaultValue: ConfigConst.DEFAULT_MAX_ANIMATIONS_MODELREPLACEMENT,
+                                                      new ConfigDescription("(Client only) Set the maximum of interns with a replacement model (heavy on performance) that can be animated at the same time (if heavy lag occurs when looking at a lot of interns)",
+                                                      new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
+
+            MaxFootStepAudioInterns = cfg.Bind(ConfigConst.ConfigSectionPerformance,
+                                               "Max number of intern making footstep sound at the same time",
+                                               defaultValue: ConfigConst.DEFAULT_MAX_FOOTSTEP_SOUND,
+                                               new ConfigDescription("(Client only) Set the maximum number of intern making footstep sound at the same time",
+                                               new AcceptableValueRange<int>(1, ConfigConst.MAX_INTERNS_AVAILABLE)));
 
             // Debug
             EnableDebugLog = cfg.Bind(ConfigConst.ConfigSectionDebug,
-                                      "EnableDebugLog  (Client only)",
+                                      "EnableDebugLog",
                                       defaultValue: false,
-                                      "Enable the debug logs used for this mod.");
+                                      "(Client only) Enable the debug logs used for this mod.");
 
             ClearUnusedEntries(cfg);
             cfg.SaveOnConfigSet = true;
@@ -227,17 +248,30 @@ namespace LethalInternship.Configs
             return string.Format(TerminalConst.STRING_INTERNSHIP_PROGRAM_HELP, TitleInHelpMenu.Value.ToUpper(), SubTitleInHelpMenu.Value);
         }
 
-        public float GetVolumeMultiplierInterns()
+        public float GetVolumeVoicesMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
             NumberFormatInfo nfi = new NumberFormatInfo();
             nfi.NumberDecimalSeparator = ",";
 
-            if (float.TryParse(VolumeMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(VolumeVoicesMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }
-            return VoicesConst.DEFAULT_VOLUME;
+            return VoicesConst.DEFAULT_VOICES_VOLUME_MULTIPLIER;
+        }
+
+        public float GetVolumeFootstepMultiplierInterns()
+        {
+            // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
+            NumberFormatInfo nfi = new NumberFormatInfo();
+            nfi.NumberDecimalSeparator = ",";
+
+            if (float.TryParse(VolumeFootstepMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            {
+                return Mathf.Clamp(volume, 0f, 1f);
+            }
+            return VoicesConst.DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER;
         }
 
         private void ClearUnusedEntries(ConfigFile cfg)

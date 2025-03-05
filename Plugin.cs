@@ -14,9 +14,11 @@ using LethalInternship.Patches.ModPatches.BetterEmotes;
 using LethalInternship.Patches.ModPatches.BunkbedRevive;
 using LethalInternship.Patches.ModPatches.ButteryFixes;
 using LethalInternship.Patches.ModPatches.FasterItemDropship;
+using LethalInternship.Patches.ModPatches.HotdogScout;
 using LethalInternship.Patches.ModPatches.LCAlwaysHearActiveWalkie;
 using LethalInternship.Patches.ModPatches.LethalPhones;
 using LethalInternship.Patches.ModPatches.LethalProgression;
+using LethalInternship.Patches.ModPatches.Mipa;
 using LethalInternship.Patches.ModPatches.ModelRplcmntAPI;
 using LethalInternship.Patches.ModPatches.MoreCompany;
 using LethalInternship.Patches.ModPatches.MoreEmotes;
@@ -26,6 +28,7 @@ using LethalInternship.Patches.ModPatches.ReservedItemSlotCore;
 using LethalInternship.Patches.ModPatches.ReviveCompany;
 using LethalInternship.Patches.ModPatches.ShowCapacity;
 using LethalInternship.Patches.ModPatches.TooManyEmotes;
+using LethalInternship.Patches.ModPatches.UsualScrap;
 using LethalInternship.Patches.ModPatches.Zaprillator;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Patches.ObjectsPatches;
@@ -69,6 +72,7 @@ namespace LethalInternship
     [BepInDependency(Const.BUTTERYFIXES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.PEEPERS_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALMIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.HOTDOGMODEL_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -90,6 +94,8 @@ namespace LethalInternship
         internal static bool IsModReviveCompanyLoaded = false;
         internal static bool IsModBunkbedReviveLoaded = false;
         internal static bool IsModLethalMinLoaded = false;
+        internal static bool IsModMipaLoaded = false;
+        internal static bool IsModMonoProfilerLoaderLoaded = false;
 
         private readonly Harmony _harmony = new(ModGUID);
 
@@ -169,6 +175,7 @@ namespace LethalInternship
             _harmony.PatchAll(typeof(StartOfRoundPatch));
 
             // Npc
+            _harmony.PatchAll(typeof(EnemyAICollisionDetectPatch));
             _harmony.PatchAll(typeof(EnemyAIPatch));
             _harmony.PatchAll(typeof(PlayerControllerBPatch));
 
@@ -229,6 +236,7 @@ namespace LethalInternship
             IsModReviveCompanyLoaded = IsModLoaded(Const.REVIVECOMPANY_GUID);
             IsModBunkbedReviveLoaded = IsModLoaded(Const.BUNKBEDREVIVE_GUID);
             IsModLethalMinLoaded = IsModLoaded(Const.LETHALMIN_GUID);
+            IsModMipaLoaded = IsModLoaded(Const.MIPA_GUID);
 
             bool isModMoreEmotesLoaded = IsModLoaded(Const.MOREEMOTES_GUID);
             bool isModBetterEmotesLoaded = IsModLoaded(Const.BETTEREMOTES_GUID);
@@ -242,6 +250,8 @@ namespace LethalInternship
             bool isModZaprillatorLoaded = IsModLoaded(Const.ZAPRILLATOR_GUID);
             bool isModButteryFixesLoaded = IsModLoaded(Const.BUTTERYFIXES_GUID);
             bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
+            bool isModHotDogModelLoaded = IsModLoaded(Const.HOTDOGMODEL_GUID);
+            bool isModUsualScrapLoaded = IsModLoaded(Const.USUALSCRAP_GUID);
 
             // -------------------
             // Read the preloaders
@@ -252,6 +262,7 @@ namespace LethalInternship
             }
             // Are these preloaders loaded ?
             bool isModAdditionalNetworkingLoaded = IsPreLoaderLoaded(Const.ADDITIONALNETWORKING_DLLFILENAME, preloadersFileNames);
+            IsModMonoProfilerLoaderLoaded = IsPreLoaderLoaded(Const.MONOPROFILERLOADER_DLLFILENAME, preloadersFileNames);
 
             // -----------------------------
             // Compatibility with other mods
@@ -285,11 +296,15 @@ namespace LethalInternship
             }
             if (IsModModelReplacementAPILoaded)
             {
+                _harmony.PatchAll(typeof(AvatarUpdaterPatch));
                 _harmony.PatchAll(typeof(BodyReplacementBasePatch));
+                _harmony.PatchAll(typeof(ManagerBasePatch));
                 _harmony.PatchAll(typeof(ModelReplacementPlayerControllerBPatchPatch));
                 _harmony.PatchAll(typeof(ModelReplacementAPIPatch));
-                _harmony.PatchAll(typeof(ManagerBasePatch));
+                _harmony.PatchAll(typeof(ViewModelUpdaterPatch));
+                _harmony.PatchAll(typeof(ViewStateManagerPatch));
             }
+
             if (isModLethalPhonesLoaded)
             {
                 _harmony.PatchAll(typeof(PlayerPhonePatchPatch));
@@ -371,6 +386,19 @@ namespace LethalInternship
             {
                 _harmony.PatchAll(typeof(PeeperAttachHitboxPatch));
             }
+            if (isModHotDogModelLoaded)
+            {
+                _harmony.PatchAll(typeof(JawMovementPatch));
+            }
+            if (IsModMipaLoaded)
+            {
+                _harmony.PatchAll(typeof(SkinApplyPatch));
+            }
+            if (isModUsualScrapLoaded)
+            {
+                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "RevivePlayer"),
+                               new HarmonyMethod(typeof(DefibrillatorScriptPatch), nameof(DefibrillatorScriptPatch.RevivePlayer_Prefix)));
+            }
         }
 
         private bool IsModLoaded(string modGUID)
@@ -396,6 +424,11 @@ namespace LethalInternship
             {
                 LogInfo($"Mod compatibility loaded for preloader : {dllFileName}");
             }
+
+            //foreach (var a in fileNames)
+            //{
+            //    LogDebug($"{a}");
+            //}
 
             return ret;
         }

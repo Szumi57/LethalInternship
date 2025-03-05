@@ -14,7 +14,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// </summary>
     [HarmonyPatch(typeof(BlobAI))]
     [HarmonyAfter(Const.MORECOMPANY_GUID)]
-    internal class BlobAIPatch
+    public class BlobAIPatch
     {
         [HarmonyPatch("OnCollideWithPlayer")]
         [HarmonyTranspiler]

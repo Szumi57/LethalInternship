@@ -14,7 +14,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// </summary>
     [HarmonyPatch(typeof(CrawlerAI))]
     [HarmonyAfter(Const.MORECOMPANY_GUID)]
-    internal class CrawlerAIPatch
+    public class CrawlerAIPatch
     {
         /// <summary>
         /// Patch fields to take into account for the numbers of players + interns

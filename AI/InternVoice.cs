@@ -9,7 +9,7 @@ using Random = System.Random;
 
 namespace LethalInternship.AI
 {
-    internal class InternVoice
+    public class InternVoice
     {
         public int InternID { get; set; }
         public string VoiceFolder { get; set; }
@@ -27,11 +27,17 @@ namespace LethalInternship.AI
         private bool wasInside;
         private bool wasAllowedToSwear;
 
+        private int sampleDataLength = 1024;
+        private float timerUpdateAmplitudeValue = 0.1f;
+        private float[] clipSampleData;
+        private float clipLoudness;
+
         public InternVoice(string voiceFolder, float volume, float voicePitch)
         {
             this.VoiceFolder = voiceFolder;
             this.Volume = volume;
             this.VoicePitch = voicePitch;
+            this.clipSampleData = new float[sampleDataLength];
         }
 
         public override string ToString()
@@ -49,6 +55,12 @@ namespace LethalInternship.AI
             cooldownPlayAudio = GetRandomCooldown();
         }
 
+        public void CountTime(float time)
+        {
+            ReduceCooldown(time);
+            UpdateTimeUpdateAmplitudeValue(time);
+        }
+
         public void ReduceCooldown(float time)
         {
             // CooldownPlayAudio
@@ -62,6 +74,15 @@ namespace LethalInternship.AI
             }
         }
 
+        public void UpdateTimeUpdateAmplitudeValue(float time)
+        {
+            timerUpdateAmplitudeValue += time;
+            if (timerUpdateAmplitudeValue >= 1f)
+            {
+                timerUpdateAmplitudeValue = 1f;
+            }
+        }
+
         public bool CanPlayAudioAfterCooldown()
         {
             return cooldownPlayAudio == 0f;
@@ -69,7 +90,7 @@ namespace LethalInternship.AI
 
         public bool IsTalking()
         {
-            return CurrentAudioSource.isPlaying || aboutToTalk;
+            return CurrentAudioSource != null && (CurrentAudioSource.isPlaying || aboutToTalk);
         }
 
         public void TryPlayVoiceAudio(PlayVoiceParameters parameters)
@@ -156,7 +177,7 @@ namespace LethalInternship.AI
 
             CurrentAudioSource.pitch = VoicePitch;
             CurrentAudioSource.clip = audioClip;
-            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, this.Volume * Plugin.Config.GetVolumeMultiplierInterns());
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, this.Volume * Plugin.Config.GetVolumeVoicesMultiplierInterns());
 
             SetCooldownAudio(audioClip.length + GetRandomCooldown());
         }
@@ -301,6 +322,31 @@ namespace LethalInternship.AI
                 AudioManager.Instance.FadeOutAndStopAudio(CurrentAudioSource, VoicesConst.FADE_OUT_TIME);
                 lastVoiceState = EnumVoicesState.None;
             }
+        }
+
+        public float GetAmplitude()
+        {
+            // https://discussions.unity.com/t/how-do-i-get-the-current-volume-level-amplitude-of-playing-audio-not-the-set-volume-but-how-loud-it-is/162556/2
+            if (CurrentAudioSource == null
+                || CurrentAudioSource.clip == null)
+            {
+                return clipLoudness;
+            }
+
+            if (timerUpdateAmplitudeValue < 0.1f)
+            {
+                return clipLoudness;
+            }
+            timerUpdateAmplitudeValue = 0f;
+
+            CurrentAudioSource.clip.GetData(clipSampleData, CurrentAudioSource.timeSamples);
+            clipLoudness = 0f;
+            foreach (var sample in clipSampleData)
+            {
+                clipLoudness += Mathf.Abs(sample);
+            }
+            clipLoudness /= sampleDataLength;
+            return clipLoudness;
         }
     }
 

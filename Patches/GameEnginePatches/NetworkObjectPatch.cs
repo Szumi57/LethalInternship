@@ -11,7 +11,7 @@ namespace LethalInternship.Patches.GameEnginePatches
     /// Patch for <c>NetworkObject</c>
     /// </summary>
     [HarmonyPatch(typeof(NetworkObject))]
-    internal class NetworkObjectPatch
+    public class NetworkObjectPatch
     {
         /// <summary>
         /// Patch for intercepting the change of ownership on a network object.

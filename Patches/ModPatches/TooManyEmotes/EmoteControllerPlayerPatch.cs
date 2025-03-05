@@ -9,7 +9,7 @@ using TooManyEmotes;
 namespace LethalInternship.Patches.ModPatches.TooManyEmotes
 {
     [HarmonyPatch(typeof(EmoteControllerPlayer))]
-    internal class EmoteControllerPlayerPatch
+    public class EmoteControllerPlayerPatch
     {
         [HarmonyPatch("PerformEmote", new Type[] { typeof(UnlockableEmote), typeof(int), typeof(bool) })]
         [HarmonyTranspiler]

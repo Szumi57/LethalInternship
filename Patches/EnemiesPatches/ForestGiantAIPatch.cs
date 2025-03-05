@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patches for <c>ForestGiantAI</c>
     /// </summary>
     [HarmonyPatch(typeof(ForestGiantAI))]
-    internal class ForestGiantAIPatch
+    public class ForestGiantAIPatch
     {
         /// <summary>
         /// <inheritdoc cref="ButlerBeesEnemyAIPatch.OnCollideWithPlayer_Transpiler"/>

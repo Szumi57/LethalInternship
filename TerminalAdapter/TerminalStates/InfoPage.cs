@@ -8,7 +8,7 @@ namespace LethalInternship.TerminalAdapter.TerminalStates
     /// <summary>
     /// Page/state for displaying various infos about the interns owned and to be send by dropship on moon
     /// </summary>
-    internal class InfoPage : TerminalState
+    public class InfoPage : TerminalState
     {
         private int diffNbInternAvailable;
         private int diffNbInternToDrop;

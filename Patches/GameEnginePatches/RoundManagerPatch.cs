@@ -4,7 +4,7 @@ using LethalInternship.Constants;
 namespace LethalInternship.Patches.GameEnginePatches
 {
     [HarmonyPatch(typeof(RoundManager))]
-    internal class RoundManagerPatch
+    public class RoundManagerPatch
     {
         /// <summary>
         /// Patch for debug spawn bush spawn point

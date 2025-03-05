@@ -2,8 +2,8 @@
 using HarmonyLib;
 using LethalInternship.AI;
 using LethalInternship.Constants;
-using LethalInternship.Enums;
 using LethalInternship.Patches.NpcPatches;
+using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 
 namespace LethalInternship.Managers
 {
-    internal class InputManager : MonoBehaviour
+    public class InputManager : MonoBehaviour
     {
         public static InputManager Instance { get; private set; } = null!;
 
@@ -207,7 +207,7 @@ namespace LethalInternship.Managers
                 {
                     intern.SyncAssignTargetAndSetMovingTo(localPlayer);
 
-                    if (Plugin.Config.ChangeSuitBehaviour.Value == (int)EnumOptionSuitChange.AutomaticSameAsPlayer)
+                    if (Plugin.Config.ChangeSuitAutoBehaviour.Value)
                     {
                         intern.ChangeSuitInternServerRpc(player.playerClientId, localPlayer.currentSuitID);
                     }
@@ -308,6 +308,13 @@ namespace LethalInternship.Managers
 
         private void ReleaseInterns_performed(InputAction.CallbackContext obj)
         {
+            // Profiler, does not concern intern logic
+            if (Plugin.IsModMonoProfilerLoaderLoaded)
+            {
+                DumpMonoProfilerFile();
+            }
+            // ---------------------------------------
+
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
             {
@@ -326,6 +333,19 @@ namespace LethalInternship.Managers
             }
 
             HUDManager.Instance.ClearControlTips();
+        }
+
+        private void DumpMonoProfilerFile()
+        {
+            try
+            {
+                FileInfo dumpFile = MonoProfiler.MonoProfilerPatcher.RunProfilerDump();
+                Plugin.LogDebug("-----------------------Saved profiler dump to " + dumpFile.FullName);
+            }
+            catch
+            {
+                Plugin.LogDebug("Could not dump profiler file. Ignore if not wanted.");
+            }
         }
 
         private void ChangeSuitIntern_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
@@ -352,7 +372,7 @@ namespace LethalInternship.Managers
                     continue;
                 }
                 InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null 
+                if (intern == null
                     || intern.IsSpawningAnimationRunning())
                 {
                     continue;

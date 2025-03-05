@@ -15,7 +15,7 @@ namespace LethalInternship.Patches.NpcPatches
     /// Patch for the internAI
     /// </summary>
     [HarmonyPatch(typeof(EnemyAI))]
-    internal class EnemyAIPatch
+    public class EnemyAIPatch
     {
         /// <summary>
         /// Patch for intercepting when ownership of an enemy changes.<br/>
@@ -135,9 +135,10 @@ namespace LethalInternship.Patches.NpcPatches
                 }
 
                 Vector3 position = internController.gameplayCamera.transform.position;
-                if (Vector3.Distance(position, __instance.eye.position) < (float)range && !Physics.Linecast(__instance.eye.position, position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                Vector3 to = position - __instance.eye.position;
+                if (to.sqrMagnitude < (float)range * (float)range
+                    && !Physics.Linecast(__instance.eye.position, position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
                 {
-                    Vector3 to = position - __instance.eye.position;
                     if (Vector3.Angle(__instance.eye.forward, to) < width || (proximityAwareness != -1 && Vector3.Distance(__instance.eye.position, position) < (float)proximityAwareness))
                     {
                         internControllerFound = internController;

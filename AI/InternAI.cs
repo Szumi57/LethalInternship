@@ -34,7 +34,7 @@ namespace LethalInternship.AI
     /// Then the AI class use its methods to pilot the body using <c>NpcController</c>.
     /// The <c>NpcController</c> is set outside in <see cref="InternManager.InitInternSpawning"><c>InternManager.InitInternSpawning</c></see>.
     /// </remarks>
-    internal class InternAI : EnemyAI
+    public class InternAI : EnemyAI
     {
         /// <summary>
         /// Dictionnary of the recently dropped object on the ground.
@@ -70,6 +70,9 @@ namespace LethalInternship.AI
 
         public List<Component> ListModelReplacement = null!;
 
+        public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
+        public TimedAngleFOVWithLocalPlayerCheck AngleFOVWithLocalPlayerTimedCheck = null!;
+
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -89,9 +92,7 @@ namespace LethalInternship.AI
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
 
-        public LineRendererUtil LineRendererUtil = null!;
-
-        private RaycastHit GroundHit;
+        private LineRendererUtil LineRendererUtil = null!;
 
         private void Awake()
         {
@@ -162,7 +163,7 @@ namespace LethalInternship.AI
             this.NpcController.Awake();
 
             // Refresh billboard position
-            StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
+            StartCoroutine(WaitSecondsForChangeSuitToApply());
 
             // Health
             MaxHealth = InternIdentity.HpMax;
@@ -188,6 +189,10 @@ namespace LethalInternship.AI
 
             TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
+
+            // Start timed calculation
+            IsTouchingGroundTimedCheck = new TimedTouchingGroundCheck();
+            AngleFOVWithLocalPlayerTimedCheck = new TimedAngleFOVWithLocalPlayerCheck();
 
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
@@ -248,21 +253,27 @@ namespace LethalInternship.AI
 
         private void FixedUpdate()
         {
+            if (NpcController == null)
+            {
+                // Intern AI not init
+                return;
+            }
+
             UpdateSurfaceRayCast();
         }
 
         private void UpdateSurfaceRayCast()
         {
-            NpcController.IsTouchingGround = Physics.Raycast(new Ray(NpcController.Npc.thisPlayerBody.position + Vector3.up, -Vector3.up),
-                                                             out GroundHit,
-                                                             2.5f,
-                                                             StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+            NpcController.IsTouchingGround = IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position);
 
             // Update current material standing on
-            if (NpcController.IsTouchingGround
-                && InternManager.Instance.DictTagSurfaceIndex.ContainsKey(GroundHit.collider.tag))
+            if (NpcController.IsTouchingGround)
             {
-                NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[GroundHit.collider.tag];
+                RaycastHit groundRaycastHit = IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
+                if (InternManager.Instance.DictTagSurfaceIndex.ContainsKey(groundRaycastHit.collider.tag))
+                {
+                    NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[groundRaycastHit.collider.tag];
+                }
             }
         }
 
@@ -275,6 +286,12 @@ namespace LethalInternship.AI
         /// </remarks>
         public override void Update()
         {
+            if (NpcController == null)
+            {
+                // Intern AI not init
+                return;
+            }
+
             // Update identity
             InternIdentity.Hp = NpcController.Npc.isPlayerDead ? 0 : NpcController.Npc.health;
 
@@ -297,8 +314,7 @@ namespace LethalInternship.AI
                 return;
             }
 
-            if (NpcController == null
-                || !NpcController.Npc.gameObject.activeSelf
+            if (!NpcController.Npc.gameObject.activeSelf
                 || !NpcController.Npc.isPlayerControlled
                 || isEnemyDead
                 || NpcController.Npc.isPlayerDead)
@@ -375,12 +391,12 @@ namespace LethalInternship.AI
 
             // Is still falling ?
             if (StateControllerMovement == EnumStateControllerMovement.Free
-                && NpcController.IsTouchingGround
+                && IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position)
                 && !shouldFreeMovement)
             {
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= touch ground GroundHit.point {NpcController.GroundHit.point}");
                 StateControllerMovement = EnumStateControllerMovement.FollowAgent;
-                TeleportAgentAIAndBody(GroundHit.point);
+                TeleportAgentAIAndBody(IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).point);
                 //Plugin.LogDebug($"{NpcController.Npc.playerUsername} ============= NpcController.Npc.transform.position {NpcController.Npc.transform.position}");
             }
 
@@ -453,21 +469,27 @@ namespace LethalInternship.AI
 
         private void LateUpdate()
         {
+            if (NpcController == null)
+            {
+                // Intern AI not init
+                return;
+            }
+
             // Update voice position
             InternVoice.transform.position = NpcController.Npc.gameplayCamera.transform.position;
         }
 
         private bool ShouldFreeMovement()
         {
-            if (NpcController.IsTouchingGround
-                && dictComponentByCollider.TryGetValue(GroundHit.collider.name, out Component component))
+            if (IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position)
+                && dictComponentByCollider.TryGetValue(IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name, out Component component))
             {
                 BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                 if (bridgeTrigger != null
                     && bridgeTrigger.fallenBridgeColliders.Length > 0
                     && bridgeTrigger.fallenBridgeColliders[0].enabled)
                 {
-                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {GroundHit.collider.name}");
+                    Plugin.LogDebug($"{NpcController.Npc.playerUsername} on fallen bridge ! {IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name}");
                     return true;
                 }
             }
@@ -488,6 +510,7 @@ namespace LethalInternship.AI
                 && NpcController.Npc.isCrouching)
             {
                 NpcController.OrderToToggleCrouch();
+                return;
             }
 
             if (Plugin.Config.FollowCrouchWithPlayer
@@ -616,17 +639,7 @@ namespace LethalInternship.AI
                 && !NpcController.Npc.isPlayerDead
                 && !StartOfRound.Instance.shipIsLeaving)
             {
-                if (!this.SetDestinationToPosition(destination, checkForPath: true))
-                {
-                    try
-                    {
-                        destination = this.ChooseClosestNodeToPosition(destination, avoidLineOfSight).position;
-                    }
-                    catch (Exception e)
-                    {
-                        Plugin.LogDebug($"{NpcController.Npc.playerUsername} ChooseClosestNodeToPosition error : {e.Message} , InnerException : {e.InnerException}");
-                    }
-                }
+                this.SetDestinationToPosition(destination);
                 agent.SetDestination(destination);
                 hasDestinationChanged = false;
             }
@@ -924,8 +937,12 @@ namespace LethalInternship.AI
 
                 // Fear range
                 float? fearRange = GetFearRangeForEnemies(spawnedEnemy);
-                if (!fearRange.HasValue
-                    || sqrDistanceToEnemy > fearRange * fearRange)
+                if (!fearRange.HasValue)
+                {
+                    continue;
+                }
+
+                if (sqrDistanceToEnemy > fearRange * fearRange)
                 {
                     continue;
                 }
@@ -961,18 +978,15 @@ namespace LethalInternship.AI
             switch (enemy.enemyType.enemyName)
             {
                 case "Crawler":
-                case "Bunker Spider":
                 case "MouthDog":
                 case "ForestGiant":
                 case "Butler Bees":
-                    return 20f;
-
                 case "Nutcracker":
-                case "Red Locust Bees":
                 case "Blob":
                 case "ImmortalSnail":
-                    return 10f;
+                    return 15f;
 
+                case "Red Locust Bees":
                 case "Earth Leviathan":
                 case "Clay Surgeon":
                 case "Flowerman":
@@ -985,11 +999,22 @@ namespace LethalInternship.AI
                 case "Centipede":
                     return 1f;
 
+                case "Bunker Spider":
+                    if (enemy.currentBehaviourStateIndex == 2)
+                    {
+                        // Mad
+                        return 15f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
                 case "Spring":
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1000,7 +1025,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1011,7 +1036,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1022,7 +1047,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1033,7 +1058,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 30f;
+                        return 15f;
                     }
                     else
                     {
@@ -1044,7 +1069,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex == 2)
                     {
                         // Mad
-                        return 10f;
+                        return 15f;
                     }
                     else
                     {
@@ -1056,7 +1081,7 @@ namespace LethalInternship.AI
                     if (enemy.currentBehaviourStateIndex > 0)
                     {
                         // Mad
-                        return 20f;
+                        return 15f;
                     }
                     else
                     {
@@ -1109,8 +1134,8 @@ namespace LethalInternship.AI
         public string GetSizedBillboardStateIndicator()
         {
             string indicator;
-            int sizePercentage = Math.Clamp((int)(100f + 2.5f * (StartOfRound.Instance.localPlayerController.transform.position - NpcController.Npc.transform.position).sqrMagnitude),
-                                 100, 800);
+            int sizePercentage = Math.Clamp((int)(100f + 2.5f * NpcController.SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(NpcController.Npc.transform.position)),
+                                 100, 500);
 
             if (IsOwner)
             {
@@ -1289,11 +1314,12 @@ namespace LethalInternship.AI
             }
 
             // Intern wants to use ladder
-            if (Plugin.Config.TeleportWhenUsingLadders.Value)
-            {
-                NpcController.Npc.transform.position = this.transform.position;
-                return true;
-            }
+            // Removing all that for the moment
+            //if (Plugin.Config.TeleportWhenUsingLadders.Value)
+            //{
+            //    NpcController.Npc.transform.position = this.transform.position;
+            //    return true;
+            //}
 
             // Try to use ladder
             if (NpcController.CanUseLadder(ladder))
@@ -1625,7 +1651,7 @@ namespace LethalInternship.AI
 
             foreach (var item in listPickMinItems)
             {
-                if(item != null
+                if (item != null
                     && item.Root == grabbableObject
                     && item.PikminOnItem > 0)
                 {
@@ -2187,7 +2213,8 @@ namespace LethalInternship.AI
             }
 
             // Update state indicator
-            this.stateIndicatorServer = stateIndicator;
+            // Actually, too much cluter, indicator just for owner for now
+            //this.stateIndicatorServer = stateIndicator;
 
             // Update direction
             NpcController.SetTurnBodyTowardsDirection(direction);
@@ -3433,6 +3460,10 @@ namespace LethalInternship.AI
                 // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
                 NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
                 this.InternIdentity.DeadBody = NpcController.Npc.deadBody;
+
+                // Register body for animation culling
+                bool hasComponentModelReplacementAPI = Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
+                InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, hasComponentModelReplacementAPI);
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -3519,6 +3550,9 @@ namespace LethalInternship.AI
 
             // Set intern to brain dead
             State = new BrainDeadState(this);
+
+            // Register body for animation culling
+            InternManager.Instance.RegisterInternBodyForAnimationCulling(ragdollBodyDeadBodyInfo);
         }
 
         private void InstantiateDeadBodyInfo(PlayerControllerB playerReference, Vector3 bodyVelocity = default)
@@ -3719,6 +3753,11 @@ namespace LethalInternship.AI
 
             // Change ai state
             SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+
+            yield return null;
+
+            // Teleport again, cuz I don't know why the teleport does not work first time
+            TeleportAgentAIAndBody(GameNetworkManager.Instance.localPlayerController.transform.position);
 
             spawnAnimationCoroutine = null;
             yield break;
@@ -4112,12 +4151,18 @@ namespace LethalInternship.AI
         [ServerRpc(RequireOwnership = false)]
         public void ChangeSuitInternServerRpc(ulong idInternController, int suitID)
         {
+            ChangeSuitIntern(idInternController, suitID, playAudio: true);
             ChangeSuitInternClientRpc(idInternController, suitID);
         }
 
         [ClientRpc]
         private void ChangeSuitInternClientRpc(ulong idInternController, int suitID)
         {
+            if (IsServer)
+            {
+                return;
+            }
+
             ChangeSuitIntern(idInternController, suitID, playAudio: true);
         }
 
@@ -4132,17 +4177,24 @@ namespace LethalInternship.AI
 
             UnlockableSuit.SwitchSuitForPlayer(internController, suitID, playAudio);
             internController.thisPlayerModelArms.enabled = false;
-            StartCoroutine(Wait2EndOfFrameToRefreshBillBoard());
+            StartCoroutine(WaitSecondsForChangeSuitToApply());
             InternIdentity.SuitID = suitID;
 
             Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}: {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
         }
 
-        private IEnumerator Wait2EndOfFrameToRefreshBillBoard()
+        private IEnumerator WaitSecondsForChangeSuitToApply()
         {
-            yield return new WaitForEndOfFrame();
-            yield return new WaitForEndOfFrame();
+            yield return new WaitForSeconds(0.2f);
+
             NpcController.RefreshBillBoardPosition();
+
+            InternCullingBodyInfo? internCullingBodyInfo = InternManager.Instance.GetInternCullingBodyInfo(NpcController.Npc.gameObject);
+            if (internCullingBodyInfo != null)
+            {
+                internCullingBodyInfo.HasModelReplacement = Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
+            }
+
             yield break;
         }
 
@@ -4192,5 +4244,96 @@ namespace LethalInternship.AI
         }
 
         #endregion
+
+        public class TimedTouchingGroundCheck
+        {
+            private bool isTouchingGround = true;
+            private RaycastHit groundHit;
+
+            private long timer = 200 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public bool IsTouchingGround(Vector3 internPosition)
+            {
+                if (!NeedToRecalculate())
+                {
+                    return isTouchingGround;
+                }
+
+                CalculateTouchingGround(internPosition);
+                return isTouchingGround;
+            }
+
+            public RaycastHit GetGroundHit(Vector3 internPosition)
+            {
+                if (!NeedToRecalculate())
+                {
+                    return groundHit;
+                }
+
+                CalculateTouchingGround(internPosition);
+                return groundHit;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateTouchingGround(Vector3 internPosition)
+            {
+                isTouchingGround = Physics.Raycast(new Ray(internPosition + Vector3.up, -Vector3.up),
+                                                   out groundHit,
+                                                   2.5f,
+                                                   StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+            }
+        }
+
+        public class TimedAngleFOVWithLocalPlayerCheck
+        {
+            private float angle;
+
+            private long timer = 50 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
+            {
+                if (!NeedToRecalculate())
+                {
+                    return angle;
+                }
+
+                CalculateAngleFOVWithLocalPlayer(localPlayerCameraTransform, internBodyPos);
+                return angle;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
+            {
+                angle = Vector3.Angle(localPlayerCameraTransform.forward, internBodyPos - localPlayerCameraTransform.position);
+            }
+        }
     }
 }

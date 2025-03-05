@@ -9,7 +9,7 @@ using Random = System.Random;
 namespace LethalInternship.Patches.MapPatches
 {
     [HarmonyPatch(typeof(ShipTeleporter))]
-    internal class ShipTeleporterPatch
+    public class ShipTeleporterPatch
     {
         [HarmonyPatch("SetPlayerTeleporterId")]
         [HarmonyPrefix]

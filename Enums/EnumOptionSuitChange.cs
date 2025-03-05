@@ -1,6 +1,6 @@
 ﻿namespace LethalInternship.Enums
 {
-    internal enum EnumOptionSuitChange
+    public enum EnumOptionSuitChange
     {
         Manual = 0,
         AutomaticSameAsPlayer

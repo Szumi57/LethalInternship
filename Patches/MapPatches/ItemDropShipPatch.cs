@@ -11,7 +11,7 @@ namespace LethalInternship.Patches.MapPatches
     /// Patch for the <c>ItemDropship</c>
     /// </summary>
     [HarmonyPatch(typeof(ItemDropship))]
-    internal class ItemDropShipPatch
+    public class ItemDropShipPatch
     {
         /// <summary>
         /// Patch for making the item drop ship check if interns are scheduled to land, to know if it should spawn

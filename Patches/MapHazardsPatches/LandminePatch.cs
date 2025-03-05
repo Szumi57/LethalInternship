@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
     /// Patch for the <c>Landmine</c>
     /// </summary>
     [HarmonyPatch(typeof(Landmine))]
-    internal class LandminePatch
+    public class LandminePatch
     {
         /// <summary>
         /// Patch for making the intern able to trigger the mine by stepping on it

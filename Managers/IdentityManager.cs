@@ -10,7 +10,7 @@ using Random = System.Random;
 
 namespace LethalInternship.Managers
 {
-    internal class IdentityManager : MonoBehaviour
+    public class IdentityManager : MonoBehaviour
     {
         public static IdentityManager Instance { get; private set; } = null!;
 
@@ -38,7 +38,7 @@ namespace LethalInternship.Managers
                 if (internIdentity != null
                     && internIdentity.Voice != null)
                 {
-                    internIdentity.Voice.ReduceCooldown(Time.deltaTime);
+                    internIdentity.Voice.CountTime(Time.deltaTime);
                 }
             }
         }
@@ -78,8 +78,8 @@ namespace LethalInternship.Managers
             EnumOptionSuitConfig suitConfig;
             if (!Enum.IsDefined(typeof(EnumOptionSuitConfig), configIdentity.suitConfigOption))
             {
-                Plugin.LogWarning($"Could not get option for intern suit config in config file, value {configIdentity.suitConfigOption}, name {configIdentity.name}");
-                suitConfig = EnumOptionSuitConfig.AutomaticSameAsPlayer;
+                Plugin.LogWarning($"Could not get option for intern suit config in config file, value {configIdentity.suitConfigOption} for {configIdentity.name}, now using random suit.");
+                suitConfig = EnumOptionSuitConfig.Random;
             }
             else
             {
@@ -88,7 +88,6 @@ namespace LethalInternship.Managers
 
             switch (suitConfig)
             {
-                case EnumOptionSuitConfig.AutomaticSameAsPlayer:
                 case EnumOptionSuitConfig.Fixed:
                     suitID = configIdentity.suitID;
                     break;
@@ -96,7 +95,6 @@ namespace LethalInternship.Managers
                 case EnumOptionSuitConfig.Random:
                     suitID = null;
                     break;
-
             }
 
             // Voice
@@ -211,6 +209,19 @@ namespace LethalInternship.Managers
                         .ToArray();
         }
 
+        public int[] GetIdentitiesSpawned()
+        {
+            if (InternIdentities == null)
+            {
+                return new int[0];
+            }
+
+            return InternIdentities
+                        .FilterSpawned()
+                        .Select(x => x.IdIdentity)
+                        .ToArray();
+        }
+
         public bool IsAnIdentityToDrop()
         {
             return InternIdentities.FilterToDropAlive().Any();
@@ -243,6 +254,11 @@ namespace LethalInternship.Managers
         public static IEnumerable<InternIdentity> FilterSpawnedAlive(this IEnumerable<InternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned && x.Alive);
+        }
+
+        public static IEnumerable<InternIdentity> FilterSpawned(this IEnumerable<InternIdentity> enumerable)
+        {
+            return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned);
         }
     }
 }

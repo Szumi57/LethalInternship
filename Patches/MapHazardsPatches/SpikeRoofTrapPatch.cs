@@ -8,7 +8,7 @@ namespace LethalInternship.Patches.MapHazardsPatches
     /// Patch for <c>SpikeRoofTrap</c>
     /// </summary>
     [HarmonyPatch(typeof(SpikeRoofTrap))]
-    internal class SpikeRoofTrapPatch
+    public class SpikeRoofTrapPatch
     {
         [HarmonyPatch("OnTriggerStay")]
         [HarmonyPostfix]

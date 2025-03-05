@@ -10,7 +10,7 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ModPatches.BetterEmotes
 {
-    internal class BetterEmotesPatch
+    public class BetterEmotesPatch
     {
         public static bool StartPostfix_Prefix(PlayerControllerB __0)
         {

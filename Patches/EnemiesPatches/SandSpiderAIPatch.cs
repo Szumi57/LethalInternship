@@ -9,7 +9,7 @@ namespace LethalInternship.Patches.EnemiesPatches
     /// Patch for <c>SandSpiderAI</c>
     /// </summary>
     [HarmonyPatch(typeof(SandSpiderAI))]
-    internal class SandSpiderAIPatch
+    public class SandSpiderAIPatch
     {
         /// <summary>
         /// Patch to make the spider use the right player id for hurting the player(intern) instead of only localPlayerController id.

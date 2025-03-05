@@ -11,7 +11,7 @@ namespace LethalInternship.Patches.ObjectsPatches
     /// Patches for <c>ShotgunItem</c>
     /// </summary>
     [HarmonyPatch(typeof(ShotgunItem))]
-    internal class ShotgunItemPatch
+    public class ShotgunItemPatch
     {
         /// <summary>
         /// Patch to make the shotgun able to damage/kill intern, held by players or enemies

@@ -18,7 +18,7 @@ namespace LethalInternship.Patches.GameEnginePatches
     /// Patch for <c>SoundManager</c>
     /// </summary>
     [HarmonyPatch(typeof(SoundManager))]
-    internal class SoundManagerPatch
+    public class SoundManagerPatch
     {
         /// <summary>
         /// Patch for only set player pitch for not intern

@@ -11,7 +11,8 @@ namespace LethalInternship.Constants
         public static readonly string ConfigSectionBehaviour = "3. Behaviour";
         public static readonly string ConfigSectionTeleporters = "4. Teleporters";
         public static readonly string ConfigSectionVoices = "5. Voices";
-        public static readonly string ConfigSectionDebug = "6. Debug";
+        public static readonly string ConfigSectionPerformance = "6. Performance";
+        public static readonly string ConfigSectionDebug = "7. Debug";
 
         public static readonly int DEFAULT_MAX_INTERNS_AVAILABLE = 16;
         public static readonly int MIN_INTERNS_AVAILABLE = 1;
@@ -66,11 +67,14 @@ namespace LethalInternship.Constants
         public static readonly ConfigIdentity DEFAULT_CONFIG_IDENTITY = new ConfigIdentity()
         {
             name = DEFAULT_INTERN_NAME,
-            suitConfigOption = (int)EnumOptionSuitConfig.AutomaticSameAsPlayer,
+            suitConfigOption = (int)EnumOptionSuitConfig.Random,
             suitID = 0,
             voiceFolder = "Mathew_kelly",
             volume = 0.5f
             // voice pitch set after
         };
+
+        public static readonly int DEFAULT_MAX_ANIMATIONS_MODELREPLACEMENT = 6;
+        public static readonly int DEFAULT_MAX_FOOTSTEP_SOUND = 7;
     }
 }

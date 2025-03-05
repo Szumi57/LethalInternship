@@ -3,7 +3,7 @@
     /// <summary>
     /// Enumeration for setting the intern to look at a target
     /// </summary>
-    internal enum EnumObjectsLookingAt
+    public enum EnumObjectsLookingAt
     {
         Forward,
         Player,

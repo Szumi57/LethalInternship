@@ -1,6 +1,4 @@
-﻿using LethalInternship.Enums;
-using LethalInternship.NetworkSerializers;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LethalInternship.Constants
 {
@@ -31,8 +29,12 @@ namespace LethalInternship.Constants
         public const string BUTTERYFIXES_GUID = "butterystancakes.lethalcompany.butteryfixes";
         public const string PEEPERS_GUID = "x753.Peepers";
         public const string LETHALMIN_GUID = "NoteBoxz.LethalMin";
+        public const string HOTDOGMODEL_GUID = "hotdogModel";
+        public const string MIPA_GUID = "Mipa";
+        public const string USUALSCRAP_GUID = "Emil.UsualScrap";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
+        public const string MONOPROFILERLOADER_DLLFILENAME = "MonoProfilerLoader.dll";
 
         public static readonly float EPSILON = 0.01f;
         public static readonly bool DISABLE_ORIGINAL_GAME_DEBUG_LOGS = true;
@@ -115,8 +117,8 @@ namespace LethalInternship.Constants
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 5f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
-        public static readonly float DISTANCE_AWARENESS_HOR = 25f;
-        public static readonly float DISTANCE_AWARENESS_VER = 50f;
+        public static readonly float DISTANCE_AWARENESS_HOR = 50f;
+        public static readonly float DISTANCE_AWARENESS_VER = 75f;
 
         // JustLostPlayerState
         public static readonly float TIMER_LOOKING_AROUND = 6f;

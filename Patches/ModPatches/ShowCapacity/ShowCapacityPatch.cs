@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace LethalInternship.Patches.ModPatches.ShowCapacity
 {
-    internal class ShowCapacityPatch
+    public class ShowCapacityPatch
     {
         private static GameObject? capacityMeter;
 

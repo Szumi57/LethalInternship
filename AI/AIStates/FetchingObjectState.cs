@@ -7,7 +7,7 @@ namespace LethalInternship.AI.AIStates
     /// <summary>
     /// State where the interns try to get close and grab a item
     /// </summary>
-    internal class FetchingObjectState : AIState
+    public class FetchingObjectState : AIState
     {
         /// <summary>
         /// <inheritdoc cref="AIState(AIState)"/>

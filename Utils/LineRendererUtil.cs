@@ -7,7 +7,7 @@ namespace LethalInternship.Utils
     /// <summary>
     /// Class that use an list of linerenderers to return to the user of the class, for drawing things
     /// </summary>
-    internal class LineRendererUtil
+    public class LineRendererUtil
     {
         private LineRenderer[] _listLineRenderers;
         private Transform _transformToParent;

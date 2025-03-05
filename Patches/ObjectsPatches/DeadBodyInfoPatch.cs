@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.ObjectsPatches
     /// Patches for <c>DeadBodyInfo</c>
     /// </summary>
     [HarmonyPatch(typeof(DeadBodyInfo))]
-    internal class DeadBodyInfoPatch
+    public class DeadBodyInfoPatch
     {
         [HarmonyPatch("DetectIfSeenByLocalPlayer")]
         [HarmonyPrefix]

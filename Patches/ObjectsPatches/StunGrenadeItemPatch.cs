@@ -6,7 +6,7 @@ using UnityEngine;
 namespace LethalInternship.Patches.ObjectsPatches
 {
     [HarmonyPatch(typeof(StunGrenadeItem))]
-    internal class StunGrenadeItemPatch
+    public class StunGrenadeItemPatch
     {
         [HarmonyPatch("SetControlTipForGrenade")]
         [HarmonyPrefix]

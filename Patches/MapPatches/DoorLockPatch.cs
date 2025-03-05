@@ -9,7 +9,7 @@ namespace LethalInternship.Patches.MapPatches
     /// Patch for <c>DoorLock</c>
     /// </summary>
     [HarmonyPatch(typeof(DoorLock))]
-    internal class DoorLockPatch
+    public class DoorLockPatch
     {
         /// <summary>
         /// Patch for making the intern only open door if not locked or already opened
