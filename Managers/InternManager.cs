@@ -1278,7 +1278,7 @@ namespace LethalInternship.Managers
                 DisableInternControllerModel(internController.gameObject, internController, enable: false, disableLocalArms: false);
                 if (Plugin.IsModModelReplacementAPILoaded)
                 {
-                    Patches.ModPatches.ModelRplcmntAPI.ModelReplacementAPIPatch.RemoveInternModelReplacement(internController);
+                    Patches.ModPatches.ModelRplcmntAPI.ModelReplacementAPIPatch.RemoveInternModelReplacement(internAI);
                 }
 
                 if (internController.isPlayerDead
