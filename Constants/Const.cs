@@ -118,7 +118,7 @@ namespace LethalInternship.Constants
         public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 5f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
         public static readonly float DISTANCE_AWARENESS_HOR = 50f;
-        public static readonly float DISTANCE_AWARENESS_VER = 75f;
+        public static readonly float DISTANCE_AWARENESS_VER = 50f;
 
         // JustLostPlayerState
         public static readonly float TIMER_LOOKING_AROUND = 6f;
