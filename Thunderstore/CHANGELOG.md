@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.19.5 [Alpha] - 2025-04-03
+## 0.19.6 [Alpha] - 2025-03-05
+### HotFixed
+- Fix not being able for the player to switch back to vanilla suit after switching to suit with custom model, thanks @DravenXD on GitHub, (issue [#72](https://github.com/Szumi57/LethalInternship/issues/72))
+- Fix indexOutOfRange exception and softlock when leaving moon, thanks @MathewKelly on Discord.
+
+## 0.19.5 [Alpha] - 2025-03-04
 ### Added
 - Config option for footstep loudness, suggestion from @dezzyfox55 on GitHub, (issue [#68](https://github.com/Szumi57/LethalInternship/issues/68))
 - Lots of optimizations under the hood, the most noticeable, added new config section : Performance</br>
