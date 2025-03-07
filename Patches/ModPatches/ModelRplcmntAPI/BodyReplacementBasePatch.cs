@@ -71,13 +71,21 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             for (int i = 0; i < ListBodyReplacementOnDeadBodies.Count; i++)
             {
                 var bodyReplacementBase = ListBodyReplacementOnDeadBodies[i];
+                if (bodyReplacementBase == null
+                    || bodyReplacementBase.deadBody == null)
+                {
+                    continue;
+                }
+
                 if (!StartOfRound.Instance.shipBounds.bounds.Contains(bodyReplacementBase.deadBody.transform.position))
                 {
-                    ModelReplacementAPIPatch.RemoveInternModelReplacement(bodyReplacementBase.controller, forceRemove: true);
+                    bodyReplacementBase.IsActive = false;
+                    UnityEngine.Object.Destroy(bodyReplacementBase);
                     ListBodyReplacementOnDeadBodies[i] = null!;
                 }
             }
-            ListBodyReplacementOnDeadBodies = ListBodyReplacementOnDeadBodies.Where(x => x != null).ToList();
+            ListBodyReplacementOnDeadBodies = ListBodyReplacementOnDeadBodies.Where(x => x != null 
+                                                                                      && x.deadBody != null).ToList();
         }
 
         private static void UpdateModelReplacement(BodyReplacementBase bodyReplacement)

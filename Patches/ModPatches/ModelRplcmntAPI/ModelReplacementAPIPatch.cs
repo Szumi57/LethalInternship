@@ -20,6 +20,13 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             InternAI? internAI = InternManager.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
+                if ((int)player.playerClientId >= InternManager.Instance.IndexBeginOfInterns)
+                {
+                    // It's an intern but all intern have been disabled (ex : end of round)
+                    // So ignore trying to set model
+                    return false;
+                }
+                // Real player
                 return true;
             }
 
@@ -60,7 +67,9 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             }
 
             //Plugin.LogDebug($"{player.playerUsername} shouldAddNewBodyReplacement {shouldAddNewBodyReplacement}");
-            if (shouldAddNewBodyReplacement && !internAI.NpcController.Npc.isPlayerDead)
+            if (shouldAddNewBodyReplacement
+                && !internAI.NpcController.Npc.isPlayerDead
+                && internAI.NpcController.Npc.isPlayerControlled)
             {
                 Plugin.LogInfo($"Patch LethalInternship, intern {player.playerUsername}, Suit Change detected {suitNameToReplace} => {currentSuitID} {unlockableName}, Replacing {type}.");
                 BodyReplacementBase bodyReplacementBaseToAdd = (BodyReplacementBase)player.gameObject.AddComponent(type);
