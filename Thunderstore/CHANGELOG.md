@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.7 [Alpha] - 2025-03-07
+### HotFixed
+- Fix softlock when leaving moon if an intern died with a model replacement, thanks @MathewKelly on Discord.
+
+
 ## 0.19.6 [Alpha] - 2025-03-05
 ### HotFixed
 - Fix not being able for the player to switch back to vanilla suit after switching to suit with custom model, thanks @DravenXD on GitHub, (issue [#72](https://github.com/Szumi57/LethalInternship/issues/72))
