@@ -3462,8 +3462,7 @@ namespace LethalInternship.AI
                 this.InternIdentity.DeadBody = NpcController.Npc.deadBody;
 
                 // Register body for animation culling
-                bool hasComponentModelReplacementAPI = Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
-                InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, hasComponentModelReplacementAPI);
+                InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, HasInternModelReplacementAPI());
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -3527,11 +3526,16 @@ namespace LethalInternship.AI
 
             if (idPlayerGrabberController == StartOfRound.Instance.localPlayerController.playerClientId)
             {
+                // Add weight of body
                 float weightToGain = RagdollInternBody.GetWeight() - 1f < 0f ? 0f : RagdollInternBody.GetWeight() - 1f;
                 playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + weightToGain, 1f, 10f);
 
                 weightToGain = NpcController.Npc.carryWeight - 1f < 0f ? 0f : NpcController.Npc.carryWeight - 1f;
                 playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight + weightToGain, 1f, 10f);
+
+                // Register held interns
+                InternManager.Instance.RegisterHeldInternForLocalPlayer((int)NpcController.Npc.playerClientId);
+                // Hide of held ragdoll > 1 is done on BodyReplacementBasePatch after creation of replacementDeadBody
             }
 
             if (HeldItem != null)
@@ -3552,7 +3556,7 @@ namespace LethalInternship.AI
             State = new BrainDeadState(this);
 
             // Register body for animation culling
-            InternManager.Instance.RegisterInternBodyForAnimationCulling(ragdollBodyDeadBodyInfo);
+            InternManager.Instance.RegisterInternBodyForAnimationCulling(ragdollBodyDeadBodyInfo, HasInternModelReplacementAPI());
         }
 
         private void InstantiateDeadBodyInfo(PlayerControllerB playerReference, Vector3 bodyVelocity = default)
@@ -3694,12 +3698,17 @@ namespace LethalInternship.AI
         {
             if (idPlayerGrabberController == StartOfRound.Instance.localPlayerController.playerClientId)
             {
+                // Remove weight of body
                 PlayerControllerB playerGrabberController = StartOfRound.Instance.allPlayerScripts[idPlayerGrabberController];
                 float weightToLose = RagdollInternBody.GetWeight() - 1f < 0f ? 0f : RagdollInternBody.GetWeight() - 1f;
                 playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - weightToLose, 1f, 10f);
 
                 weightToLose = NpcController.Npc.carryWeight - 1f < 0f ? 0f : NpcController.Npc.carryWeight - 1f;
                 playerGrabberController.carryWeight = Mathf.Clamp(playerGrabberController.carryWeight - weightToLose, 1f, 10f);
+
+                // Unregister held interns
+                InternManager.Instance.UnregisterHeldInternForLocalPlayer((int)NpcController.Npc.playerClientId);
+                InternManager.Instance.HideShowRagdollModel(NpcController.Npc, show: true);
             }
 
             if (HeldItem != null)
@@ -4183,6 +4192,11 @@ namespace LethalInternship.AI
             Plugin.LogDebug($"Changed suit of intern {NpcController.Npc.playerUsername} to {suitID}: {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
         }
 
+        public bool HasInternModelReplacementAPI()
+        {
+            return Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
+        }
+
         private IEnumerator WaitSecondsForChangeSuitToApply()
         {
             yield return new WaitForSeconds(0.2f);
@@ -4192,7 +4206,7 @@ namespace LethalInternship.AI
             InternCullingBodyInfo? internCullingBodyInfo = InternManager.Instance.GetInternCullingBodyInfo(NpcController.Npc.gameObject);
             if (internCullingBodyInfo != null)
             {
-                internCullingBodyInfo.HasModelReplacement = Plugin.IsModModelReplacementAPILoaded ? InternManager.Instance.HasComponentModelReplacementAPI(NpcController.Npc.gameObject) : false;
+                internCullingBodyInfo.HasModelReplacement = HasInternModelReplacementAPI();
             }
 
             yield break;
