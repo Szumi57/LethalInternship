@@ -69,7 +69,8 @@ namespace LethalInternship.Managers
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
         public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
         public List<InternCullingBodyInfo> InternBodiesSpawned = null!;
-        public InternCullingBodyInfo[] OrderedInternBodiesInFOV = new InternCullingBodyInfo[Plugin.Config.MaxInternsAvailable];
+        public InternCullingBodyInfo[] OrderedInternBodiesInFOV = new InternCullingBodyInfo[Plugin.Config.MaxInternsAvailable * 2];
+        public List<int> HeldInternsLocalPlayer = null!;
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
 
@@ -772,11 +773,7 @@ namespace LethalInternship.Managers
         /// </summary>
         public void DisableInternControllerModel(GameObject internObject, PlayerControllerB internController, bool enable = false, bool disableLocalArms = false)
         {
-            SkinnedMeshRenderer[] componentsInChildren = internObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-            for (int i = 0; i < componentsInChildren.Length; i++)
-            {
-                componentsInChildren[i].enabled = enable;
-            }
+            HideShowInternControllerModel(internObject, enable);
             if (disableLocalArms)
             {
                 internController.thisPlayerModelArms.enabled = false;
@@ -1244,6 +1241,60 @@ namespace LethalInternship.Managers
             return healthPercent < 1 ? 1 : healthPercent;
         }
 
+        #region SyncEndOfRoundInterns
+
+        /// <summary>
+        /// Only for the owner of <c>InternManager</c>, call server and clients to count intern left alive to re-drop on next round
+        /// </summary>
+        public void SyncEndOfRoundInterns()
+        {
+            if (!base.IsOwner)
+            {
+                return;
+            }
+
+            if (base.IsServer)
+            {
+                foreach (InternAI internAI in AllInternAIs)
+                {
+                    if (internAI == null
+                        || internAI.isEnemyDead
+                        || internAI.NpcController.Npc.isPlayerDead
+                        || !internAI.NpcController.Npc.isPlayerControlled
+                        || internAI.AreHandsFree())
+                    {
+                        continue;
+                    }
+
+                    internAI.DropItem();
+                }
+
+                SyncEndOfRoundInternsFromServerToClientRpc();
+            }
+            else
+            {
+                SyncEndOfRoundInternsFromClientToServerRpc();
+            }
+        }
+
+        /// <summary>
+        /// Server side, call clients to count intern left alive to re-drop on next round
+        /// </summary>
+        [ServerRpc]
+        private void SyncEndOfRoundInternsFromClientToServerRpc()
+        {
+            SyncEndOfRoundInternsFromServerToClientRpc();
+        }
+
+        /// <summary>
+        /// Client side, count intern left alive to re-drop on next round
+        /// </summary>
+        [ClientRpc]
+        private void SyncEndOfRoundInternsFromServerToClientRpc()
+        {
+            EndOfRoundForInterns();
+        }
+
         private void EndOfRoundForInterns()
         {
             DictEnemyAINoiseListeners.Clear();
@@ -1299,60 +1350,11 @@ namespace LethalInternship.Managers
             {
                 Patches.ModPatches.ModelRplcmntAPI.BodyReplacementBasePatch.CleanListBodyReplacementOnDeadBodies();
             }
-        }
 
-        #region SyncEndOfRoundInterns
-
-        /// <summary>
-        /// Only for the owner of <c>InternManager</c>, call server and clients to count intern left alive to re-drop on next round
-        /// </summary>
-        public void SyncEndOfRoundInterns()
-        {
-            if (!base.IsOwner)
+            if (HeldInternsLocalPlayer != null)
             {
-                return;
+                HeldInternsLocalPlayer.Clear();
             }
-
-            if (base.IsServer)
-            {
-                foreach (InternAI internAI in AllInternAIs)
-                {
-                    if (internAI == null
-                        || internAI.isEnemyDead
-                        || internAI.NpcController.Npc.isPlayerDead
-                        || !internAI.NpcController.Npc.isPlayerControlled
-                        || internAI.AreHandsFree())
-                    {
-                        continue;
-                    }
-
-                    internAI.DropItem();
-                }
-
-                SyncEndOfRoundInternsFromServerToClientRpc();
-            }
-            else
-            {
-                SyncEndOfRoundInternsFromClientToServerRpc();
-            }
-        }
-
-        /// <summary>
-        /// Server side, call clients to count intern left alive to re-drop on next round
-        /// </summary>
-        [ServerRpc]
-        private void SyncEndOfRoundInternsFromClientToServerRpc()
-        {
-            SyncEndOfRoundInternsFromServerToClientRpc();
-        }
-
-        /// <summary>
-        /// Client side, count intern left alive to re-drop on next round
-        /// </summary>
-        [ClientRpc]
-        private void SyncEndOfRoundInternsFromServerToClientRpc()
-        {
-            EndOfRoundForInterns();
         }
 
         #endregion
@@ -1590,6 +1592,12 @@ namespace LethalInternship.Managers
             {
                 internCullingBodyInfo.Init(hasModelReplacement);
             }
+
+            // Resizing, bodies info contains player controllers and ragdoll corpse
+            if (InternBodiesSpawned.Count > OrderedInternBodiesInFOV.Length)
+            {
+                Array.Resize(ref OrderedInternBodiesInFOV, InternBodiesSpawned.Count);
+            }
         }
 
         public InternCullingBodyInfo? GetInternCullingBodyInfo(GameObject gameObject)
@@ -1609,6 +1617,69 @@ namespace LethalInternship.Managers
             }
 
             return null;
+        }
+
+        public void RegisterHeldInternForLocalPlayer(int idInternController)
+        {
+            if (HeldInternsLocalPlayer == null)
+            {
+                HeldInternsLocalPlayer = new List<int>();
+            }
+
+            HeldInternsLocalPlayer.Add(idInternController);
+        }
+
+        public void UnregisterHeldInternForLocalPlayer(int idInternController)
+        {
+            if (HeldInternsLocalPlayer == null)
+            {
+                return;
+            }
+
+            HeldInternsLocalPlayer.Remove(idInternController);
+        }
+
+        public void HideShowRagdollModel(PlayerControllerB internController, bool show)
+        {
+            if (Plugin.IsModModelReplacementAPILoaded)
+            {
+                HideShowRagdollWithModelReplacement(internController.gameObject, show);
+            }
+            else
+            {
+                HideShowInternControllerModel(internController.gameObject, show);
+            }
+        }
+
+        private void HideShowRagdollWithModelReplacement(GameObject internObject, bool show)
+        {
+            ModelReplacement.BodyReplacementBase? bodyReplacement = internObject.GetComponent<ModelReplacement.BodyReplacementBase>();
+            if (bodyReplacement == null)
+            {
+                HideShowInternControllerModel(internObject, show);
+                return;
+            }
+
+            GameObject? model = bodyReplacement.replacementDeadBody;
+            if (model == null)
+            {
+                HideShowInternControllerModel(internObject, show);
+                return;
+            }
+
+            foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
+            {
+                renderer.enabled = show;
+            }
+        }
+
+        public void HideShowInternControllerModel(GameObject internObject, bool show)
+        {
+            SkinnedMeshRenderer[] componentsInChildren = internObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+            for (int i = 0; i < componentsInChildren.Length; i++)
+            {
+                componentsInChildren[i].enabled = show;
+            }
         }
 
         #endregion

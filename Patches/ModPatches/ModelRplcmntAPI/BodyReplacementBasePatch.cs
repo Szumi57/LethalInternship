@@ -33,6 +33,10 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 {
                     __instance.cosmeticAvatar = __instance.ragdollAvatar;
                     CreateAndParentRagdoll_ReversePatch(__instance, heldDeadBodyInfo);
+                    if (InternManager.Instance.HeldInternsLocalPlayer.Count > 1)
+                    {
+                        InternManager.Instance.HideShowRagdollModel(internAI.NpcController.Npc, show: false);
+                    }
                 }
 
                 // Held intern with replacement body not null

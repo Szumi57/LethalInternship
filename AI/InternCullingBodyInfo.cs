@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
 using LethalInternship.Managers;
+using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.AI
@@ -149,11 +150,26 @@ namespace LethalInternship.AI
                 }
             }
 
-
             DeadBodyInfo? deadBodyInfo = InternBody as DeadBodyInfo;
             if (deadBodyInfo != null)
             {
-                return Vector3.Angle(localPlayerCamera.transform.forward, (deadBodyInfo.transform.position - localPlayerCamera.transform.position)) < localPlayerCamera.fieldOfView * 0.81f;
+                if (InternManager.Instance.HeldInternsLocalPlayer.Contains(deadBodyInfo.playerObjectId))
+                {
+                    // Held by local player
+                    if (InternManager.Instance.HeldInternsLocalPlayer.First() == deadBodyInfo.playerObjectId)
+                    {
+                        // First held force fov
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return Vector3.Angle(localPlayerCamera.transform.forward, (deadBodyInfo.transform.position - localPlayerCamera.transform.position)) < localPlayerCamera.fieldOfView * 0.81f;
+                }
             }
 
             return false;

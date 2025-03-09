@@ -1,9 +1,15 @@
 # Changelog
 
+## 0.19.8 [Alpha] - 2025-03-09
+### Changed
+- Not rendering more than 1 held intern for local player (does not work with default model for now, but no performance cost)
+### HotFixed
+- Fix index out of range exception when too many corpse and intern in FOV to cull.
+- Fix grabbing intern with model replacement not updating.
+
 ## 0.19.7 [Alpha] - 2025-03-07
 ### HotFixed
 - Fix softlock when leaving moon if an intern died with a model replacement, thanks @MathewKelly on Discord.
-
 
 ## 0.19.6 [Alpha] - 2025-03-05
 ### HotFixed
