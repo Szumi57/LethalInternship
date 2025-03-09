@@ -69,7 +69,7 @@ namespace LethalInternship.Managers
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
         public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
         public List<InternCullingBodyInfo> InternBodiesSpawned = null!;
-        public InternCullingBodyInfo[] OrderedInternBodiesInFOV = new InternCullingBodyInfo[Plugin.Config.MaxInternsAvailable];
+        public InternCullingBodyInfo[] OrderedInternBodiesInFOV = new InternCullingBodyInfo[Plugin.Config.MaxInternsAvailable * 2];
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
 
@@ -1589,6 +1589,12 @@ namespace LethalInternship.Managers
             else
             {
                 internCullingBodyInfo.Init(hasModelReplacement);
+            }
+
+            // Resizing, bodies info contains player controllers and ragdoll corpse
+            if (InternBodiesSpawned.Count > OrderedInternBodiesInFOV.Length)
+            {
+                Array.Resize(ref OrderedInternBodiesInFOV, InternBodiesSpawned.Count);
             }
         }
 
