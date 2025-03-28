@@ -142,7 +142,7 @@ namespace LethalInternship.AI.AIStates
                 npcController.OrderToStopSprint();
             }
 
-            ai.OrderMoveToDestination();
+            ai.NpcController.OrderToMove();
         }
 
         public override void TryPlayCurrentStateVoiceAudio()

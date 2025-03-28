@@ -73,6 +73,8 @@ namespace LethalInternship.AI
         public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
         public TimedAngleFOVWithLocalPlayerCheck AngleFOVWithLocalPlayerTimedCheck = null!;
 
+        public LineRendererUtil LineRendererUtil = null!;
+
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private EntranceTeleport[] entrancesTeleportArray = null!;
@@ -87,12 +89,15 @@ namespace LethalInternship.AI
 
         private string stateIndicatorServer = string.Empty;
         private Vector3 previousWantedDestination;
-        private bool hasDestinationChanged = true;
         private float updateDestinationIntervalInternAI;
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
 
         private LineRendererUtil LineRendererUtil = null!;
+
+        private RaycastHit GroundHit;
+
+        private RaycastHit GroundHit;
 
         private void Awake()
         {
@@ -608,26 +613,12 @@ namespace LethalInternship.AI
         /// Set the destination in <c>EnemyAI</c>, not on the agent
         /// </summary>
         /// <param name="position">the destination</param>
-        public void SetDestinationToPositionInternAI(Vector3 position)
+        public void SetDestinationToPositionInternAI(Vector3 position, bool forceChangeDestination = false, bool avoidLineOfSight = true, int offset = 0)
         {
             moveTowardsDestination = true;
             movingTowardsTargetPlayer = false;
 
-            if (previousWantedDestination != position)
-            {
-                previousWantedDestination = position;
-                hasDestinationChanged = true;
-                destination = position;
-            }
-        }
-
-        /// <summary>
-        /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
-        /// </summary>
-        public void OrderMoveToDestination(bool avoidLineOfSight = true)
-        {
-            NpcController.OrderToMove();
-
+            if (previousWantedDestination != position
             if (!hasDestinationChanged)
             {
                 return;
@@ -640,6 +631,10 @@ namespace LethalInternship.AI
                 && !StartOfRound.Instance.shipIsLeaving)
             {
                 this.SetDestinationToPosition(destination);
+                agent.SetDestination(destination);
+                hasDestinationChanged = false;
+            }
+                }
                 agent.SetDestination(destination);
                 hasDestinationChanged = false;
             }

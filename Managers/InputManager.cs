@@ -1,8 +1,10 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.AI;
+using LethalInternship.AI.AIStates;
 using LethalInternship.Constants;
 using LethalInternship.Patches.NpcPatches;
+using LethalInternship.Utils;
 using System.IO;
 using System.Linq;
 using TMPro;
@@ -15,15 +17,36 @@ namespace LethalInternship.Managers
     {
         public static InputManager Instance { get; private set; } = null!;
 
+        public bool CommandInternInputIsPressed;
+        private bool CanCommandIntern;
+
+        private LineRendererUtil LineRendererUtil = null!;
+
         private void Awake()
         {
             Instance = this;
             AddEventHandlers();
         }
 
+        private void Update()
+        {
+            if (GameNetworkManager.Instance == null
+                || GameNetworkManager.Instance.localPlayerController == null)
+            {
+                return;
+            }
+
+            if (LineRendererUtil == null)
+            {
+                LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
+            }
+
+            CheckOrderToWaitInput();
+        }
+
         private void AddEventHandlers()
         {
-            Plugin.InputActionsInstance.LeadIntern.performed += LeadIntern_performed;
+            Plugin.InputActionsInstance.SuperviseCommandIntern.performed += SuperviseCommand_performed;
             Plugin.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
             Plugin.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
             Plugin.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
@@ -32,7 +55,7 @@ namespace LethalInternship.Managers
 
         public void RemoveEventHandlers()
         {
-            Plugin.InputActionsInstance.LeadIntern.performed -= LeadIntern_performed;
+            Plugin.InputActionsInstance.SuperviseCommandIntern.performed -= SuperviseCommand_performed;
             Plugin.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
             Plugin.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
             Plugin.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
@@ -173,7 +196,7 @@ namespace LethalInternship.Managers
             return true;
         }
 
-        private void LeadIntern_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+        private void SuperviseCommand_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
@@ -216,6 +239,93 @@ namespace LethalInternship.Managers
                 //HUDManager.Instance.ClearControlTips();
                 //HUDManager.Instance.ChangeControlTipMultiple(new string[] { Const.TOOLTIPS_ORDER_1 });
                 return;
+            }
+        }
+
+        private void CheckOrderToWaitInput()
+        {
+            if (!Plugin.InputActionsInstance.SuperviseCommandIntern.IsPressed())
+            {
+                CommandInternInputIsPressed = false;
+                CanCommandIntern = true;
+                return;
+            }
+
+            if (!CanCommandIntern)
+            {
+                return;
+            }
+
+            if (!CommandInternInputIsPressed)
+            {
+                InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                if (internsOwned == null
+                    || internsOwned.Length == 0)
+                {
+                    CommandInternInputIsPressed = false;
+                    return;
+                }
+            }
+
+            CommandInternInputIsPressed = true;
+
+            // Show interact animation
+            GameNetworkManager.Instance.localPlayerController.cursorTip.text = "Wait over there";
+            if (HUDManager.Instance.HoldInteractionFill(0.5f, 1))
+            {
+                InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                if (internsOwned == null
+                    || internsOwned.Length == 0)
+                {
+                    CommandInternInputIsPressed = false;
+                    return;
+                }
+                // Order to wait
+                OrderToWait(internsOwned);
+
+                CanCommandIntern = false;
+            }
+        }
+
+        private void OrderToWait(InternAI[] internsOwned)
+        {
+
+            PlayerControllerB localPlayerController = GameNetworkManager.Instance.localPlayerController;
+
+            Ray interactRay = new Ray(localPlayerController.gameplayCamera.transform.position, localPlayerController.gameplayCamera.transform.forward);
+            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 20f, StartOfRound.Instance.collidersAndRoomMaskAndDefault);
+            if (raycastHits.Length == 0)
+            {
+                return;
+            }
+
+            // Check if looking too far in the distance or at a valid position
+            foreach (var hit in raycastHits)
+            {
+                if (hit.distance < 0.1f)
+                {
+                    continue;
+                }
+
+                PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
+                {
+                    continue;
+                }
+
+                InternAI firstIntern = internsOwned.First();
+                if (firstIntern.TrySetDestinationToPosition(hit.point, avoidLineOfSight: false, offset: 0))
+                {
+                    Plugin.LogDebug($"hit.distance {hit.distance} {LineRendererUtil.GetLineRenderer()}");
+                    DrawUtil.DrawWhiteLine(LineRendererUtil.GetLineRenderer(), interactRay, hit.distance);
+
+                    // Hit point
+                    foreach (InternAI internAI in internsOwned)
+                    {
+                        internAI.State = new WaitingState(internAI, hit.point);
+                    }
+                    break;
+                }
             }
         }
 

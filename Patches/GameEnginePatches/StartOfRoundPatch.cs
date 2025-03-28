@@ -507,7 +507,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         }
 
         /// <summary>
-        /// Removes dupcation of event triggering when quitting to main menu and coming back
+        /// Removes duplication of event triggering when quitting to main menu and coming back
         /// </summary>
         [HarmonyPatch("OnDisable")]
         [HarmonyPostfix]
