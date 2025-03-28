@@ -314,7 +314,7 @@ namespace LethalInternship.Managers
                 }
 
                 InternAI firstIntern = internsOwned.First();
-                if (firstIntern.TrySetDestinationToPosition(hit.point, avoidLineOfSight: false, offset: 0))
+                if (firstIntern.TrySetDestinationToPosition(hit.point))
                 {
                     Plugin.LogDebug($"hit.distance {hit.distance} {LineRendererUtil.GetLineRenderer()}");
                     DrawUtil.DrawWhiteLine(LineRendererUtil.GetLineRenderer(), interactRay, hit.distance);

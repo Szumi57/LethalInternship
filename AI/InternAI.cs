@@ -93,12 +93,6 @@ namespace LethalInternship.AI
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
 
-        private LineRendererUtil LineRendererUtil = null!;
-
-        private RaycastHit GroundHit;
-
-        private RaycastHit GroundHit;
-
         private void Awake()
         {
             // Behaviour states
@@ -613,16 +607,24 @@ namespace LethalInternship.AI
         /// Set the destination in <c>EnemyAI</c>, not on the agent
         /// </summary>
         /// <param name="position">the destination</param>
-        public void SetDestinationToPositionInternAI(Vector3 position, bool forceChangeDestination = false, bool avoidLineOfSight = true, int offset = 0)
+        public void SetDestinationToPositionInternAI(Vector3 position)
         {
             moveTowardsDestination = true;
             movingTowardsTargetPlayer = false;
 
-            if (previousWantedDestination != position
-            if (!hasDestinationChanged)
+            if (previousWantedDestination != position)
             {
-                return;
+                previousWantedDestination = position;
+                destination = position;
             }
+        }
+
+        /// <summary>
+        /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
+        /// </summary>
+        public void OrderMoveToDestination()
+        {
+            NpcController.OrderToMove();
 
             if (agent.isActiveAndEnabled
                 && agent.isOnNavMesh
@@ -630,14 +632,14 @@ namespace LethalInternship.AI
                 && !NpcController.Npc.isPlayerDead
                 && !StartOfRound.Instance.shipIsLeaving)
             {
-                this.SetDestinationToPosition(destination);
+                TrySetDestinationToPosition(destination);
                 agent.SetDestination(destination);
-                hasDestinationChanged = false;
             }
-                }
-                agent.SetDestination(destination);
-                hasDestinationChanged = false;
-            }
+        }
+
+        public bool TrySetDestinationToPosition(Vector3 position)
+        {
+            return this.SetDestinationToPosition(position);
         }
 
         public void StopMoving()

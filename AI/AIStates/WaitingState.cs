@@ -16,7 +16,7 @@ namespace LethalInternship.AI.AIStates
 
         public override void DoAI()
         {
-            ai.SetDestinationToPositionInternAI(waitingDestination, forceChangeDestination: false, avoidLineOfSight: false);
+            ai.SetDestinationToPositionInternAI(waitingDestination);
             DrawUtil.DrawWhiteLine(ai.LineRendererUtil.GetLineRenderer(), new Ray(ai.transform.position + Vector3.up, ai.destination - (ai.transform.position + Vector3.up)), (ai.destination - (ai.transform.position + Vector3.up)).magnitude);
             ai.NpcController.OrderToMove();
         }
