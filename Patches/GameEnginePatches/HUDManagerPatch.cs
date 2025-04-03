@@ -20,14 +20,6 @@ namespace LethalInternship.Patches.GameEnginePatches
     [HarmonyAfter(Const.BETTER_EXP_GUID)]
     public class HUDManagerPatch
     {
-        #region Reverse patches
-
-        [HarmonyPatch("DisplayGlobalNotification")]
-        [HarmonyReversePatch]
-        public static void DisplayGlobalNotification_ReversePatch(object instance, string displayText) => throw new NotImplementedException("Stub LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.DisplayGlobalNotification_ReversePatch");
-
-        #endregion
-
         [HarmonyPatch("FillEndGameStats")]
         [HarmonyPrefix]
         static void FillEndGameStats_PreFix(HUDManager __instance)
@@ -39,6 +31,16 @@ namespace LethalInternship.Patches.GameEnginePatches
                 ResizeStatsUIElements(__instance);
             }
         }
+        
+        #region Reverse patches
+
+        [HarmonyPatch("DisplayGlobalNotification")]
+        [HarmonyReversePatch]
+        public static void DisplayGlobalNotification_ReversePatch(object instance, string displayText) => throw new NotImplementedException("Stub LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.DisplayGlobalNotification_ReversePatch");
+
+        #endregion
+
+        #region Transpilers
 
         /// <summary>
         /// Patch for making the hud only show end games stats for irl players, not interns
@@ -219,6 +221,17 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        #endregion
+
+        #region PostFixes
+
+        [HarmonyPatch("Awake")]
+        [HarmonyPostfix]
+        public static void Awake_Postfix(HUDManager __instance)
+        {
+            UIManager.Instance.Init(__instance.HUDContainer.transform.parent);
+        }
+
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         public static void Start_Postfix(HUDManager __instance)
@@ -271,5 +284,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             InputManager.Instance.AddInternsControlTip(__instance);
         }
+
+        #endregion
     }
 }

@@ -23,7 +23,6 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
-            Plugin.LogDebug("=============== awake audio manager =====================");
 
             try
             {

@@ -280,6 +280,7 @@ namespace LethalInternship.Managers
                     CommandInternInputIsPressed = false;
                     return;
                 }
+
                 // Order to wait
                 OrderToWait(internsOwned);
 
@@ -465,6 +466,8 @@ namespace LethalInternship.Managers
             {
                 return;
             }
+
+            UIManager.Instance.ToogleCommandWheel();
 
             // Use of change suit key to change suit of intern
             Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);

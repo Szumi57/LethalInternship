@@ -21,7 +21,6 @@ namespace LethalInternship.Managers
         private void Awake()
         {
             Instance = this;
-            Plugin.LogDebug("=============== awake IdentityManager =====================");
         }
 
         private void Update()

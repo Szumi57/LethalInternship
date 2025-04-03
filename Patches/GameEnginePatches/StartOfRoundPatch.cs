@@ -40,6 +40,9 @@ namespace LethalInternship.Patches.GameEnginePatches
             objectManager = new GameObject("IdentityManager");
             objectManager.AddComponent<IdentityManager>();
 
+            objectManager = new GameObject("UIManager");
+            objectManager.AddComponent<UIManager>();
+
             // NetworkBehaviours
             objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)

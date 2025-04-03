@@ -78,14 +78,14 @@ namespace LethalInternship
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
 
         public static AssetBundle ModAssets = null!;
+        public static EnemyType InternNPCPrefab = null!;
+        public static GameObject CommandsUIPrefab = null!;
+        
         internal static string DirectoryName = null!;
-
-        internal static EnemyType InternNPCPrefab = null!;
-        internal static int PluginIrlPlayersCount = 0;
-
         internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
         internal static LethalInternshipInputs InputActionsInstance = null!;
+        internal static int PluginIrlPlayersCount = 0;
 
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
@@ -141,7 +141,7 @@ namespace LethalInternship
                 Object.DestroyImmediate(transform.gameObject);
             }
 
-            // randomize GlobalObjectIdHash
+            // Randomize GlobalObjectIdHash
             byte[] value = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Assembly.GetCallingAssembly().GetName().Name + gameObject.name + bundleName));
             uint newGlobalObjectIdHash = BitConverter.ToUInt32(value, 0);
             Type type = typeof(NetworkObject);
@@ -151,6 +151,10 @@ namespace LethalInternship
 
             // Register the network prefab with the randomized GlobalObjectIdHash
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(InternNPCPrefab.enemyPrefab);
+
+            // Load UI prefabs
+            CommandsUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("Commands");
+            Plugin.LogDebug($"asset ? {CommandsUIPrefab}");
 
             InitPluginManager();
 
