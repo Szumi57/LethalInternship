@@ -1,6 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
+using LethalInternship.Interns.AI;
 using LethalInternship.Managers;
 
 namespace LethalInternship.Patches.MapPatches

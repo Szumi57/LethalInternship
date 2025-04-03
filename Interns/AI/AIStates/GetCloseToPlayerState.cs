@@ -3,7 +3,7 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     /// <summary>
     /// State where the intern has a target player and wants to get close to him.
@@ -58,7 +58,7 @@ namespace LethalInternship.AI.AIStates
             if (ai.targetPlayer == null)
             {
                 // Last position unknown
-                if (this.targetLastKnownPosition.HasValue)
+                if (targetLastKnownPosition.HasValue)
                 {
                     ai.State = new JustLostPlayerState(this);
                     return;
@@ -94,8 +94,8 @@ namespace LethalInternship.AI.AIStates
             }
 
             // Target is in awarness range
-            float sqrHorizontalDistanceWithTarget = Vector3.Scale((ai.targetPlayer.transform.position - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
-            float sqrVerticalDistanceWithTarget = Vector3.Scale((ai.targetPlayer.transform.position - npcController.Npc.transform.position), new Vector3(0, 1, 0)).sqrMagnitude;
+            float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - npcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - npcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
             if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
                     && sqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
             {

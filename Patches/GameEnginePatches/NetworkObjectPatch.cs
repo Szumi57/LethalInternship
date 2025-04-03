@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Constants;
+using LethalInternship.Interns.AI;
 using LethalInternship.Managers;
 using Unity.Netcode;
 using UnityEngine;

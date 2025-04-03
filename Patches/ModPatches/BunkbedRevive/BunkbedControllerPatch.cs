@@ -1,7 +1,7 @@
 ﻿using BunkbedRevive;
 using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Enums;
+using LethalInternship.Interns;
 using LethalInternship.Managers;
 using LethalInternship.Patches.GameEnginePatches;
 using System;

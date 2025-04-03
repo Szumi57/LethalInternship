@@ -3,7 +3,7 @@ using LethalInternship.Enums;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     public class PlayerInCruiserState : AIState
     {
@@ -34,7 +34,7 @@ namespace LethalInternship.AI.AIStates
         /// </summary>
         public override void DoAI()
         {
-            ai.SetAgent(enabled:  false);
+            ai.SetAgent(enabled: false);
 
             if (vehicleController == null)
             {

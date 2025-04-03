@@ -3,7 +3,7 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     /// <summary>
     /// The state when the AI is close to the owner player
@@ -22,7 +22,7 @@ namespace LethalInternship.AI.AIStates
         {
             get
             {
-                return Vector3.Scale((ai.targetPlayer.transform.position - npcController.Npc.transform.position), new Vector3(1, 0, 1)).sqrMagnitude;
+                return Vector3.Scale(ai.targetPlayer.transform.position - npcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
             }
         }
 
@@ -34,7 +34,7 @@ namespace LethalInternship.AI.AIStates
         {
             get
             {
-                return Vector3.Scale((ai.targetPlayer.transform.position - npcController.Npc.transform.position), new Vector3(0, 1, 0)).sqrMagnitude;
+                return Vector3.Scale(ai.targetPlayer.transform.position - npcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
             }
         }
 

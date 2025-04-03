@@ -7,7 +7,7 @@ using UnityEngine;
 using AudioManager = LethalInternship.Managers.AudioManager;
 using Random = System.Random;
 
-namespace LethalInternship.AI
+namespace LethalInternship.Interns
 {
     public class InternVoice
     {
@@ -34,10 +34,10 @@ namespace LethalInternship.AI
 
         public InternVoice(string voiceFolder, float volume, float voicePitch)
         {
-            this.VoiceFolder = voiceFolder;
-            this.Volume = volume;
-            this.VoicePitch = voicePitch;
-            this.clipSampleData = new float[sampleDataLength];
+            VoiceFolder = voiceFolder;
+            Volume = volume;
+            VoicePitch = voicePitch;
+            clipSampleData = new float[sampleDataLength];
         }
 
         public override string ToString()
@@ -102,7 +102,7 @@ namespace LethalInternship.AI
 
             if (!parameters.CanTalkIfOtherInternTalk)
             {
-                if (InternManager.Instance.DidAnInternJustTalkedClose(this.InternID))
+                if (InternManager.Instance.DidAnInternJustTalkedClose(InternID))
                 {
                     SetNewRandomCooldownAudio();
                     return;
@@ -146,7 +146,7 @@ namespace LethalInternship.AI
 
             PlayRandomVoiceAudio(parameters.VoiceState, parameters);
             lastVoiceState = parameters.VoiceState;
-            InternManager.Instance.PlayAudibleNoiseForIntern(this.InternID, CurrentAudioSource.transform.position, 16f, 0.9f, 5);
+            InternManager.Instance.PlayAudibleNoiseForIntern(InternID, CurrentAudioSource.transform.position, 16f, 0.9f, 5);
         }
 
         public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)
@@ -177,7 +177,7 @@ namespace LethalInternship.AI
 
             CurrentAudioSource.pitch = VoicePitch;
             CurrentAudioSource.clip = audioClip;
-            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, this.Volume * Plugin.Config.GetVolumeVoicesMultiplierInterns());
+            AudioManager.Instance.FadeInAudio(CurrentAudioSource, VoicesConst.FADE_IN_TIME, Volume * Plugin.Config.GetVolumeVoicesMultiplierInterns());
 
             SetCooldownAudio(audioClip.length + GetRandomCooldown());
         }
@@ -189,13 +189,13 @@ namespace LethalInternship.AI
             switch (Plugin.Config.Talkativeness.Value)
             {
                 case (int)EnumTalkativeness.Shy:
-                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_SHY, VoicesConst.MAX_COOLDOWN_PLAYVOICE_SHY);
+                    return randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_SHY, VoicesConst.MAX_COOLDOWN_PLAYVOICE_SHY);
                 case (int)EnumTalkativeness.Normal:
-                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_NORMAL, VoicesConst.MAX_COOLDOWN_PLAYVOICE_NORMAL);
+                    return randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_NORMAL, VoicesConst.MAX_COOLDOWN_PLAYVOICE_NORMAL);
                 case (int)EnumTalkativeness.Talkative:
-                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_TALKATIVE, VoicesConst.MAX_COOLDOWN_PLAYVOICE_TALKATIVE);
+                    return randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_TALKATIVE, VoicesConst.MAX_COOLDOWN_PLAYVOICE_TALKATIVE);
                 case (int)EnumTalkativeness.CantStopTalking:
-                    return (float)randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_CANTSTOPTALKING, VoicesConst.MAX_COOLDOWN_PLAYVOICE_CANTSTOPTALKING);
+                    return randomInstance.Next(VoicesConst.MIN_COOLDOWN_PLAYVOICE_CANTSTOPTALKING, VoicesConst.MAX_COOLDOWN_PLAYVOICE_CANTSTOPTALKING);
                 default:
                     return 0f;
             }

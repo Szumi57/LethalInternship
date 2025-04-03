@@ -1,5 +1,4 @@
-﻿using LethalInternship.AI;
-using LethalInternship.Enums;
+﻿using LethalInternship.Enums;
 using System.Collections.Generic;
 
 namespace LethalInternship.TerminalAdapter

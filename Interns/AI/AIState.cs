@@ -1,7 +1,7 @@
 ﻿using LethalInternship.Enums;
 using UnityEngine;
 
-namespace LethalInternship.AI
+namespace LethalInternship.Interns.AI
 {
     /// <summary>
     /// Abstract state main class for the <c>AIState</c>
@@ -11,15 +11,16 @@ namespace LethalInternship.AI
         protected InternAI ai;
 
         private EnumAIStates currentState;
-        protected EnumAIStates CurrentState {
+        protected EnumAIStates CurrentState
+        {
             get
             {
-                return this.currentState;
+                return currentState;
             }
             set
             {
-                this.currentState = value;
-                Plugin.LogDebug($"Intern {npcController.Npc.playerClientId} ({npcController.Npc.playerUsername}) new state :                 {this.currentState}");
+                currentState = value;
+                Plugin.LogDebug($"Intern {npcController.Npc.playerClientId} ({npcController.Npc.playerUsername}) new state :                 {currentState}");
             }
         }
 
@@ -41,11 +42,11 @@ namespace LethalInternship.AI
         /// <param name="oldState"></param>
         protected AIState(AIState oldState) : this(oldState.ai)
         {
-            this.targetLastKnownPosition = oldState.targetLastKnownPosition;
-            this.targetItem = oldState.targetItem;
+            targetLastKnownPosition = oldState.targetLastKnownPosition;
+            targetItem = oldState.targetItem;
 
-            this.panikCoroutine = oldState.panikCoroutine;
-            this.currentEnemy = oldState.currentEnemy;
+            panikCoroutine = oldState.panikCoroutine;
+            currentEnemy = oldState.currentEnemy;
         }
 
         /// <summary>
@@ -62,14 +63,14 @@ namespace LethalInternship.AI
 
             this.ai = ai;
 
-            this.npcController = ai.NpcController;
+            npcController = ai.NpcController;
 
-            this.searchForPlayers = new AISearchRoutine();
-            this.searchForPlayers.randomized = true;
+            searchForPlayers = new AISearchRoutine();
+            searchForPlayers.randomized = true;
         }
 
         /// <summary>
-        /// Apply the behaviour according to the type of state <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see>.<br/>
+        /// Apply the behaviour according to the type of state <see cref="EnumAIStates"><c>Enums.EnumAIStates</c></see>.<br/>
         /// </summary>
         public abstract void DoAI();
 
@@ -78,7 +79,7 @@ namespace LethalInternship.AI
         public virtual void PlayerHeard(Vector3 noisePosition) { }
 
         /// <summary>
-        /// Get the <see cref="Enums.EnumAIStates"><c>Enums.EnumAIStates</c></see> of current State
+        /// Get the <see cref="EnumAIStates"><c>Enums.EnumAIStates</c></see> of current State
         /// </summary>
         /// <returns></returns>
         public virtual EnumAIStates GetAIState() { return CurrentState; }

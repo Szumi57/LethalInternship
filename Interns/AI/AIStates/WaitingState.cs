@@ -1,8 +1,9 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Interns.AI;
 using LethalInternship.Utils;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     public class WaitingState : AIState
     {

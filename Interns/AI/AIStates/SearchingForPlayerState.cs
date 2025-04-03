@@ -1,10 +1,11 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interns.AI;
 using System.Collections;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     /// <summary>
     /// State where the intern has no target player to follow, and is looking for one.
@@ -120,7 +121,7 @@ namespace LethalInternship.AI.AIStates
         public override void PlayerHeard(Vector3 noisePosition)
         {
             // Go towards the sound heard
-            this.targetLastKnownPosition = noisePosition;
+            targetLastKnownPosition = noisePosition;
             ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
                 VoiceState = EnumVoicesState.HearsPlayer,
@@ -167,17 +168,17 @@ namespace LethalInternship.AI.AIStates
 
         private void StartSearchingWanderCoroutine()
         {
-            if (this.searchingWanderCoroutine == null)
+            if (searchingWanderCoroutine == null)
             {
-                this.searchingWanderCoroutine = ai.StartCoroutine(this.SearchingWander());
+                searchingWanderCoroutine = ai.StartCoroutine(SearchingWander());
             }
         }
 
         private void StopSearchingWanderCoroutine()
         {
-            if (this.searchingWanderCoroutine != null)
+            if (searchingWanderCoroutine != null)
             {
-                ai.StopCoroutine(this.searchingWanderCoroutine);
+                ai.StopCoroutine(searchingWanderCoroutine);
             }
         }
     }

@@ -1,5 +1,5 @@
 ﻿using BepInEx;
-using LethalInternship.AI;
+using LethalInternship.Interns;
 using System;
 using System.Collections;
 using System.Collections.Generic;

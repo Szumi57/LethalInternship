@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Random = System.Random;
 
-namespace LethalInternship.AI
+namespace LethalInternship.Interns
 {
     public class InternIdentity
     {
@@ -47,8 +47,8 @@ namespace LethalInternship.AI
         public void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity)
         {
             this.Hp = Hp;
-            this.SuitID = suitID;
-            this.Status = enumStatusIdentity;
+            SuitID = suitID;
+            Status = enumStatusIdentity;
         }
 
         public override string ToString()

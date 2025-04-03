@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using LethalInternship.AI;
+using LethalInternship.Interns.AI;
 using UnityEngine;
 
 namespace LethalInternship.Patches.MapHazardsPatches

@@ -1,7 +1,8 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Enums;
+using LethalInternship.Interns;
+using LethalInternship.Interns.AI;
 using LethalInternship.Managers;
 using UnityEngine;
 

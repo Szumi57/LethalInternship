@@ -2,7 +2,7 @@
 using LethalInternship.Enums;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     /// <summary>
     /// State where the interns try to get close and grab a item
@@ -39,35 +39,35 @@ namespace LethalInternship.AI.AIStates
 
             // Target item invalid to grab
             if (ai.HeldItem != null
-                || this.targetItem == null 
-                || !ai.IsGrabbableObjectGrabbable(this.targetItem))
+                || targetItem == null
+                || !ai.IsGrabbableObjectGrabbable(targetItem))
             {
-                this.targetItem = null;
+                targetItem = null;
                 ai.State = new GetCloseToPlayerState(this);
                 return;
             }
 
-            float sqrMagDistanceItem = (this.targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude;
+            float sqrMagDistanceItem = (targetItem.transform.position - npcController.Npc.transform.position).sqrMagnitude;
             // Close enough to item for grabbing, attempt to grab
             if (sqrMagDistanceItem < npcController.Npc.grabDistance * npcController.Npc.grabDistance * Plugin.Config.InternSizeScale.Value)
             {
-                if (!npcController.Npc.inAnimationWithEnemy 
+                if (!npcController.Npc.inAnimationWithEnemy
                     && !npcController.Npc.activatingItem)
                 {
-                    ai.GrabItemServerRpc(this.targetItem.NetworkObject, itemGiven: false);
-                    this.targetItem = null;
+                    ai.GrabItemServerRpc(targetItem.NetworkObject, itemGiven: false);
+                    targetItem = null;
                     ai.State = new GetCloseToPlayerState(this);
                     return;
                 }
             }
 
             // Else get close to item
-            ai.SetDestinationToPositionInternAI(this.targetItem.transform.position);
+            ai.SetDestinationToPositionInternAI(targetItem.transform.position);
 
             // Look at item or not if hidden by stuff
-            if (!Physics.Linecast(npcController.Npc.gameplayCamera.transform.position, this.targetItem.transform.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+            if (!Physics.Linecast(npcController.Npc.gameplayCamera.transform.position, targetItem.transform.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
             {
-                npcController.OrderToLookAtPosition(this.targetItem.transform.position);
+                npcController.OrderToLookAtPosition(targetItem.transform.position);
             }
             else
             {

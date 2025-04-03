@@ -1,10 +1,11 @@
 ﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interns.AI;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     /// <summary>
     /// State where the intern just saw a dangerous enemy (see: <see cref="InternAI.GetFearRangeForEnemies"><c>InternAI.GetFearRangeForEnemies</c></see>).
@@ -27,11 +28,11 @@ namespace LethalInternship.AI.AIStates
             }
 
             Plugin.LogDebug($"{npcController.Npc.playerUsername} enemy seen {enemyAI.enemyType.enemyName}");
-            this.currentEnemy = enemyAI;
-            float? fearRange = ai.GetFearRangeForEnemies(this.currentEnemy);
+            currentEnemy = enemyAI;
+            float? fearRange = ai.GetFearRangeForEnemies(currentEnemy);
             if (fearRange.HasValue)
             {
-                StartPanikCoroutine(this.currentEnemy.transform, fearRange.Value);
+                StartPanikCoroutine(currentEnemy.transform, fearRange.Value);
             }
             else
             {
@@ -51,7 +52,7 @@ namespace LethalInternship.AI.AIStates
                 return;
             }
 
-            float? fearRange = ai.GetFearRangeForEnemies(this.currentEnemy);
+            float? fearRange = ai.GetFearRangeForEnemies(currentEnemy);
             if (!fearRange.HasValue)
             {
                 ai.State = new GetCloseToPlayerState(this);
@@ -66,9 +67,9 @@ namespace LethalInternship.AI.AIStates
                 float? newFearRange = ai.GetFearRangeForEnemies(newEnemyAI);
                 if (newFearRange.HasValue)
                 {
-                    this.currentEnemy = newEnemyAI;
+                    currentEnemy = newEnemyAI;
                     fearRange = newFearRange.Value;
-                    RestartPanikCoroutine(this.currentEnemy, fearRange.Value);
+                    RestartPanikCoroutine(currentEnemy, fearRange.Value);
                 }
                 // else no fear range, ignore this enemy, already ignored by CheckLOSForEnemy but hey better be safe
             }
@@ -101,7 +102,7 @@ namespace LethalInternship.AI.AIStates
             // If enemy still too close, and destination reached, restart the panic routine
             if ((ai.destination - npcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
-                RestartPanikCoroutine(this.currentEnemy, fearRange.Value);
+                RestartPanikCoroutine(currentEnemy, fearRange.Value);
             }
 
             // Sprint of course
@@ -141,7 +142,7 @@ namespace LethalInternship.AI.AIStates
         /// <returns></returns>
         private IEnumerator ChooseFleeingNodeFromPosition(Transform enemyTransform, float fearRange)
         {
-            var nodes = ai.allAINodes.OrderBy(node => (node.transform.position - this.ai.transform.position).sqrMagnitude)
+            var nodes = ai.allAINodes.OrderBy(node => (node.transform.position - ai.transform.position).sqrMagnitude)
                                      .ToArray();
             yield return null;
 
@@ -155,7 +156,7 @@ namespace LethalInternship.AI.AIStates
                     continue;
                 }
 
-                if (!this.ai.agent.CalculatePath(nodeTransform.position, this.ai.path1))
+                if (!ai.agent.CalculatePath(nodeTransform.position, ai.path1))
                 {
                     yield return null;
                     continue;

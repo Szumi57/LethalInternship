@@ -1,9 +1,10 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Configs;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interns;
+using LethalInternship.Interns.AI;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;

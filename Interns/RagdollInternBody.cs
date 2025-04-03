@@ -1,7 +1,7 @@
 ﻿using GameNetcodeStuff;
 using UnityEngine;
 
-namespace LethalInternship.AI
+namespace LethalInternship.Interns
 {
     public class RagdollInternBody
     {
@@ -12,7 +12,7 @@ namespace LethalInternship.AI
         {
             this.ragdollGrabbableObject = ragdollGrabbableObject;
             this.ragdollGrabbableObject.transform.position = StartOfRound.Instance.notSpawnedPosition.position;
-            this.idPlayerHolder = -1;
+            idPlayerHolder = -1;
         }
 
         public void SetGrabbedBy(PlayerControllerB playerGrabberController,
@@ -23,8 +23,8 @@ namespace LethalInternship.AI
 
             ragdollGrabbableObject.ragdoll = deadBodyInfo;
             ragdollGrabbableObject.ragdoll.grabBodyObject = ragdollGrabbableObject;
-            ragdollGrabbableObject.ragdoll.attachedTo = this.ragdollGrabbableObject.transform;
-            ragdollGrabbableObject.ragdoll.attachedLimb = this.ragdollGrabbableObject.ragdoll.bodyParts[bodyPart];
+            ragdollGrabbableObject.ragdoll.attachedTo = ragdollGrabbableObject.transform;
+            ragdollGrabbableObject.ragdoll.attachedLimb = ragdollGrabbableObject.ragdoll.bodyParts[bodyPart];
             ragdollGrabbableObject.ragdoll.matchPositionExactly = true;
             ragdollGrabbableObject.ragdoll.lerpBeforeMatchingPosition = true;
             ragdollGrabbableObject.ragdoll.SetBodyPartsKinematic(false);
@@ -66,7 +66,7 @@ namespace LethalInternship.AI
 
             ragdollGrabbableObject.hasHitGround = false;
             ragdollGrabbableObject.isHeld = false;
-            this.idPlayerHolder = -1;
+            idPlayerHolder = -1;
         }
 
         public void SetFreeRagdoll(DeadBodyInfo deadBodyInfo)

@@ -1,6 +1,7 @@
 ﻿using LethalInternship.Enums;
+using LethalInternship.Interns.AI;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     public class BrainDeadState : AIState
     {

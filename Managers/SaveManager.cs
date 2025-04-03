@@ -1,5 +1,5 @@
-﻿using LethalInternship.AI;
-using LethalInternship.Enums;
+﻿using LethalInternship.Enums;
+using LethalInternship.Interns;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.SaveAdapter;
 using Newtonsoft.Json;

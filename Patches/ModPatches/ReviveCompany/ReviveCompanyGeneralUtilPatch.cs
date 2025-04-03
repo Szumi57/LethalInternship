@@ -1,7 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
 using LethalInternship.Enums;
+using LethalInternship.Interns;
 using LethalInternship.Managers;
 using OPJosMod.ReviveCompany;
 using UnityEngine;

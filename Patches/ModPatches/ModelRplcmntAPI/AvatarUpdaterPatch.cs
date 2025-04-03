@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using LethalInternship.AI;
+using LethalInternship.Interns;
 using LethalInternship.Managers;
 using ModelReplacement.AvatarBodyUpdater;
 using UnityEngine;

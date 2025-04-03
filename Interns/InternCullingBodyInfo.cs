@@ -1,10 +1,11 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
+using LethalInternship.Interns.AI;
 using LethalInternship.Managers;
 using System.Linq;
 using UnityEngine;
 
-namespace LethalInternship.AI
+namespace LethalInternship.Interns
 {
     public class InternCullingBodyInfo
     {
@@ -41,7 +42,7 @@ namespace LethalInternship.AI
             PlayerControllerB? playerController = InternBody as PlayerControllerB;
             if (playerController != null)
             {
-                this.EnumBodyTypeCulling = EnumBodyTypeCulling.InternBody;
+                EnumBodyTypeCulling = EnumBodyTypeCulling.InternBody;
 
                 InternAI? internAI = InternManager.Instance.GetInternAI((int)playerController.playerClientId);
                 if (internAI != null)
@@ -53,7 +54,7 @@ namespace LethalInternship.AI
             DeadBodyInfo? deadBodyInfo = InternBody as DeadBodyInfo;
             if (deadBodyInfo != null)
             {
-                this.EnumBodyTypeCulling = EnumBodyTypeCulling.Ragdoll;
+                EnumBodyTypeCulling = EnumBodyTypeCulling.Ragdoll;
             }
         }
 
@@ -168,7 +169,7 @@ namespace LethalInternship.AI
                 }
                 else
                 {
-                    return Vector3.Angle(localPlayerCamera.transform.forward, (deadBodyInfo.transform.position - localPlayerCamera.transform.position)) < localPlayerCamera.fieldOfView * 0.81f;
+                    return Vector3.Angle(localPlayerCamera.transform.forward, deadBodyInfo.transform.position - localPlayerCamera.transform.position) < localPlayerCamera.fieldOfView * 0.81f;
                 }
             }
 
@@ -182,7 +183,7 @@ namespace LethalInternship.AI
             timerRagdollUpdateModelReplacement += Time.deltaTime;
             if (timerRagdollUpdateModelReplacement > 10f) timerRagdollUpdateModelReplacement = 10f;
 
-            switch (this.EnumBodyTypeCulling)
+            switch (EnumBodyTypeCulling)
             {
                 case EnumBodyTypeCulling.InternBody:
                     UpdateAnimationCullingInternBody(avatarBodyUpdater, rootPositionOffset, playerModelRenderer);

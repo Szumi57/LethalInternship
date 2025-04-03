@@ -1,6 +1,6 @@
-﻿using LethalInternship.AI;
-using LethalInternship.Constants;
+﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interns;
 using LethalInternship.Managers;
 using System.Text;
 using UnityEngine;

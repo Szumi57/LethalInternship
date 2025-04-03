@@ -1,8 +1,8 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using LethalInternship.AI;
-using LethalInternship.AI.AIStates;
 using LethalInternship.Constants;
+using LethalInternship.Interns.AI;
+using LethalInternship.Interns.AI.AIStates;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System.IO;

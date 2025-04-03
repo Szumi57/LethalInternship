@@ -1,6 +1,6 @@
-﻿using LethalInternship.AI;
-using LethalInternship.Constants;
+﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interns;
 using LethalInternship.TerminalAdapter;
 using LethalInternship.TerminalAdapter.TerminalStates;
 using System.Linq;

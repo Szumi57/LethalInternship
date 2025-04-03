@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using LethalInternship.AI;
+using LethalInternship.Interns.AI;
 using LethalInternship.Managers;
 using ModelReplacement;
 using System;

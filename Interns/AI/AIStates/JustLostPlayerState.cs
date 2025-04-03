@@ -4,7 +4,7 @@ using LethalInternship.Enums;
 using System.Collections;
 using UnityEngine;
 
-namespace LethalInternship.AI.AIStates
+namespace LethalInternship.Interns.AI.AIStates
 {
     /// <summary>
     /// State where the intern cannot see the target player and try to reach his last known (seen) position
@@ -239,17 +239,17 @@ namespace LethalInternship.AI.AIStates
 
         private void StartLookingAroundCoroutine()
         {
-            if (this.lookingAroundCoroutine == null)
+            if (lookingAroundCoroutine == null)
             {
-                this.lookingAroundCoroutine = ai.StartCoroutine(this.LookingAround());
+                lookingAroundCoroutine = ai.StartCoroutine(LookingAround());
             }
         }
 
         private void StopLookingAroundCoroutine()
         {
-            if (this.lookingAroundCoroutine != null)
+            if (lookingAroundCoroutine != null)
             {
-                ai.StopCoroutine(this.lookingAroundCoroutine);
+                ai.StopCoroutine(lookingAroundCoroutine);
             }
         }
     }
