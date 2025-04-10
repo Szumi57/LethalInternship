@@ -33,9 +33,6 @@ namespace LethalInternship.Interns.AI
         protected Vector3? targetLastKnownPosition;
         protected GrabbableObject? targetItem;
 
-        protected Coroutine? panikCoroutine;
-        protected EnemyAI? currentEnemy;
-
         /// <summary>
         /// Constructor from another state
         /// </summary>
@@ -45,8 +42,8 @@ namespace LethalInternship.Interns.AI
             targetLastKnownPosition = oldState.targetLastKnownPosition;
             targetItem = oldState.targetItem;
 
-            panikCoroutine = oldState.panikCoroutine;
-            currentEnemy = oldState.currentEnemy;
+            //panikCoroutine = oldState.panikCoroutine;
+            //currentEnemy = oldState.currentEnemy;
         }
 
         /// <summary>

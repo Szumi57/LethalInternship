@@ -13,6 +13,7 @@
         FetchingObject,
         PlayerInCruiser,
         Panik,
-        Waiting
+        Waiting,
+        Relax
     }
 }

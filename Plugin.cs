@@ -124,7 +124,12 @@ namespace LethalInternship
             InternNPCPrefab = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
             if (InternNPCPrefab == null)
             {
-                Logger.LogError($"InternNPC prefab.");
+                Logger.LogError($"Failed to load InternNPC prefab.");
+                return;
+            }
+            if (InternNPCPrefab.enemyPrefab == null)
+            {
+                Logger.LogError($"Failed to load InternNPCPrefab.enemyPrefab.");
                 return;
             }
             foreach (var transform in InternNPCPrefab.enemyPrefab.GetComponentsInChildren<Transform>()
@@ -154,7 +159,11 @@ namespace LethalInternship
 
             // Load UI prefabs
             CommandsUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("Commands");
-            Plugin.LogDebug($"asset ? {CommandsUIPrefab}");
+            if (CommandsUIPrefab == null)
+            {
+                Logger.LogError($"Failed to load CommandsUIPrefab.");
+                return;
+            }
 
             InitPluginManager();
 

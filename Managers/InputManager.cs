@@ -244,6 +244,8 @@ namespace LethalInternship.Managers
 
         private void CheckOrderToWaitInput()
         {
+            return;
+
             if (!Plugin.InputActionsInstance.SuperviseCommandIntern.IsPressed())
             {
                 CommandInternInputIsPressed = false;

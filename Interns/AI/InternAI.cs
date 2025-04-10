@@ -2,6 +2,7 @@
 using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Interns.AI.AIStates;
+using LethalInternship.Interns.AI.Commands;
 using LethalInternship.Managers;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
@@ -49,7 +50,20 @@ namespace LethalInternship.Interns.AI
         /// with the class <see cref="AIState"><c>AIState</c></see> 
         /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
         /// </remarks>
-        public AIState State { get; set; } = null!;
+        public AIState State = null!;
+        public LinkedList<ICommandAI> CommandLinkedList = null!;
+        public ICommandAI CurrentCommand = null!;
+        public EnumCommandEnd CurrentCommandEnd;
+
+        public AISearchRoutine SearchForPlayers = null!;
+        public Vector3? TargetLastKnownPosition;
+        public GrabbableObject? TargetItem;
+        public EnemyAI? CurrentEnemy;
+        public float LookingAroundTimer;
+        public Coroutine? PanikCoroutine;
+        public Coroutine LookingAroundCoroutine = null!;
+        public Coroutine SearchingWanderCoroutine = null!;
+
         /// <summary>
         /// Pilot class of the body <c>PlayerControllerB</c> of the intern.
         /// </summary>
@@ -117,6 +131,17 @@ namespace LethalInternship.Interns.AI
 
             try
             {
+                // Ok so the unity project is so broken with this dll right now
+                // External mod dependencies chain nightmare
+                // So we initialize enemyType in the code, it's ugly sorry (but it works ;p)
+                EnemyType enemyTypeIntern = ScriptableObject.CreateInstance<EnemyType>();
+                enemyTypeIntern.name = "InternNPC";
+                enemyTypeIntern.enemyName = enemyTypeIntern.name;
+                enemyTypeIntern.doorSpeedMultiplier = 0.25f;
+                enemyTypeIntern.canDie = true;
+                this.enemyType = enemyTypeIntern;
+
+                gameObject.GetComponentInChildren<EnemyAICollisionDetect>().mainScript = this;
                 agent = gameObject.GetComponentInChildren<NavMeshAgent>();
                 agent.enabled = false;
                 skinnedMeshRenderers = gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
@@ -133,8 +158,6 @@ namespace LethalInternship.Interns.AI
             {
                 Plugin.LogError(string.Format("Error when initializing intern variables for {0} : {1}", gameObject.name, arg));
             }
-
-            //Plugin.LogDebug("InternAI started");
         }
 
         /// <summary>
@@ -174,6 +197,7 @@ namespace LethalInternship.Interns.AI
             isEnemyDead = false;
             enabled = true;
             addPlayerVelocityToDestination = 3f;
+            CommandLinkedList = new LinkedList<ICommandAI>();
 
             // Body collider
             InternBodyCollider = NpcController.Npc.GetComponentInChildren<Collider>();
@@ -379,7 +403,6 @@ namespace LethalInternship.Interns.AI
             else if (StateControllerMovement == EnumStateControllerMovement.FollowAgent)
             {
                 Vector3 aiPosition = transform.position;
-                //Plugin.LogDebug($"{NpcController.Npc.playerUsername} --> y {(NpcController.IsTouchingGround ? NpcController.GroundHit.point.y : aiPosition.y)} MoveVector {NpcController.MoveVector}");
                 NpcController.Npc.transform.position = new Vector3(x,
                                                                    aiPosition.y,
                                                                    z); ;
@@ -441,13 +464,81 @@ namespace LethalInternship.Interns.AI
 
             // Doors
             OpenDoorIfNeeded();
-
-            // Copy movement
-            FollowCrouchStateIfCan();
-
-            // Voice
-            State.TryPlayCurrentStateVoiceAudio();
         }
+
+        #region Commands
+
+        public ICommandAI GetNewCommand()
+        {
+            Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command list   {CommandLinkedList.Count} ------------------------------");
+            int i = 0;
+            foreach (var a in CommandLinkedList)
+            {
+                Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command : {i++} {a.GetType().ToString().Replace("LethalInternship.Interns.AI.Commands.", "")}");
+            }
+
+            if (CommandLinkedList.First == null)
+            {
+                CurrentCommand = new LookingForPlayer(this);
+            }
+            else
+            {
+                CurrentCommand = CommandLinkedList.First.Value;
+            }
+
+            Plugin.LogDebug($"=====================================");
+            Plugin.LogDebug($"= {NpcController.Npc.playerUsername} CurrentCommand {CurrentCommand.ToString().Replace("LethalInternship.Interns.AI.Commands.", "")} <--");
+            Plugin.LogDebug($"=====================================");
+            return CurrentCommand;
+        }
+
+        public void QueueNewCommand(ICommandAI commandAI)
+        {
+            if (CommandLinkedList.Count >= Const.MAX_COMMANDS_QUEUE)
+            {
+                return;
+            }
+
+            CommandLinkedList.AddLast(commandAI);
+        }
+
+        public void QueueNewPriorityCommand(ICommandAI commandAI)
+        {
+            CommandLinkedList.AddFirst(commandAI);
+
+            if (CommandLinkedList.Count > Const.MAX_COMMANDS_QUEUE)
+            {
+                CommandLinkedList.RemoveLast();
+            }
+        }
+
+        public void ClearAndQueueCommand(ICommandAI commandAI)
+        {
+            CommandLinkedList.Clear();
+            CommandLinkedList.AddFirst(commandAI);
+        }
+
+        public void ClearCommandQueue()
+        {
+            CommandLinkedList.Clear();
+        }
+
+        public void ExecuteEndCommand(EnumCommandEnd enumCommandEnd)
+        {
+            switch (enumCommandEnd)
+            {
+                case EnumCommandEnd.None:
+                case EnumCommandEnd.Repeat:
+                    break;
+                case EnumCommandEnd.Finished:
+                    CommandLinkedList.RemoveFirst();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        #endregion
 
         public void UpdateController()
         {
@@ -499,32 +590,6 @@ namespace LethalInternship.Interns.AI
             }
 
             return false;
-        }
-
-        private void FollowCrouchStateIfCan()
-        {
-            if (State != null
-                && State.GetAIState() == EnumAIStates.Panik
-                && NpcController.Npc.isCrouching)
-            {
-                NpcController.OrderToToggleCrouch();
-                return;
-            }
-
-            if (Plugin.Config.FollowCrouchWithPlayer
-                && targetPlayer != null)
-            {
-                if (targetPlayer.isCrouching
-                    && !NpcController.Npc.isCrouching)
-                {
-                    NpcController.OrderToToggleCrouch();
-                }
-                else if (!targetPlayer.isCrouching
-                        && NpcController.Npc.isCrouching)
-                {
-                    NpcController.OrderToToggleCrouch();
-                }
-            }
         }
 
         public override void OnCollideWithPlayer(Collider other)
@@ -621,10 +686,8 @@ namespace LethalInternship.Interns.AI
         /// <summary>
         /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
         /// </summary>
-        public void OrderMoveToDestination()
+        public void UpdateDestinationToAgent()
         {
-            NpcController.OrderToMove();
-
             if (agent.isActiveAndEnabled
                 && agent.isOnNavMesh
                 && !isEnemyDead
@@ -634,6 +697,12 @@ namespace LethalInternship.Interns.AI
                 TrySetDestinationToPosition(destination);
                 agent.SetDestination(destination);
             }
+        }
+
+        public void OrderAgentAndBodyMoveToDestination()
+        {
+            NpcController.OrderToMove();
+            UpdateDestinationToAgent();
         }
 
         public bool TrySetDestinationToPosition(Vector3 position)
@@ -658,9 +727,9 @@ namespace LethalInternship.Interns.AI
             return OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
-        public void InitStateToSearchingNoTarget()
+        public void InitStateToRelax()
         {
-            State = new SearchingForPlayerState(this);
+            State = new RelaxState(this);
             targetPlayer = null;
         }
 
@@ -2055,13 +2124,18 @@ namespace LethalInternship.Interns.AI
 
             if (NpcController.IsControllerInCruiser)
             {
-                State = new PlayerInCruiserState(this, GetVehicleCruiserTargetPlayerIsIn());
+                State = new RelaxState(this);
+                VehicleController? vehicleController = GetVehicleCruiserTargetPlayerIsIn();
+                if (vehicleController != null)
+                {
+                    QueueNewPriorityCommand(new GoToCruiserCommand(this, vehicleController));
+                }
             }
             else if (State == null
-                || State.GetAIState() != EnumAIStates.GetCloseToPlayer
-                || State.GetAIState() == EnumAIStates.GetCloseToPlayer && this.targetPlayer != targetPlayer)
+                || State.GetAIState() != EnumAIStates.Relax)
             {
-                State = new GetCloseToPlayerState(this, targetPlayer);
+                State = new RelaxState(this);
+                QueueNewCommand(new FollowPlayerCommand(this));
             }
         }
 
@@ -3718,7 +3792,7 @@ namespace LethalInternship.Interns.AI
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
 
             // Set intern to chill
-            State = new ChillWithPlayerState(this);
+            State = new RelaxState(this);
         }
 
         #endregion
@@ -3756,13 +3830,19 @@ namespace LethalInternship.Interns.AI
                 yield break;
             }
 
-            // Change ai state
-            SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+            if (IsOwner)
+            {
+                // Change ai state
+                SyncAssignTargetAndSetMovingTo(GetClosestIrlPlayer());
+            }
 
             yield return null;
 
-            // Teleport again, cuz I don't know why the teleport does not work first time
-            TeleportAgentAIAndBody(GameNetworkManager.Instance.localPlayerController.transform.position);
+            if (IsOwner)
+            {
+                // Teleport again, cuz I don't know why the teleport does not work first time
+                TeleportAgentAIAndBody(GameNetworkManager.Instance.localPlayerController.transform.position);
+            }
 
             spawnAnimationCoroutine = null;
             yield break;

@@ -7,7 +7,7 @@ namespace LethalInternship.UI
 {
     public class CommandButtonController : MonoBehaviour
     {
-        public event EventHandler OnSelected;
+        public event EventHandler OnSelected = null!;
 
         public int ID;
 

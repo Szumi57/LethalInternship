@@ -4,6 +4,7 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Interns.AI;
 using LethalInternship.Managers;
+using LethalInternship.NetworkSerializers;
 using LethalInternship.Utils;
 using System;
 using System.Collections.Generic;

@@ -1,6 +1,5 @@
 ﻿using LethalInternship.Constants;
 using LethalInternship.Enums;
-using LethalInternship.Interns.AI;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -13,6 +12,9 @@ namespace LethalInternship.Interns.AI.AIStates
     /// </summary>
     public class PanikState : AIState
     {
+        private Coroutine? panikCoroutine;
+        private EnemyAI? currentEnemy;
+
         /// <summary>
         /// Constructor for PanikState
         /// </summary>
@@ -36,7 +38,7 @@ namespace LethalInternship.Interns.AI.AIStates
             }
             else
             {
-                ai.State = new GetCloseToPlayerState(this);
+                ai.State = new RelaxState(this);
             }
         }
 
@@ -47,7 +49,7 @@ namespace LethalInternship.Interns.AI.AIStates
         {
             if (currentEnemy == null)
             {
-                ai.State = new GetCloseToPlayerState(this);
+                ai.State = new RelaxState(this);
                 StopPanikCoroutine();
                 return;
             }
@@ -55,7 +57,7 @@ namespace LethalInternship.Interns.AI.AIStates
             float? fearRange = ai.GetFearRangeForEnemies(currentEnemy);
             if (!fearRange.HasValue)
             {
-                ai.State = new GetCloseToPlayerState(this);
+                ai.State = new RelaxState(this);
                 StopPanikCoroutine();
                 return;
             }
@@ -83,7 +85,7 @@ namespace LethalInternship.Interns.AI.AIStates
                 // and the intern is far enough when the enemy can not see him
                 if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
                 {
-                    ai.State = new GetCloseToPlayerState(this);
+                    ai.State = new RelaxState(this);
                     StopPanikCoroutine();
                     return;
                 }
@@ -93,7 +95,7 @@ namespace LethalInternship.Interns.AI.AIStates
             // Far enough from enemy
             if (sqrDistanceToEnemy > fearRange * fearRange)
             {
-                ai.State = new GetCloseToPlayerState(this);
+                ai.State = new RelaxState(this);
                 StopPanikCoroutine();
                 return;
             }
@@ -107,7 +109,10 @@ namespace LethalInternship.Interns.AI.AIStates
 
             // Sprint of course
             npcController.OrderToSprint();
-            ai.NpcController.OrderToMove();
+            ai.OrderAgentAndBodyMoveToDestination();
+
+            // Try play voice
+            TryPlayCurrentStateVoiceAudio();
         }
 
         public override void TryPlayCurrentStateVoiceAudio()
@@ -162,9 +167,12 @@ namespace LethalInternship.Interns.AI.AIStates
                     continue;
                 }
 
+                // Assign destination
                 ai.SetDestinationToPositionInternAI(nodeTransform.position);
-                yield break;
+                break;
             }
+
+            yield break;
         }
 
         private void StartPanikCoroutine(Transform enemyTransform, float fearRange)
