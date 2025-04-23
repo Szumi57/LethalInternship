@@ -15,6 +15,7 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem.XR;
 using Component = UnityEngine.Component;
 using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
@@ -51,7 +52,8 @@ namespace LethalInternship.Interns.AI
         /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
         /// </remarks>
         public AIState State = null!;
-        public LinkedList<ICommandAI> CommandLinkedList = null!;
+        public Queue<ICommandAI> CommandQueue = null!;
+        public Queue<ICommandAI> CommandPriorityQueue = null!;
         public ICommandAI CurrentCommand = null!;
         public EnumCommandEnd CurrentCommandEnd;
 
@@ -60,6 +62,8 @@ namespace LethalInternship.Interns.AI
         public GrabbableObject? TargetItem;
         public EnemyAI? CurrentEnemy;
         public float LookingAroundTimer;
+        public Vector3? CommandPoint;
+        public Vector3? MeetingPoint;
         public Coroutine? PanikCoroutine;
         public Coroutine LookingAroundCoroutine = null!;
         public Coroutine SearchingWanderCoroutine = null!;
@@ -197,7 +201,8 @@ namespace LethalInternship.Interns.AI
             isEnemyDead = false;
             enabled = true;
             addPlayerVelocityToDestination = 3f;
-            CommandLinkedList = new LinkedList<ICommandAI>();
+            CommandQueue = new Queue<ICommandAI>();
+            CommandPriorityQueue = new Queue<ICommandAI>();
 
             // Body collider
             InternBodyCollider = NpcController.Npc.GetComponentInChildren<Collider>();
@@ -470,73 +475,86 @@ namespace LethalInternship.Interns.AI
 
         public ICommandAI GetNewCommand()
         {
-            Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command list   {CommandLinkedList.Count} ------------------------------");
-            int i = 0;
-            foreach (var a in CommandLinkedList)
-            {
-                Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command : {i++} {a.GetType().ToString().Replace("LethalInternship.Interns.AI.Commands.", "")}");
-            }
+            //Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command list   {CommandQueue.Count} ------------------------------");
+            //int i = 0;
+            //foreach (var a in CommandQueue)
+            //{
+            //    Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command : {i++} {a.GetType().ToString().Replace("LethalInternship.Interns.AI.Commands.", "")}");
+            //}
 
-            if (CommandLinkedList.First == null)
+            if (CommandPriorityQueue.Count > 0)
             {
-                CurrentCommand = new LookingForPlayer(this);
+                CurrentCommand = CommandPriorityQueue.Dequeue();
             }
             else
             {
-                CurrentCommand = CommandLinkedList.First.Value;
+                if (CommandQueue.Count == 0)
+                {
+                    CurrentCommand = new LookingForPlayerCommand(this);
+                }
+                else
+                {
+                    CurrentCommand = CommandQueue.Dequeue();
+                }
             }
 
-            Plugin.LogDebug($"=====================================");
+            //Plugin.LogDebug($"=====================================");
             Plugin.LogDebug($"= {NpcController.Npc.playerUsername} CurrentCommand {CurrentCommand.ToString().Replace("LethalInternship.Interns.AI.Commands.", "")} <--");
-            Plugin.LogDebug($"=====================================");
+            //Plugin.LogDebug($"=====================================");
             return CurrentCommand;
         }
 
         public void QueueNewCommand(ICommandAI commandAI)
         {
-            if (CommandLinkedList.Count >= Const.MAX_COMMANDS_QUEUE)
+            if (CommandQueue.Count >= Const.MAX_COMMANDS_QUEUE)
             {
                 return;
             }
 
-            CommandLinkedList.AddLast(commandAI);
+            if (!CommandQueue.Any(x => x.GetCommandType() == commandAI.GetCommandType()))
+            {
+                CommandQueue.Enqueue(commandAI);
+            }
         }
 
         public void QueueNewPriorityCommand(ICommandAI commandAI)
         {
-            CommandLinkedList.AddFirst(commandAI);
-
-            if (CommandLinkedList.Count > Const.MAX_COMMANDS_QUEUE)
+            if (CommandPriorityQueue.Count >= Const.MAX_COMMANDS_QUEUE)
             {
-                CommandLinkedList.RemoveLast();
+                return;
+            }
+
+            if (!CommandPriorityQueue.Any(x => x.GetCommandType() == commandAI.GetCommandType()))
+            {
+                CommandPriorityQueue.Enqueue(commandAI);
             }
         }
 
         public void ClearAndQueueCommand(ICommandAI commandAI)
         {
-            CommandLinkedList.Clear();
-            CommandLinkedList.AddFirst(commandAI);
+            CommandQueue.Clear();
+            CommandQueue.Enqueue(commandAI);
         }
 
         public void ClearCommandQueue()
         {
-            CommandLinkedList.Clear();
+            CommandQueue.Clear();
         }
 
-        public void ExecuteEndCommand(EnumCommandEnd enumCommandEnd)
-        {
-            switch (enumCommandEnd)
-            {
-                case EnumCommandEnd.None:
-                case EnumCommandEnd.Repeat:
-                    break;
-                case EnumCommandEnd.Finished:
-                    CommandLinkedList.RemoveFirst();
-                    break;
-                default:
-                    break;
-            }
-        }
+        //public void ExecuteEndCommand(EnumCommandEnd enumCommandEnd)
+        //{
+        //    switch (enumCommandEnd)
+        //    {
+        //        case EnumCommandEnd.None:
+        //        case EnumCommandEnd.Repeat:
+        //            break;
+        //        case EnumCommandEnd.Finished:
+        //            CommandQueue.RemoveFirst();
+        //            break;
+        //        default:
+        //            break;
+        //    }
+        //}
 
         #endregion
 
@@ -705,9 +723,29 @@ namespace LethalInternship.Interns.AI
             UpdateDestinationToAgent();
         }
 
-        public bool TrySetDestinationToPosition(Vector3 position)
+        public bool TrySetDestinationToPosition(Vector3 position, bool checkForPath = false)
         {
-            return SetDestinationToPosition(position);
+            if (!checkForPath)
+            {
+                // Destination set in method
+                return SetDestinationToPosition(position);
+            }
+
+            // Agent need to be active
+            bool previousStateAgent = agent.isActiveAndEnabled;
+            SetAgent(true);
+
+            Vector3 previousDestination = destination;
+            bool validDestination = SetDestinationToPosition(position, checkForPath);
+            if (!validDestination)
+            {
+                // Previous destination
+                destination = previousDestination;
+            }
+
+            SetAgent(previousStateAgent);
+
+            return validDestination;
         }
 
         public void StopMoving()
@@ -1811,6 +1849,86 @@ namespace LethalInternship.Interns.AI
              where x.gameObject.name == "BetaBadge"
              select x).First().enabled = show;
         }
+
+        public void SetInternLookAt(Vector3? position = null)
+        {
+            if (Plugin.InputActionsInstance.MakeInternLookAtPosition.IsPressed())
+            {
+                LookAtWhatPlayerPointingAt();
+            }
+            else
+            {
+                if (position.HasValue)
+                {
+                    NpcController.OrderToLookAtPlayer(position.Value + new Vector3(0, 2.35f, 0));
+                }
+                else
+                {
+                    // Looking at player or forward
+                    PlayerControllerB? playerToLook = CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+                    if (playerToLook != null)
+                    {
+                        NpcController.OrderToLookAtPlayer(playerToLook.playerEye.position);
+                    }
+                    else
+                    {
+                        NpcController.OrderToLookForward();
+                    }
+                }
+            }
+        }
+
+        public void LookAtWhatPlayerPointingAt()
+        {
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            // Look where the target player is looking
+            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
+            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay);
+            if (raycastHits.Length == 0)
+            {
+                NpcController.SetTurnBodyTowardsDirection(localPlayer.gameplayCamera.transform.forward);
+                NpcController.OrderToLookForward();
+            }
+            else
+            {
+                // Check if looking at a player/intern
+                foreach (var hit in raycastHits)
+                {
+                    PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                    if (player != null
+                        && player.playerClientId != StartOfRound.Instance.localPlayerController.playerClientId)
+                    {
+                        NpcController.OrderToLookAtPosition(hit.point);
+                        NpcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
+                        return;
+                    }
+                }
+
+                // Check if looking too far in the distance or at a valid position
+                foreach (var hit in raycastHits)
+                {
+                    if (hit.distance < 0.1f)
+                    {
+                        NpcController.SetTurnBodyTowardsDirection(localPlayer.gameplayCamera.transform.forward);
+                        NpcController.OrderToLookForward();
+                        return;
+                    }
+
+                    PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                    if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
+                    {
+                        continue;
+                    }
+
+                    // Look at position
+                    NpcController.OrderToLookAtPosition(hit.point);
+                    NpcController.SetTurnBodyTowardsDirectionWithPosition(hit.point);
+                    break;
+                }
+            }
+        }
+
 
         #region Voices
 

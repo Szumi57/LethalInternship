@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 namespace LethalInternship.Interns.AI.Commands
 {
-    public class LookingForPlayer : ICommandAI
+    public class LookingForPlayerCommand : ICommandAI
     {
         private readonly InternAI ai;
         private NpcController Controller { get { return ai.NpcController; } }
@@ -16,12 +16,12 @@ namespace LethalInternship.Interns.AI.Commands
 
         private Coroutine SearchingWanderCoroutine { get { return ai.SearchingWanderCoroutine; } set { ai.SearchingWanderCoroutine = value; } }
 
-        public LookingForPlayer(InternAI ai)
+        public LookingForPlayerCommand(InternAI ai)
         {
             this.ai = ai;
         }
 
-        public EnumCommandEnd Execute()
+        public void Execute()
         {
             // Start coroutine for wandering
             StartSearchingWanderCoroutine();
@@ -53,7 +53,7 @@ namespace LethalInternship.Interns.AI.Commands
                 }
 
                 ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                return EnumCommandEnd.Finished;
+                return;
             }
 
             ai.SetDestinationToPositionInternAI(ai.destination);
@@ -68,7 +68,8 @@ namespace LethalInternship.Interns.AI.Commands
             // Try play voice
             TryPlayCurrentStateVoiceAudio();
 
-            return EnumCommandEnd.Repeat;
+            ai.QueueNewCommand(this);
+            return;
         }
 
         public string GetBillboardStateIndicator()
@@ -150,6 +151,11 @@ namespace LethalInternship.Interns.AI.Commands
             {
                 ai.StopCoroutine(SearchingWanderCoroutine);
             }
+        }
+
+        public EnumCommandTypes GetCommandType()
+        {
+            return EnumCommandTypes.LookingForPlayer;
         }
     }
 }

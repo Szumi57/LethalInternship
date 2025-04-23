@@ -8,8 +8,8 @@ namespace LethalInternship.Inputs
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        [InputAction(KeyboardControl.E, Name = "Supervise intern / Command", GamepadPath = "<Gamepad>/dpad/up")]
-        public InputAction SuperviseCommandIntern { get; set; }
+        [InputAction(KeyboardControl.E, Name = "Manage intern", GamepadPath = "<Gamepad>/dpad/up")]
+        public InputAction ManageIntern { get; set; }
 
         [InputAction(KeyboardControl.G, Name = "Give/take item", GamepadControl = GamepadControl.ButtonEast)]
         public InputAction GiveTakeItem { get; set; }
@@ -20,11 +20,14 @@ namespace LethalInternship.Inputs
         [InputAction(KeyboardControl.R, Name = "Release grabbed interns", GamepadControl = GamepadControl.LeftShoulder)]
         public InputAction ReleaseInterns { get; set; }
 
-        [InputAction(KeyboardControl.X, Name = "Change suit of intern", GamepadPath = "<Gamepad>/dpad/right")]
+        [InputAction(KeyboardControl.W, Name = "Change suit of intern", GamepadPath = "<Gamepad>/dpad/left")]
         public InputAction ChangeSuitIntern { get; set; }
 
         [InputAction(KeyboardControl.C, Name = "Make intern look at position", GamepadPath = "<Gamepad>/dpad/up")]
         public InputAction MakeInternLookAtPosition { get; set; }
+
+        [InputAction(KeyboardControl.X, Name = "Commands", GamepadPath = "<Gamepad>/dpad/right")]
+        public InputAction OpenCommandsIntern { get; set; }
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     }

@@ -96,6 +96,7 @@
     <PackageReference Include="BepInEx.Core" Version="5.*" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
     <PackageReference Include="Evaisa.LethalLib" Version="0.16.0" />
+    <PackageReference Include="FluentBehaviourTree" Version="0.0.4" />
     <PackageReference Include="Mono.pdb2mdb" Version="0.1.0.20130128" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Rune580.Mods.LethalCompany.InputUtils" Version="0.7.4" />

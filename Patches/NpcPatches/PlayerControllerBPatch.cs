@@ -489,14 +489,14 @@ namespace LethalInternship.Patches.NpcPatches
         /// </summary>
         /// <param name="__state"></param>
         /// <returns></returns>
-        [HarmonyPatch("StopHoldInteractionOnTrigger")]
-        [HarmonyPrefix]
-        static bool StopHoldInteractionOnTrigger_PreFix(out float __state)
-        {
-            __state = InputManager.Instance.CommandInternInputIsPressed ? HUDManager.Instance.holdFillAmount : 0;
-            // see postfix
-            return true;
-        }
+        //[HarmonyPatch("StopHoldInteractionOnTrigger")]
+        //[HarmonyPrefix]
+        //static bool StopHoldInteractionOnTrigger_PreFix(out float __state)
+        //{
+        //    __state = InputManager.Instance.OpenCommandsInternInputIsPressed ? HUDManager.Instance.holdFillAmount : 0;
+        //    // see postfix
+        //    return true;
+        //}
 
         #endregion
 
@@ -781,6 +781,13 @@ namespace LethalInternship.Patches.NpcPatches
             ___nearByPlayers = new Collider[InternManager.Instance.AllEntitiesCount];
         }
 
+        [HarmonyPatch("ConnectClientToPlayerObject")]
+        [HarmonyPostfix]
+        public static void ConnectClientToPlayerObject_Postfix(PlayerControllerB __instance)
+        {
+            UIManager.Instance.InitUI(__instance);
+        }
+
         /// <summary>
         /// Debug patch to spawn an intern at will
         /// </summary>
@@ -902,7 +909,7 @@ namespace LethalInternship.Patches.NpcPatches
                 // Line Follow
                 if (intern.OwnerClientId != __instance.actualClientId)
                 {
-                    sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.SuperviseCommandIntern)))
+                    sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManager.Instance.GetKeyAction(Plugin.InputActionsInstance.ManageIntern)))
                         .AppendLine();
                 }
 
@@ -938,15 +945,15 @@ namespace LethalInternship.Patches.NpcPatches
         /// See <see cref="StopHoldInteractionOnTrigger_PreFix"><c>StopHoldInteractionOnTrigger_PreFix</c></see>
         /// </summary>
         /// <param name="__state"></param>
-        [HarmonyPatch("StopHoldInteractionOnTrigger")]
-        [HarmonyPostfix]
-        static void StopHoldInteractionOnTrigger_PostFix(float __state)
-        {
-            if (InputManager.Instance.CommandInternInputIsPressed)
-            {
-                HUDManager.Instance.holdFillAmount = __state;
-            }
-        }
+        //[HarmonyPatch("StopHoldInteractionOnTrigger")]
+        //[HarmonyPostfix]
+        //static void StopHoldInteractionOnTrigger_PostFix(float __state)
+        //{
+        //    if (InputManager.Instance.OpenCommandsInternInputIsPressed)
+        //    {
+        //        HUDManager.Instance.holdFillAmount = __state;
+        //    }
+        //}
 
         #endregion
     }

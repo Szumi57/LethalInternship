@@ -56,7 +56,7 @@ namespace LethalInternship.Interns.AI.AIStates
             }
 
             // Execute command
-            ai.ExecuteEndCommand(ai.GetNewCommand().Execute());
+            //ai.ExecuteEndCommand(ai.GetNewCommand().Execute());
 
             // Copy movement
             FollowCrouchStateIfCan();

@@ -15,7 +15,7 @@ namespace LethalInternship.Interns.AI.Commands
             ai = internAI;
         }
 
-        public EnumCommandEnd Execute()
+        public void Execute()
         {
             // Lost target player
             if (ai.targetPlayer == null)
@@ -24,18 +24,18 @@ namespace LethalInternship.Interns.AI.Commands
                 if (ai.TargetLastKnownPosition.HasValue)
                 {
                     ai.QueueNewCommand(new LostPlayerCommand(ai));
-                    return EnumCommandEnd.Finished;
+                    return;
                 }
 
-                ai.QueueNewCommand(new LookingForPlayer(ai));
-                return EnumCommandEnd.Finished;
+                ai.QueueNewCommand(new LookingForPlayerCommand(ai));
+                return;
             }
 
             if (!ai.PlayerIsTargetable(ai.targetPlayer, false, true))
             {
                 // Target is not available anymore
-                ai.QueueNewCommand(new LookingForPlayer(ai));
-                return EnumCommandEnd.Finished;
+                ai.QueueNewCommand(new LookingForPlayerCommand(ai));
+                return;
             }
 
             // Target is in awarness range
@@ -55,7 +55,7 @@ namespace LethalInternship.Interns.AI.Commands
                 if (checkTarget == null)
                 {
                     ai.QueueNewCommand(new LostPlayerCommand(ai));
-                    return EnumCommandEnd.Finished;
+                    return;
                 }
                 else
                 {
@@ -75,7 +75,7 @@ namespace LethalInternship.Interns.AI.Commands
                 && sqrVerticalDistanceWithTarget < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {
                 ai.QueueNewCommand(new ChillWithPlayerCommand(ai));
-                return EnumCommandEnd.Finished;
+                return;
             }
             else if (sqrHorizontalDistanceWithTarget > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING
                      || sqrVerticalDistanceWithTarget > 0.3f * 0.3f)
@@ -93,7 +93,7 @@ namespace LethalInternship.Interns.AI.Commands
             TryPlayCurrentStateVoiceAudio();
 
             ai.QueueNewCommand(this);
-            return EnumCommandEnd.Finished;
+            return;
         }
 
         public void PlayerHeard(Vector3 noisePosition) { }
@@ -118,6 +118,11 @@ namespace LethalInternship.Interns.AI.Commands
         public string GetBillboardStateIndicator()
         {
             return string.Empty;
+        }
+
+        public EnumCommandTypes GetCommandType()
+        {
+            return EnumCommandTypes.FollowPlayer;
         }
     }
 }

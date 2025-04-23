@@ -1,8 +1,10 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.Constants;
+using LethalInternship.Enums;
 using LethalInternship.Interns.AI;
 using LethalInternship.Interns.AI.AIStates;
+using LethalInternship.Interns.AI.Commands;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System.IO;
@@ -17,15 +19,21 @@ namespace LethalInternship.Managers
     {
         public static InputManager Instance { get; private set; } = null!;
 
-        public bool CommandInternInputIsPressed;
-        private bool CanCommandIntern;
+        public EnumInputAction CurrentInputAction;
 
+        private bool openCommandsInternInputIsPressed;
+        private InternAI currentCommandedIntern = null!;
         private LineRendererUtil LineRendererUtil = null!;
 
         private void Awake()
         {
             Instance = this;
             AddEventHandlers();
+        }
+
+        private void Start()
+        {
+            CurrentInputAction = EnumInputAction.None;
         }
 
         private void Update()
@@ -41,12 +49,12 @@ namespace LethalInternship.Managers
                 LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
             }
 
-            CheckOrderToWaitInput();
+            CheckOpenCommandsInput();
         }
 
         private void AddEventHandlers()
         {
-            Plugin.InputActionsInstance.SuperviseCommandIntern.performed += SuperviseCommand_performed;
+            Plugin.InputActionsInstance.ManageIntern.performed += Manage_performed;
             Plugin.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
             Plugin.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
             Plugin.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
@@ -55,11 +63,16 @@ namespace LethalInternship.Managers
 
         public void RemoveEventHandlers()
         {
-            Plugin.InputActionsInstance.SuperviseCommandIntern.performed -= SuperviseCommand_performed;
+            Plugin.InputActionsInstance.ManageIntern.performed -= Manage_performed;
             Plugin.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
             Plugin.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
             Plugin.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
             Plugin.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
+        }
+
+        public void SetCurrentInputAction(EnumInputAction action)
+        {
+            CurrentInputAction = action;
         }
 
         #region Tips display
@@ -153,8 +166,6 @@ namespace LethalInternship.Managers
 
         #endregion
 
-        #region Event handlers
-
         private bool IsPerformedValid(PlayerControllerB localPlayer)
         {
             if (!localPlayer.IsOwner
@@ -196,13 +207,62 @@ namespace LethalInternship.Managers
             return true;
         }
 
-        private void SuperviseCommand_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+        #region Command intern
+
+        private void Manage_performed(InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
             {
                 return;
             }
+
+            Vector3? location;
+            switch (CurrentInputAction)
+            {
+                case EnumInputAction.SendingInternToLocation:
+                    location = UIManager.Instance.GetValidNavMeshPoint();
+                    if (location == null)
+                    {
+                        break;
+                    }
+
+                    // Current intern
+                    currentCommandedIntern.CommandPoint = location;
+                    currentCommandedIntern.QueueNewPriorityCommand(new GoToPositionCommand(currentCommandedIntern));
+
+                    CurrentInputAction = EnumInputAction.None;
+                    break;
+
+                case EnumInputAction.SendingAllInternsToLocation:
+                    location = UIManager.Instance.GetValidNavMeshPoint();
+                    if (location == null)
+                    {
+                        break;
+                    }
+
+                    // All owned interns (later close interns)
+                    InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                    foreach (InternAI intern in internsOwned)
+                    {
+                        Plugin.LogDebug($"intern {location}");
+                        intern.CommandPoint = location;
+                        intern.QueueNewPriorityCommand(new GoToPositionCommand(intern));
+                    }
+
+                    CurrentInputAction = EnumInputAction.None;
+                    break;
+
+                case EnumInputAction.None:
+                default:
+                    ManageIntern();
+                    break;
+            }
+        }
+
+        private void ManageIntern()
+        {
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
             // Use of interact key to assign intern to player
             Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
@@ -242,52 +302,54 @@ namespace LethalInternship.Managers
             }
         }
 
-        private void CheckOrderToWaitInput()
+        private void CheckOpenCommandsInput()
         {
-            return;
-
-            if (!Plugin.InputActionsInstance.SuperviseCommandIntern.IsPressed())
+            if (!Plugin.InputActionsInstance.OpenCommandsIntern.IsPressed())
             {
-                CommandInternInputIsPressed = false;
-                CanCommandIntern = true;
+                openCommandsInternInputIsPressed = false;
+                UIManager.Instance.HideCommands();
                 return;
             }
 
-            if (!CanCommandIntern)
+            // If already open, do nothing
+            if (openCommandsInternInputIsPressed)
             {
                 return;
             }
 
-            if (!CommandInternInputIsPressed)
-            {
-                InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                if (internsOwned == null
-                    || internsOwned.Length == 0)
-                {
-                    CommandInternInputIsPressed = false;
-                    return;
-                }
-            }
+            openCommandsInternInputIsPressed = true;
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
-            CommandInternInputIsPressed = true;
-
-            // Show interact animation
-            GameNetworkManager.Instance.localPlayerController.cursorTip.text = "Wait over there";
-            if (HUDManager.Instance.HoldInteractionFill(0.5f, 1))
+            // Check if pointing intern
+            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
+            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
+            foreach (RaycastHit hit in raycastHits)
             {
-                InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                if (internsOwned == null
-                    || internsOwned.Length == 0)
+                if (hit.collider.tag != "Player")
                 {
-                    CommandInternInputIsPressed = false;
-                    return;
+                    continue;
                 }
 
-                // Order to wait
-                OrderToWait(internsOwned);
+                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
+                if (player == null)
+                {
+                    continue;
+                }
+                InternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
+                if (intern == null
+                    || intern.IsSpawningAnimationRunning())
+                {
+                    continue;
+                }
 
-                CanCommandIntern = false;
+                // Command single intern
+                UIManager.Instance.ShowCommandsSingle();
+                currentCommandedIntern = intern;
+                return;
             }
+
+            // Command all close interns
+            UIManager.Instance.ShowCommandsMultiple();
         }
 
         private void OrderToWait(InternAI[] internsOwned)
@@ -332,7 +394,11 @@ namespace LethalInternship.Managers
             }
         }
 
-        private void GiveTakeItem_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+        #endregion
+
+        #region Give/Take Item
+
+        private void GiveTakeItem_performed(InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
@@ -381,7 +447,9 @@ namespace LethalInternship.Managers
             }
         }
 
-        private void GrabIntern_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+        #endregion
+
+        private void GrabIntern_performed(InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
@@ -461,15 +529,13 @@ namespace LethalInternship.Managers
             }
         }
 
-        private void ChangeSuitIntern_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+        private void ChangeSuitIntern_performed(InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
             {
                 return;
             }
-
-            UIManager.Instance.ToogleCommandWheel();
 
             // Use of change suit key to change suit of intern
             Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
@@ -507,6 +573,5 @@ namespace LethalInternship.Managers
             }
         }
 
-        #endregion
     }
 }

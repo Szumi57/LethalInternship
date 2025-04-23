@@ -21,7 +21,7 @@ namespace LethalInternship.Interns.AI.Commands
             this.ai = ai;
         }
 
-        public EnumCommandEnd Execute()
+        public void Execute()
         {
             // Looking around for too long, stop the coroutine, the target player is officially lost
             if (LookingAroundTimer > Const.TIMER_LOOKING_AROUND)
@@ -45,17 +45,18 @@ namespace LethalInternship.Interns.AI.Commands
                 if (CheckLOSForTargetAndGetClose())
                 {
                     ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                    return EnumCommandEnd.Finished;
+                    return;
                 }
 
-                return EnumCommandEnd.Repeat;
+                ai.QueueNewCommand(this);
+                return;
             }
 
             // Try to reach target last known position
             if (!TargetLastKnownPosition.HasValue)
             {
-                ai.QueueNewCommand(new LookingForPlayer(ai));
-                return EnumCommandEnd.Finished;
+                ai.QueueNewCommand(new LookingForPlayerCommand(ai));
+                return;
             }
 
             Plugin.LogDebug($"{Controller.Npc.playerUsername} distance to last position {Vector3.Distance(TargetLastKnownPosition.Value, Controller.Npc.transform.position)}");
@@ -82,7 +83,8 @@ namespace LethalInternship.Interns.AI.Commands
                             LookingAroundTimer += ai.AIIntervalTime;
                         }
 
-                        return EnumCommandEnd.Repeat;
+                        ai.QueueNewCommand(this);
+                        return;
                     }
                 }
             }
@@ -92,7 +94,7 @@ namespace LethalInternship.Interns.AI.Commands
             if (CheckLOSForTargetOrClosestPlayer())
             {
                 ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                return EnumCommandEnd.Finished;
+                return;
             }
 
             // Go to the last known position
@@ -115,7 +117,8 @@ namespace LethalInternship.Interns.AI.Commands
             // Try play voice
             TryPlayCurrentStateVoiceAudio();
 
-            return EnumCommandEnd.Repeat;
+            ai.QueueNewCommand(this);
+            return;
         }
 
         public string GetBillboardStateIndicator()
@@ -239,6 +242,11 @@ namespace LethalInternship.Interns.AI.Commands
             {
                 ai.StopCoroutine(LookingAroundCoroutine);
             }
+        }
+
+        public EnumCommandTypes GetCommandType()
+        {
+            return EnumCommandTypes.LostPlayer;
         }
     }
 }

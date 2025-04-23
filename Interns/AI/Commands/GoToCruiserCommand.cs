@@ -17,14 +17,14 @@ namespace LethalInternship.Interns.AI.Commands
             this.vehicleController = vehicleController;
         }
 
-        public EnumCommandEnd Execute()
+        public void Execute()
         {
             ai.SetAgent(enabled: false);
 
             if (vehicleController == null)
             {
                 ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                return EnumCommandEnd.Finished;
+                return;
             }
 
             Vector3 entryPointInternCruiser = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomEntryPosCruiser();
@@ -39,14 +39,15 @@ namespace LethalInternship.Interns.AI.Commands
 
                     Plugin.LogDebug("gotocruiser add follow");
                     ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                    return EnumCommandEnd.Finished;
+                    return;
                 }
 
                 // Try play voice
                 TryPlayCurrentStateVoiceAudio();
 
                 // Stay in vehicle with target player
-                return EnumCommandEnd.Repeat;
+                ai.QueueNewCommand(this);
+                return;
             }
 
             // Intern still not in vehicle
@@ -56,8 +57,8 @@ namespace LethalInternship.Interns.AI.Commands
             if (ai.targetPlayer == null
                 || !ai.PlayerIsTargetable(ai.targetPlayer))
             {
-                ai.QueueNewCommand(new LookingForPlayer(ai));
-                return EnumCommandEnd.Finished;
+                ai.QueueNewCommand(new LookingForPlayerCommand(ai));
+                return;
             }
 
             // Teleport to cruiser and enter vehicle
@@ -83,7 +84,8 @@ namespace LethalInternship.Interns.AI.Commands
             // Chill
             Controller.OrderToStopMoving();
 
-            return EnumCommandEnd.Repeat;
+            ai.QueueNewCommand(this);
+            return;
         }
 
         public string GetBillboardStateIndicator()
@@ -124,6 +126,16 @@ namespace LethalInternship.Interns.AI.Commands
             float x = Random.Range(Const.POS1_ENTRY_INTERN_CRUISER.x, Const.POS2_ENTRY_INTERN_CRUISER.x);
 
             return new Vector3(x, Const.POS1_ENTRY_INTERN_CRUISER.y, Const.POS1_ENTRY_INTERN_CRUISER.z);
+        }
+
+        public EnumCommandTypes GetCommandType()
+        {
+            return EnumCommandTypes.GoToCruiser;
+        }
+
+        void ICommandAI.Execute()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

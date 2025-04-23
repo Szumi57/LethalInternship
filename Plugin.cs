@@ -79,8 +79,13 @@ namespace LethalInternship
 
         public static AssetBundle ModAssets = null!;
         public static EnemyType InternNPCPrefab = null!;
-        public static GameObject CommandsUIPrefab = null!;
-        
+
+        // UI
+        public static GameObject CommandsSingleInternUIPrefab = null!;
+        public static GameObject CommandsMultipleInternsUIPrefab = null!;
+        public static GameObject HereSimpleIconUIPrefab = null!;
+        public static GameObject HereMultipleIconUIPrefab = null!;
+
         internal static string DirectoryName = null!;
         internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
@@ -121,16 +126,59 @@ namespace LethalInternship
             }
 
             // Load intern prefab
+            if (!LoadInternPrefab(bundleName))
+            {
+                return;
+            }
+
+            // Load UI prefabs
+            if (!LoadUIPrefabs())
+            {
+                return;
+            }
+
+            InitPluginManager();
+
+            PatchBaseGame();
+
+            PatchOtherMods();
+
+            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+        }
+        private static void InitializeNetworkBehaviours()
+        {
+            // See https://github.com/EvaisaDev/UnityNetcodePatcher?tab=readme-ov-file#preparing-mods-for-patching
+            var types = Assembly.GetExecutingAssembly().GetTypes();
+            foreach (var type in types)
+            {
+                var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                foreach (var method in methods)
+                {
+                    try
+                    {
+                        var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                        if (attributes.Length > 0)
+                        {
+                            method.Invoke(null, null);
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        private bool LoadInternPrefab(string bundleName)
+        {
             InternNPCPrefab = Plugin.ModAssets.LoadAsset<EnemyType>("InternNPC");
             if (InternNPCPrefab == null)
             {
                 Logger.LogError($"Failed to load InternNPC prefab.");
-                return;
+                return false;
             }
             if (InternNPCPrefab.enemyPrefab == null)
             {
                 Logger.LogError($"Failed to load InternNPCPrefab.enemyPrefab.");
-                return;
+                return false;
             }
             foreach (var transform in InternNPCPrefab.enemyPrefab.GetComponentsInChildren<Transform>()
                                                                .Where(x => x.parent != null && x.parent.name == "InternNPCObj"
@@ -157,21 +205,47 @@ namespace LethalInternship
             // Register the network prefab with the randomized GlobalObjectIdHash
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(InternNPCPrefab.enemyPrefab);
 
-            // Load UI prefabs
-            CommandsUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("Commands");
-            if (CommandsUIPrefab == null)
+            return true;
+        }
+
+        private static void InitPluginManager()
+        {
+            GameObject gameObject = new GameObject("PluginManager");
+            gameObject.AddComponent<PluginManager>();
+            PluginManager.Instance.InitManagers();
+        }
+
+        private bool LoadUIPrefabs()
+        {
+            CommandsSingleInternUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsSingleIntern");
+            if (CommandsSingleInternUIPrefab == null)
             {
-                Logger.LogError($"Failed to load CommandsUIPrefab.");
-                return;
+                Logger.LogError($"Failed to load Commands UI prefab.");
+                return false;
             }
 
-            InitPluginManager();
+            CommandsMultipleInternsUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsMultipleInterns");
+            if (CommandsMultipleInternsUIPrefab == null)
+            {
+                Logger.LogError($"Failed to load Commands UI prefab.");
+                return false;
+            }
 
-            PatchBaseGame();
+            HereSimpleIconUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("HereSimpleIcon");
+            if (HereSimpleIconUIPrefab == null)
+            {
+                Logger.LogError($"Failed to load HereSimpleIcon UI prefab.");
+                return false;
+            }
 
-            PatchOtherMods();
+            HereMultipleIconUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("HereMultipleIcon");
+            if (HereMultipleIconUIPrefab == null)
+            {
+                Logger.LogError($"Failed to load HereMultipleIcon UI prefab.");
+                return false;
+            }
 
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+            return true;
         }
 
         private void PatchBaseGame()
@@ -446,34 +520,6 @@ namespace LethalInternship
             return ret;
         }
 
-        private static void InitializeNetworkBehaviours()
-        {
-            // See https://github.com/EvaisaDev/UnityNetcodePatcher?tab=readme-ov-file#preparing-mods-for-patching
-            var types = Assembly.GetExecutingAssembly().GetTypes();
-            foreach (var type in types)
-            {
-                var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                foreach (var method in methods)
-                {
-                    try
-                    {
-                        var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
-                        if (attributes.Length > 0)
-                        {
-                            method.Invoke(null, null);
-                        }
-                    }
-                    catch { }
-                }
-            }
-        }
-
-        private static void InitPluginManager()
-        {
-            GameObject gameObject = new GameObject("PluginManager");
-            gameObject.AddComponent<PluginManager>();
-            PluginManager.Instance.InitManagers();
-        }
 
         internal static void LogDebug(string debugLog)
         {

@@ -225,18 +225,13 @@ namespace LethalInternship.Patches.GameEnginePatches
 
         #region PostFixes
 
-        [HarmonyPatch("Awake")]
-        [HarmonyPostfix]
-        public static void Awake_Postfix(HUDManager __instance)
-        {
-            UIManager.Instance.Init(__instance.HUDContainer.transform.parent);
-        }
-
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         public static void Start_Postfix(HUDManager __instance)
         {
             ResizeStatsUIElements(__instance);
+
+            UIManager.Instance.InitCommandsUI(__instance.HUDContainer.transform.parent);
         }
 
         private static void ResizeStatsUIElements(HUDManager instance)

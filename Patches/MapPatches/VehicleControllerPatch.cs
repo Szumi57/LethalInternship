@@ -31,6 +31,11 @@ namespace LethalInternship.Patches.MapPatches
             PlayerControllerB internController;
             foreach (InternAI internAI in InternManager.Instance.GetInternsAIOwnedByLocal())
             {
+                if (internAI.NpcController.Npc.isPlayerDead)
+                {
+                    continue;
+                }
+
                 internController = internAI.NpcController.Npc;
 
                 if (!__instance.localPlayerInPassengerSeat && !__instance.localPlayerInControl)
@@ -74,6 +79,11 @@ namespace LethalInternship.Patches.MapPatches
         {
             foreach (InternAI internAI in InternManager.Instance.GetInternsAIOwnedByLocal())
             {
+                if (internAI.NpcController.Npc.isPlayerDead)
+                {
+                    continue;
+                }
+
                 Plugin.LogDebug($"DestroyCar Killing intern #{internAI.InternId}");
                 internAI.NpcController.Npc.KillPlayer(Vector3.up * 27f + 20f * Random.insideUnitSphere, spawnBody: true, CauseOfDeath.Blast, 6, Vector3.up * 1.5f);
             }

@@ -40,7 +40,7 @@ namespace LethalInternship.Interns.AI.Commands
             ai = internAI;
         }
 
-        public EnumCommandEnd Execute()
+        public void Execute()
         {
             // Update target last known position
             PlayerControllerB? playerTarget = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
@@ -57,11 +57,11 @@ namespace LethalInternship.Interns.AI.Commands
                 Controller.OrderToLookForward();
                     Plugin.LogDebug("chill add follow");
                 ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                return EnumCommandEnd.Finished;
+                return;
             }
 
             // Set where the intern should look
-            SetInternLookAt();
+            ai.SetInternLookAt();
 
             // Chill
             ai.StopMoving();
@@ -73,91 +73,13 @@ namespace LethalInternship.Interns.AI.Commands
             TryPlayCurrentStateVoiceAudio();
 
             ai.QueueNewCommand(this);
-            return EnumCommandEnd.Finished;
+            return;
         }
-
-        private void SetInternLookAt(Vector3? position = null)
-        {
-            if (Plugin.InputActionsInstance.MakeInternLookAtPosition.IsPressed())
-            {
-                LookAtWhatPlayerPointingAt();
-            }
-            else
-            {
-                if (position.HasValue)
-                {
-                    Controller.OrderToLookAtPlayer(position.Value + new Vector3(0, 2.35f, 0));
-                }
-                else
-                {
-                    // Looking at player or forward
-                    PlayerControllerB? playerToLook = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                    if (playerToLook != null)
-                    {
-                        Controller.OrderToLookAtPlayer(playerToLook.playerEye.position);
-                    }
-                    else
-                    {
-                        Controller.OrderToLookForward();
-                    }
-                }
-            }
-        }
-
-        private void LookAtWhatPlayerPointingAt()
-        {
-            // Look where the target player is looking
-            Ray interactRay = new Ray(ai.targetPlayer.gameplayCamera.transform.position, ai.targetPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay);
-            if (raycastHits.Length == 0)
-            {
-                Controller.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
-                Controller.OrderToLookForward();
-            }
-            else
-            {
-                // Check if looking at a player/intern
-                foreach (var hit in raycastHits)
-                {
-                    PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                    if (player != null
-                        && player.playerClientId != StartOfRound.Instance.localPlayerController.playerClientId)
-                    {
-                        Controller.OrderToLookAtPosition(hit.point);
-                        Controller.SetTurnBodyTowardsDirectionWithPosition(hit.point);
-                        return;
-                    }
-                }
-
-                // Check if looking too far in the distance or at a valid position
-                foreach (var hit in raycastHits)
-                {
-                    if (hit.distance < 0.1f)
-                    {
-                        Controller.SetTurnBodyTowardsDirection(ai.targetPlayer.gameplayCamera.transform.forward);
-                        Controller.OrderToLookForward();
-                        return;
-                    }
-
-                    PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                    if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
-                    {
-                        continue;
-                    }
-
-                    // Look at position
-                    Controller.OrderToLookAtPosition(hit.point);
-                    Controller.SetTurnBodyTowardsDirectionWithPosition(hit.point);
-                    break;
-                }
-            }
-        }
-
 
         public void PlayerHeard(Vector3 noisePosition)
         {
             // Look at origin of sound
-            SetInternLookAt(noisePosition);
+            ai.SetInternLookAt(noisePosition);
         }
 
         public string GetBillboardStateIndicator()
@@ -180,6 +102,11 @@ namespace LethalInternship.Interns.AI.Commands
                 IsInternInside = Controller.Npc.isInsideFactory,
                 AllowSwearing = Plugin.Config.AllowSwearing.Value
             });
+        }
+
+        public EnumCommandTypes GetCommandType()
+        {
+            return EnumCommandTypes.ChillWithPlayer;
         }
     }
 }

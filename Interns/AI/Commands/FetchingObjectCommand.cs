@@ -17,7 +17,7 @@ namespace LethalInternship.Interns.AI.Commands
             ai.TargetItem = targetItem;
         }
 
-        public EnumCommandEnd Execute()
+        public void Execute()
         {
             // Target item invalid to grab
             if (ai.HeldItem != null
@@ -26,7 +26,7 @@ namespace LethalInternship.Interns.AI.Commands
             {
                 TargetItem = null;
                 ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                return EnumCommandEnd.Finished;
+                return;
             }
 
             float sqrMagDistanceItem = (TargetItem.transform.position - Controller.Npc.transform.position).sqrMagnitude;
@@ -39,7 +39,7 @@ namespace LethalInternship.Interns.AI.Commands
                     ai.GrabItemServerRpc(TargetItem.NetworkObject, itemGiven: false);
                     TargetItem = null;
                     ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                    return EnumCommandEnd.Finished;
+                    return;
                 }
             }
 
@@ -67,7 +67,8 @@ namespace LethalInternship.Interns.AI.Commands
             // Try play voice
             TryPlayCurrentStateVoiceAudio();
 
-            return EnumCommandEnd.Repeat;
+            ai.QueueNewCommand(this);
+            return;
         }
 
         public void PlayerHeard(Vector3 noisePosition) { }
@@ -92,6 +93,11 @@ namespace LethalInternship.Interns.AI.Commands
         public string GetBillboardStateIndicator()
         {
             return "!!";
+        }
+
+        public EnumCommandTypes GetCommandType()
+        {
+            return EnumCommandTypes.FetchingObject;
         }
     }
 }

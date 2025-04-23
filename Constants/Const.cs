@@ -109,7 +109,7 @@ namespace LethalInternship.Constants
         public static readonly int CROUCHING_WALKING_STATE_HASH = -483816927;
 
         // Commands
-        public static readonly int MAX_COMMANDS_QUEUE = 3;
+        public static readonly int MAX_COMMANDS_QUEUE = 10;
 
         // SearchingForPlayerState 
         public static readonly float MIN_TIME_SPRINT_SEARCH_WANDER = 1f;

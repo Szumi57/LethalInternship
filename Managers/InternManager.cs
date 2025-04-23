@@ -1142,21 +1142,9 @@ namespace LethalInternship.Managers
 
         public InternAI[] GetInternsAIOwnedByLocal()
         {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            List<InternAI> results = new List<InternAI>();
-            InternAI? internAI;
-            for (int i = IndexBeginOfInterns; i < instanceSOR.allPlayerScripts.Length; i++)
-            {
-                internAI = GetInternAI((int)instanceSOR.allPlayerScripts[i].playerClientId);
-                if (internAI != null
-                    && internAI.NpcController != null
-                    && !internAI.NpcController.Npc.isPlayerDead
-                    && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
-                {
-                    results.Add(internAI);
-                }
-            }
-            return results.ToArray();
+            return AllInternAIs.Where(x => x != null
+                                        && x.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                               .ToArray();
         }
 
         public void SetInternsInElevatorLateUpdate(float deltaTime)

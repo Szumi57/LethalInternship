@@ -5,7 +5,9 @@ namespace LethalInternship.Interns.AI
 {
     public interface ICommandAI
     {
-        public EnumCommandEnd Execute();
+        public EnumCommandTypes GetCommandType();
+
+        public void Execute();
 
         public void PlayerHeard(Vector3 noisePosition);
 
