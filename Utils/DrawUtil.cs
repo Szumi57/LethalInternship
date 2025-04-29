@@ -5,7 +5,7 @@ namespace LethalInternship.Utils
     /// <summary>
     /// Utilitary class for help drawing using <c>LineRenderer</c>
     /// </summary>
-    internal static class DrawUtil
+    public static class DrawUtil
     {
         public static void DrawWhiteLine(LineRenderer? lr, Ray ray, float length)
         {

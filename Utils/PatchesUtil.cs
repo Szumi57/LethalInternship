@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace LethalInternship.Utils
 {
-    internal static class PatchesUtil
+    public static class PatchesUtil
     {
         public static readonly FieldInfo FieldInfoWasUnderwaterLastFrame = AccessTools.Field(typeof(PlayerControllerB), "wasUnderwaterLastFrame");
         public static readonly FieldInfo FieldInfoPlayerClientId = AccessTools.Field(typeof(PlayerControllerB), "playerClientId");

@@ -2,6 +2,7 @@
 using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Interns.AI.AIStates;
+using LethalInternship.Interns.AI.BT;
 using LethalInternship.Interns.AI.Commands;
 using LethalInternship.Managers;
 using LethalInternship.NetworkSerializers;
@@ -15,7 +16,6 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem.XR;
 using Component = UnityEngine.Component;
 using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
@@ -43,6 +43,20 @@ namespace LethalInternship.Interns.AI
         /// </summary>
         public static Dictionary<GrabbableObject, float> DictJustDroppedItems = new Dictionary<GrabbableObject, float>();
 
+        public BTController BTController = null!;
+
+        public EnumCommandTypes CurrentCommand;
+        public EnemyAI? CurrentEnemy;
+        public GrabbableObject? TargetItem;
+        public Vector3? TargetLastKnownPosition;
+        public EntranceTeleport? ClosestEntrance;
+        public Vector3 NextPos;
+
+        public Coroutine? PanikCoroutine;
+        public Coroutine LookingAroundCoroutine = null!;
+        public Coroutine SearchingWanderCoroutine = null!;
+        public AISearchRoutine SearchForPlayers = null!;
+
         /// <summary>
         /// Current state of the AI.
         /// </summary>
@@ -54,19 +68,12 @@ namespace LethalInternship.Interns.AI
         public AIState State = null!;
         public Queue<ICommandAI> CommandQueue = null!;
         public Queue<ICommandAI> CommandPriorityQueue = null!;
-        public ICommandAI CurrentCommand = null!;
+        //public ICommandAI CurrentCommand = null!;
         public EnumCommandEnd CurrentCommandEnd;
 
-        public AISearchRoutine SearchForPlayers = null!;
-        public Vector3? TargetLastKnownPosition;
-        public GrabbableObject? TargetItem;
-        public EnemyAI? CurrentEnemy;
         public float LookingAroundTimer;
-        public Vector3? CommandPoint;
         public Vector3? MeetingPoint;
-        public Coroutine? PanikCoroutine;
-        public Coroutine LookingAroundCoroutine = null!;
-        public Coroutine SearchingWanderCoroutine = null!;
+        public Vector3? CommandPoint;
 
         /// <summary>
         /// Pilot class of the body <c>PlayerControllerB</c> of the intern.
@@ -92,9 +99,9 @@ namespace LethalInternship.Interns.AI
 
         public LineRendererUtil LineRendererUtil = null!;
 
+        public EntranceTeleport[] EntrancesTeleportArray = null!;
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
-        private EntranceTeleport[] entrancesTeleportArray = null!;
         private DoorLock[] doorLocksArray = null!;
         private Dictionary<string, Component> dictComponentByCollider = null!;
 
@@ -173,7 +180,7 @@ namespace LethalInternship.Interns.AI
         public void Init(EnumSpawnAnimation enumSpawnAnimation)
         {
             // Entrances
-            entrancesTeleportArray = FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+            EntrancesTeleportArray = FindObjectsOfType<EntranceTeleport>(includeInactive: false);
 
             // Doors
             doorLocksArray = FindObjectsOfType<DoorLock>(includeInactive: false);
@@ -203,6 +210,10 @@ namespace LethalInternship.Interns.AI
             addPlayerVelocityToDestination = 3f;
             CommandQueue = new Queue<ICommandAI>();
             CommandPriorityQueue = new Queue<ICommandAI>();
+
+            // Behavior tree
+            BTController = new BTController(this);
+            BTController.Init();
 
             // Body collider
             InternBodyCollider = NpcController.Npc.GetComponentInChildren<Collider>();
@@ -465,13 +476,35 @@ namespace LethalInternship.Interns.AI
             }
 
             // Do the AI calculation behaviour for the current state
-            State.DoAI();
+            //State.DoAI();
+
+            BTController.TickTree(AIIntervalTime);
 
             // Doors
             OpenDoorIfNeeded();
         }
 
         #region Commands
+
+        public void SetCommandTo(EnumCommandTypes commandType)
+        {
+            CurrentCommand = commandType;
+        }
+
+        public void SetCommandToGoToPosition(Vector3 pos)
+        {
+            Plugin.LogDebug($"SetCommandToGoToPosition {pos}");
+            CurrentCommand = EnumCommandTypes.GoToPosition;
+            CommandPoint = pos;
+            NextPos = pos;
+        }
+
+        public void SetCommandToFollowPlayer()
+        {
+            Plugin.LogDebug($"SetCommandToFollowPlayer");
+            CurrentCommand = EnumCommandTypes.FollowPlayer;
+            CommandPoint = null;
+        }
 
         public ICommandAI GetNewCommand()
         {
@@ -484,24 +517,24 @@ namespace LethalInternship.Interns.AI
 
             if (CommandPriorityQueue.Count > 0)
             {
-                CurrentCommand = CommandPriorityQueue.Dequeue();
+                //CurrentCommand = CommandPriorityQueue.Dequeue();
             }
             else
             {
                 if (CommandQueue.Count == 0)
                 {
-                    CurrentCommand = new LookingForPlayerCommand(this);
+                    //CurrentCommand = new LookingForPlayerCommand(this);
                 }
                 else
                 {
-                    CurrentCommand = CommandQueue.Dequeue();
+                    //CurrentCommand = CommandQueue.Dequeue();
                 }
             }
 
             //Plugin.LogDebug($"=====================================");
             Plugin.LogDebug($"= {NpcController.Npc.playerUsername} CurrentCommand {CurrentCommand.ToString().Replace("LethalInternship.Interns.AI.Commands.", "")} <--");
             //Plugin.LogDebug($"=====================================");
-            return CurrentCommand;
+            return default;
         }
 
         public void QueueNewCommand(ICommandAI commandAI)
@@ -1321,16 +1354,18 @@ namespace LethalInternship.Interns.AI
         /// <returns>The entrance close for both, else null</returns>
         public EntranceTeleport? IsEntranceCloseForBoth(Vector3 entityPos1, Vector3 entityPos2)
         {
-            for (int i = 0; i < entrancesTeleportArray.Length; i++)
+            for (int i = 0; i < EntrancesTeleportArray.Length; i++)
             {
-                if ((entityPos1 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE
-                    && (entityPos2 - entrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)
+                if ((entityPos1 - EntrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE
+                    && (entityPos2 - EntrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)
                 {
-                    return entrancesTeleportArray[i];
+                    return EntrancesTeleportArray[i];
                 }
             }
             return null;
         }
+
+        
 
         /// <summary>
         /// Get the position of teleport of entrance, to teleport intern to it, if he needs to go in/out of the facility to follow player.
@@ -1344,9 +1379,9 @@ namespace LethalInternship.Interns.AI
                 return null;
             }
 
-            for (int i = 0; i < entrancesTeleportArray.Length; i++)
+            for (int i = 0; i < EntrancesTeleportArray.Length; i++)
             {
-                EntranceTeleport entrance = entrancesTeleportArray[i];
+                EntranceTeleport entrance = EntrancesTeleportArray[i];
                 if (entrance.entranceId == entranceToUse.entranceId
                     && entrance.isEntranceToBuilding != entranceToUse.isEntranceToBuilding)
                 {
@@ -1608,9 +1643,9 @@ namespace LethalInternship.Interns.AI
             // Is item too close to entrance (with config option enabled)
             if (!Plugin.Config.GrabItemsNearEntrances.Value)
             {
-                for (int j = 0; j < entrancesTeleportArray.Length; j++)
+                for (int j = 0; j < EntrancesTeleportArray.Length; j++)
                 {
-                    if ((grabbableObject.transform.position - entrancesTeleportArray[j].entrancePoint.position).sqrMagnitude < Const.DISTANCE_ITEMS_TO_ENTRANCE * Const.DISTANCE_ITEMS_TO_ENTRANCE)
+                    if ((grabbableObject.transform.position - EntrancesTeleportArray[j].entrancePoint.position).sqrMagnitude < Const.DISTANCE_ITEMS_TO_ENTRANCE * Const.DISTANCE_ITEMS_TO_ENTRANCE)
                     {
                         return false;
                     }
@@ -2239,6 +2274,8 @@ namespace LethalInternship.Interns.AI
             SetMovingTowardsTargetPlayer(targetPlayer);
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
+
+            CurrentCommand = EnumCommandTypes.FollowPlayer;
 
             if (NpcController.IsControllerInCruiser)
             {

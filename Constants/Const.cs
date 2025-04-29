@@ -118,7 +118,7 @@ namespace LethalInternship.Constants
         // GetCloseToPlayerState
         public static readonly float DISTANCE_START_RUNNING = 8f;
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
-        public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 5f;
+        public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 4f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
         public static readonly float DISTANCE_AWARENESS_HOR = 50f;
         public static readonly float DISTANCE_AWARENESS_VER = 50f;
@@ -139,6 +139,8 @@ namespace LethalInternship.Constants
         public static readonly float DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT = 2f;
 
         // Player in cruiser vehicle
+        public static readonly float DISTANCE_TO_CRUISER = 4f;
+
         public static readonly Vector3 POS1_ENTRY_INTERN_CRUISER = new Vector3(-0.5f, -1f, -5.5f);
         public static readonly Vector3 POS2_ENTRY_INTERN_CRUISER = new Vector3(0.9f, -1f, -5.5f);
 

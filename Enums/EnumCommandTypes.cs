@@ -2,13 +2,10 @@
 {
     public enum EnumCommandTypes
     {
-        ChillWithPlayer,
-        FetchingObject,
+        None = 0,
         FollowPlayer,
-        GoToCruiser,
+        GoToVehicle,
         GoToPosition,
-        LookingForPlayer,
-        LostPlayer,
         Wait
     }
 }

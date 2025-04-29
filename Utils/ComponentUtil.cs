@@ -7,7 +7,7 @@ namespace LethalInternship.Utils
     /// <summary>
     /// Utilitary class for displaying debug log of infos of objects
     /// </summary>
-    internal static class ComponentUtil
+    public static class ComponentUtil
     {
         public static void ListAllComponents(GameObject gameObject)
         {

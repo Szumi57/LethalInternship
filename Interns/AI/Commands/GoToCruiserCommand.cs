@@ -130,7 +130,7 @@ namespace LethalInternship.Interns.AI.Commands
 
         public EnumCommandTypes GetCommandType()
         {
-            return EnumCommandTypes.GoToCruiser;
+            return EnumCommandTypes.None;
         }
 
         void ICommandAI.Execute()

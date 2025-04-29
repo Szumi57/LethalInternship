@@ -97,7 +97,7 @@ namespace LethalInternship.Interns.AI.Commands
 
         public EnumCommandTypes GetCommandType()
         {
-            return EnumCommandTypes.FetchingObject;
+            return EnumCommandTypes.None;
         }
     }
 }

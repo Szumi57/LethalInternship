@@ -106,7 +106,7 @@ namespace LethalInternship.Interns.AI.Commands
 
         public EnumCommandTypes GetCommandType()
         {
-            return EnumCommandTypes.ChillWithPlayer;
+            return EnumCommandTypes.None;
         }
     }
 }

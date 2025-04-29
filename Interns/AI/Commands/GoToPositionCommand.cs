@@ -16,28 +16,28 @@ namespace LethalInternship.Interns.AI.Commands
 
         public void Execute()
         {
-            if (ai.CommandPoint == null)
-            {
-                ai.QueueNewCommand(new FollowPlayerCommand(ai));
-                return;
-            }
+            //if (ai.CommandPoint == null)
+            //{
+            //    ai.QueueNewCommand(new FollowPlayerCommand(ai));
+            //    return;
+            //}
 
-            float sqrHorizontalDistanceWithPoint = Vector3.Scale(ai.CommandPoint.Value - Controller.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-            float sqrVerticalDistanceWithPoint = Vector3.Scale(ai.CommandPoint.Value - Controller.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
-            if (sqrHorizontalDistanceWithPoint < Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
-                && sqrVerticalDistanceWithPoint < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
-            {
-                ai.QueueNewPriorityCommand(new WaitCommand(ai));
-                return;
-            }
+            //float sqrHorizontalDistanceWithPoint = Vector3.Scale(ai.CommandPoint.Value - Controller.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            //float sqrVerticalDistanceWithPoint = Vector3.Scale(ai.CommandPoint.Value - Controller.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+            //if (sqrHorizontalDistanceWithPoint < Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
+            //    && sqrVerticalDistanceWithPoint < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
+            //{
+            //    ai.QueueNewPriorityCommand(new WaitCommand(ai));
+            //    return;
+            //}
 
-            ai.SetDestinationToPositionInternAI(ai.CommandPoint.Value);
-            ai.OrderAgentAndBodyMoveToDestination();
+            //ai.SetDestinationToPositionInternAI(ai.CommandPoint.Value);
+            //ai.OrderAgentAndBodyMoveToDestination();
 
-            // Try play voice
-            TryPlayCurrentStateVoiceAudio();
+            //// Try play voice
+            //TryPlayCurrentStateVoiceAudio();
 
-            ai.QueueNewPriorityCommand(this);
+            //ai.QueueNewPriorityCommand(this);
             return;
         }
 

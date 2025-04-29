@@ -98,7 +98,7 @@ namespace LethalInternship.Managers
                          });
             foreach (var commandPoint in internsByCommandPoints)
             {
-                //Plugin.LogDebug($"commandPoint {commandPoint.CommandPoint} {commandPoint.numberInterns}");
+                //Plugin.LogDebug($"CommandPos {commandPoint.CommandPoint} {commandPoint.numberInterns}");
                 if (commandPoint.numberInterns == 1)
                 {
                     IconUI iconHereSimple = iconUIDispenser.GetHereSimpleIcon();

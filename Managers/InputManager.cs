@@ -4,7 +4,6 @@ using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Interns.AI;
 using LethalInternship.Interns.AI.AIStates;
-using LethalInternship.Interns.AI.Commands;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System.IO;
@@ -228,8 +227,7 @@ namespace LethalInternship.Managers
                     }
 
                     // Current intern
-                    currentCommandedIntern.CommandPoint = location;
-                    currentCommandedIntern.QueueNewPriorityCommand(new GoToPositionCommand(currentCommandedIntern));
+                    currentCommandedIntern.SetCommandToGoToPosition(location.Value);
 
                     CurrentInputAction = EnumInputAction.None;
                     break;
@@ -245,9 +243,7 @@ namespace LethalInternship.Managers
                     InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
                     foreach (InternAI intern in internsOwned)
                     {
-                        Plugin.LogDebug($"intern {location}");
-                        intern.CommandPoint = location;
-                        intern.QueueNewPriorityCommand(new GoToPositionCommand(intern));
+                        intern.SetCommandToGoToPosition(location.Value);
                     }
 
                     CurrentInputAction = EnumInputAction.None;

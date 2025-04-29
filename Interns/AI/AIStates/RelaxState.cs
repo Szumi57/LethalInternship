@@ -88,7 +88,7 @@ namespace LethalInternship.Interns.AI.AIStates
 
         public override string GetBillboardStateIndicator()
         {
-            return ai.CurrentCommand == null ? string.Empty: ai.CurrentCommand.GetBillboardStateIndicator();
+            return string.Empty;
         }
 
         public override void TryPlayCurrentStateVoiceAudio()
