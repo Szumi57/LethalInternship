@@ -1949,7 +1949,7 @@ namespace LethalInternship.Interns
             if (UpdatePlayerLookInterval > 0.25f && IsRealPlayerClose(Npc.transform.position, 35f))
             {
                 UpdatePlayerLookInterval = 0f;
-                InternAIController.SyncUpdateInternRotationAndLook(InternAIController.State.GetBillboardStateIndicator(),
+                InternAIController.SyncUpdateInternRotationAndLook(string.Empty,
                                                                    newDirectionToUpdateTurnBodyTowardsTo,
                                                                    newIntEnumObjectsLookingAt,
                                                                    newPlayerEyeToLookAt,

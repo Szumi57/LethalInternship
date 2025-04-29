@@ -1,9 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
-using LethalInternship.Interns.AI.AIStates;
 using LethalInternship.Interns.AI.BT;
-using LethalInternship.Interns.AI.Commands;
 using LethalInternship.Managers;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
@@ -52,27 +50,6 @@ namespace LethalInternship.Interns.AI
         public EntranceTeleport? ClosestEntrance;
         public Vector3 NextPos;
 
-        public Coroutine? PanikCoroutine;
-        public Coroutine LookingAroundCoroutine = null!;
-        public Coroutine SearchingWanderCoroutine = null!;
-        public AISearchRoutine SearchForPlayers = null!;
-
-        /// <summary>
-        /// Current state of the AI.
-        /// </summary>
-        /// <remarks>
-        /// For the behaviour of the AI, we use a State pattern,
-        /// with the class <see cref="AIState"><c>AIState</c></see> 
-        /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
-        /// </remarks>
-        public AIState State = null!;
-        public Queue<ICommandAI> CommandQueue = null!;
-        public Queue<ICommandAI> CommandPriorityQueue = null!;
-        //public ICommandAI CurrentCommand = null!;
-        public EnumCommandEnd CurrentCommandEnd;
-
-        public float LookingAroundTimer;
-        public Vector3? MeetingPoint;
         public Vector3? CommandPoint;
 
         /// <summary>
@@ -93,13 +70,13 @@ namespace LethalInternship.Interns.AI
         public float TimeSinceTeleporting = 0f;
 
         public List<Component> ListModelReplacement = null!;
+        public EntranceTeleport[] EntrancesTeleportArray = null!;
 
         public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
         public TimedAngleFOVWithLocalPlayerCheck AngleFOVWithLocalPlayerTimedCheck = null!;
 
         public LineRendererUtil LineRendererUtil = null!;
 
-        public EntranceTeleport[] EntrancesTeleportArray = null!;
         private EnumStateControllerMovement StateControllerMovement;
         private InteractTrigger[] laddersInteractTrigger = null!;
         private DoorLock[] doorLocksArray = null!;
@@ -208,8 +185,6 @@ namespace LethalInternship.Interns.AI
             isEnemyDead = false;
             enabled = true;
             addPlayerVelocityToDestination = 3f;
-            CommandQueue = new Queue<ICommandAI>();
-            CommandPriorityQueue = new Queue<ICommandAI>();
 
             // Behavior tree
             BTController = new BTController(this);
@@ -343,12 +318,6 @@ namespace LethalInternship.Interns.AI
 
                 SetAgent(enabled: false);
 
-                if (State == null
-                    || State.GetAIState() != EnumAIStates.BrainDead)
-                {
-                    State = new BrainDeadState(this);
-                }
-
                 return;
             }
 
@@ -365,7 +334,7 @@ namespace LethalInternship.Interns.AI
 
             // No AI calculation if in special animation
             if (inSpecialAnimation
-                || RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld())
+                || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
             {
                 SetAgent(enabled: false);
                 return;
@@ -470,7 +439,7 @@ namespace LethalInternship.Interns.AI
         {
             if (isEnemyDead
                 || NpcController.Npc.isPlayerDead
-                || State == null)
+                || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
             {
                 return;
             }
@@ -493,10 +462,10 @@ namespace LethalInternship.Interns.AI
 
         public void SetCommandToGoToPosition(Vector3 pos)
         {
-            Plugin.LogDebug($"SetCommandToGoToPosition {pos}");
             CurrentCommand = EnumCommandTypes.GoToPosition;
             CommandPoint = pos;
-            NextPos = pos;
+            NextPos = ChooseClosestNodeToPosition(pos).position;
+            Plugin.LogDebug($"SetCommandToGoToPosition {pos}, nextpos {NextPos}");
         }
 
         public void SetCommandToFollowPlayer()
@@ -505,89 +474,6 @@ namespace LethalInternship.Interns.AI
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             CommandPoint = null;
         }
-
-        public ICommandAI GetNewCommand()
-        {
-            //Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command list   {CommandQueue.Count} ------------------------------");
-            //int i = 0;
-            //foreach (var a in CommandQueue)
-            //{
-            //    Plugin.LogDebug($"{NpcController.Npc.playerUsername}  command : {i++} {a.GetType().ToString().Replace("LethalInternship.Interns.AI.Commands.", "")}");
-            //}
-
-            if (CommandPriorityQueue.Count > 0)
-            {
-                //CurrentCommand = CommandPriorityQueue.Dequeue();
-            }
-            else
-            {
-                if (CommandQueue.Count == 0)
-                {
-                    //CurrentCommand = new LookingForPlayerCommand(this);
-                }
-                else
-                {
-                    //CurrentCommand = CommandQueue.Dequeue();
-                }
-            }
-
-            //Plugin.LogDebug($"=====================================");
-            Plugin.LogDebug($"= {NpcController.Npc.playerUsername} CurrentCommand {CurrentCommand.ToString().Replace("LethalInternship.Interns.AI.Commands.", "")} <--");
-            //Plugin.LogDebug($"=====================================");
-            return default;
-        }
-
-        public void QueueNewCommand(ICommandAI commandAI)
-        {
-            if (CommandQueue.Count >= Const.MAX_COMMANDS_QUEUE)
-            {
-                return;
-            }
-
-            if (!CommandQueue.Any(x => x.GetCommandType() == commandAI.GetCommandType()))
-            {
-                CommandQueue.Enqueue(commandAI);
-            }
-        }
-
-        public void QueueNewPriorityCommand(ICommandAI commandAI)
-        {
-            if (CommandPriorityQueue.Count >= Const.MAX_COMMANDS_QUEUE)
-            {
-                return;
-            }
-
-            if (!CommandPriorityQueue.Any(x => x.GetCommandType() == commandAI.GetCommandType()))
-            {
-                CommandPriorityQueue.Enqueue(commandAI);
-            }
-        }
-
-        public void ClearAndQueueCommand(ICommandAI commandAI)
-        {
-            CommandQueue.Clear();
-            CommandQueue.Enqueue(commandAI);
-        }
-
-        public void ClearCommandQueue()
-        {
-            CommandQueue.Clear();
-        }
-
-        //public void ExecuteEndCommand(EnumCommandEnd enumCommandEnd)
-        //{
-        //    switch (enumCommandEnd)
-        //    {
-        //        case EnumCommandEnd.None:
-        //        case EnumCommandEnd.Repeat:
-        //            break;
-        //        case EnumCommandEnd.Finished:
-        //            CommandQueue.RemoveFirst();
-        //            break;
-        //        default:
-        //            break;
-        //    }
-        //}
 
         #endregion
 
@@ -685,8 +571,7 @@ namespace LethalInternship.Interns.AI
                 || !NpcController.Npc.gameObject.activeSelf
                 || !NpcController.Npc.isPlayerControlled
                 || isEnemyDead
-                || NpcController.Npc.isPlayerDead
-                || State == null)
+                || NpcController.Npc.isPlayerDead)
             {
                 return;
             }
@@ -706,8 +591,9 @@ namespace LethalInternship.Interns.AI
             }
 
             Plugin.LogDebug($"Intern {NpcController.Npc.playerUsername} detected noise noisePosition {noisePosition}, noiseLoudness {noiseLoudness}, timesPlayedInOneSpot {timesPlayedInOneSpot}, noiseID {noiseID}");
+
             // Player heard
-            State.PlayerHeard(noisePosition);
+            // todo : BT
         }
 
         public void SetAgent(bool enabled)
@@ -796,12 +682,6 @@ namespace LethalInternship.Interns.AI
         public bool IsClientOwnerOfIntern()
         {
             return OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
-        }
-
-        public void InitStateToRelax()
-        {
-            State = new RelaxState(this);
-            targetPlayer = null;
         }
 
         private int MaxHealthPercent(int percentage)
@@ -896,59 +776,6 @@ namespace LethalInternship.Interns.AI
                 }
             }
 
-            return null;
-        }
-
-        /// <summary>
-        /// Check the line of sight if the intern see another intern who see the same target player.
-        /// </summary>
-        /// <param name="width">FOV of the intern</param>
-        /// <param name="range">Distance max for seeing something</param>
-        /// <param name="proximityAwareness">Distance where the interns "sense" the player, in line of sight or not. -1 for no proximity awareness</param>
-        /// <returns>Target player <c>PlayerControllerB</c> or null</returns>
-        public PlayerControllerB? CheckLOSForInternHavingTargetInLOS(float width = 45f, int range = 60, int proximityAwareness = -1)
-        {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            Transform thisInternCamera = NpcController.Npc.gameplayCamera.transform;
-
-            // Check for any interns that has target still in LOS
-            for (int i = InternManager.Instance.IndexBeginOfInterns; i < InternManager.Instance.AllEntitiesCount; i++)
-            {
-                PlayerControllerB intern = instanceSOR.allPlayerScripts[i];
-                if (intern.playerClientId == NpcController.Npc.playerClientId
-                    || intern.isPlayerDead
-                    || !intern.isPlayerControlled)
-                {
-                    continue;
-                }
-
-                InternAI? internAI = InternManager.Instance.GetInternAI(i);
-                if (internAI == null
-                    || internAI.targetPlayer == null
-                    || internAI.State.GetAIState() == EnumAIStates.JustLostPlayer)
-                {
-                    continue;
-                }
-
-                // Check for target player
-                Vector3 posInternCamera = intern.gameplayCamera.transform.position;
-                if (Vector3.Distance(posInternCamera, thisInternCamera.position) < range
-                    && !Physics.Linecast(thisInternCamera.position, posInternCamera, instanceSOR.collidersAndRoomMaskAndDefault))
-                {
-                    // Target close enough and nothing in between to break line of sight 
-                    Vector3 to = posInternCamera - thisInternCamera.position;
-                    if (Vector3.Angle(thisInternCamera.forward, to) < width
-                        || proximityAwareness != -1 && Vector3.Distance(thisInternCamera.position, posInternCamera) < proximityAwareness)
-                    {
-                        // Target in FOV or proximity awareness range
-                        if (internAI.targetPlayer == targetPlayer)
-                        {
-                            Plugin.LogDebug($"{NpcController.Npc.playerClientId} Found intern {intern.playerUsername} who knows target {targetPlayer.playerUsername}");
-                            return targetPlayer;
-                        }
-                    }
-                }
-            }
             return null;
         }
 
@@ -1241,32 +1068,6 @@ namespace LethalInternship.Interns.AI
             NpcController.ReParentNotSpawnedTransform(newParent);
         }
 
-        /// <summary>
-        /// Is the target player in the vehicle cruiser
-        /// </summary>
-        /// <returns></returns>
-        public VehicleController? GetVehicleCruiserTargetPlayerIsIn()
-        {
-            if (targetPlayer == null
-                || targetPlayer.isPlayerDead)
-            {
-                return null;
-            }
-
-            VehicleController? vehicleController = InternManager.Instance.VehicleController;
-            if (vehicleController == null)
-            {
-                return null;
-            }
-
-            if (targetPlayer.inVehicleAnimation)
-            {
-                return vehicleController;
-            }
-
-            return null;
-        }
-
         public string GetSizedBillboardStateIndicator()
         {
             string indicator;
@@ -1275,7 +1076,8 @@ namespace LethalInternship.Interns.AI
 
             if (IsOwner)
             {
-                indicator = State == null ? string.Empty : State.GetBillboardStateIndicator();
+                //indicator = State == null ? string.Empty : State.GetBillboardStateIndicator();
+                indicator = string.Empty;
             }
             else
             {
@@ -1336,56 +1138,6 @@ namespace LethalInternship.Interns.AI
                     // Wants to go down on ladder
                     NpcController.OrderToGoUpDownLadder(hasToGoDown: true);
                     return ladder;
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Is the entrance (main or fire exit) is close for the two entity position in parameters ?
-        /// </summary>
-        /// <remarks>
-        /// Use to know if the player just used the entrance and teleported away,
-        /// the intern gets close to last seen position in front of the door, we check if intern is close
-        /// to the door and the last seen position too.
-        /// </remarks>
-        /// <param name="entityPos1">Position of entity 1</param>
-        /// <param name="entityPos2">Position of entity 1</param>
-        /// <returns>The entrance close for both, else null</returns>
-        public EntranceTeleport? IsEntranceCloseForBoth(Vector3 entityPos1, Vector3 entityPos2)
-        {
-            for (int i = 0; i < EntrancesTeleportArray.Length; i++)
-            {
-                if ((entityPos1 - EntrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE
-                    && (entityPos2 - EntrancesTeleportArray[i].entrancePoint.position).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)
-                {
-                    return EntrancesTeleportArray[i];
-                }
-            }
-            return null;
-        }
-
-        
-
-        /// <summary>
-        /// Get the position of teleport of entrance, to teleport intern to it, if he needs to go in/out of the facility to follow player.
-        /// </summary>
-        /// <param name="entranceToUse"></param>
-        /// <returns></returns>
-        public Vector3? GetTeleportPosOfEntrance(EntranceTeleport? entranceToUse)
-        {
-            if (entranceToUse == null)
-            {
-                return null;
-            }
-
-            for (int i = 0; i < EntrancesTeleportArray.Length; i++)
-            {
-                EntranceTeleport entrance = EntrancesTeleportArray[i];
-                if (entrance.entranceId == entranceToUse.entranceId
-                    && entrance.isEntranceToBuilding != entranceToUse.isEntranceToBuilding)
-                {
-                    return entrance.entrancePoint.position;
                 }
             }
             return null;
@@ -1964,7 +1716,6 @@ namespace LethalInternship.Interns.AI
             }
         }
 
-
         #region Voices
 
         public void UpdateInternVoiceEffects()
@@ -2275,23 +2026,7 @@ namespace LethalInternship.Interns.AI
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
 
-            CurrentCommand = EnumCommandTypes.FollowPlayer;
-
-            if (NpcController.IsControllerInCruiser)
-            {
-                State = new RelaxState(this);
-                VehicleController? vehicleController = GetVehicleCruiserTargetPlayerIsIn();
-                if (vehicleController != null)
-                {
-                    QueueNewPriorityCommand(new GoToCruiserCommand(this, vehicleController));
-                }
-            }
-            else if (State == null
-                || State.GetAIState() != EnumAIStates.Relax)
-            {
-                State = new RelaxState(this);
-                QueueNewCommand(new FollowPlayerCommand(this));
-            }
+            SetCommandToFollowPlayer();
         }
 
         #endregion
@@ -3707,7 +3442,6 @@ namespace LethalInternship.Interns.AI
                 agent.enabled = false;
             }
             InternIdentity.Voice.StopAudioFadeOut();
-            State = new BrainDeadState(this);
             Plugin.LogDebug($"Ran kill intern function for LOCAL client #{NetworkManager.LocalClientId}, intern object: Intern #{InternId} {NpcController.Npc.playerUsername}");
 
             // Compat with revive company mod
@@ -3776,9 +3510,6 @@ namespace LethalInternship.Interns.AI
             StopSinkingState();
             NpcController.Npc.ResetFallGravity();
             NpcController.OrderToStopMoving();
-
-            // Set intern to brain dead
-            State = new BrainDeadState(this);
 
             // Register body for animation culling
             InternManager.Instance.RegisterInternBodyForAnimationCulling(ragdollBodyDeadBodyInfo, HasInternModelReplacementAPI());
@@ -3946,8 +3677,8 @@ namespace LethalInternship.Interns.AI
             // Enable model
             InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
 
-            // Set intern to chill
-            State = new RelaxState(this);
+            // Set intern to follow
+            SetCommandToFollowPlayer();
         }
 
         #endregion

@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Enums;
-using LethalInternship.Interns.AI.AIStates;
 using LethalInternship.Interns.AI;
 using LethalInternship.UI;
 using LethalInternship.Utils;
@@ -14,7 +13,6 @@ using UnityEngine.UI;
 using Component = UnityEngine.Component;
 using System.Collections;
 using UnityEngine.AI;
-using UnityEngine.InputSystem.HID;
 using LethalInternship.Constants;
 using System.Data;
 
@@ -288,19 +286,21 @@ namespace LethalInternship.Managers
                 return null;
             }
 
-            GameObject[] allAINodes;
-            if (lastNavMeshHitPoint.Value.y >= -80f)
-            {
-                allAINodes = GameObject.FindGameObjectsWithTag("OutsideAINode");
-            }
-            else
-            {
-                allAINodes = GameObject.FindGameObjectsWithTag("AINode");
-            }
+            return lastNavMeshHitPoint.Value;
 
-            return allAINodes.OrderBy(node => (node.transform.position - lastNavMeshHitPoint.Value).sqrMagnitude)
-                             .FirstOrDefault()
-                             .transform.position;
+            //GameObject[] allAINodes;
+            //if (lastNavMeshHitPoint.Value.y >= -80f)
+            //{
+            //    allAINodes = GameObject.FindGameObjectsWithTag("OutsideAINode");
+            //}
+            //else
+            //{
+            //    allAINodes = GameObject.FindGameObjectsWithTag("AINode");
+            //}
+
+            //return allAINodes.OrderBy(node => (node.transform.position - lastNavMeshHitPoint.Value).sqrMagnitude)
+            //                 .FirstOrDefault()
+            //                 .transform.position;
         }
 
         private void StartScanPositionCoroutine()

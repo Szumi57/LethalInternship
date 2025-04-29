@@ -3,7 +3,6 @@ using HarmonyLib;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
 using LethalInternship.Interns.AI;
-using LethalInternship.Interns.AI.AIStates;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
 using System.IO;
@@ -346,48 +345,6 @@ namespace LethalInternship.Managers
 
             // Command all close interns
             UIManager.Instance.ShowCommandsMultiple();
-        }
-
-        private void OrderToWait(InternAI[] internsOwned)
-        {
-
-            PlayerControllerB localPlayerController = GameNetworkManager.Instance.localPlayerController;
-
-            Ray interactRay = new Ray(localPlayerController.gameplayCamera.transform.position, localPlayerController.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 20f, StartOfRound.Instance.collidersAndRoomMaskAndDefault);
-            if (raycastHits.Length == 0)
-            {
-                return;
-            }
-
-            // Check if looking too far in the distance or at a valid position
-            foreach (var hit in raycastHits)
-            {
-                if (hit.distance < 0.1f)
-                {
-                    continue;
-                }
-
-                PlayerControllerB? player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player != null && player.playerClientId == StartOfRound.Instance.localPlayerController.playerClientId)
-                {
-                    continue;
-                }
-
-                InternAI firstIntern = internsOwned.First();
-                if (firstIntern.TrySetDestinationToPosition(hit.point))
-                {
-                    Plugin.LogDebug($"hit.distance {hit.distance} {LineRendererUtil.GetLineRenderer()}");
-                    DrawUtil.DrawWhiteLine(LineRendererUtil.GetLineRenderer(), interactRay, hit.distance);
-
-                    // Hit point
-                    foreach (InternAI internAI in internsOwned)
-                    {
-                        internAI.State = new WaitingState(internAI, hit.point);
-                    }
-                    break;
-                }
-            }
         }
 
         #endregion

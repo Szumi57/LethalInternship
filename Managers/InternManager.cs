@@ -889,7 +889,6 @@ namespace LethalInternship.Managers
 
                 // Teleport intern
                 ShipTeleporterPatch.SetPlayerTeleporterId_ReversePatch(teleporter, internAI.NpcController.Npc, 2);
-                internAI.InitStateToRelax();
                 internAI.TeleportIntern(teleportPos, setOutside: false, isUsingEntrance: false);
                 internAI.NpcController.Npc.beamOutParticle.Play();
                 teleporter.shipTeleporterAudio.PlayOneShot(teleporter.teleporterBeamUpSFX);
@@ -1181,9 +1180,7 @@ namespace LethalInternship.Managers
                     continue;
                 }
 
-                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
-                    && internAI.State != null
-                    && internAI.State.GetAIState() == EnumAIStates.ChillWithPlayer)
+                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
                 {
                     return true;
                 }

@@ -26,7 +26,7 @@ namespace LethalInternship.Patches.MapPatches
                 && teleporterId == -1)
             {
                 // The intern is being teleported to the ship
-                internAI.InitStateToRelax();
+                internAI.SetCommandToFollowPlayer();
             }
         }
 
