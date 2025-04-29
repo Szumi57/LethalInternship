@@ -2011,7 +2011,7 @@ namespace LethalInternship.AI
             {
                 return;
             }
-            if (Npc.isSprinting)
+            if (!Npc.isSprinting)
             {
                 return;
             }
