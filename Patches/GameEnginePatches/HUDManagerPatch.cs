@@ -231,7 +231,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             ResizeStatsUIElements(__instance);
 
-            UIManager.Instance.InitCommandsUI(__instance.HUDContainer.transform.parent);
+            UIManager.Instance.InitUI(__instance.HUDContainer.transform.parent);
         }
 
         private static void ResizeStatsUIElements(HUDManager instance)

@@ -196,12 +196,12 @@ namespace LethalInternship.Interns.AI.BT
                             .End()
 
                             .Sequence("Go to entrance")
-                                .Condition("tooFarFromEntrance", t => tooFarFromEntrance.Condition(internAI))
+                                .Condition("<tooFarFromEntrance>", t => tooFarFromEntrance.Condition(internAI))
                                 .Do("Go to entrance", t => goToEntrance.Action(internAI))
                             .End()
 
                             .Sequence("Exit not blocked, take entrance")
-                                .Condition("exitNotBlocked", t => exitNotBlocked.Condition(internAI))
+                                .Condition("<exitNotBlocked>", t => exitNotBlocked.Condition(internAI))
                                 .Do("takeEntrance", t => takeEntrance.Action(internAI))
                             .End()
 
@@ -278,12 +278,12 @@ namespace LethalInternship.Interns.AI.BT
                             .End()
 
                             .Sequence("Go to entrance")
-                                .Condition("tooFarFromEntrance", t => tooFarFromEntrance.Condition(internAI))
+                                .Condition("<tooFarFromEntrance>", t => tooFarFromEntrance.Condition(internAI))
                                 .Do("Go to entrance", t => goToEntrance.Action(internAI))
                             .End()
 
                             .Sequence("Exit not blocked, take entrance")
-                                .Condition("exitNotBlocked", t => exitNotBlocked.Condition(internAI))
+                                .Condition("<exitNotBlocked>", t => exitNotBlocked.Condition(internAI))
                                 .Do("takeEntrance", t => takeEntrance.Action(internAI))
                             .End()
 
@@ -292,7 +292,7 @@ namespace LethalInternship.Interns.AI.BT
                     .End()
 
                     .Sequence("Go to vehicle")
-                        .Condition("tooFarFromVehicle", t => tooFarFromVehicle.Condition(internAI))
+                        .Condition("<tooFarFromVehicle>", t => tooFarFromVehicle.Condition(internAI))
                         .Do("goToVehicle", t => goToVehicle.Action(internAI))
                     .End()
 

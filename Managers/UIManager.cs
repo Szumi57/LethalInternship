@@ -1,20 +1,21 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interfaces;
 using LethalInternship.Interns.AI;
 using LethalInternship.UI;
-using LethalInternship.Utils;
+using LethalInternship.UI.Icons;
+using LethalInternship.UI.Icons.InputIcons;
+using LethalInternship.UI.Icons.Pools;
+using LethalInternship.UI.Icons.WorldIcons;
+using LethalInternship.UI.Renderers;
+using LethalInternship.UI.Renderers.InterestPointsRenderer;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Data;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using Component = UnityEngine.Component;
-using System.Collections;
-using UnityEngine.AI;
-using LethalInternship.Constants;
-using System.Data;
 
 namespace LethalInternship.Managers
 {
@@ -34,97 +35,76 @@ namespace LethalInternship.Managers
         public Canvas CanvasOverlay = null!;
 
         // Icon dispenser
-        private IconUIDispenser iconUIDispenser = null!;
+        private WorldIconUIPool worldIconUIPool = null!;
+        private InputIconUIPool inputIconUIPool = null!;
 
-        private Coroutine? scanPositionCoroutine;
+        // Input icon current icon
+        private GameObject inputIconImagePrefab = null!;
+
+        // Renderers
+        InterestPointRendererRegistery interestPointRendererRegistery = null!;
+        PointOfInterestRendererService pointOfInterestRendererService = null!;
 
         private PlayerControllerB localPlayerController = null!;
         private bool InternsOwned;
-        private Vector3? lastNavMeshHitPoint = null;
-        private bool isValidNavMeshPoint;
+        private WorldIconUI? WorldIconInCenter = null;
 
-        private void Awake()
-        {
-            Instance = this;
-        }
+        private void Awake() { Instance = this; }
 
-        private void Start()
-        {
-        }
+        private void Start() { }
 
         private void Update()
         {
-            switch (InputManager.Instance.CurrentInputAction)
+            if (!Plugin.UIAssetsLoaded)
             {
-                case EnumInputAction.SendingInternToLocation:
-
-                    StartScanPositionCoroutine();
-
-                    IconUI iconHereSimple = iconUIDispenser.GetHereSimpleIcon();
-                    iconHereSimple.SetPositionUICenter();
-                    iconHereSimple.SetColorIconValidOrNot(isValidNavMeshPoint);
-
-                    break;
-
-                case EnumInputAction.SendingAllInternsToLocation:
-
-                    StartScanPositionCoroutine();
-
-                    IconUI iconHereMultiple = iconUIDispenser.GetHereMultipleIcon();
-                    iconHereMultiple.SetPositionUICenter();
-                    iconHereMultiple.SetColorIconValidOrNot(isValidNavMeshPoint);
-
-                    break;
-
-                case EnumInputAction.None:
-                default:
-                    StopScanPositionCoroutine();
-                    break;
+                return;
             }
 
-            // Show other active icons
-            InternAI[] internAIsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-            InternsOwned = internAIsOwned.Length > 0;
-
-            var internsByCommandPoints = internAIsOwned
-                         .Where(y => y.CommandPoint != null)
-                         .GroupBy(n => n.CommandPoint)
-                         .Select(n => new
-                         {
-                             CommandPoint = n.Key,
-                             numberInterns = n.Count()
-                         });
-            foreach (var commandPoint in internsByCommandPoints)
+            // Check for interns owned
+            InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+            InternsOwned = internsOwned.Length > 0;
+            if (!InternsOwned)
             {
-                //Plugin.LogDebug($"CommandPos {commandPoint.CommandPoint} {commandPoint.numberInterns}");
-                if (commandPoint.numberInterns == 1)
+                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
+            }
+
+            // ----------------
+            WorldIconInCenter = null;
+
+            // Show other already active icons
+            var pointsOfInterest = internsOwned
+                         .Where(y => y.PointOfInterest != null)
+                         .Select(x => x.PointOfInterest!)
+                         .Distinct();
+            foreach (IPointOfInterest pointOfInterest in pointsOfInterest)
+            {
+                //Plugin.LogDebug($"pointOfInterest {pointOfInterest.}");
+                WorldIconUI worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
+                worldIcon.SetPositionUI(pointOfInterest.GetPoint());
+                worldIcon.SetDefaultColor();
+                worldIcon.SetIconActive(true);
+
+                // Scan icon in center
+                if (WorldIconInCenter == null)
                 {
-                    IconUI iconHereSimple = iconUIDispenser.GetHereSimpleIcon();
-#pragma warning disable CS8629 // Nullable value type may be null.
-                    iconHereSimple.SetPositionUI(commandPoint.CommandPoint.Value);
-                    iconHereSimple.SetDefaultColor();
-                }
-                else
-                {
-                    IconUI iconHereMultiple = iconUIDispenser.GetHereMultipleIcon();
-                    iconHereMultiple.SetPositionUI(commandPoint.CommandPoint.Value);
-#pragma warning restore CS8629 // Nullable value type may be null.
-                    iconHereMultiple.SetDefaultColor();
+                    WorldIconInCenter = worldIcon.IsIconInCenter ? worldIcon : null;
                 }
             }
 
             // Clear remaining icons
-            iconUIDispenser.ClearDispenser();
+            worldIconUIPool.DisableOtherIcons();
         }
 
         private void LateUpdate()
         {
+            if (!Plugin.UIAssetsLoaded)
+            {
+                return;
+            }
+
             switch (InputManager.Instance.CurrentInputAction)
             {
                 case EnumInputAction.SendingInternToLocation:
-                    localPlayerController.cursorTip.text = UIConst.UI_CHOOSE_LOCATION;
-                    break;
-
                 case EnumInputAction.SendingAllInternsToLocation:
                     localPlayerController.cursorTip.text = UIConst.UI_CHOOSE_LOCATION;
                     break;
@@ -136,9 +116,20 @@ namespace LethalInternship.Managers
             }
         }
 
-        public void InitUI(PlayerControllerB player)
+        public void AttachUIToLocalPlayer(PlayerControllerB player)
         {
             localPlayerController = player;
+        }
+
+        public void InitUI(Transform HUDContainerParent)
+        {
+            if (!Plugin.UIAssetsLoaded)
+            {
+                Plugin.LogWarning("No UI initialization : UI assets failed to load (see Plugin loading assets).");
+                return;
+            }
+
+            Plugin.LogDebug($"InitUI");
 
             if (CanvasOverlay == null)
             {
@@ -148,21 +139,17 @@ namespace LethalInternship.Managers
                 canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             }
 
-            if (iconUIDispenser == null)
-            {
-                iconUIDispenser = new IconUIDispenser(CanvasOverlay);
-            }
-        }
+            // Renderers
+            interestPointRendererRegistery = new InterestPointRendererRegistery();
+            interestPointRendererRegistery.Register(new DefaultInterestPointRenderer());
 
-        public void InitCommandsUI(Transform HUDContainerParent)
-        {
-            Plugin.LogDebug($"Attempt to InitCommandsUI");
-            if (CommandsSingleIntern != null)
-            {
-                Plugin.LogDebug($"InitCommandsUI aborting : CommandsUI != null");
-                return;
-            }
+            pointOfInterestRendererService = new PointOfInterestRendererService(interestPointRendererRegistery);
 
+            // Dispenser
+            worldIconUIPool ??= new WorldIconUIPool(CanvasOverlay);
+            inputIconUIPool ??= new InputIconUIPool(CanvasOverlay);
+
+            // Instantiating prefabs
             CommandsSingleIntern = GameObject.Instantiate(Plugin.CommandsSingleInternUIPrefab, HUDContainerParent);
             CommandsSingleIntern.name = "CommandsSingleInternUI";
             CommandsSingleIntern.SetActive(false);
@@ -221,105 +208,23 @@ namespace LethalInternship.Managers
             }
         }
 
-        private IEnumerator ScanPosition()
+        public void ShowInputIcon(bool isValid)
         {
-            while (InputManager.Instance.CurrentInputAction == EnumInputAction.SendingInternToLocation
-                    || InputManager.Instance.CurrentInputAction == EnumInputAction.SendingAllInternsToLocation
-                   && InternsOwned)
-            {
-                Ray interactRay = new Ray(localPlayerController.gameplayCamera.transform.position, localPlayerController.gameplayCamera.transform.forward);
-                RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
-                if (raycastHits.Length == 0)
-                {
-                    isValidNavMeshPoint = false;
-                    yield return null;
-                    continue;
-                }
-
-                Vector3? lastHitPoint = null;
-                raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
-                NavMeshHit hitMesh = new NavMeshHit();
-                // Check if looking too far in the distance or at a valid position
-                foreach (var hit in raycastHits)
-                {
-                    if (hit.distance < 1f)
-                    {
-                        continue;
-                    }
-
-                    if (hit.collider.tag == "Player")
-                    {
-                        continue;
-                    }
-
-                    lastHitPoint = hit.point;
-                    if (NavMesh.SamplePosition(hit.point, out hitMesh, 5f, -1))
-                    {
-                        lastNavMeshHitPoint = hitMesh.position;
-                    }
-
-                    break;
-                }
-
-                if (lastHitPoint != null
-                    && lastNavMeshHitPoint != null)
-                {
-                    isValidNavMeshPoint = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
-                }
-                else
-                {
-                    isValidNavMeshPoint = false;
-                }
-
-                yield return null;
-            }
-
-            isValidNavMeshPoint = false;
-            yield break;
+            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }));
+            inputIconUI.SetPositionUICenter();
+            inputIconUI.SetColorIconValidOrNot(isValid);
+            inputIconUI.SetIconActive(true);
         }
 
-        public Vector3? GetValidNavMeshPoint()
+        public void SetDefaultInputIcon()
         {
-            if (!isValidNavMeshPoint
-                || !lastNavMeshHitPoint.HasValue)
-            {
-                return null;
-            }
-
-            return lastNavMeshHitPoint.Value;
-
-            //GameObject[] allAINodes;
-            //if (lastNavMeshHitPoint.Value.y >= -80f)
-            //{
-            //    allAINodes = GameObject.FindGameObjectsWithTag("OutsideAINode");
-            //}
-            //else
-            //{
-            //    allAINodes = GameObject.FindGameObjectsWithTag("AINode");
-            //}
-
-            //return allAINodes.OrderBy(node => (node.transform.position - lastNavMeshHitPoint.Value).sqrMagnitude)
-            //                 .FirstOrDefault()
-            //                 .transform.position;
+            inputIconImagePrefab = Plugin.DefaultIconImagePrefab;
         }
 
-        private void StartScanPositionCoroutine()
+        public Vector3? GetWorldIconInCenter()
         {
-            if (scanPositionCoroutine == null)
-            {
-                scanPositionCoroutine = StartCoroutine(ScanPosition());
-            }
+            return WorldIconInCenter?.IconWorldPosition;
         }
-
-        private void StopScanPositionCoroutine()
-        {
-            if (scanPositionCoroutine != null)
-            {
-                StopCoroutine(scanPositionCoroutine);
-                scanPositionCoroutine = null;
-            }
-        }
-
 
         //Plugin.LogDebug($"pos {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.position}, {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.GetSiblingIndex()}");
 
@@ -338,6 +243,11 @@ namespace LethalInternship.Managers
 
         public void ShowCommandsSingle()
         {
+            if (!Plugin.UIAssetsLoaded)
+            {
+                return;
+            }
+
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -359,13 +269,17 @@ namespace LethalInternship.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            StopScanPositionCoroutine();
 
             CommandsSingleIntern.SetActive(false);
         }
 
         public void ShowCommandsMultiple()
         {
+            if (!Plugin.UIAssetsLoaded)
+            {
+                return;
+            }
+
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -386,8 +300,6 @@ namespace LethalInternship.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-
-            StopScanPositionCoroutine();
 
             CommandsMultipleInterns.SetActive(false);
         }

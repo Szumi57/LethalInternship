@@ -3,8 +3,11 @@ using HarmonyLib;
 using LethalInternship.Configs;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interfaces;
 using LethalInternship.Interns;
 using LethalInternship.Interns.AI;
+using LethalInternship.Interns.AI.PointsOfInterest;
+using LethalInternship.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.NetworkSerializers;
 using LethalInternship.Patches.MapPatches;
 using LethalInternship.Patches.NpcPatches;
@@ -91,6 +94,8 @@ namespace LethalInternship.Managers
         private float timerRegisterAINoiseListener;
         private List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
         public Dictionary<string, int> DictTagSurfaceIndex = new Dictionary<string, int>();
+
+        private Dictionary<Vector3, IPointOfInterest> dictPointOfInterest = new Dictionary<Vector3, IPointOfInterest>();
 
         private float timerSetInternInElevator;
 
@@ -826,6 +831,36 @@ namespace LethalInternship.Managers
 
                 yield return new WaitForSeconds(0.3f);
             }
+        }
+
+        #endregion
+
+        #region Point of interests
+
+        public IPointOfInterest GetPointOfInterestOrDefaultInterestPoint(Vector3 key)
+        {
+            IPointOfInterest pointOfInterest;
+            if (dictPointOfInterest.TryGetValue(key, out pointOfInterest))
+            {
+                return pointOfInterest;
+            }
+
+            pointOfInterest = new PointOfInterest(new DefaultInterestPoint(key));
+            dictPointOfInterest.Add(key, pointOfInterest);
+            return pointOfInterest;
+        }
+
+        public IPointOfInterest GetPointOfInterestOrVehicleInterestPoint(Vector3 key, VehicleController vehicleController)
+        {
+            IPointOfInterest pointOfInterest;
+            if (dictPointOfInterest.TryGetValue(key, out pointOfInterest))
+            {
+                return pointOfInterest;
+            }
+
+            pointOfInterest = new PointOfInterest(new VehicleInterestPoint(vehicleController));
+            dictPointOfInterest.Add(key, pointOfInterest);
+            return pointOfInterest;
         }
 
         #endregion

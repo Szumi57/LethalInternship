@@ -785,7 +785,7 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPostfix]
         public static void ConnectClientToPlayerObject_Postfix(PlayerControllerB __instance)
         {
-            UIManager.Instance.InitUI(__instance);
+            UIManager.Instance.AttachUIToLocalPlayer(__instance);
         }
 
         /// <summary>

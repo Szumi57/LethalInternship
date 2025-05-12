@@ -2,13 +2,16 @@
 using HarmonyLib;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interfaces;
 using LethalInternship.Interns.AI;
 using LethalInternship.Patches.NpcPatches;
 using LethalInternship.Utils;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 namespace LethalInternship.Managers
@@ -22,6 +25,10 @@ namespace LethalInternship.Managers
         private bool openCommandsInternInputIsPressed;
         private InternAI currentCommandedIntern = null!;
         private LineRendererUtil LineRendererUtil = null!;
+
+        private Coroutine? scanPositionCoroutine;
+        private Vector3? lastNavMeshHitPoint = null;
+        private bool isValidNavMeshPoint;
 
         private void Awake()
         {
@@ -45,6 +52,20 @@ namespace LethalInternship.Managers
             if (LineRendererUtil == null)
             {
                 LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
+            }
+
+            switch (CurrentInputAction)
+            {
+                case EnumInputAction.SendingInternToLocation:
+                case EnumInputAction.SendingAllInternsToLocation:
+                    StartScanPositionCoroutine();
+                    UIManager.Instance.ShowInputIcon(isValidNavMeshPoint);
+                    break;
+
+                case EnumInputAction.None:
+                default:
+                    StopScanPositionCoroutine();
+                    break;
             }
 
             CheckOpenCommandsInput();
@@ -215,24 +236,24 @@ namespace LethalInternship.Managers
                 return;
             }
 
-            Vector3? location;
+            IPointOfInterest? location;
             switch (CurrentInputAction)
             {
                 case EnumInputAction.SendingInternToLocation:
-                    location = UIManager.Instance.GetValidNavMeshPoint();
+                    location = GetDefaultPoint();
                     if (location == null)
                     {
                         break;
                     }
 
                     // Current intern
-                    currentCommandedIntern.SetCommandToGoToPosition(location.Value);
+                    currentCommandedIntern.SetCommandToGoToPosition(location);
 
                     CurrentInputAction = EnumInputAction.None;
                     break;
 
                 case EnumInputAction.SendingAllInternsToLocation:
-                    location = UIManager.Instance.GetValidNavMeshPoint();
+                    location = GetDefaultPoint();
                     if (location == null)
                     {
                         break;
@@ -242,7 +263,7 @@ namespace LethalInternship.Managers
                     InternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
                     foreach (InternAI intern in internsOwned)
                     {
-                        intern.SetCommandToGoToPosition(location.Value);
+                        intern.SetCommandToGoToPosition(location);
                     }
 
                     CurrentInputAction = EnumInputAction.None;
@@ -253,6 +274,43 @@ namespace LethalInternship.Managers
                     ManageIntern();
                     break;
             }
+        }
+
+        private IPointOfInterest? GetDefaultPoint()
+        {
+            Vector3? point;
+
+            point = UIManager.Instance.GetWorldIconInCenter();
+            if (point == null)
+            {
+                if (isValidNavMeshPoint
+                && lastNavMeshHitPoint.HasValue)
+                {
+                    point = lastNavMeshHitPoint.Value;
+                }
+            }
+
+            if (point != null)
+            {
+                InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(point.Value);
+            }
+
+
+            return null;
+
+            //GameObject[] allAINodes;
+            //if (lastNavMeshHitPoint.Value.y >= -80f)
+            //{
+            //    allAINodes = GameObject.FindGameObjectsWithTag("OutsideAINode");
+            //}
+            //else
+            //{
+            //    allAINodes = GameObject.FindGameObjectsWithTag("AINode");
+            //}
+
+            //return allAINodes.OrderBy(node => (node.transform.position - lastNavMeshHitPoint.Value).sqrMagnitude)
+            //                 .FirstOrDefault()
+            //                 .transform.position;
         }
 
         private void ManageIntern()
@@ -312,6 +370,7 @@ namespace LethalInternship.Managers
                 return;
             }
 
+            StopScanPositionCoroutine();
             openCommandsInternInputIsPressed = true;
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
@@ -339,12 +398,94 @@ namespace LethalInternship.Managers
 
                 // Command single intern
                 UIManager.Instance.ShowCommandsSingle();
+
+
                 currentCommandedIntern = intern;
                 return;
             }
 
             // Command all close interns
             UIManager.Instance.ShowCommandsMultiple();
+        }
+
+        private void StartScanPositionCoroutine()
+        {
+            if (scanPositionCoroutine == null)
+            {
+                scanPositionCoroutine = StartCoroutine(ScanPosition());
+            }
+        }
+
+        private void StopScanPositionCoroutine()
+        {
+            if (scanPositionCoroutine != null)
+            {
+                StopCoroutine(scanPositionCoroutine);
+                scanPositionCoroutine = null;
+            }
+        }
+
+        private IEnumerator ScanPosition()
+        {
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            while (CurrentInputAction == EnumInputAction.SendingInternToLocation
+                    || CurrentInputAction == EnumInputAction.SendingAllInternsToLocation)
+            {
+                // Scan 3D world
+                Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
+                RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
+                if (raycastHits.Length == 0)
+                {
+                    isValidNavMeshPoint = false;
+                    yield return null;
+                    continue;
+                }
+
+                Vector3? lastHitPoint = null;
+                raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
+                NavMeshHit hitMesh = new NavMeshHit();
+                // Check if looking too far in the distance or at a valid position
+                foreach (var hit in raycastHits)
+                {
+                    if (hit.distance < 1f)
+                    {
+                        continue;
+                    }
+
+                    if (hit.collider.tag == "Player")
+                    {
+                        continue;
+                    }
+
+                    lastHitPoint = hit.point;
+
+                    // Check for what we hit
+                    UIManager.Instance.SetDefaultInputIcon();
+
+                    if (NavMesh.SamplePosition(hit.point, out hitMesh, 5f, -1))
+                    {
+                        lastNavMeshHitPoint = hitMesh.position;
+                    }
+
+                    break;
+                }
+
+                if (lastHitPoint != null
+                    && lastNavMeshHitPoint != null)
+                {
+                    isValidNavMeshPoint = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
+                }
+                else
+                {
+                    isValidNavMeshPoint = false;
+                }
+
+                yield return null;
+            }
+
+            isValidNavMeshPoint = false;
+            yield break;
         }
 
         #endregion

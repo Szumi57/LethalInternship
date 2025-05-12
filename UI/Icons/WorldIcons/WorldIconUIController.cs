@@ -1,11 +1,12 @@
 ﻿using System.Linq;
+using LethalInternship.Interfaces;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace LethalInternship.UI
+namespace LethalInternship.UI.Icons.WorldIcons
 {
     [ExecuteInEditMode]
-    public class IconHereController : MonoBehaviour, IIconUIController
+    public class WorldIconUIController : MonoBehaviour, IIconUIController
     {
         [SerializeField]
         private float minWidth;
@@ -38,6 +39,10 @@ namespace LethalInternship.UI
         }
 
         private RectTransform rectTransformIcon = null!;
+
+        private bool isIconInCenter;
+        public bool IsIconInCenter { get => isIconInCenter; }
+
         private Image ImageTop = null!;
         private Image ImageBottom = null!;
 
@@ -84,6 +89,26 @@ namespace LethalInternship.UI
                 return;
             }
 
+            // Size
+            if (screenPos.z != 0f)
+            {
+                float size = 1f / screenPos.z * 400f;
+                //Plugin.LogDebug($"size {size}, dist {screenPos.z}");
+                if (size < 10f) { size = 10f; }
+                if (size > 200f) { size = 200f; }
+                if (screenPos.z < 5f)
+                {
+                    SetTransparency(screenPos.z / 5f * 0.5f);
+                }
+                else
+                {
+                    SetTransparency(1f);
+                }
+
+                // Size with distance
+                rectTransformIcon.sizeDelta = new Vector2(rectTransformIcon.sizeDelta.x, size);
+            }
+
             // Limit the image to screen borders
             if (screenPos.x - rectTransformIcon.sizeDelta.x * 0.5f < rectTransformCanvasParent.sizeDelta.x * -0.5f)
             {
@@ -102,25 +127,19 @@ namespace LethalInternship.UI
             {
                 screenPos.y = rectTransformCanvasParent.sizeDelta.y * 0.5f - rectTransformIcon.sizeDelta.y;
             }
-
+            // Position
             rectTransformIcon.localPosition = new Vector3(screenPos.x, screenPos.y + rectTransformIcon.sizeDelta.y * 0.5f, 0f);
 
-            if (screenPos.z != 0f)
-            {
-                float size = 1f / screenPos.z * 400f;
-                //Plugin.LogDebug($"size {size}, dist {screenPos.z}");
-                if (size < 10f) { size = 10f; }
-                if (size > 200f) { size = 200f; }
-                if (screenPos.z < 5f)
-                {
-                    SetTransparency(screenPos.z / 5f * 0.5f);
-                }
-                else
-                {
-                    SetTransparency(1f);
-                }
+            // Is icon in center
+            float xLeft = rectTransformIcon.localPosition.x - rectTransformIcon.sizeDelta.x / 2;
+            float xRight = rectTransformIcon.localPosition.x + rectTransformIcon.sizeDelta.x / 2;
+            float yTop = rectTransformIcon.localPosition.y + rectTransformIcon.sizeDelta.y / 2;
+            float yBottom = rectTransformIcon.localPosition.y - rectTransformIcon.sizeDelta.y / 2;
 
-                rectTransformIcon.sizeDelta = new Vector2(rectTransformIcon.sizeDelta.x, size);
+            isIconInCenter = xLeft < 0f && xRight > 0f && yTop > 0f && yBottom < 0f;
+            if (isIconInCenter)
+            {
+                rectTransformIcon.sizeDelta *= 1.5f;
             }
         }
 

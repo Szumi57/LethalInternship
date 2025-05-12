@@ -1,45 +1,53 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using LethalInternship.Interfaces;
+using UnityEngine;
+using UnityEngine.UI;
 
-namespace LethalInternship.UI
+namespace LethalInternship.UI.Icons.WorldIcons
 {
-    public class IconUI
+    public class WorldIconUI : IIconUI
     {
-        private IIconUIController iconUIController;
+        public string Key => key;
+        private string key;
+
+        public bool IsIconActive => iconGameObject.activeSelf;
+        public bool IsIconInCenter => iconUIController.IsIconInCenter;
+        public Vector3 IconWorldPosition => iconWorldPosition;
+
         private GameObject iconGameObject;
         private RectTransform rectTransformCanvasOverlay;
+        private List<Image> images;
 
-        public IconUI(GameObject iconGameObject, RectTransform rectTransformCanvasOverlay)
+        private Vector3 iconWorldPosition;
+
+        private IIconUIController iconUIController;
+
+        public WorldIconUI(GameObject iconGameObject, IIconUIInfos iconUIInfos, RectTransform rectTransformCanvasOverlay)
         {
             this.iconGameObject = iconGameObject;
+            this.key = iconUIInfos.GetUIKey();
             this.rectTransformCanvasOverlay = rectTransformCanvasOverlay;
 
-            iconUIController = this.iconGameObject.GetComponentInChildren<IconHereController>();
-            iconGameObject.SetActive(false);
+            images = new List<Image>();
+            foreach (GameObject prefab in iconUIInfos.GetImagesPrefab())
+            {
+                images.Add(Object.Instantiate(prefab).GetComponent<Image>());
+            }
+
+            iconUIController = this.iconGameObject.GetComponentInChildren<WorldIconUIController>();
+            SetIconActive(false);
         }
 
         public void SetPositionUI(Vector3 worldPosition)
         {
+            iconWorldPosition = worldPosition;
             Vector3 screenPos = WorldSpaceToCanvas(rectTransformCanvasOverlay, StartOfRound.Instance.localPlayerController.gameplayCamera, worldPosition);
             iconUIController.PlaceOnCanvas(screenPos, rectTransformCanvasOverlay);
-            iconGameObject.SetActive(true);
         }
 
-        public void SetPositionUICenter()
+        public void SetColorIcon(Color color)
         {
-            iconUIController.PlaceOnCanvas(new Vector3(0f, 0f, 10f), rectTransformCanvasOverlay);
-            iconGameObject.SetActive(true);
-        }
-
-        public void SetColorIconValidOrNot(bool isValidNavMeshPoint)
-        {
-            if (isValidNavMeshPoint)
-            {
-                iconUIController.SetColor(Color.green);
-            }
-            else
-            {
-                iconUIController.SetColor(Color.red);
-            }
+            iconUIController.SetColor(color);
         }
 
         public void SetDefaultColor()
@@ -57,8 +65,8 @@ namespace LethalInternship.UI
         {
             // https://discussions.unity.com/t/how-to-convert-from-world-space-to-canvas-space/117981/16
             Vector3 viewportPosition = camera.WorldToViewportPoint(worldPos);
-            Vector3 canvasPos = new Vector3((viewportPosition.x * canvasRect.sizeDelta.x) - (canvasRect.sizeDelta.x * 0.5f),
-                                            (viewportPosition.y * canvasRect.sizeDelta.y) - (canvasRect.sizeDelta.y * 0.5f),
+            Vector3 canvasPos = new Vector3(viewportPosition.x * canvasRect.sizeDelta.x - canvasRect.sizeDelta.x * 0.5f,
+                                            viewportPosition.y * canvasRect.sizeDelta.y - canvasRect.sizeDelta.y * 0.5f,
                                             Mathf.Abs(viewportPosition.z));
 
             // If pos behind
@@ -78,6 +86,5 @@ namespace LethalInternship.UI
 
             return canvasPos;
         }
-
     }
 }

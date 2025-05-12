@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Constants;
 using LethalInternship.Enums;
+using LethalInternship.Interfaces;
 using LethalInternship.Interns.AI.BT;
 using LethalInternship.Managers;
 using LethalInternship.NetworkSerializers;
@@ -50,7 +51,7 @@ namespace LethalInternship.Interns.AI
         public EntranceTeleport? ClosestEntrance;
         public Vector3 NextPos;
 
-        public Vector3? CommandPoint;
+        public IPointOfInterest? PointOfInterest = null!;
 
         /// <summary>
         /// Pilot class of the body <c>PlayerControllerB</c> of the intern.
@@ -460,19 +461,19 @@ namespace LethalInternship.Interns.AI
             CurrentCommand = commandType;
         }
 
-        public void SetCommandToGoToPosition(Vector3 pos)
+        public void SetCommandToGoToPosition(IPointOfInterest pointOfInterest)
         {
+            this.PointOfInterest = pointOfInterest;
             CurrentCommand = EnumCommandTypes.GoToPosition;
-            CommandPoint = pos;
-            NextPos = ChooseClosestNodeToPosition(pos).position;
-            Plugin.LogDebug($"SetCommandToGoToPosition {pos}, nextpos {NextPos}");
+            NextPos = ChooseClosestNodeToPosition(this.PointOfInterest.GetPoint()).position;
+            Plugin.LogDebug($"SetCommandToGoToPosition {this.PointOfInterest.GetPoint()}, nextpos {NextPos}");
         }
 
         public void SetCommandToFollowPlayer()
         {
-            Plugin.LogDebug($"SetCommandToFollowPlayer");
             CurrentCommand = EnumCommandTypes.FollowPlayer;
-            CommandPoint = null;
+            this.PointOfInterest = null;
+            Plugin.LogDebug($"SetCommandToFollowPlayer");
         }
 
         #endregion

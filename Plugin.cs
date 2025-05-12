@@ -81,10 +81,19 @@ namespace LethalInternship
         public static EnemyType InternNPCPrefab = null!;
 
         // UI
+        internal static bool UIAssetsLoaded = false;
         public static GameObject CommandsSingleInternUIPrefab = null!;
         public static GameObject CommandsMultipleInternsUIPrefab = null!;
-        public static GameObject HereSimpleIconUIPrefab = null!;
-        public static GameObject HereMultipleIconUIPrefab = null!;
+
+        public static GameObject WorldIconPrefab = null!;
+        public static GameObject InputIconPrefab = null!;
+
+        public static GameObject DefaultIconImagePrefab = null!; 
+        public static GameObject VehicleIconImagePrefab = null!;
+        public static GameObject ShipIconImagePrefab = null!;
+        public static GameObject MeetingPointIconImagePrefab = null!;
+        public static GameObject GatheringPointIconImagePrefab = null!;
+        public static GameObject AttackPointIconImagePrefab = null!;
 
         internal static string DirectoryName = null!;
         internal static new ManualLogSource Logger = null!;
@@ -132,10 +141,7 @@ namespace LethalInternship
             }
 
             // Load UI prefabs
-            if (!LoadUIPrefabs())
-            {
-                return;
-            }
+            UIAssetsLoaded = LoadUIPrefabs();
 
             InitPluginManager();
 
@@ -217,6 +223,7 @@ namespace LethalInternship
 
         private bool LoadUIPrefabs()
         {
+            // Commands wheel
             CommandsSingleInternUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsSingleIntern");
             if (CommandsSingleInternUIPrefab == null)
             {
@@ -231,17 +238,61 @@ namespace LethalInternship
                 return false;
             }
 
-            HereSimpleIconUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("HereSimpleIcon");
-            if (HereSimpleIconUIPrefab == null)
+            // Icon UI
+            WorldIconPrefab = Plugin.ModAssets.LoadAsset<GameObject>("WorldIcon");
+            if (WorldIconPrefab == null)
             {
-                Logger.LogError($"Failed to load HereSimpleIcon UI prefab.");
+                Logger.LogError($"Failed to load WorldIcon UI prefab.");
                 return false;
             }
 
-            HereMultipleIconUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("HereMultipleIcon");
-            if (HereMultipleIconUIPrefab == null)
+            InputIconPrefab = Plugin.ModAssets.LoadAsset<GameObject>("InputIcon");
+            if (InputIconPrefab == null)
             {
-                Logger.LogError($"Failed to load HereMultipleIcon UI prefab.");
+                Logger.LogError($"Failed to load InputIcon UI prefab.");
+                return false;
+            }
+
+            // Images prefabs
+            DefaultIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("DefaultIconImage");
+            if (DefaultIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load DefaultIconImage UI prefab.");
+                return false;
+            }
+
+            VehicleIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("VehicleIconImage");
+            if (VehicleIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load VehicleIconImage UI prefab.");
+                return false;
+            }
+
+            ShipIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("ShipIconImage");
+            if (ShipIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load ShipIconImage UI prefab.");
+                return false;
+            }
+
+            MeetingPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("MeetingPointIconImage");
+            if (MeetingPointIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load MeetingPointIconImage UI prefab.");
+                return false;
+            }
+
+            GatheringPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("GatheringPointIconImage");
+            if (GatheringPointIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load GatheringPointIconImage UI prefab.");
+                return false;
+            }
+
+            AttackPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackPointIconImage");
+            if (AttackPointIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load AttackPointIconImage UI prefab.");
                 return false;
             }
 
