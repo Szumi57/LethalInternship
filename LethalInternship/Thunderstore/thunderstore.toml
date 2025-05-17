@@ -1,0 +1,50 @@
+[config]
+schemaVersion = "0.0.1"
+
+[general]
+repository = "https://thunderstore.io"
+
+[package]
+description = "Recruit interns, take them with you, grab items, make company happy, they may or may not help but what can you do ? It's their first experience."
+websiteUrl = "https://github.com/Szumi57/LethalInternship"
+containsNsfwContent = false
+[package.dependencies]
+BepInEx-BepInExPack = "5.4.2100"
+Evaisa-LethalLib = "0.16.1"
+Sigurd-CSync = "5.0.1"
+Rune580-LethalCompany_InputUtils = "0.7.4"
+
+[build]
+icon = "./icon.png"
+readme = "./README.md"
+outdir = "./Packages"
+
+[[build.copy]]
+source = "../bin/Release/netstandard2.1/LethalInternship.dll"
+target = "plugins/Szumi57-LethalInternship/"
+
+[[build.copy]]
+source = "../../LethalInternship.Core/bin/Release/netstandard2.1/LethalInternship.Core.dll"
+target = "plugins/Szumi57-LethalInternship/"
+
+[[build.copy]]
+source = "../../LethalInternship.Patches/bin/Release/netstandard2.1/LethalInternship.Patches.dll"
+target = "plugins/Szumi57-LethalInternship/"
+
+[[build.copy]]
+source = "../../LethalInternship.SharedAbstractions/bin/Release/netstandard2.1/LethalInternship.SharedAbstractions.dll"
+target = "plugins/Szumi57-LethalInternship/"
+
+[[build.copy]]
+source = "../../UnityProject/AssetBundles/StandaloneWindows/internnpcmodassets"
+target = "plugins/Szumi57-LethalInternship/"
+
+[[build.copy]]
+source = "./CHANGELOG.md"
+target = "/"
+
+[publish]
+communities = [ "lethal-company", ]
+[publish.categories]
+# Get the list of categories from https://thunderstore.io/api/experimental/community/lethal-company/category/
+lethal-company = [ "bepinex", "clientside", "serverside", "tweaks-and-quality-of-life", "equipment", "mods", ]

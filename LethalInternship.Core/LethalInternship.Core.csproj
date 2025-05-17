@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Audio\Voices\DefaultVoices.zip" />
+    <None Remove="Assets\Images\buy4.png" />
+    <None Remove="Assets\Images\buy_mathew.png" />
+    <None Remove="Assets\Images\folder_configs.png" />
+    <None Remove="Assets\Images\folder_config_user.png" />
+    <None Remove="Assets\Images\info_page.png" />
+    <None Remove="Assets\Images\interns_example.png" />
+    <None Remove="Assets\Images\interns_suits.png" />
+    <None Remove="Assets\Images\Lethal-internship-logo.png" />
+    <None Remove="Assets\Images\menu.png" />
+    <None Remove="Assets\Images\status_page.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Audio\Voices\DefaultVoices.zip" />
+    <EmbeddedResource Include="Assets\Images\buy4.png" />
+    <EmbeddedResource Include="Assets\Images\buy_mathew.png" />
+    <EmbeddedResource Include="Assets\Images\folder_configs.png" />
+    <EmbeddedResource Include="Assets\Images\folder_config_user.png" />
+    <EmbeddedResource Include="Assets\Images\info_page.png" />
+    <EmbeddedResource Include="Assets\Images\interns_example.png" />
+    <EmbeddedResource Include="Assets\Images\interns_suits.png" />
+    <EmbeddedResource Include="Assets\Images\Lethal-internship-logo.png" />
+    <EmbeddedResource Include="Assets\Images\menu.png" />
+    <EmbeddedResource Include="Assets\Images\status_page.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="UnityEngine.Modules" Version="2022.3.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>compile</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\lib\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\lib\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="LethalInternship.SharedAbstractions">
+      <HintPath>..\LethalInternship.SharedAbstractions\bin\Release\netstandard2.1\LethalInternship.SharedAbstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Animation.Rigging">
+      <HintPath>..\lib\Unity.Animation.Rigging.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>..\lib\Unity.Collections.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>..\lib\Unity.InputSystem.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Netcode.Runtime">
+      <HintPath>..\lib\Unity.Netcode.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>..\lib\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\.nuget\packages\unityengine.modules\2022.3.9\lib\netstandard2.0\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\lib\UnityEngine.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
