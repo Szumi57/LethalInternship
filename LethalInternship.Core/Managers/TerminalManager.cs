@@ -1,9 +1,9 @@
-﻿using LethalInternship.Core.Interns;
-using LethalInternship.Core.TerminalAdapter;
+﻿using LethalInternship.Core.TerminalAdapter;
 using LethalInternship.Core.TerminalAdapter.TerminalStates;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Linq;
@@ -130,7 +130,7 @@ namespace LethalInternship.Core.Managers
                     return;
                 }
 
-                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[newIdentityToSpawn];
+                IInternIdentity internIdentity = IdentityManager.Instance.InternIdentities[newIdentityToSpawn];
                 internIdentity.Status = EnumStatusIdentity.ToDrop;
                 internIdentity.Hp = internIdentity.Alive ? internIdentity.Hp : internIdentity.HpMax;
                 idsRandomIdentities[i] = newIdentityToSpawn;
@@ -182,7 +182,7 @@ namespace LethalInternship.Core.Managers
 
             for (int i = 0; i < idsRandomIdentities.Length; i++)
             {
-                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]];
+                IInternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]];
                 internIdentity.Status = EnumStatusIdentity.ToDrop;
                 internIdentity.Hp = internIdentity.Alive ? internIdentity.Hp : internIdentity.HpMax;
             }

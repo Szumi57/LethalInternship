@@ -16,5 +16,6 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool Alive { get; }
 
         int GetRandomSuitID();
+        void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity);
     }
 }

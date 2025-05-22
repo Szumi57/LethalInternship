@@ -46,9 +46,11 @@ namespace LethalInternship.Core.Interns.AI
         public PlayerControllerB Npc => npcController.Npc;
         public IInternIdentity InternIdentity { get => internIdentity; set => internIdentity = value; }
         public new ulong OwnerClientId => base.OwnerClientId;
+        public new NetworkObject NetworkObject => base.NetworkObject;
         public Transform Transform => this.transform;
         public IRagdollInternBody RagdollInternBody { get => ragdollInternBody; set => ragdollInternBody = value; }
-        public bool IsEnemyDead => this.IsEnemyDead;
+        public bool IsEnemyDead => base.isEnemyDead;
+        public new bool IsSpawned => base.IsSpawned;
         public bool AnimationCoroutineRagdollingRunning => animationCoroutineRagdollingRunning;
         public List<Component> ListModelReplacement { get => listModelReplacement; set => listModelReplacement = value; }
         public GrabbableObject? HeldItem { get => heldItem; set => heldItem = value; }
@@ -185,6 +187,9 @@ namespace LethalInternship.Core.Interns.AI
 
             // Important colliders
             InitImportantColliders();
+
+            // Model replacements
+            listModelReplacement = new List<Component>();
 
             // Grabbableobject
             InternManager.Instance.RegisterItems();

@@ -1,7 +1,7 @@
-﻿using LethalInternship.Core.Interns;
-using LethalInternship.Core.SaveAdapter;
+﻿using LethalInternship.Core.SaveAdapter;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using Newtonsoft.Json;
@@ -94,7 +94,7 @@ namespace LethalInternship.Core.Managers
             Save.IdentitiesSaveFiles = new IdentitySaveFile[IdentityManager.Instance.InternIdentities.Length];
             for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {
-                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[i];
+                IInternIdentity internIdentity = IdentityManager.Instance.InternIdentities[i];
                 IdentitySaveFile identitySaveFile = new IdentitySaveFile()
                 {
                     IdIdentity = internIdentity.IdIdentity,
@@ -128,7 +128,7 @@ namespace LethalInternship.Core.Managers
 
             for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {
-                InternIdentity identity = IdentityManager.Instance.InternIdentities[i];
+                IInternIdentity identity = IdentityManager.Instance.InternIdentities[i];
                 if (identity.IdIdentity >= Save.IdentitiesSaveFiles.Length)
                 {
                     continue;
@@ -162,7 +162,7 @@ namespace LethalInternship.Core.Managers
             IdentitySaveFileNetworkSerializable[] identitiesSaveNS = new IdentitySaveFileNetworkSerializable[IdentityManager.Instance.InternIdentities.Length];
             for (int i = 0; i < identitiesSaveNS.Length; i++)
             {
-                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[i];
+                IInternIdentity internIdentity = IdentityManager.Instance.InternIdentities[i];
                 IdentitySaveFileNetworkSerializable identitySaveNS = new IdentitySaveFileNetworkSerializable()
                 {
                     IdIdentity = internIdentity.IdIdentity,
@@ -206,7 +206,7 @@ namespace LethalInternship.Core.Managers
 
             for (int i = 0; i < IdentityManager.Instance.InternIdentities.Length; i++)
             {
-                InternIdentity identity = IdentityManager.Instance.InternIdentities[i];
+                IInternIdentity identity = IdentityManager.Instance.InternIdentities[i];
                 if (identity.IdIdentity >= saveNetworkSerializable.Identities.Length)
                 {
                     return;

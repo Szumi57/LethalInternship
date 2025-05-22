@@ -1,9 +1,11 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using ModelReplacement;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI

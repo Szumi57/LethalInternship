@@ -17,7 +17,10 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         ulong OwnerClientId { get; }
         bool IsOwner { get; }
+        NetworkObject NetworkObject { get; }
         Transform Transform { get; }
+
+        bool IsSpawned { get; }
         bool IsEnemyDead { get; }
 
         IPointOfInterest? GetPointOfInterest();
@@ -66,6 +69,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget);
         void GrabInternServerRpc(ulong idPlayerGrabberController);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
+        void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
 
         // Npc adapter
         Vector3 GetBillBoardPosition(GameObject bodyModel);

@@ -1,7 +1,7 @@
-﻿using LethalInternship.Core.Interns;
-using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using UnityEngine;
@@ -131,7 +131,7 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
             }
             else
             {
-                InternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idIdentityChosen];
+                IInternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idIdentityChosen];
                 string textRevivedIntern = internIdentity.Alive ? string.Empty : TerminalConst.TEXT_CONFIRM_CANCEL_REVIVE_INTERN;
                 terminalNode.displayText = string.Format(TerminalConst.TEXT_CONFIRM_CANCEL_SPECIFIC_PURCHASE,
                                                          internIdentity.Name,

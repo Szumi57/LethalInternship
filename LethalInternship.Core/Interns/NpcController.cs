@@ -176,11 +176,11 @@ namespace LethalInternship.Core.Interns
             //PluginLoggerHook.LogDebug?.Invoke("Awake intern controller.");
             Init();
 
-            PropertyInfo propertyInfo = typeof(PlayerControllerB).GetProperty("previousAnimationStateHash");
-            propertyInfo.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
+            FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("previousAnimationStateHash", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            fieldInfo.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
 
-            propertyInfo = typeof(PlayerControllerB).GetProperty("currentAnimationStateHash");
-            propertyInfo.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
+            fieldInfo = typeof(PlayerControllerB).GetField("currentAnimationStateHash", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            fieldInfo.SetValue(Npc, new List<int>(new int[Npc.playerBodyAnimator.layerCount]));
         }
 
         private void Init()

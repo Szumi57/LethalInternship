@@ -93,7 +93,7 @@ namespace LethalInternship.Core.Managers
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners { get => dictEnemyAINoiseListeners; }
         private Dictionary<EnemyAI, INoiseListener> dictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
 
-        private InternAI[] AllInternAIs = null!;
+        private IInternAI[] AllInternAIs = null!;
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
@@ -511,7 +511,7 @@ namespace LethalInternship.Core.Managers
             int indexNextIntern = indexNextPlayerObject - IndexBeginOfInterns;
 
             NetworkObject networkObject;
-            InternAI internAI = AllInternAIs[indexNextIntern];
+            IInternAI internAI = AllInternAIs[indexNextIntern];
             if (internAI != null)
             {
                 // Use internAI if exists
@@ -521,7 +521,7 @@ namespace LethalInternship.Core.Managers
             {
                 // Or spawn one (server only)
                 GameObject internPrefab = Object.Instantiate<GameObject>(PluginRuntimeProvider.Context.InternNPCPrefab.enemyPrefab);
-                internAI = internPrefab.GetComponent<InternAI>();
+                internAI = internPrefab.GetComponent<IInternAI>();
                 AllInternAIs[indexNextIntern] = internAI;
 
                 networkObject = internPrefab.GetComponentInChildren<NetworkObject>();
@@ -692,8 +692,8 @@ namespace LethalInternship.Core.Managers
             internController.climbSpeed = Const.CLIMB_SPEED;
             internController.usernameBillboardText.enabled = true;
 
-            PropertyInfo propertyInfo = typeof(PlayerControllerB).GetProperty("updatePositionForNewlyJoinedClient");
-            propertyInfo.SetValue(internController, true);
+            FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("updatePositionForNewlyJoinedClient", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            fieldInfo.SetValue(internController, true);
 
             // CleanLegsFromMoreEmotesMod
             CleanLegsFromMoreEmotesMod(internController);
@@ -993,7 +993,7 @@ namespace LethalInternship.Core.Managers
             {
                 if (internAI == null
                     || !internAI.IsSpawned
-                    || internAI.isEnemyDead
+                    || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
                     || !internAI.NpcController.Npc.isPlayerControlled
@@ -1013,13 +1013,13 @@ namespace LethalInternship.Core.Managers
 
         public IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder)
         {
-            List<InternAI> results = new List<InternAI>();
+            List<IInternAI> results = new List<IInternAI>();
 
             foreach (var internAI in AllInternAIs)
             {
                 if (internAI == null
                     || !internAI.IsSpawned
-                    || internAI.isEnemyDead
+                    || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
                     || !internAI.NpcController.Npc.isPlayerControlled)
@@ -1188,7 +1188,7 @@ namespace LethalInternship.Core.Managers
             {
                 if (internAI == null
                     || !internAI.IsSpawned
-                    || internAI.isEnemyDead
+                    || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
                     || !internAI.NpcController.Npc.isPlayerControlled)
@@ -1211,7 +1211,7 @@ namespace LethalInternship.Core.Managers
             {
                 if (internAI == null
                     || !internAI.IsSpawned
-                    || internAI.isEnemyDead
+                    || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
                     || !internAI.NpcController.Npc.isPlayerControlled)
@@ -1437,13 +1437,13 @@ namespace LethalInternship.Core.Managers
 
         public bool DidAnInternJustTalkedClose(int idInternTryingToTalk)
         {
-            InternAI internTryingToTalk = AllInternAIs[idInternTryingToTalk];
+            IInternAI internTryingToTalk = AllInternAIs[idInternTryingToTalk];
 
             foreach (var internAI in AllInternAIs)
             {
                 if (internAI == null
                     || !internAI.IsSpawned
-                    || internAI.isEnemyDead
+                    || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
                     || !internAI.NpcController.Npc.isPlayerControlled)
@@ -1477,7 +1477,7 @@ namespace LethalInternship.Core.Managers
                                               float noiseLoudness = 0.5f,
                                               int noiseID = 0)
         {
-            InternAI internAI = AllInternAIs[internID];
+            IInternAI internAI = AllInternAIs[internID];
             bool noiseIsInsideClosedShip = internAI.NpcController.Npc.isInHangarShipRoom && internAI.NpcController.Npc.playersManager.hangarDoorsClosed;
             internAI.NpcController.PlayAudibleNoiseIntern(noisePosition,
                                                           noiseRange,

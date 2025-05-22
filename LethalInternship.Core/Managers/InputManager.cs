@@ -453,8 +453,8 @@ namespace LethalInternship.Core.Managers
                 }
 
                 // To cut Discard_performed from triggering after this input
-                PropertyInfo propertyInfo = typeof(PlayerControllerB).GetProperty("timeSinceSwitchingSlots");
-                propertyInfo.SetValue(localPlayer, 0f);
+                FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                fieldInfo.SetValue(localPlayer, 0f);
 
                 if (!intern.AreHandsFree())
                 {

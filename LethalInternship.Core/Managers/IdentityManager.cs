@@ -18,7 +18,7 @@ namespace LethalInternship.Core.Managers
     {
         public static IdentityManager Instance { get; private set; } = null!;
 
-        public InternIdentity[] InternIdentities = null!;
+        public IInternIdentity[] InternIdentities = null!;
 
         private ConfigIdentity[] configIdentities = null!;
 
@@ -34,7 +34,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            InternIdentity internIdentity;
+            IInternIdentity internIdentity;
             for (int i = 0; i < InternIdentities.Length; i++)
             {
                 internIdentity = InternIdentities[i];
@@ -147,7 +147,7 @@ namespace LethalInternship.Core.Managers
 
         public int GetRandomAvailableAliveIdentityIndex()
         {
-            InternIdentity[] availableIdentities = InternIdentities.FilterAvailableAlive().ToArray();
+            IInternIdentity[] availableIdentities = InternIdentities.FilterAvailableAlive().ToArray();
             if (availableIdentities.Length == 0)
             {
                 return -1;
@@ -160,7 +160,7 @@ namespace LethalInternship.Core.Managers
 
         public int GetNextAvailableAliveIdentityIndex()
         {
-            InternIdentity[] availableIdentities = InternIdentities.FilterAvailableAlive().ToArray();
+            IInternIdentity[] availableIdentities = InternIdentities.FilterAvailableAlive().ToArray();
             if (availableIdentities.Length == 0)
             {
                 return -1;
@@ -238,28 +238,28 @@ namespace LethalInternship.Core.Managers
 
     internal static class IdentityEnumerableExtension
     {
-        public static IEnumerable<InternIdentity> FilterAvailableAlive(this IEnumerable<InternIdentity> enumerable)
+        public static IEnumerable<IInternIdentity> FilterAvailableAlive(this IEnumerable<IInternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.Available && x.Alive);
         }
 
-        public static IEnumerable<InternIdentity> FilterToDropAlive(this IEnumerable<InternIdentity> enumerable)
+        public static IEnumerable<IInternIdentity> FilterToDropAlive(this IEnumerable<IInternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.ToDrop && x.Alive);
         }
 
-        public static IEnumerable<InternIdentity> FilterToDropOrSpawnedAlive(this IEnumerable<InternIdentity> enumerable)
+        public static IEnumerable<IInternIdentity> FilterToDropOrSpawnedAlive(this IEnumerable<IInternIdentity> enumerable)
         {
             return enumerable.Where(x => (x.Status == EnumStatusIdentity.ToDrop || x.Status == EnumStatusIdentity.Spawned)
                                          && x.Alive);
         }
 
-        public static IEnumerable<InternIdentity> FilterSpawnedAlive(this IEnumerable<InternIdentity> enumerable)
+        public static IEnumerable<IInternIdentity> FilterSpawnedAlive(this IEnumerable<IInternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned && x.Alive);
         }
 
-        public static IEnumerable<InternIdentity> FilterSpawned(this IEnumerable<InternIdentity> enumerable)
+        public static IEnumerable<IInternIdentity> FilterSpawned(this IEnumerable<IInternIdentity> enumerable)
         {
             return enumerable.Where(x => x.Status == EnumStatusIdentity.Spawned);
         }
