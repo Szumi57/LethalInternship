@@ -3,7 +3,7 @@
     /// <summary>
     /// Interface for behaviour tree nodes.
     /// </summary>
-    public interface IBehaviourTreeNode : IPrintableNode
+    public interface IBehaviourTreeNode// : IPrintableNode
     {
         /// <summary>
         /// Update the time of the behaviour tree.

@@ -69,7 +69,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             InitNodes();
             BehaviorTree = CreateTree();
 
-            BTUtil.PrintTree(BehaviorTree);
+            BTUtil.PrintTree(CreateTree());
             PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
         }
 

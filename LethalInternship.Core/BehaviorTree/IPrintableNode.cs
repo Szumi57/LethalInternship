@@ -4,7 +4,7 @@ namespace LethalInternship.Core.BehaviorTree
 {
     public interface IPrintableNode
     {
-        List<IBehaviourTreeNode> Children { get; }
+        List<IPrintableNode> PrintableChildren { get; }
 
         string Name { get; }
 

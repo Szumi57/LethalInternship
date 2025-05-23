@@ -17,7 +17,22 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>(); //todo: this could be optimized as a baked array.
 
-        List<IBehaviourTreeNode> IPrintableNode.Children { get { return children; } }
+        public List<IPrintableNode> PrintableChildren
+        {
+            get
+            {
+                var list = new List<IPrintableNode>();
+                foreach (var child in children)
+                {
+                    if (child is IPrintableNode)
+                    {
+                        list.Add((IPrintableNode)child);
+                    }
+                }
+
+                return list;
+            }
+        }
         public string Name { get { return name; } }
         public string NodeType { get { return "sequence"; } }
         public string NodeTypeSign { get { return "->"; } }

@@ -5,7 +5,7 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// <summary>
     /// Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
     /// </summary>
-    public class SelectorNode : IParentBehaviourTreeNode
+    public class SelectorNode : IParentBehaviourTreeNode, IPrintableNode
     {
         /// <summary>
         /// The name of the node.
@@ -17,7 +17,22 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>(); //todo: optimization, bake this to an array.
 
-        List<IBehaviourTreeNode> IPrintableNode.Children { get { return children; } }
+        public List<IPrintableNode> PrintableChildren
+        {
+            get
+            {
+                var list = new List<IPrintableNode>();
+                foreach (var child in children)
+                {
+                    if (child is IPrintableNode)
+                    {
+                        list.Add((IPrintableNode)child);
+                    }
+                }
+
+                return list;
+            }
+        }
         public string Name { get { return name; } }
         public string NodeType { get { return "select"; } }
         public string NodeTypeSign { get { return "?"; } }

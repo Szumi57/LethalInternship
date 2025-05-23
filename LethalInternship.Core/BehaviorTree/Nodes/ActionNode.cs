@@ -6,7 +6,7 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// <summary>
     /// A behaviour tree leaf node for running an action.
     /// </summary>
-    public class ActionNode : IBehaviourTreeNode
+    public class ActionNode : IBehaviourTreeNode, IPrintableNode
     {
         /// <summary>
         /// The name of the node.
@@ -18,10 +18,11 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private Func<TimeData, BehaviourTreeStatus> fn;
 
-        List<IBehaviourTreeNode> IPrintableNode.Children { get { return new List<IBehaviourTreeNode>(); } }
+        public List<IPrintableNode> PrintableChildren { get { return new List<IPrintableNode>(); } }
         public string Name { get { return name; } }
         public string NodeType { get { return "action"; } }
         public string NodeTypeSign { get { return string.Empty; } }
+
 
         public ActionNode(string name, Func<TimeData, BehaviourTreeStatus> fn)
         {

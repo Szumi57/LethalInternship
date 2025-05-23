@@ -9,10 +9,12 @@ namespace LethalInternship.Core.Utils
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public static class BTUtil
     {
-        
-        public static void PrintTree(IPrintableNode tree)
+        public static void PrintTree(IBehaviourTreeNode tree)
         {
-            PrintNode(tree);
+            if (tree is IPrintableNode)
+            {
+                PrintNode((IPrintableNode)tree);
+            }
         }
 
         private static void PrintNode(IPrintableNode node, int depth = 0)
@@ -27,7 +29,7 @@ namespace LethalInternship.Core.Utils
                 log += "├─ ";
 
             PluginLoggerHook.LogDebug?.Invoke($"{log}{node.NodeTypeSign} {node.NodeType} {node.Name}");
-            foreach (var childNode in node.Children)
+            foreach (var childNode in node.PrintableChildren)
             {
                 PrintNode(childNode, depth + 1);
             }
@@ -38,9 +40,15 @@ namespace LethalInternship.Core.Utils
         /// </summary>
         /// <param name="tree"></param>
         /// <returns></returns>
-        public static string Export1TreeJson(IPrintableNode tree)
+        public static string Export1TreeJson(IBehaviourTreeNode tree)
         {
-            return JsonConvert.SerializeObject(Export1Tree(tree));
+            if (tree is IPrintableNode)
+            {
+                PrintNode((IPrintableNode)tree);
+                return JsonConvert.SerializeObject(Export1Tree((IPrintableNode)tree));
+            }
+
+            return "No printable tree.";
         }
 
         /// <summary>
@@ -115,7 +123,7 @@ namespace LethalInternship.Core.Utils
             export1Nodes.Add(guid, export1Node);
 
             // Traverse tree
-            foreach (var childNode in node.Children)
+            foreach (var childNode in node.PrintableChildren)
             {
                 if (export1Node.children == null)
                 {

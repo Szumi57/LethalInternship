@@ -6,7 +6,7 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// <summary>
     /// Decorator node that inverts the success/failure of its child.
     /// </summary>
-    public class InverterNode : IParentBehaviourTreeNode
+    public class InverterNode : IParentBehaviourTreeNode, IPrintableNode
     {
         /// <summary>
         /// Name of the node.
@@ -18,7 +18,18 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private IBehaviourTreeNode childNode;
 
-        List<IBehaviourTreeNode> IPrintableNode.Children { get { return new List<IBehaviourTreeNode>() { childNode }; } }
+        public List<IPrintableNode> PrintableChildren
+        {
+            get
+            {
+                if (childNode is IPrintableNode)
+                {
+                    return new List<IPrintableNode>() { (IPrintableNode)childNode };
+                }
+
+                return new List<IPrintableNode>();
+            }
+        }
         public string Name { get { return name; } }
         public string NodeType { get { return "inverter"; } }
         public string NodeTypeSign { get { return "<->"; } }
