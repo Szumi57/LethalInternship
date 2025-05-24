@@ -1,10 +1,10 @@
 ﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class NotValidEntrance
+    public class NotValidEntrance : IBTCondition
     {
-        public bool Condition(InternAI ai)
+        public bool Condition(BTContext context)
         {
-            return ai.ClosestEntrance == null;
+            return context.InternAI.ClosestEntrance == null;
         }
     }
 }

@@ -6,10 +6,12 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class ExitVehicle
+    public class ExitVehicle : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {

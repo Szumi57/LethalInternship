@@ -1,16 +1,17 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class TeleportDebugToPos
+    public class TeleportDebugToPos : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai, Vector3 pos)
+        public BehaviourTreeStatus Action(BTContext context)
         {
             PluginLoggerHook.LogWarning?.Invoke("Teleporting directly, maybe a problem occured.");
 
-            ai.SyncTeleportIntern(pos, !ai.isOutside, isUsingEntrance: false);
+            InternAI ai = context.InternAI;
+
+            ai.SyncTeleportIntern(ai.NextPos, !ai.isOutside, isUsingEntrance: false);
             return BehaviourTreeStatus.Success;
         }
     }

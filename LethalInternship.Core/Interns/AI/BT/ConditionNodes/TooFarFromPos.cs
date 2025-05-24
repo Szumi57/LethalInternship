@@ -3,12 +3,14 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class TooFarFromPos
+    public class TooFarFromPos : IBTCondition
     {
-        public bool Condition(InternAI ai, Vector3 targetPosition)
+        public bool Condition(BTContext context)
         {
-            float sqrHorizontalDistance = Vector3.Scale(targetPosition - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-            float sqrVerticalDistance = Vector3.Scale(targetPosition - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+            InternAI ai = context.InternAI;
+
+            float sqrHorizontalDistance = Vector3.Scale(ai.NextPos - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            float sqrVerticalDistance = Vector3.Scale(ai.NextPos - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
             if (sqrHorizontalDistance < Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
                 && sqrVerticalDistance < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {

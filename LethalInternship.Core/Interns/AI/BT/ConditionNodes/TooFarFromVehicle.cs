@@ -4,10 +4,12 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class TooFarFromVehicle
+    public class TooFarFromVehicle : IBTCondition
     {
-        public bool Condition(InternAI ai)
+        public bool Condition(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {

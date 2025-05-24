@@ -1,22 +1,24 @@
 ﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class IsObjectToGrab
+    public class IsObjectToGrab : IBTCondition
     {
-        public bool Condition(InternAI internAI)
+        public bool Condition(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             // Check for object to grab
-            if (!internAI.AreHandsFree())
+            if (!ai.AreHandsFree())
             {
                 return false;
             }
 
-            GrabbableObject? grabbableObject = internAI.LookingForObjectToGrab();
+            GrabbableObject? grabbableObject = ai.LookingForObjectToGrab();
             if (grabbableObject == null)
             {
                 return false;
             }
 
-            internAI.TargetItem = grabbableObject;
+            ai.TargetItem = grabbableObject;
             return true;
         }
     }

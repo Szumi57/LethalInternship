@@ -1,10 +1,10 @@
 ﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class IsInternInVehicle
+    public class IsInternInVehicle : IBTCondition
     {
-        public bool Condition(InternAI ai)
+        public bool Condition(BTContext context)
         {
-            return ai.NpcController.IsControllerInCruiser;
+            return context.InternAI.NpcController.IsControllerInCruiser;
         }
     }
 }

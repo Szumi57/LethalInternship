@@ -3,10 +3,12 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class DropItem
+    public class DropItem : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             if (ai.AreHandsFree())
             {
                 PluginLoggerHook.LogError?.Invoke("DropItem action failed, no item held !");

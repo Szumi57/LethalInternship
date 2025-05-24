@@ -3,10 +3,12 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class TakeEntrance
+    public class TakeEntrance : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             if (ai.ClosestEntrance == null)
             {
                 PluginLoggerHook.LogError?.Invoke("TakeEntrance Action, ClosestEntrance is null !");

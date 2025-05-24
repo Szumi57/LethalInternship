@@ -73,6 +73,7 @@ namespace LethalInternship.Core.Interns.AI
         public Vector3? TargetLastKnownPosition;
         public EntranceTeleport? ClosestEntrance;
         public Vector3 NextPos;
+        public bool CanRun = true;
 
         public IPointOfInterest? PointOfInterest = null!;
 
@@ -214,7 +215,6 @@ namespace LethalInternship.Core.Interns.AI
 
             // Behavior tree
             BTController = new BTController(this);
-            BTController.Init();
 
             // Body collider
             InternBodyCollider = NpcController.Npc.GetComponentInChildren<Collider>();

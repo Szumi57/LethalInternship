@@ -5,17 +5,19 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class GoToEntrance
+    public class GoToEntrance : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai, bool canRun = true)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             if (ai.ClosestEntrance == null)
             {
                 PluginLoggerHook.LogError?.Invoke("TooFarFromEntrance Action, ClosestPosOfEntrance is null !");
                 return BehaviourTreeStatus.Failure;
             }
 
-            if (canRun)
+            if (ai.CanRun)
             {
                 float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
                 float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;

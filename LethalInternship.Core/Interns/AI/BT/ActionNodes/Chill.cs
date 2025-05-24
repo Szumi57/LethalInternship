@@ -8,10 +8,12 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class Chill
+    public class Chill : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+            
             // Set where the intern should look
             SetInternLookAt(ai);
 

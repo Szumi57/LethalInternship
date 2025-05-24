@@ -2,11 +2,18 @@
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class IsCommandThis
+    public class IsCommandThis : IBTCondition
     {
-        public bool Condition(InternAI ai, EnumCommandTypes commandType)
+        private readonly EnumCommandTypes commandType;
+
+        public IsCommandThis(EnumCommandTypes commandType)
         {
-            return ai.CurrentCommand == commandType;
+            this.commandType = commandType;
+        }
+
+        public bool Condition(BTContext context)
+        {
+            return context.InternAI.CurrentCommand == commandType;
         }
     }
 }

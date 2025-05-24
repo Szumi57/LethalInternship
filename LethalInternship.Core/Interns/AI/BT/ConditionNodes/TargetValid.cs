@@ -1,15 +1,17 @@
 ﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class TargetValid
+    public class TargetValid : IBTCondition
     {
-        public bool Condition(InternAI internAI)
+        public bool Condition(BTContext context)
         {
-            if (internAI.targetPlayer == null)
+            InternAI ai = context.InternAI;
+
+            if (ai.targetPlayer == null)
             {
                 return false;
             }
 
-            if (!internAI.PlayerIsTargetable(internAI.targetPlayer, cannotBeInShip: false, overrideInsideFactoryCheck: true))
+            if (!ai.PlayerIsTargetable(ai.targetPlayer, cannotBeInShip: false, overrideInsideFactoryCheck: true))
             {
                 // Target is not available anymore
                 return false;

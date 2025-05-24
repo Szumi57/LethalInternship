@@ -2,15 +2,12 @@
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class ChillFrontOfEntrance : IBTAction
+    public class SetNextPosTargetLastKnownPosition : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
-
-            // Chill
-            ai.StopMoving();
-
+            ai.NextPos = ai.TargetLastKnownPosition.Value;
             return BehaviourTreeStatus.Success;
         }
     }

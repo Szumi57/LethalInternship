@@ -3,13 +3,15 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class GetClosestEntrance
+    public class GetClosestEntrance : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai, EntranceTeleport[] entrancesTeleportArray)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             Vector3 entityPos = ai.NpcController.Npc.transform.position;
 
-            ai.ClosestEntrance = GetClosest(entityPos, entrancesTeleportArray);
+            ai.ClosestEntrance = GetClosest(entityPos, ai.EntrancesTeleportArray);
             return BehaviourTreeStatus.Success;
         }
 

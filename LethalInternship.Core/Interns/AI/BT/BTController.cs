@@ -5,6 +5,7 @@ using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.Interns.AI.BT
 {
@@ -12,61 +13,26 @@ namespace LethalInternship.Core.Interns.AI.BT
     {
         public IBehaviourTreeNode BehaviorTree = null!;
 
-        private InternAI internAI = null!;
-
         // Routine controllers
-        public CoroutineController panikCoroutineController = null!;
-        public CoroutineController lookingAroundCoroutineController = null!;
-        public CoroutineController searchingWanderCoroutineController = null!;
-        public SearchCoroutineController searchForPlayers = null!;
+        private CoroutineController panikCoroutineController = null!;
+        private CoroutineController lookingAroundCoroutineController = null!;
+        private CoroutineController searchingWanderCoroutineController = null!;
+        private SearchCoroutineController searchForPlayers = null!;
 
         // Action nodes
-        private CheckLOSForClosestPlayer checkLOSForClosestPlayer = null!;
-        private Chill chill = null!;
-        private ChillFrontOfEntrance chillFrontOfEntrance = null!;
-        private DropItem dropItem = null!;
-        private EnterVehicle enterVehicle = null!;
-        private ExitVehicle exitVehicle = null!;
-        private FleeFromEnemy fleeFromEnemy = null!;
-        private GetClosestEntrance getClosestEntrance = null!;
-        private GoToEntrance goToEntrance = null!;
-        private GoToPosition goToPosition = null!;
-        private GoToVehicle goToVehicle = null!;
-        private GrabItemBehavior grabItemBehavior = null!;
-        private InVehicle inVehicle = null!;
-        private LookingAround lookingAround = null!;
-        private LookingForPlayer lookingForPlayer = null!;
-        private SetNextPos setNextPos = null!;
-        private TakeEntrance takeEntrance = null!;
-        private TeleportDebugToPos teleportDebugToPos = null!;
-        private UpdateLastKnownPos updateLastKnownPos = null!;
-
+        Dictionary<string, IBTAction> actions = null!;
         // Condition nodes
-        private EnemySeen enemySeen = null!;
-        private ExitNotBlocked exitNotBlocked = null!;
-        private HasItemAndInShip hasItemAndInShip = null!;
-        private IsCommandThis isCommandThis = null!;
-        private IsInternInVehicle isInternInVehicle = null!;
-        private IsLastKnownPositionValid isLastKnownPositionValid = null!;
-        private IsObjectToGrab isObjectToGrab = null!;
-        private IsTargetInVehicle isTargetInVehicle = null!;
-        private NextPositionIsAfterEntrance nextPositionIsAfterEntrance = null!;
-        private NotValidEntrance notValidEntrance = null!;
-        private TargetValid targetValid = null!;
-        private TooFarFromEntrance tooFarFromEntrance = null!;
-        private TooFarFromObject tooFarFromObject = null!;
-        private TooFarFromPos tooFarFromPos = null!;
-        private TooFarFromVehicle tooFarFromVehicle = null!;
+        Dictionary<string, IBTCondition> conditions = null!;
+
+        // Data context
+        private BTContext BTContext = null!;
 
         public BTController(InternAI internAI)
         {
-            this.internAI = internAI;
-        }
-
-        public void Init()
-        {
-            InitCoroutineControllers();
+            InitCoroutineControllers(internAI);
             InitNodes();
+            InitContext(internAI);
+
             BehaviorTree = CreateTree();
 
             BTUtil.PrintTree(CreateTree());
@@ -88,7 +54,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             searchForPlayers.CheckCoroutine();
         }
 
-        private void InitCoroutineControllers()
+        private void InitCoroutineControllers(InternAI internAI)
         {
             panikCoroutineController = new CoroutineController(internAI);
             lookingAroundCoroutineController = new CoroutineController(internAI);
@@ -99,42 +65,65 @@ namespace LethalInternship.Core.Interns.AI.BT
         private void InitNodes()
         {
             // Action nodes
-            checkLOSForClosestPlayer = new CheckLOSForClosestPlayer();
-            chill = new Chill();
-            chillFrontOfEntrance = new ChillFrontOfEntrance();
-            dropItem = new DropItem();
-            enterVehicle = new EnterVehicle();
-            exitVehicle = new ExitVehicle();
-            fleeFromEnemy = new FleeFromEnemy();
-            getClosestEntrance = new GetClosestEntrance();
-            goToEntrance = new GoToEntrance();
-            goToPosition = new GoToPosition();
-            goToVehicle = new GoToVehicle();
-            grabItemBehavior = new GrabItemBehavior();
-            inVehicle = new InVehicle();
-            lookingAround = new LookingAround();
-            lookingForPlayer = new LookingForPlayer();
-            setNextPos = new SetNextPos();
-            takeEntrance = new TakeEntrance();
-            teleportDebugToPos = new TeleportDebugToPos();
-            updateLastKnownPos = new UpdateLastKnownPos();
+            actions = new Dictionary<string, IBTAction>()
+            {
+                { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
+                { "Chill", new Chill() },
+                { "ChillFrontOfEntrance", new ChillFrontOfEntrance() },
+                { "DropItem", new DropItem() },
+                { "EnterVehicle", new EnterVehicle() },
+                { "ExitVehicle", new ExitVehicle() },
+                { "FleeFromEnemy", new FleeFromEnemy() },
+                { "GetClosestEntrance", new GetClosestEntrance() },
+                { "GoToEntrance", new GoToEntrance() },
+                { "GoToPosition", new GoToPosition() },
+                { "GoToVehicle", new GoToVehicle() },
+                { "GrabItemBehavior", new GrabItemBehavior() },
+                { "InVehicle", new InVehicle() },
+                { "LookingAround", new LookingAround() },
+                { "LookingForPlayer", new LookingForPlayer() },
+                { "SetNextPosTargetItem", new SetNextPosTargetItem() },
+                { "SetNextPosTargetLastKnownPosition", new SetNextPosTargetLastKnownPosition() },
+                { "TakeEntrance", new TakeEntrance() },
+                { "TeleportDebugToPos", new TeleportDebugToPos() },
+                { "UpdateLastKnownPos", new UpdateLastKnownPos() }
+            };
 
             // Condition nodes
-            enemySeen = new EnemySeen();
-            exitNotBlocked = new ExitNotBlocked();
-            hasItemAndInShip = new HasItemAndInShip();
-            isCommandThis = new IsCommandThis();
-            isInternInVehicle = new IsInternInVehicle();
-            isLastKnownPositionValid = new IsLastKnownPositionValid();
-            isObjectToGrab = new IsObjectToGrab();
-            isTargetInVehicle = new IsTargetInVehicle();
-            nextPositionIsAfterEntrance = new NextPositionIsAfterEntrance();
-            notValidEntrance = new NotValidEntrance();
-            targetValid = new TargetValid();
-            tooFarFromEntrance = new TooFarFromEntrance();
-            tooFarFromObject = new TooFarFromObject();
-            tooFarFromPos = new TooFarFromPos();
-            tooFarFromVehicle = new TooFarFromVehicle();
+            conditions = new Dictionary<string, IBTCondition>()
+            {
+                { "EnemySeen", new EnemySeen() },
+                { "ExitNotBlocked", new ExitNotBlocked() },
+                { "HasItemAndInShip", new HasItemAndInShip() },
+                { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
+                { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
+                { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
+                { "IsCommandWait", new IsCommandThis(EnumCommandTypes.Wait) },
+                { "IsInternInVehicle", new IsInternInVehicle() },
+                { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
+                { "IsObjectToGrab", new IsObjectToGrab() },
+                { "IsTargetInVehicle", new IsTargetInVehicle() },
+                { "NextPositionIsAfterEntrance", new NextPositionIsAfterEntrance() },
+                { "NotValidEntrance", new NotValidEntrance() },
+                { "TargetValid", new TargetValid() },
+                { "TooFarFromEntrance", new TooFarFromEntrance() },
+                { "TooFarFromObject", new TooFarFromObject() },
+                { "TooFarFromPos", new TooFarFromPos() },
+                { "TooFarFromVehicle", new TooFarFromVehicle() }
+            };
+            
+        }
+
+        private void InitContext(InternAI internAI)
+        {
+            BTContext = new BTContext()
+            {
+                InternAI = internAI,
+                LookingAroundCoroutineController = this.lookingAroundCoroutineController,
+                PanikCoroutine = this.panikCoroutineController,
+                searchForPlayers = this.searchForPlayers,
+                searchingWanderCoroutineController = this.searchingWanderCoroutineController
+            };
         }
 
         private IBehaviourTreeNode CreateTree()
@@ -143,40 +132,40 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Start")
                     .Sequence("Panik")
-                        .Condition("<EnemySeen>", t => enemySeen.Condition(internAI))
-                        .Do("fleeFromEnemy", t => fleeFromEnemy.Action(internAI, panikCoroutineController))
+                        .Condition("<EnemySeen>", t => conditions["EnemySeen"].Condition(BTContext))
+                        .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
                     .End()
 
                     .Sequence("Command go to position")
-                        .Condition("<isCommand GoToPosition>", t => isCommandThis.Condition(internAI, EnumCommandTypes.GoToPosition))
+                        .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
                         .Selector("Go to position")
                             .Splice(CreateSubTreeGoToPosition())
-                            .Do("chill", t => chill.Action(internAI))
+                            .Do("Chill", t => actions["Chill"].Action(BTContext))
                         .End()
                     .End()
 
                     .Sequence("Command go to vehicle")
-                        .Condition("<isCommand GoToVehicle>", t => isCommandThis.Condition(internAI, EnumCommandTypes.GoToVehicle))
+                        .Condition("<isCommand GoToVehicle>", t => conditions["IsCommandGoToVehicle"].Condition(BTContext))
                         .Splice(CreateSubTreeGoToVehicle())
                     .End()
 
                     .Sequence("Fetch object")
-                        .Condition("<IsObjectToGrab>", t => isObjectToGrab.Condition(internAI))
-                        .Do("setNextPos", t => setNextPos.Action(internAI, internAI.TargetItem.transform.position))
+                        .Condition("<IsObjectToGrab>", t => conditions["IsObjectToGrab"].Condition(BTContext))
+                        .Do("SetNextPosTargetItem", t => actions["SetNextPosTargetItem"].Action(BTContext))
                         .Selector("Should go to position")
                             .Splice(CreateSubTreeGoToObject())
-                            .Do("GrabObject", t => grabItemBehavior.Action(internAI))
+                            .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
                         .End()
                     .End()
 
                     .Sequence("Command follow player")
-                        .Condition("<isCommand FollowPlayer>", t => isCommandThis.Condition(internAI, EnumCommandTypes.FollowPlayer))
-                        .Condition("<TargetValid>", t => targetValid.Condition(internAI))
+                        .Condition("<isCommand FollowPlayer>", t => conditions["IsCommandFollowPlayer"].Condition(BTContext))
+                        .Condition("<TargetValid>", t => conditions["TargetValid"].Condition(BTContext))
                         .Splice(CreateSubTreeFollowPlayer())
                     .End()
 
-                    .Do("checkLOSForClosestPlayer", t => checkLOSForClosestPlayer.Action(internAI))
-                    .Do("LookingForPlayer", t => lookingForPlayer.Action(internAI, searchingWanderCoroutineController, searchForPlayers))
+                    .Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
+                    .Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
 
                 .End()
                 .Build();
@@ -188,36 +177,36 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Sequence("Take entrance maybe")
-                        .Condition("<nextPositionIsAfterEntrance>", t => nextPositionIsAfterEntrance.Condition(internAI, internAI.NextPos))
+                        .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
                         .Selector("Take entrance")
                             .Sequence("Get entrance")
-                                .Do("getClosestEntrance", t => getClosestEntrance.Action(internAI, internAI.EntrancesTeleportArray))
-                                .Condition("<notValidEntrance>", t => notValidEntrance.Condition(internAI))
-                                .Do("teleportDebugToPos", t => teleportDebugToPos.Action(internAI, internAI.NextPos))
+                                .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
+                                .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
+                                .Do("teleportDebugToPos", t => actions["TeleportDebugToPos"].Action(BTContext))
                             .End()
 
                             .Sequence("Go to entrance")
-                                .Condition("<tooFarFromEntrance>", t => tooFarFromEntrance.Condition(internAI))
-                                .Do("Go to entrance", t => goToEntrance.Action(internAI))
+                                .Condition("<tooFarFromEntrance>", t => conditions["TooFarFromEntrance"].Condition(BTContext))
+                                .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
                             .End()
 
                             .Sequence("Exit not blocked, take entrance")
-                                .Condition("<exitNotBlocked>", t => exitNotBlocked.Condition(internAI))
-                                .Do("takeEntrance", t => takeEntrance.Action(internAI))
+                                .Condition("<exitNotBlocked>", t => conditions["ExitNotBlocked"].Condition(BTContext))
+                                .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
                             .End()
 
-                            .Do("chillFrontOfEntrance", t => chillFrontOfEntrance.Action(internAI))
+                            .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
                         .End()
                     .End()
 
                     .Sequence("Go to position if too far")
-                        .Condition("tooFarFromPos", t => tooFarFromPos.Condition(internAI, internAI.NextPos))
-                        .Do("goToPosition", t => goToPosition.Action(internAI, internAI.NextPos))
+                        .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
+                        .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
 
                     .Sequence("Drop item if in ship")
-                        .Condition("hasItemAndInShip", t => hasItemAndInShip.Condition(internAI))
-                        .Do("dropItem", t => dropItem.Action(internAI))
+                        .Condition("hasItemAndInShip", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                        .Do("dropItem", t => actions["DropItem"].Action(BTContext))
                     .End()
                 .End()
                 .Build();
@@ -229,31 +218,31 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Sequence("Take entrance maybe")
-                        .Condition("<nextPositionIsAfterEntrance>", t => nextPositionIsAfterEntrance.Condition(internAI, internAI.NextPos))
+                        .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
                         .Selector("Take entrance")
                             .Sequence("Get entrance")
-                                .Do("getClosestEntrance", t => getClosestEntrance.Action(internAI, internAI.EntrancesTeleportArray))
-                                .Condition("<notValidEntrance>", t => notValidEntrance.Condition(internAI))
-                                .Do("teleportDebugToPos", t => teleportDebugToPos.Action(internAI, internAI.NextPos))
+                                .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
+                                .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
+                                .Do("teleportDebugToPos", t => actions["TeleportDebugToPos"].Action(BTContext))
                             .End()
 
                             .Sequence("Go to entrance")
-                                .Condition("tooFarFromEntrance", t => tooFarFromEntrance.Condition(internAI))
-                                .Do("Go to entrance", t => goToEntrance.Action(internAI))
+                                .Condition("tooFarFromEntrance", t => conditions["TooFarFromEntrance"].Condition(BTContext))
+                                .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
                             .End()
 
                             .Sequence("Exit not blocked, take entrance")
-                                .Condition("exitNotBlocked", t => exitNotBlocked.Condition(internAI))
-                                .Do("takeEntrance", t => takeEntrance.Action(internAI))
+                                .Condition("exitNotBlocked", t => conditions["ExitNotBlocked"].Condition(BTContext))
+                                .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
                             .End()
 
-                            .Do("chillFrontOfEntrance", t => chillFrontOfEntrance.Action(internAI))
+                            .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
                         .End()
                     .End()
 
                     .Sequence("Go to position")
-                        .Condition("tooFarFromObject", t => tooFarFromObject.Condition(internAI, internAI.TargetItem))
-                        .Do("goToPosition", t => goToPosition.Action(internAI, internAI.NextPos))
+                        .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
+                        .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
                 .End()
                 .Build();
@@ -265,39 +254,39 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to vehicle")
                     .Sequence("In vehicle")
-                        .Condition("<isInternInVehicle>", t => isInternInVehicle.Condition(internAI))
-                        .Do("inVehicle", t => inVehicle.Action(internAI))
+                        .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                        .Do("inVehicle", t => actions["InVehicle"].Action(BTContext))
                     .End()
 
                     .Sequence("Take entrance maybe")
-                        .Condition("<nextPositionIsAfterEntrance>", t => nextPositionIsAfterEntrance.Condition(internAI, internAI.NextPos))
+                        .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
                         .Selector("Take entrance")
                             .Sequence("Get entrance")
-                                .Do("getClosestEntrance", t => getClosestEntrance.Action(internAI, internAI.EntrancesTeleportArray))
-                                .Condition("<notValidEntrance>", t => notValidEntrance.Condition(internAI))
-                                .Do("enterVehicle", t => enterVehicle.Action(internAI))
+                                .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
+                                .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
+                                .Do("enterVehicle", t => actions["EnterVehicle"].Action(BTContext))
                             .End()
 
                             .Sequence("Go to entrance")
-                                .Condition("<tooFarFromEntrance>", t => tooFarFromEntrance.Condition(internAI))
-                                .Do("Go to entrance", t => goToEntrance.Action(internAI))
+                                .Condition("<tooFarFromEntrance>", t => conditions["TooFarFromEntrance"].Condition(BTContext))
+                                .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
                             .End()
 
                             .Sequence("Exit not blocked, take entrance")
-                                .Condition("<exitNotBlocked>", t => exitNotBlocked.Condition(internAI))
-                                .Do("takeEntrance", t => takeEntrance.Action(internAI))
+                                .Condition("<exitNotBlocked>", t => conditions["ExitNotBlocked"].Condition(BTContext))
+                                .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
                             .End()
 
-                            .Do("chillFrontOfEntrance", t => chillFrontOfEntrance.Action(internAI))
+                            .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
                         .End()
                     .End()
 
                     .Sequence("Go to vehicle")
-                        .Condition("<tooFarFromVehicle>", t => tooFarFromVehicle.Condition(internAI))
-                        .Do("goToVehicle", t => goToVehicle.Action(internAI))
+                        .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
+                        .Do("goToVehicle", t => actions["GoToVehicle"].Action(BTContext))
                     .End()
 
-                    .Do("enterVehicle", t => enterVehicle.Action(internAI))
+                    .Do("enterVehicle", t => actions["EnterVehicle"].Action(BTContext))
                 .End()
                 .Build();
         }
@@ -308,26 +297,26 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Should follow player")
                     .Sequence("Target in vehicle")
-                        .Condition("<isTargetInVehicle>", t => isTargetInVehicle.Condition(internAI))
+                        .Condition("<isTargetInVehicle>", t => conditions["IsTargetInVehicle"].Condition(BTContext))
                         .Splice(CreateSubTreeGoToVehicle())
                     .End()
 
                     .Sequence("Intern in vehicle, exit")
-                        .Condition("<isInternInVehicle>", t => isInternInVehicle.Condition(internAI))
-                        .Do("exitVehicle", t => exitVehicle.Action(internAI))
+                        .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                        .Do("exitVehicle", t => actions["ExitVehicle"].Action(BTContext))
                     .End()
 
                     .Sequence("Follow player")
-                        .Do("updateLastKnownPos", t => updateLastKnownPos.Action(internAI))
-                        .Condition("<isLastKnownPositionValid>", t => isLastKnownPositionValid.Condition(internAI))
-                        .Do("setNextPos", t => setNextPos.Action(internAI, internAI.TargetLastKnownPosition.Value))
+                        .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
+                        .Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
+                        .Do("SetNextPosTargetLastKnownPosition", t => actions["SetNextPosTargetLastKnownPosition"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
-                            .Do("chill", t => chill.Action(internAI))
+                            .Do("chill", t => actions["Chill"].Action(BTContext))
                         .End()
                     .End()
 
-                    .Do("LookingAround", t => lookingAround.Action(internAI, lookingAroundCoroutineController))
+                    .Do("LookingAround", t => actions["LookingAround"].Action(BTContext))
                 .End()
                 .Build();
         }

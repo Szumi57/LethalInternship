@@ -1,10 +1,10 @@
 ﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class IsLastKnownPositionValid
+    public class IsLastKnownPositionValid : IBTCondition
     {
-        public bool Condition(InternAI ai)
+        public bool Condition(BTContext context)
         {
-            return ai.TargetLastKnownPosition != null;
+            return context.InternAI.TargetLastKnownPosition != null;
         }
     }
 }

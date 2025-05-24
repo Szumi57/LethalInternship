@@ -2,28 +2,30 @@
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class EnemySeen
+    public class EnemySeen : IBTCondition
     {
-        public bool Condition(InternAI internAI)
+        public bool Condition(BTContext context)
         {
-            if (internAI.CurrentEnemy != null)
+            InternAI ai = context.InternAI;
+
+            if (ai.CurrentEnemy != null)
             {
                 return true;
             }
 
-            if (internAI.NpcController.IsControllerInCruiser)
+            if (ai.NpcController.IsControllerInCruiser)
             {
                 return false;
             }
 
             // Check for enemies
-            EnemyAI? enemyAI = internAI.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            EnemyAI? enemyAI = ai.CheckLOSForEnemy(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (enemyAI == null)
             {
                 return false;
             }
 
-            internAI.CurrentEnemy = enemyAI;
+            ai.CurrentEnemy = enemyAI;
             return true;
         }
     }

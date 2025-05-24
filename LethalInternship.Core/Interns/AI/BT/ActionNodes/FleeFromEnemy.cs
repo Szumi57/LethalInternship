@@ -11,10 +11,13 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class FleeFromEnemy
+    public class FleeFromEnemy : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai, CoroutineController panikCoroutine)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+            CoroutineController panikCoroutine = context.PanikCoroutine;
+
             if (ai.CurrentEnemy == null)
             {
                 PluginLoggerHook.LogError?.Invoke("CurrentEnemy is null");

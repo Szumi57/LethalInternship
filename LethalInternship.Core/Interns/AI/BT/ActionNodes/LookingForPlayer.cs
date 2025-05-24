@@ -1,22 +1,23 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.SharedAbstractions.Constants;
 using System.Collections;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class LookingForPlayer
+    public class LookingForPlayer : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai, CoroutineController searchingWanderCoroutineController, SearchCoroutineController searchForPlayers)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             // Start coroutine for wandering
-            searchingWanderCoroutineController.StartCoroutine(SearchingWander(ai));
-            searchingWanderCoroutineController.KeepAlive();
+            context.searchingWanderCoroutineController.StartCoroutine(SearchingWander(ai));
+            context.searchingWanderCoroutineController.KeepAlive();
 
             // Start the coroutine from base game to search for players
-            searchForPlayers.StartSearch(ai.NpcController.Npc.transform.position);
-            searchForPlayers.KeepAlive();
+            context.searchForPlayers.StartSearch(ai.NpcController.Npc.transform.position);
+            context.searchForPlayers.KeepAlive();
 
             ai.SetDestinationToPositionInternAI(ai.destination);
             ai.OrderAgentAndBodyMoveToDestination();

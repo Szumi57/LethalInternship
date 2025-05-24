@@ -7,10 +7,12 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class CheckLOSForClosestPlayer
+    public class CheckLOSForClosestPlayer : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             // Try to find the closest player to target
             PlayerControllerB? player = ai.CheckLOSForClosestPlayer(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
             if (player == null)

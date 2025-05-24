@@ -1,5 +1,4 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System.Collections;
@@ -7,14 +6,16 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class LookingAround
+    public class LookingAround : IBTAction
     {
         private float lookingAroundTimer;
 
-        public BehaviourTreeStatus Action(InternAI ai, CoroutineController lookingAroundCoroutineController)
+        public BehaviourTreeStatus Action(BTContext context)
         {
-            lookingAroundCoroutineController.StartCoroutine(LookingAroundEnumerator(ai));
-            lookingAroundCoroutineController.KeepAlive();
+            InternAI ai = context.InternAI;
+
+            context.LookingAroundCoroutineController.StartCoroutine(LookingAroundEnumerator(ai));
+            context.LookingAroundCoroutineController.KeepAlive();
 
             ai.StopMoving();
 

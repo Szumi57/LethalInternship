@@ -1,17 +1,17 @@
-﻿using UnityEngine;
-
-namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
+﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class NextPositionIsAfterEntrance
+    public class NextPositionIsAfterEntrance : IBTCondition
     {
-        public bool Condition(InternAI ai, Vector3 nextPos)
+        public bool Condition(BTContext context)
         {
-            if (ai.isOutside && nextPos.y < -80f)
+            InternAI ai = context.InternAI;
+
+            if (ai.isOutside && ai.NextPos.y < -80f)
             {
                 return true;
             }
 
-            if (!ai.isOutside && nextPos.y >= -80f)
+            if (!ai.isOutside && ai.NextPos.y >= -80f)
             {
                 return true;
             }

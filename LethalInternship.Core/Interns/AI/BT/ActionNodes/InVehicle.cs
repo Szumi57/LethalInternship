@@ -5,10 +5,12 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class InVehicle
+    public class InVehicle : IBTAction
     {
-        public BehaviourTreeStatus Action(InternAI ai)
+        public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             // Stop animations
             ai.NpcController.StopAnimations();
 
