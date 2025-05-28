@@ -20,7 +20,7 @@ namespace LethalInternship.Core.UI.Icons.Pools
 
         protected override InputIconUI NewIcon(IIconUIInfos iconInfos)
         {
-            return new InputIconUI(Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab, canvasOverlay.transform), iconInfos, rectTransformCanvasOverlay);
+            return new InputIconUI(Object.Instantiate(PluginRuntimeProvider.Context.InputIconPrefab, canvasOverlay.transform), iconInfos, rectTransformCanvasOverlay);
         }
     }
 }

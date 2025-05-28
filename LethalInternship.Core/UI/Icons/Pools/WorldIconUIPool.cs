@@ -20,7 +20,7 @@ namespace LethalInternship.Core.UI.Icons.Pools
 
         protected override WorldIconUI NewIcon(IIconUIInfos iconInfos)
         {
-            return new WorldIconUI(Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab, canvasOverlay.transform), iconInfos, rectTransformCanvasOverlay);
+            return new WorldIconUI(Object.Instantiate(PluginRuntimeProvider.Context.WorldIconPrefab, canvasOverlay.transform), iconInfos, rectTransformCanvasOverlay);
         }
     }
 }

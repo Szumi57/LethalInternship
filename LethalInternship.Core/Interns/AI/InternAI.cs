@@ -495,7 +495,17 @@ namespace LethalInternship.Core.Interns.AI
         {
             this.PointOfInterest = pointOfInterest;
             CurrentCommand = EnumCommandTypes.GoToPosition;
-            NextPos = ChooseClosestNodeToPosition(this.PointOfInterest.GetPoint()).position;
+
+            NavMesh.CalculatePath(this.transform.position, this.PointOfInterest.GetPoint(), NavMesh.AllAreas, this.path1);
+            if (this.path1.status == NavMeshPathStatus.PathPartial)
+            {
+                NextPos = path1.corners[path1.corners.Length - 1];
+            }
+            else
+            {
+                NextPos = this.PointOfInterest.GetPoint();
+            }
+
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToGoToPosition {this.PointOfInterest.GetPoint()}, nextpos {NextPos}");
         }
 
@@ -675,27 +685,13 @@ namespace LethalInternship.Core.Interns.AI
 
         public bool TrySetDestinationToPosition(Vector3 position, bool checkForPath = false)
         {
-            if (!checkForPath)
+            NavMesh.CalculatePath(this.transform.position, position, NavMesh.AllAreas, this.path1);
+            if (this.path1.status == NavMeshPathStatus.PathPartial)
             {
-                // Destination set in method
-                return SetDestinationToPosition(position);
+                PluginLoggerHook.LogDebug?.Invoke($"TrySetDestinationToPosition CalculatePath {this.path1.status}");
+                return SetDestinationToPosition(path1.corners[path1.corners.Length - 1]);
             }
-
-            // Agent need to be active
-            bool previousStateAgent = agent.isActiveAndEnabled;
-            SetAgent(true);
-
-            Vector3 previousDestination = destination;
-            bool validDestination = SetDestinationToPosition(position, checkForPath);
-            if (!validDestination)
-            {
-                // Previous destination
-                destination = previousDestination;
-            }
-
-            SetAgent(previousStateAgent);
-
-            return validDestination;
+            return SetDestinationToPosition(position);
         }
 
         public void StopMoving()

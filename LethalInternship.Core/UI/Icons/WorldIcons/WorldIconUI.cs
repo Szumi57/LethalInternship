@@ -1,7 +1,5 @@
 ﻿using LethalInternship.SharedAbstractions.UI;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.Icons.WorldIcons
 {
@@ -11,16 +9,16 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         private string key;
 
         public bool IsIconActive => iconGameObject.activeSelf;
-        public bool IsIconInCenter => iconUIController.IsIconInCenter;
+        public bool IsIconInCenter => IsIconActive && iconUIController.IsIconInCenter;
         public Vector3 IconWorldPosition => iconWorldPosition;
 
         private GameObject iconGameObject;
         private RectTransform rectTransformCanvasOverlay;
-        private List<Image> images;
+        //private List<GameObject> images;
 
         private Vector3 iconWorldPosition;
 
-        private IIconUIController iconUIController;
+        private WorldIconUIController iconUIController;
 
         public WorldIconUI(GameObject iconGameObject, IIconUIInfos iconUIInfos, RectTransform rectTransformCanvasOverlay)
         {
@@ -28,13 +26,15 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             this.key = iconUIInfos.GetUIKey();
             this.rectTransformCanvasOverlay = rectTransformCanvasOverlay;
 
-            images = new List<Image>();
-            foreach (GameObject prefab in iconUIInfos.GetImagesPrefab())
-            {
-                images.Add(Object.Instantiate(prefab).GetComponent<Image>());
-            }
+            //images = new List<GameObject>();
+            //foreach (GameObject prefab in iconUIInfos.GetImagesPrefab())
+            //{
+            //    images.Add(prefab);
+            //}
 
             iconUIController = this.iconGameObject.GetComponentInChildren<WorldIconUIController>();
+            iconUIController.SetImagesOnTop(iconUIInfos.GetImagesPrefab());
+
             SetIconActive(false);
         }
 

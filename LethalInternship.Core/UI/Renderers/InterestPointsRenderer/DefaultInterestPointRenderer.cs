@@ -9,7 +9,7 @@ namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
     {
         public GameObject GetImagePrefab(DefaultInterestPoint defaultInterestPoint)
         {
-            return PluginRuntimeProvider.Context.DefaultIconImagePrefab;
+            return PluginRuntimeProvider.Context.PedestrianIconImagePrefab;
         }
     }
 }

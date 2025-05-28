@@ -17,6 +17,7 @@ namespace LethalInternship.Core.UI.Renderers
 
         public IIconUIInfos GetIconUIInfos(IPointOfInterest pointOfInterest)
         {
+            string key = string.Empty;
             var imagesPrefabs = new List<GameObject>();
             foreach (var interestPoint in pointOfInterest.GetInterestPoints())
             {
@@ -24,10 +25,11 @@ namespace LethalInternship.Core.UI.Renderers
                 if (imagePrefab != null)
                 {
                     imagesPrefabs.Add(imagePrefab);
+                    key += imagePrefab.name;
                 }
             }
 
-            return new IconUIInfos(pointOfInterest.GetPoint().ToString(), imagesPrefabs);
+            return new IconUIInfos(key, imagesPrefabs);
         }
     }
 }

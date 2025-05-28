@@ -24,11 +24,13 @@ namespace LethalInternship.SharedAbstractions.PluginRuntimeProvider
         GameObject InputIconPrefab { get; }
 
         GameObject DefaultIconImagePrefab { get; }
+        GameObject PointerIconImagePrefab { get; }
+        GameObject PedestrianIconImagePrefab { get; }
         GameObject VehicleIconImagePrefab { get; }
         GameObject ShipIconImagePrefab { get; }
         GameObject MeetingPointIconImagePrefab { get; }
         GameObject GatheringPointIconImagePrefab { get; }
-        GameObject AttackPointIconImagePrefab { get; }
+        GameObject AttackIconImagePrefab { get; }
 
         string DirectoryName { get; }
         IConfig Config { get; }

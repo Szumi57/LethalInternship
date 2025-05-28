@@ -74,6 +74,7 @@ namespace LethalInternship.Core.Managers
             // ----------------
             WorldIconInCenter = null;
 
+            List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
             // Show other already active icons
             var pointsOfInterest = internsOwned
                          .Where(y => y.GetPointOfInterest() != null)
@@ -86,6 +87,7 @@ namespace LethalInternship.Core.Managers
                 worldIcon.SetPositionUI(pointOfInterest.GetPoint());
                 worldIcon.SetDefaultColor();
                 worldIcon.SetIconActive(true);
+                worldIconsToReturn.Add(worldIcon);
 
                 // Scan icon in center
                 if (WorldIconInCenter == null)
@@ -96,6 +98,10 @@ namespace LethalInternship.Core.Managers
 
             // Clear remaining icons
             worldIconUIPool.DisableOtherIcons();
+            foreach(var icon in worldIconsToReturn)
+            {
+                worldIconUIPool.ReturnIcon(icon);
+            }
         }
 
         private void LateUpdate()
@@ -217,6 +223,14 @@ namespace LethalInternship.Core.Managers
             inputIconUI.SetPositionUICenter();
             inputIconUI.SetColorIconValidOrNot(isValid);
             inputIconUI.SetIconActive(true);
+
+            inputIconUIPool.DisableOtherIcons();
+            inputIconUIPool.ReturnIcon(inputIconUI);
+        }
+
+        public void HideInputIcon()
+        {
+            inputIconUIPool.DisableOtherIcons();
         }
 
         public void SetDefaultInputIcon()

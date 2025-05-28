@@ -65,6 +65,7 @@ namespace LethalInternship.Core.Managers
                 case EnumInputAction.None:
                 default:
                     StopScanPositionCoroutine();
+                    UIManager.Instance.HideInputIcon();
                     break;
             }
 
@@ -222,9 +223,8 @@ namespace LethalInternship.Core.Managers
 
             if (point != null)
             {
-                InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(point.Value);
+                return InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(point.Value);
             }
-
 
             return null;
 
@@ -375,6 +375,7 @@ namespace LethalInternship.Core.Managers
                 Vector3? lastHitPoint = null;
                 raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
                 NavMeshHit hitMesh = new NavMeshHit();
+                NavMeshPath path = new NavMeshPath();
                 // Check if looking too far in the distance or at a valid position
                 foreach (var hit in raycastHits)
                 {
@@ -393,9 +394,10 @@ namespace LethalInternship.Core.Managers
                     // Check for what we hit
                     UIManager.Instance.SetDefaultInputIcon();
 
-                    if (NavMesh.SamplePosition(hit.point, out hitMesh, 5f, -1))
+                    NavMesh.CalculatePath(localPlayer.transform.position, hit.point, NavMesh.AllAreas, path);
+                    if (path.status != NavMeshPathStatus.PathInvalid)
                     {
-                        lastNavMeshHitPoint = hitMesh.position;
+                        lastNavMeshHitPoint = hit.point;
                     }
 
                     break;

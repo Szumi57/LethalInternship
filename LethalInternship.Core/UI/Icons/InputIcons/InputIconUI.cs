@@ -1,9 +1,6 @@
-﻿using LethalInternship.Core.UI.Icons.WorldIcons;
-using LethalInternship.SharedAbstractions.UI;
-using System.Collections.Generic;
+﻿using LethalInternship.SharedAbstractions.UI;
+using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
-using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.UI.Icons.InputIcons
 {
@@ -14,9 +11,8 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
 
         private GameObject iconGameObject;
         private RectTransform rectTransformCanvasOverlay;
-        private List<Image> images;
 
-        private IIconUIController iconUIController;
+        private InputIconUIController iconUIController;
 
         public InputIconUI(GameObject iconGameObject, IIconUIInfos iconUIInfos, RectTransform rectTransformCanvasOverlay)
         {
@@ -24,19 +20,15 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
             this.key = iconUIInfos.GetUIKey();
             this.rectTransformCanvasOverlay = rectTransformCanvasOverlay;
 
-            images = new List<Image>();
-            foreach (GameObject prefab in iconUIInfos.GetImagesPrefab())
-            {
-                images.Add(Object.Instantiate(prefab).GetComponent<Image>());
-            }
+            iconUIController = this.iconGameObject.GetComponentInChildren<InputIconUIController>();
+            iconUIController.SetImageOnTop(iconUIInfos.GetImagesPrefab().First());
 
-            iconUIController = this.iconGameObject.GetComponentInChildren<WorldIconUIController>();
             SetIconActive(false);
         }
 
         public void SetPositionUICenter()
         {
-            iconUIController.PlaceOnCanvas(new Vector3(0f, 0f, 10f), rectTransformCanvasOverlay);
+            iconUIController.PlaceOnCenterCanvas();
             SetIconActive(true);
         }
 

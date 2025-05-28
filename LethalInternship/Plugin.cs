@@ -67,11 +67,13 @@ namespace LethalInternship
         public static GameObject InputIconPrefab = null!;
 
         public static GameObject DefaultIconImagePrefab = null!;
+        public static GameObject PointerIconImagePrefab = null!;
+        public static GameObject PedestrianIconImagePrefab = null!;
         public static GameObject VehicleIconImagePrefab = null!;
         public static GameObject ShipIconImagePrefab = null!;
         public static GameObject MeetingPointIconImagePrefab = null!;
         public static GameObject GatheringPointIconImagePrefab = null!;
-        public static GameObject AttackPointIconImagePrefab = null!;
+        public static GameObject AttackIconImagePrefab = null!;
 
         internal static string DirectoryName = null!;
         internal static new ManualLogSource Logger = null!;
@@ -234,10 +236,24 @@ namespace LethalInternship
             }
 
             // Images prefabs
+            PointerIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PointerIconImage");
+            if (PointerIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load PointerIconImage UI prefab.");
+                return false;
+            }
+
             DefaultIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("DefaultIconImage");
             if (DefaultIconImagePrefab == null)
             {
                 Logger.LogError($"Failed to load DefaultIconImage UI prefab.");
+                return false;
+            }
+
+            PedestrianIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PedestrianIconImage");
+            if (PedestrianIconImagePrefab == null)
+            {
+                Logger.LogError($"Failed to load PedestrianIconImage UI prefab.");
                 return false;
             }
 
@@ -269,10 +285,10 @@ namespace LethalInternship
                 return false;
             }
 
-            AttackPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackPointIconImage");
-            if (AttackPointIconImagePrefab == null)
+            AttackIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackIconImage");
+            if (AttackIconImagePrefab == null)
             {
-                Logger.LogError($"Failed to load AttackPointIconImage UI prefab.");
+                Logger.LogError($"Failed to load AttackIconImage UI prefab.");
                 return false;
             }
 
@@ -679,55 +695,37 @@ namespace LethalInternship
         public string VoicesPath => Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, VoicesConst.VOICES_PATH);
 
         public EnemyType InternNPCPrefab => Plugin.InternNPCPrefab;
-
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
         public GameObject CommandsSingleInternUIPrefab => Plugin.CommandsSingleInternUIPrefab;
-
         public GameObject CommandsMultipleInternsUIPrefab => Plugin.CommandsMultipleInternsUIPrefab;
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
-
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;
 
         public GameObject DefaultIconImagePrefab => Plugin.DefaultIconImagePrefab;
-
+        public GameObject PointerIconImagePrefab => Plugin.PointerIconImagePrefab;
+        public GameObject PedestrianIconImagePrefab => Plugin.PedestrianIconImagePrefab;
         public GameObject VehicleIconImagePrefab => Plugin.VehicleIconImagePrefab;
-
         public GameObject ShipIconImagePrefab => Plugin.ShipIconImagePrefab;
-
         public GameObject MeetingPointIconImagePrefab => Plugin.MeetingPointIconImagePrefab;
-
         public GameObject GatheringPointIconImagePrefab => Plugin.GatheringPointIconImagePrefab;
-
-        public GameObject AttackPointIconImagePrefab => Plugin.AttackPointIconImagePrefab;
-
+        public GameObject AttackIconImagePrefab => Plugin.AttackIconImagePrefab;
 
         public string DirectoryName => Plugin.DirectoryName;
         public ILethalInternshipInputs InputActionsInstance => Plugin.InputActionsInstance;
         public IConfig Config => Plugin.Config;
 
-
         public int PluginIrlPlayersCount { get => Plugin.PluginIrlPlayersCount; set => Plugin.PluginIrlPlayersCount = value; }
 
         public bool IsModTooManyEmotesLoaded => Plugin.IsModTooManyEmotesLoaded;
-
         public bool IsModModelReplacementAPILoaded => Plugin.IsModModelReplacementAPILoaded;
-
         public bool IsModCustomItemBehaviourLibraryLoaded => Plugin.IsModCustomItemBehaviourLibraryLoaded;
-
         public bool IsModMoreCompanyLoaded => Plugin.IsModMoreCompanyLoaded;
-
         public bool IsModReviveCompanyLoaded => Plugin.IsModReviveCompanyLoaded;
-
         public bool IsModBunkbedReviveLoaded => Plugin.IsModBunkbedReviveLoaded;
-
         public bool IsModLethalMinLoaded => Plugin.IsModLethalMinLoaded;
-
         public bool IsModMipaLoaded => Plugin.IsModMipaLoaded;
-
         public bool IsModMonoProfilerLoaderLoaded => Plugin.IsModMonoProfilerLoaderLoaded;
-
-        
     }
 }

@@ -2,7 +2,7 @@
 {
     public enum EnumUIButtonSelected
     {
-        SendInternTo,
+        SendInternTo = 0,
         SendAllInternsTo
     }
 }
