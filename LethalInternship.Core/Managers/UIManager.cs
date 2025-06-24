@@ -51,6 +51,7 @@ namespace LethalInternship.Core.Managers
         private PlayerControllerB localPlayerController = null!;
         private bool InternsOwned;
         private WorldIconUI? WorldIconInCenter = null;
+        private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
 
         private void Awake() { Instance = this; }
 
@@ -63,45 +64,8 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Check for interns owned
-            IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-            InternsOwned = internsOwned.Length > 0;
-            if (!InternsOwned)
-            {
-                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
-            }
-
             // ----------------
-            WorldIconInCenter = null;
-
-            List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
-            // Show other already active icons
-            var pointsOfInterest = internsOwned
-                         .Where(y => y.GetPointOfInterest() != null)
-                         .Select(x => x.GetPointOfInterest()!)
-                         .Distinct();
-            foreach (IPointOfInterest pointOfInterest in pointsOfInterest)
-            {
-                //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest.}");
-                WorldIconUI worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
-                worldIcon.SetPositionUI(pointOfInterest.GetPoint());
-                worldIcon.SetDefaultColor();
-                worldIcon.SetIconActive(true);
-                worldIconsToReturn.Add(worldIcon);
-
-                // Scan icon in center
-                if (WorldIconInCenter == null)
-                {
-                    WorldIconInCenter = worldIcon.IsIconInCenter ? worldIcon : null;
-                }
-            }
-
-            // Clear remaining icons
-            worldIconUIPool.DisableOtherIcons();
-            foreach(var icon in worldIconsToReturn)
-            {
-                worldIconUIPool.ReturnIcon(icon);
-            }
+            ShowWorldIconUIs();
         }
 
         private void LateUpdate()
@@ -122,6 +86,57 @@ namespace LethalInternship.Core.Managers
                 default:
                     ClearCursorTipText();
                     break;
+            }
+        }
+
+        private void ShowWorldIconUIs()
+        {
+            WorldIconInCenter = null;
+
+            // Check for interns owned
+            IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+            InternsOwned = internsOwned.Length > 0;
+            if (!InternsOwned)
+            {
+                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
+            }
+
+            List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
+            WorldIconUI worldIcon;
+            // Show other already active icons
+            var pointsOfInterest = internsOwned
+                         .Where(y => y.GetPointOfInterest() != null)
+                         .Select(x => x.GetPointOfInterest()!)
+                         .Distinct();
+            foreach (IPointOfInterest pointOfInterest in pointsOfInterest)
+            {
+                //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest.}");
+                worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
+                worldIcon.SetPositionUI(pointOfInterest.GetPoint());
+                worldIcon.SetDefaultColor();
+                worldIcon.SetIconActive(true);
+                worldIconsToReturn.Add(worldIcon);
+
+                // Scan icon in center
+                if (WorldIconInCenter == null)
+                {
+                    WorldIconInCenter = worldIcon.IsIconInCenter ? worldIcon : null;
+                }
+
+                // Should use ping animation ?
+                if (!pointOfInterestsAlreadyDisplayed.Contains(pointOfInterest))
+                {
+                    worldIcon.TriggerPingAnimation();
+                }
+            }
+
+            pointOfInterestsAlreadyDisplayed = pointsOfInterest.ToList();
+
+            // Clear remaining icons
+            worldIconUIPool.DisableOtherIcons();
+            foreach (var icon in worldIconsToReturn)
+            {
+                worldIconUIPool.ReturnIcon(icon);
             }
         }
 

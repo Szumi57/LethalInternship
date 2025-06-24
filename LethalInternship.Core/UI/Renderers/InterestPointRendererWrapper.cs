@@ -14,7 +14,7 @@ namespace LethalInternship.Core.UI.Renderers
 
         public GameObject GetImagePrefab(IInterestPoint interestPoint)
         {
-            return renderer.GetImagePrefab((T)interestPoint); // okay cast after CanRender
+            return renderer.GetImagePrefab((T)interestPoint);
         }
     }
 }

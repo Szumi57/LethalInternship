@@ -56,9 +56,14 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             iconUIController.SetColor(new Color(255 / 255f, 111 / 255f, 1 / 255f));
         }
 
-        public void SetIconActive(bool active)
+        public void SetIconActive(bool toActive)
         {
-            iconGameObject.SetActive(active);
+            iconGameObject.SetActive(toActive);
+        }
+
+        public void TriggerPingAnimation()
+        {
+            iconUIController.TriggerPingAnimation();
         }
 
         public static Vector3 WorldSpaceToCanvas(RectTransform canvasRect, Camera camera, Vector3 worldPos)

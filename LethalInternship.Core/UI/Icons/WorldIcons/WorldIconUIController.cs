@@ -12,6 +12,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
     public class WorldIconUIController : MonoBehaviour
     {
         private RectTransform rectTransformIcon = null!;
+        private Animator animator = null!;
 
         private bool isIconInCenter;
         public bool IsIconInCenter { get => isIconInCenter; }
@@ -22,10 +23,13 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         private GameObject TopRow = null!;
         private Image ImageBottom = null!;
 
+        private bool pingAnimationNextUpdate = false;
+
         // Start is called before the first frame update
         void Start()
         {
             rectTransformIcon = GetComponent<RectTransform>();
+            animator = GetComponent<Animator>();
 
             ImageBottom = GetComponentsInChildren<Image>().FirstOrDefault(x => x.name == "PointerIconImage");
             TopRow = GetComponentsInChildren<Component>().FirstOrDefault(x => x.name == "Top").gameObject;
@@ -35,6 +39,12 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         // Update is called once per frame
         private void Update()
         {
+            if (pingAnimationNextUpdate)
+            {
+                TriggerPingAnimation();
+                pingAnimationNextUpdate = false;
+            }
+
             //if (rectTransformIcon == null)
             //{
             //    return;
@@ -62,8 +72,11 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             if (ImagesTopPrefab == null
                 || ImagesTopPrefab.Count == 0)
             {
-                ImagesTop = new List<Image>() { Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab).GetComponent<Image>() };
-                ImagesTop.First().transform.SetParent(TopRow.transform);
+                if (PluginRuntimeProvider.Context.DefaultIconImagePrefab != null) // Unity editor
+                {
+                    ImagesTop = new List<Image>() { Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab).GetComponent<Image>() };
+                    ImagesTop.First().transform.SetParent(TopRow.transform);
+                }
             }
             else
             {
@@ -138,9 +151,21 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             float yBottom = rectTransformIcon.localPosition.y - rectTransformIcon.sizeDelta.y / 2;
 
             isIconInCenter = xLeft < 0f && xRight > 0f && yTop > 0f && yBottom < 0f;
-            if (isIconInCenter)
+            animator.SetBool("IsHovered", isIconInCenter);
+        }
+
+        private void SetTransparency(float alpha)
+        {
+            if (ImagesTop != null)
             {
-                rectTransformIcon.sizeDelta *= 1.5f;
+                foreach (var imageTop in ImagesTop)
+                {
+                    imageTop.color = new Color(imageTop.color.r, imageTop.color.g, imageTop.color.b, alpha);
+                }
+            }
+            if (ImageBottom != null)
+            {
+                ImageBottom.color = new Color(ImageBottom.color.r, ImageBottom.color.g, ImageBottom.color.b, alpha);
             }
         }
 
@@ -159,19 +184,16 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             }
         }
 
-        private void SetTransparency(float alpha)
+        public void TriggerPingAnimation()
         {
-            if (ImagesTop != null)
+            if (animator == null)
             {
-                foreach (var imageTop in ImagesTop)
-                {
-                    imageTop.color = new Color(imageTop.color.r, imageTop.color.g, imageTop.color.b, alpha);
-                }
+                pingAnimationNextUpdate = true;
+                return;
             }
-            if (ImageBottom != null)
-            {
-                ImageBottom.color = new Color(ImageBottom.color.r, ImageBottom.color.g, ImageBottom.color.b, alpha);
-            }
+
+            animator.ResetTrigger("Ping");
+            animator.SetTrigger("Ping");
         }
     }
 }
