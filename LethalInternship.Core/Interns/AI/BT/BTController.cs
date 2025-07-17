@@ -35,8 +35,8 @@ namespace LethalInternship.Core.Interns.AI.BT
 
             BehaviorTree = CreateTree();
 
-            BTUtil.PrintTree(CreateTree());
-            PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
+            //BTUtil.PrintTree(CreateTree());
+            //PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
         }
 
         public void TickTree(float deltaTime)

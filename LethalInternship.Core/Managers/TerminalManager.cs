@@ -4,6 +4,7 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace LethalInternship.Core.Managers
     public class TerminalManager : NetworkBehaviour, ITerminalManager
     {
         public static TerminalManager Instance { get; private set; } = null!;
+        public GameObject ManagerGameObject => this.gameObject;
 
         public string StringIntershipProgram = null!;
         public string CommandIntershipProgram = null!;
@@ -30,6 +32,21 @@ namespace LethalInternship.Core.Managers
             Instance = this;
             this.CommandIntershipProgram = PluginRuntimeProvider.Context.Config.TitleInHelpMenu.ToLower();
             this.StringIntershipProgram = PluginRuntimeProvider.Context.Config.GetTitleInternshipProgram();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            if (!base.NetworkManager.IsServer)
+            {
+                // Destroy local manager
+                Destroy(TerminalManagerProvider.Instance.ManagerGameObject);
+
+                // Use manager from server
+                TerminalManagerProvider.Instance = this;
+                Instance = this;
+            }
         }
 
         /// <summary>

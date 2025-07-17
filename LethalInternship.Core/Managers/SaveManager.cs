@@ -2,11 +2,13 @@
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using Newtonsoft.Json;
 using System;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace LethalInternship.Core.Managers
 {
@@ -18,6 +20,7 @@ namespace LethalInternship.Core.Managers
         private const string SAVE_DATA_KEY = "LETHAL_INTERNSHIP_SAVE_DATA";
 
         public static SaveManager Instance { get; private set; } = null!;
+        public GameObject ManagerGameObject => this.gameObject;
 
         private SaveFile Save = null!;
         private ClientRpcParams ClientRpcParams = new ClientRpcParams();
@@ -29,6 +32,21 @@ namespace LethalInternship.Core.Managers
         {
             Instance = this;
             FetchSaveFile();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            if (!base.NetworkManager.IsServer)
+            {
+                // Destroy local manager
+                Destroy(SaveManagerProvider.Instance.ManagerGameObject);
+
+                // Use manager from server
+                SaveManagerProvider.Instance = this;
+                Instance = this;
+            }
         }
 
         /// <summary>

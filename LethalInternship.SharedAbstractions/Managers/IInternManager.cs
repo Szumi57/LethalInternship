@@ -9,6 +9,8 @@ namespace LethalInternship.SharedAbstractions.Managers
 {
     public interface IInternManager
     {
+        GameObject ManagerGameObject { get; }
+
         int IndexBeginOfInterns { get; }
         int AllEntitiesCount { get; }
         Vector3 ItemDropShipPos { get; set; }

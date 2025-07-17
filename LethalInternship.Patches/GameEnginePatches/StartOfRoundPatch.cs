@@ -85,14 +85,14 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-
+            
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 23; i++)
+            for (var i = 0; i < codes.Count - 22; i++)
             {
-                if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 277
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 259
                     && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
                     && codes[i + 2].ToString() == "ldlen NULL"
-                    && codes[i + 23].ToString().StartsWith("call void StartOfRound::SyncShipUnlockablesClientRpc")) // 300
+                    && codes[i + 22].ToString().StartsWith("call void StartOfRound::SyncShipUnlockablesClientRpc")) // 281
                 {
                     startIndex = i;
                     break;

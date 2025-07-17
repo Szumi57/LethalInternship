@@ -3,6 +3,7 @@ using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
+using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Events;
@@ -14,6 +15,7 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Hooks.ReviveCompanyHooks;
 using LethalInternship.SharedAbstractions.Hooks.ShipTeleporterHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
@@ -58,6 +60,7 @@ namespace LethalInternship.Core.Managers
     public class InternManager : NetworkBehaviour, IInternManager
     {
         public static InternManager Instance { get; private set; } = null!;
+        public GameObject ManagerGameObject => this.gameObject;
 
         /// <summary>
         /// Size of allPlayerScripts, AllPlayerObjects, for normal players controller + interns player controllers
@@ -79,7 +82,7 @@ namespace LethalInternship.Core.Managers
 
         private int allEntitiesCount;
         public bool LandingStatusAllowed;
-        private List<int> heldInternsLocalPlayer = null!;
+        private List<int> heldInternsLocalPlayer = new List<int>();
 
         public Vector3 ItemDropShipPos { get => itemDropShipPos; set => itemDropShipPos = value; }
         private Vector3 itemDropShipPos;
@@ -125,7 +128,22 @@ namespace LethalInternship.Core.Managers
             {
                 PluginEventsProvider.Events.InitialSyncCompleted += Config_InitialSyncCompleted;
             }
-            PluginLoggerHook.LogDebug?.Invoke($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {PluginRuntimeProvider.Context.Config.MaxInternsAvailable}");
+            PluginLoggerHook.LogDebug?.Invoke($"{this.GetInstanceID()} {this.NetworkObjectId} Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {PluginRuntimeProvider.Context.Config.MaxInternsAvailable}");
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            if (!base.NetworkManager.IsServer)
+            {
+                // Destroy local manager
+                Destroy(InternManagerProvider.Instance.ManagerGameObject);
+
+                // Use manager from server
+                InternManagerProvider.Instance = this;
+                Instance = this;
+            }
         }
 
         private void Config_InitialSyncCompleted(object sender, EventArgs e)
@@ -550,7 +568,17 @@ namespace LethalInternship.Core.Managers
             spawnInternsParamsNetworkSerializable.IndexNextPlayerObject = indexNextPlayerObject;
             spawnInternsParamsNetworkSerializable.InternIdentityID = internAI.InternIdentity.IdIdentity;
             spawnInternsParamsNetworkSerializable.SuitID = suitID;
-            SpawnInternClientRpc(networkObject, networkObjectRagdollBody, spawnInternsParamsNetworkSerializable);
+
+            //SpawnInternClientRpc(networkObject, networkObjectRagdollBody, spawnInternsParamsNetworkSerializable);
+            StartCoroutine(WaitBeforeSpawnOnClient(networkObject, networkObjectRagdollBody, spawnInternsParamsNetworkSerializable));
+        }
+
+        IEnumerator WaitBeforeSpawnOnClient(NetworkObjectReference networkObjectReferenceInternAI,
+                                            NetworkObjectReference networkObjectReferenceRagdollInternBody,
+                                            SpawnInternsParamsNetworkSerializable spawnParamsNetworkSerializable)
+        {
+            yield return null;
+            SpawnInternClientRpc(networkObjectReferenceInternAI, networkObjectReferenceRagdollInternBody, spawnParamsNetworkSerializable);
         }
 
         /// <summary>
@@ -1620,12 +1648,12 @@ namespace LethalInternship.Core.Managers
 
         public void RegisterHeldInternForLocalPlayer(int idInternController)
         {
-            if (HeldInternsLocalPlayer == null)
+            if (heldInternsLocalPlayer == null)
             {
-                HeldInternsLocalPlayer = new List<int>();
+                heldInternsLocalPlayer = new List<int>();
             }
 
-            HeldInternsLocalPlayer.Add(idInternController);
+            heldInternsLocalPlayer.Add(idInternController);
         }
 
         public void UnregisterHeldInternForLocalPlayer(int idInternController)

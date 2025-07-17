@@ -37,7 +37,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"targetPlayer pos {ai.TargetLastKnownPosition}");
+            //PluginLoggerHook.LogDebug?.Invoke($"targetPlayer pos {ai.TargetLastKnownPosition}");
             return BehaviourTreeStatus.Success;
         }
     }

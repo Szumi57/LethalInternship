@@ -31,7 +31,7 @@ namespace LethalInternship
     // HardDependencies
     [BepInDependency(LethalLib.Plugin.ModGUID, BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(Const.CSYNC_GUID, BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency(LethalCompanyInputUtils.LethalCompanyInputUtilsPlugin.ModId, BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency(Const.LETHALCOMPANYINPUTUTILS_GUID, BepInDependency.DependencyFlags.HardDependency)]
     // SoftDependencies
     [BepInDependency(Const.REVIVECOMPANY_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.BUNKBEDREVIVE_GUID, BepInDependency.DependencyFlags.SoftDependency)]
@@ -121,7 +121,7 @@ namespace LethalInternship
             }
 
             // Load UI prefabs
-            UIAssetsLoaded = LoadUIPrefabs();
+            UIAssetsLoaded = false;// LoadUIPrefabs();
 
             InitSharedValues();
 
@@ -137,21 +137,33 @@ namespace LethalInternship
         private static void InitializeNetworkBehaviours()
         {
             // See https://github.com/EvaisaDev/UnityNetcodePatcher?tab=readme-ov-file#preparing-mods-for-patching
-            var types = Assembly.GetExecutingAssembly().GetTypes();
-            foreach (var type in types)
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                foreach (var method in methods)
+                // LethalInternship
+                // LethalInternship.Core
+                // LethalInternship.Patches
+                // LethalInternship.SharedAbstractions
+                if (assembly.GetName().Name != "LethalInternship.Core")
                 {
-                    try
+                    continue;
+                }
+
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    foreach (var method in methods)
                     {
-                        var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
-                        if (attributes.Length > 0)
+                        try
                         {
-                            method.Invoke(null, null);
+                            var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                            if (attributes.Length > 0)
+                            {
+                                method.Invoke(null, null);
+                            }
                         }
+                        catch { }
                     }
-                    catch { }
                 }
             }
         }

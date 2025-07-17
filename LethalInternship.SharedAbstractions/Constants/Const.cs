@@ -10,6 +10,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public const string CSYNC_GUID = "com.sigurd.csync";
 
         public const string MORECOMPANY_GUID = "me.swipez.melonloader.morecompany";
+        public const string LETHALCOMPANYINPUTUTILS_GUID = "com.rune580.LethalCompanyInputUtils";
         public const string BETTER_EXP_GUID = "Swaggies.BetterEXP";
         public const string MOREEMOTES_GUID = "MoreEmotes";
         public const string BETTEREMOTES_GUID = "BetterEmotes";

@@ -149,7 +149,7 @@ namespace LethalInternship.Core.Managers
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
-                PluginLoggerHook.LogWarning?.Invoke("No UI initialization : UI assets failed to load (see Plugin loading assets).");
+                //PluginLoggerHook.LogWarning?.Invoke("No UI initialization : UI assets failed to load (see Plugin loading assets).");
                 return;
             }
 
@@ -234,6 +234,11 @@ namespace LethalInternship.Core.Managers
 
         public void ShowInputIcon(bool isValid)
         {
+            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
+            {
+                return;
+            }
+
             InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }));
             inputIconUI.SetPositionUICenter();
             inputIconUI.SetColorIconValidOrNot(isValid);
@@ -245,12 +250,21 @@ namespace LethalInternship.Core.Managers
 
         public void HideInputIcon()
         {
+            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
+            {
+                return;
+            }
+
             inputIconUIPool.DisableOtherIcons();
         }
 
         public void SetDefaultInputIcon()
         {
             inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
+        }
+        public void SetVehicleInputIcon()
+        {
+            inputIconImagePrefab = PluginRuntimeProvider.Context.VehicleIconImagePrefab;
         }
 
         public Vector3? GetWorldIconInCenter()

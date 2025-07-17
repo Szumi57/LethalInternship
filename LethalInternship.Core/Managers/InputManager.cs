@@ -4,6 +4,7 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.MonoProfilerHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
@@ -67,6 +68,12 @@ namespace LethalInternship.Core.Managers
                     StopScanPositionCoroutine();
                     UIManager.Instance.HideInputIcon();
                     break;
+            }
+
+            // Hide if another icon in center
+            if (UIManager.Instance.GetWorldIconInCenter() != null)
+            {
+                UIManager.Instance.HideInputIcon();
             }
 
             CheckOpenCommandsInput();
@@ -211,6 +218,7 @@ namespace LethalInternship.Core.Managers
         {
             Vector3? point;
 
+            // Get point in center
             point = UIManager.Instance.GetWorldIconInCenter();
             if (point == null)
             {
@@ -393,6 +401,7 @@ namespace LethalInternship.Core.Managers
 
                     // Check for what we hit
                     UIManager.Instance.SetDefaultInputIcon();
+                    PluginLoggerHook.LogDebug?.Invoke($"hit.collider {hit.collider} {hit.collider.tag}");
 
                     NavMesh.CalculatePath(localPlayer.transform.position, hit.point, NavMesh.AllAreas, path);
                     if (path.status != NavMeshPathStatus.PathInvalid)
