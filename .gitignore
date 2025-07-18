@@ -43,12 +43,17 @@ Backup/
 # Other
 /Properties
 UpgradeLog.htm
+UnityProject/
+Voices/
+AssetSources/
+/README.md
+/SETUP-PROJECT.py
 
 # Blender backups
 *.blend1
 
 # Thunderstore Packages
-/Thunderstore/Packages/*
+LethalInternship/Thunderstore/Packages/*
 
 # Exclude stuff
 !/dlls/LethalLib.dll
