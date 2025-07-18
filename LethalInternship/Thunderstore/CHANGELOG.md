@@ -4,7 +4,7 @@
 Sorry for the wait, I think I needed to take a break...</br>
 This update is supposed to add commands with UI to the interns, it's on its way but not ready yet.</br>
 The next updates will more frequent and smaller as I just can't make a big one like before, it's too much.</br>
-For today it's mostly v72 adaptation and stability fixes. Stay tuned for more to comme !
+For today it's mostly v72 adaptation and stability fixes. Stay tuned for more to come !
 
 ### Changed
 Under the hood tho, a lot changed. I separated the C# projects in multiple ones for better integration in Unity, 

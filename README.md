@@ -1,4 +1,4 @@
-![Lethal-internship-logo](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/Lethal-internship-logo.png?raw=true)
+![Lethal-internship-logo](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/Lethal-internship-logo.png?raw=true)
 # Lethal Internship
 
 Note from HR :
@@ -13,7 +13,7 @@ Note from HR :
 <br/>
 <br/>Great assets to the company_
 
-</br>![interns_example](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/interns_example.png?raw=true)</br>
+</br>![interns_example](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/interns_example.png?raw=true)</br>
 
 ## Cheap Interns and where to find them
 
@@ -34,14 +34,14 @@ These passionate workers are available in a new section of your shop.
 
 ## How to use the mod
 - A new entry should be present in your help page in the terminal :
-![menu](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/menu.png?raw=true)
+![menu](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/menu.png?raw=true)
 - To enter the menu, type 'LethalInternship program' or 'pro' or 'in', you should arrive to the info page.
-![info_page](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/info_page.png?raw=true)
+![info_page](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/info_page.png?raw=true)
 - From there you can buy intern with 'buy' command or 'buy nameOfIntern' if you know the name of the one you want.</br>
-![buy4](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/buy4.png?raw=true) or
-![buy_mathew](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/buy_mathew.png?raw=true)
+![buy4](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/buy4.png?raw=true) or
+![buy_mathew](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/buy_mathew.png?raw=true)
 - Type 'Status' to see check all of the available intern status.
-![status_page](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/status_page.png?raw=true)
+![status_page](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/status_page.png?raw=true)
 - You can revive intern by buying them specifically while in orbit.
 - You can revive intern with other mods like 'Revive company', 'Bunkbed revives' and 'Zaprillator'</br>
 </br>
@@ -56,10 +56,10 @@ While they are spawned, while pointing at them: </br>
 Lots of configs are available for you, so go check them !</br>
 Mod is compatible with InputUtils so you can change your inputs !</br>
 There's also a config file for the identities of the interns (a name, a suit, a voice)</br>
-![folder_config](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/folder_configs.png?raw=true)</br>
+![folder_config](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/folder_configs.png?raw=true)</br>
 Identities can be found in a new config file at Your_profile_folder\BepInEx\config\LethalInternship\ConfigIdentitiesDefault.json</br>
 If you want to make your own file, name it 'ConfigIdentitiesUser.json' and the default one will be ignored. Details can be found in the default json.</br>
-![folder_config](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/folder_config_user.png?raw=true)</br>
+![folder_config](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/folder_config_user.png?raw=true)</br>
 To link the voice folder to the intern, simply change the "VoiceFolder" property in the identity you want.
 
 ## Fully voices interns
@@ -74,7 +74,7 @@ Some AI voices should be added next update (0.20.0)
 This mod is compatible with ModelReplacementAPI and all of its users (tooManySuits, MoreSuits, ThiccCompany, etc...).
 It is also compatible with the emotes mod, emote in front of intern and they will copy your dance moves !
 
-</br>![Lethal-internship-logo](https://github.com/Szumi57/LethalInternship/blob/master/Assets/Images/interns_suits.png?raw=true)</br>
+</br>![Lethal-internship-logo](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/interns_suits.png?raw=true)</br>
 
 ## On a more serious note
 This mod is very alpha and I still need some polishing.
