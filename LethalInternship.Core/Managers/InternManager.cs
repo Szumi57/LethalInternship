@@ -123,12 +123,24 @@ namespace LethalInternship.Core.Managers
         /// </summary>
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                if (Instance.IsSpawned && Instance.IsServer)
+                {
+                    Instance.NetworkObject.Despawn(destroy: true);
+                }
+                else
+                {
+                    Destroy(Instance.gameObject);
+                }
+            }
+
             Instance = this;
             if (PluginEventsProvider.Events != null)
             {
                 PluginEventsProvider.Events.InitialSyncCompleted += Config_InitialSyncCompleted;
             }
-            PluginLoggerHook.LogDebug?.Invoke($"{this.GetInstanceID()} {this.NetworkObjectId} Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {PluginRuntimeProvider.Context.Config.MaxInternsAvailable}");
+            PluginLoggerHook.LogDebug?.Invoke($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {PluginRuntimeProvider.Context.Config.MaxInternsAvailable}");
         }
 
         public override void OnNetworkSpawn()
@@ -207,7 +219,10 @@ namespace LethalInternship.Core.Managers
 
         private IEnumerator RegisterItemsCoroutine()
         {
-            HoarderBugAI.grabbableObjectsInMap.Clear();
+            if (HoarderBugAI.grabbableObjectsInMap != null)
+            {
+                HoarderBugAI.grabbableObjectsInMap.Clear();
+            }
             yield return null;
 
             GrabbableObject[] array = Object.FindObjectsOfType<GrabbableObject>();

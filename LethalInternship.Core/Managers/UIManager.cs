@@ -53,7 +53,15 @@ namespace LethalInternship.Core.Managers
         private WorldIconUI? WorldIconInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
 
-        private void Awake() { Instance = this; }
+        private void Awake() 
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(Instance.gameObject);
+            }
+
+            Instance = this; 
+        }
 
         private void Start() { }
 

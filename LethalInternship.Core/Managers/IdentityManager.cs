@@ -24,6 +24,11 @@ namespace LethalInternship.Core.Managers
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(Instance.gameObject);
+            }
+
             Instance = this;
         }
 

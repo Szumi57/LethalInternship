@@ -21,13 +21,13 @@ namespace LethalInternship.Inputs
         [InputAction(KeyboardControl.R, Name = "Release grabbed interns", GamepadControl = GamepadControl.LeftShoulder)]
         public InputAction ReleaseInterns { get; set; }
 
-        [InputAction(KeyboardControl.W, Name = "Change suit of intern", GamepadPath = "<Gamepad>/dpad/left")]
+        [InputAction(KeyboardControl.X, Name = "Change suit of intern", GamepadPath = "<Gamepad>/dpad/left")]
         public InputAction ChangeSuitIntern { get; set; }
 
         [InputAction(KeyboardControl.C, Name = "Make intern look at position", GamepadPath = "<Gamepad>/dpad/up")]
         public InputAction MakeInternLookAtPosition { get; set; }
 
-        [InputAction(KeyboardControl.X, Name = "Commands", GamepadPath = "<Gamepad>/dpad/right")]
+        [InputAction(KeyboardControl.P, Name = "Commands (dummy input, useless for now)", GamepadPath = "<Gamepad>/dpad/right")]
         public InputAction OpenCommandsIntern { get; set; }
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

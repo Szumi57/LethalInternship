@@ -30,6 +30,18 @@ namespace LethalInternship.Core.Managers
         /// </summary>
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                if (Instance.IsSpawned && Instance.IsServer)
+                {
+                    Instance.NetworkObject.Despawn(destroy: true);
+                }
+                else
+                {
+                    Destroy(Instance.gameObject);
+                }
+            }
+
             Instance = this;
             FetchSaveFile();
         }

@@ -9,7 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship.Core", "Le
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship.SharedAbstractions", "LethalInternship.SharedAbstractions\LethalInternship.SharedAbstractions.csproj", "{3575DA3F-76AF-4E06-ADA3-6A9CE6D49058}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LethalInternship.Patches", "LethalInternship.Patches\LethalInternship.Patches.csproj", "{F2F80837-6EA0-4482-A72E-9536B7AD33F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship.Patches", "LethalInternship.Patches\LethalInternship.Patches.csproj", "{F2F80837-6EA0-4482-A72E-9536B7AD33F3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C59DCE14-46AD-43BA-960F-D92188EBC289}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

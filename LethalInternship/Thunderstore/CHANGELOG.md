@@ -1,9 +1,21 @@
 # Changelog
 
-## 0.20.0 [Alpha] - 2025-??-??
-### Added
+## 0.20.0 [Alpha] - 2025-07-18
+Sorry for the wait, I think I needed to take a break...</br>
+This update is supposed to add commands with UI to the interns, it's on its way but not ready yet.</br>
+The next updates will more frequent and smaller as I just can't make a big one like before, it's too much.</br>
+For today it's mostly v72 adaptation and stability fixes. Stay tuned for more to comme !
+
 ### Changed
+Under the hood tho, a lot changed. I separated the C# projects in multiple ones for better integration in Unity, 
+so it is to do UI stuff.</br>
+I use behaviour trees now for the interns. I needed another way to code the AI as it was getting complicated with the new commands.</br>
+A side effect for now is that the interns use of entrances is way more reliable !
+
 ### Fixed
+- v72 ready.
+- Fix server client desync when spawning interns.
+- @Crow on discord, I could not reproduce the terminal menu not appearing, hope it was fixed with the v72 adaptation.
 
 ## 0.19.8 [Alpha] - 2025-03-09
 ### Changed

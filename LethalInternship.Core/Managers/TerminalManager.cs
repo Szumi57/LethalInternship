@@ -29,6 +29,18 @@ namespace LethalInternship.Core.Managers
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                if (Instance.IsSpawned && Instance.IsServer)
+                {
+                    Instance.NetworkObject.Despawn(destroy: true);
+                }
+                else
+                {
+                    Destroy(Instance.gameObject);
+                }
+            }
+
             Instance = this;
             this.CommandIntershipProgram = PluginRuntimeProvider.Context.Config.TitleInHelpMenu.ToLower();
             this.StringIntershipProgram = PluginRuntimeProvider.Context.Config.GetTitleInternshipProgram();
