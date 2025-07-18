@@ -1,0 +1,18 @@
+﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+
+namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
+{
+    public class TeleportDebugToPos : IBTAction
+    {
+        public BehaviourTreeStatus Action(BTContext context)
+        {
+            PluginLoggerHook.LogWarning?.Invoke("Teleporting directly, maybe a problem occured.");
+
+            InternAI ai = context.InternAI;
+
+            ai.SyncTeleportIntern(ai.NextPos, !ai.isOutside, isUsingEntrance: false);
+            return BehaviourTreeStatus.Success;
+        }
+    }
+}
