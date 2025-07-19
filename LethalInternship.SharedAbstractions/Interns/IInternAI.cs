@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Enums;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -25,7 +26,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         IPointOfInterest? GetPointOfInterest();
         void SetCommandToFollowPlayer();
-        void SetCommandToGoToPosition(IPointOfInterest pointOfInterest);
+        void SetCommandTo(IPointOfInterest pointOfInterest);
 
         void AdaptController(PlayerControllerB playerControllerB);
         void UpdateController();

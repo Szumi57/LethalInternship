@@ -113,7 +113,7 @@ namespace LethalInternship.Core.Managers
         private List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
         public Dictionary<string, int> DictTagSurfaceIndex = new Dictionary<string, int>();
 
-        private Dictionary<Vector3, IPointOfInterest> dictPointOfInterest = new Dictionary<Vector3, IPointOfInterest>();
+        private List<IPointOfInterest> listPointOfInterest = new List<IPointOfInterest>();
 
         private float timerSetInternInElevator;
 
@@ -219,10 +219,12 @@ namespace LethalInternship.Core.Managers
 
         private IEnumerator RegisterItemsCoroutine()
         {
-            if (HoarderBugAI.grabbableObjectsInMap != null)
+            if (HoarderBugAI.grabbableObjectsInMap == null)
             {
-                HoarderBugAI.grabbableObjectsInMap.Clear();
+                yield break;
             }
+
+            HoarderBugAI.grabbableObjectsInMap.Clear();
             yield return null;
 
             GrabbableObject[] array = Object.FindObjectsOfType<GrabbableObject>();
@@ -879,29 +881,45 @@ namespace LethalInternship.Core.Managers
 
         #region Point of interests
 
-        public IPointOfInterest GetPointOfInterestOrDefaultInterestPoint(Vector3 key)
+        public IPointOfInterest GetPointOfInterestOrDefaultInterestPoint(Vector3 pos)
         {
-            IPointOfInterest pointOfInterest;
-            if (dictPointOfInterest.TryGetValue(key, out pointOfInterest))
+            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == pos);
+            if (pointOfInterest != null)
             {
                 return pointOfInterest;
             }
 
-            pointOfInterest = new PointOfInterest(new DefaultInterestPoint(key));
-            dictPointOfInterest.Add(key, pointOfInterest);
+            pointOfInterest = new PointOfInterest();
+            pointOfInterest.TryAddInterestPoint(new DefaultInterestPoint(pos));
+            listPointOfInterest.Add(pointOfInterest);
             return pointOfInterest;
         }
 
-        public IPointOfInterest GetPointOfInterestOrVehicleInterestPoint(Vector3 key, VehicleController vehicleController)
+        public IPointOfInterest GetPointOfInterestOrVehicleInterestPoint(VehicleController vehicleController)
         {
-            IPointOfInterest pointOfInterest;
-            if (dictPointOfInterest.TryGetValue(key, out pointOfInterest))
+            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == VehicleInterestPoint.GetVehiclePoint(vehicleController));
+            if (pointOfInterest != null)
             {
                 return pointOfInterest;
             }
 
-            pointOfInterest = new PointOfInterest(new VehicleInterestPoint(vehicleController));
-            dictPointOfInterest.Add(key, pointOfInterest);
+            pointOfInterest = new PointOfInterest();
+            pointOfInterest.TryAddInterestPoint(new VehicleInterestPoint(vehicleController));
+            listPointOfInterest.Add(pointOfInterest);
+            return pointOfInterest;
+        }
+
+        public IPointOfInterest GetPointOfInterestOrShipInterestPoint(Transform shipTransform)
+        {
+            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == ShipInterestPoint.GetShipPoint(shipTransform));
+            if (pointOfInterest != null)
+            {
+                return pointOfInterest;
+            }
+
+            pointOfInterest = new PointOfInterest();
+            pointOfInterest.TryAddInterestPoint(new ShipInterestPoint(shipTransform));
+            listPointOfInterest.Add(pointOfInterest);
             return pointOfInterest;
         }
 

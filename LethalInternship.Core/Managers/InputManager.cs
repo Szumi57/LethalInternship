@@ -28,8 +28,9 @@ namespace LethalInternship.Core.Managers
         private LineRendererUtil LineRendererUtil = null!;
 
         private Coroutine? scanPositionCoroutine;
+        private Collider? lastColliderHit = null;
         private Vector3? lastNavMeshHitPoint = null;
-        private bool isValidNavMeshPoint;
+        private bool isPointedValid;
 
         private void Awake()
         {
@@ -65,7 +66,7 @@ namespace LethalInternship.Core.Managers
                 case EnumInputAction.SendingInternToLocation:
                 case EnumInputAction.SendingAllInternsToLocation:
                     StartScanPositionCoroutine();
-                    UIManager.Instance.ShowInputIcon(isValidNavMeshPoint);
+                    UIManager.Instance.ShowInputIcon(isPointedValid);
                     break;
 
                 case EnumInputAction.None:
@@ -76,7 +77,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Hide if another icon in center
-            if (UIManager.Instance.GetWorldIconInCenter() != null)
+            if (UIManager.Instance.GetPointOfInterestInCenter() != null)
             {
                 UIManager.Instance.HideInputIcon();
             }
@@ -179,34 +180,54 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            IPointOfInterest? location;
+            IPointOfInterest? pointOfInterest;
+
+            // Get point in center
+            pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
+
+            // No point of interest pointed
+            if (pointOfInterest == null)
+            {
+                if (lastColliderHit != null && IsColliderFromVehicle(lastColliderHit))
+                {
+                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(lastColliderHit.gameObject.GetComponentInParent<VehicleController>());
+                }
+                else if (lastColliderHit != null && IsColliderFromShip(lastColliderHit))
+                {
+                    Transform? shipTransform = GetParentShip(lastColliderHit.gameObject.transform);
+                    if (shipTransform != null)
+                    {
+                        pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+                    }
+                }
+                else if (isPointedValid
+                         && lastNavMeshHitPoint.HasValue)
+                {
+                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastNavMeshHitPoint.Value);
+                }
+            }
+
+            if (pointOfInterest == null)
+            {
+                return;
+            }
+
+            // Command intern(s)
             switch (CurrentInputAction)
             {
                 case EnumInputAction.SendingInternToLocation:
-                    location = GetDefaultPoint();
-                    if (location == null)
-                    {
-                        break;
-                    }
 
                     // Current intern
-                    currentCommandedIntern.SetCommandToGoToPosition(location);
-
+                    currentCommandedIntern.SetCommandTo(pointOfInterest);
                     CurrentInputAction = EnumInputAction.None;
                     break;
 
                 case EnumInputAction.SendingAllInternsToLocation:
-                    location = GetDefaultPoint();
-                    if (location == null)
-                    {
-                        break;
-                    }
-
                     // All owned interns (later close interns)
                     IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
                     foreach (IInternAI intern in internsOwned)
                     {
-                        intern.SetCommandToGoToPosition(location);
+                        intern.SetCommandTo(pointOfInterest);
                     }
 
                     CurrentInputAction = EnumInputAction.None;
@@ -217,43 +238,6 @@ namespace LethalInternship.Core.Managers
                     ManageIntern();
                     break;
             }
-        }
-
-        private IPointOfInterest? GetDefaultPoint()
-        {
-            Vector3? point;
-
-            // Get point in center
-            point = UIManager.Instance.GetWorldIconInCenter();
-            if (point == null)
-            {
-                if (isValidNavMeshPoint
-                && lastNavMeshHitPoint.HasValue)
-                {
-                    point = lastNavMeshHitPoint.Value;
-                }
-            }
-
-            if (point != null)
-            {
-                return InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(point.Value);
-            }
-
-            return null;
-
-            //GameObject[] allAINodes;
-            //if (lastNavMeshHitPoint.Value.y >= -80f)
-            //{
-            //    allAINodes = GameObject.FindGameObjectsWithTag("OutsideAINode");
-            //}
-            //else
-            //{
-            //    allAINodes = GameObject.FindGameObjectsWithTag("AINode");
-            //}
-
-            //return allAINodes.OrderBy(node => (node.transform.position - lastNavMeshHitPoint.Value).sqrMagnitude)
-            //                 .FirstOrDefault()
-            //                 .transform.position;
         }
 
         private void ManageIntern()
@@ -380,14 +364,13 @@ namespace LethalInternship.Core.Managers
                 RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
                 if (raycastHits.Length == 0)
                 {
-                    isValidNavMeshPoint = false;
+                    isPointedValid = false;
                     yield return null;
                     continue;
                 }
 
                 Vector3? lastHitPoint = null;
                 raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
-                NavMeshHit hitMesh = new NavMeshHit();
                 NavMeshPath path = new NavMeshPath();
                 // Check if looking too far in the distance or at a valid position
                 foreach (var hit in raycastHits)
@@ -405,8 +388,26 @@ namespace LethalInternship.Core.Managers
                     lastHitPoint = hit.point;
 
                     // Check for what we hit
-                    UIManager.Instance.SetDefaultInputIcon();
-                    PluginLoggerHook.LogDebug?.Invoke($"hit.collider {hit.collider} {hit.collider.tag}");
+                    if (IsColliderFromVehicle(hit.collider))
+                    {
+                        lastColliderHit = hit.collider;
+                        isPointedValid = true;
+                        UIManager.Instance.SetVehicleInputIcon();
+                        break;
+                    }
+                    else if (IsColliderFromShip(hit.collider))
+                    {
+                        lastColliderHit = hit.collider;
+                        isPointedValid = true;
+                        UIManager.Instance.SetShipInputIcon();
+                        break;
+                    }
+                    lastColliderHit = null;
+
+                    // Pedestrian
+                    UIManager.Instance.SetPedestrianInputIcon();
+
+                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
 
                     NavMesh.CalculatePath(localPlayer.transform.position, hit.point, NavMesh.AllAreas, path);
                     if (path.status != NavMeshPathStatus.PathInvalid)
@@ -414,24 +415,63 @@ namespace LethalInternship.Core.Managers
                         lastNavMeshHitPoint = hit.point;
                     }
 
+                    if (lastHitPoint != null
+                        && lastNavMeshHitPoint != null)
+                    {
+                        isPointedValid = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
+                    }
+                    else
+                    {
+                        isPointedValid = false;
+                    }
+
                     break;
                 }
-
-                if (lastHitPoint != null
-                    && lastNavMeshHitPoint != null)
-                {
-                    isValidNavMeshPoint = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
-                }
-                else
-                {
-                    isValidNavMeshPoint = false;
-                }
-
                 yield return null;
             }
 
-            isValidNavMeshPoint = false;
+            isPointedValid = false;
             yield break;
+        }
+
+        private bool IsColliderFromVehicle(Collider? collider)
+        {
+            return collider?.gameObject.GetComponentInParent<VehicleController>();
+        }
+
+        private bool IsColliderFromShip(Collider? collider)
+        {
+            return IsParentShip(collider?.gameObject.transform);
+        }
+
+        private bool IsParentShip(Transform? transform)
+        {
+            if (transform == null)
+            {
+                return false;
+            }
+
+            if (transform.name == "HangarShip")
+            {
+                return true;
+            }
+
+            return IsParentShip(transform.parent);
+        }
+
+        private Transform? GetParentShip(Transform? transform)
+        {
+            if (transform == null)
+            {
+                return null;
+            }
+
+            if (transform.name == "HangarShip")
+            {
+                return transform;
+            }
+
+            return GetParentShip(transform.parent);
         }
 
         #endregion

@@ -121,7 +121,8 @@ namespace LethalInternship
             }
 
             // Load UI prefabs
-            UIAssetsLoaded = false;// LoadUIPrefabs();
+            //UIAssetsLoaded = false;
+            UIAssetsLoaded = LoadUIPrefabs();
 
             InitSharedValues();
 

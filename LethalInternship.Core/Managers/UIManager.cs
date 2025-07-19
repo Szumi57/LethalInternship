@@ -50,7 +50,7 @@ namespace LethalInternship.Core.Managers
 
         private PlayerControllerB localPlayerController = null!;
         private bool InternsOwned;
-        private WorldIconUI? WorldIconInCenter = null;
+        private IPointOfInterest? PointOfInterestInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
 
         private void Awake() 
@@ -99,7 +99,7 @@ namespace LethalInternship.Core.Managers
 
         private void ShowWorldIconUIs()
         {
-            WorldIconInCenter = null;
+            PointOfInterestInCenter = null;
 
             // Check for interns owned
             IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
@@ -126,9 +126,9 @@ namespace LethalInternship.Core.Managers
                 worldIconsToReturn.Add(worldIcon);
 
                 // Scan icon in center
-                if (WorldIconInCenter == null)
+                if (PointOfInterestInCenter == null)
                 {
-                    WorldIconInCenter = worldIcon.IsIconInCenter ? worldIcon : null;
+                    PointOfInterestInCenter = worldIcon.IsIconInCenter ? pointOfInterest : null;
                 }
 
                 // Should use ping animation ?
@@ -174,6 +174,8 @@ namespace LethalInternship.Core.Managers
             // Renderers
             interestPointRendererRegistery = new InterestPointRendererRegistery();
             interestPointRendererRegistery.Register(new DefaultInterestPointRenderer());
+            interestPointRendererRegistery.Register(new VehicleInterestPointRenderer());
+            interestPointRendererRegistery.Register(new ShipInterestPointRenderer());
 
             pointOfInterestRendererService = new PointOfInterestRendererService(interestPointRendererRegistery);
 
@@ -270,14 +272,22 @@ namespace LethalInternship.Core.Managers
         {
             inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
         }
+        public void SetPedestrianInputIcon()
+        {
+            inputIconImagePrefab = PluginRuntimeProvider.Context.PedestrianIconImagePrefab;
+        }
         public void SetVehicleInputIcon()
         {
             inputIconImagePrefab = PluginRuntimeProvider.Context.VehicleIconImagePrefab;
         }
-
-        public Vector3? GetWorldIconInCenter()
+        public void SetShipInputIcon()
         {
-            return WorldIconInCenter?.IconWorldPosition;
+            inputIconImagePrefab = PluginRuntimeProvider.Context.ShipIconImagePrefab;
+        }
+
+        public IPointOfInterest? GetPointOfInterestInCenter()
+        {
+            return PointOfInterestInCenter;
         }
 
         //PluginLoggerHook.LogDebug?.Invoke($"pos {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.position}, {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.GetSiblingIndex()}");

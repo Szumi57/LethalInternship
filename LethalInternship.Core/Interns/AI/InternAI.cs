@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.BT;
+using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
@@ -486,16 +487,14 @@ namespace LethalInternship.Core.Interns.AI
             return this.PointOfInterest;
         }
 
-        public void SetCommandTo(EnumCommandTypes commandType)
-        {
-            CurrentCommand = commandType;
-        }
-
-        public void SetCommandToGoToPosition(IPointOfInterest pointOfInterest)
+        public void SetCommandTo(IPointOfInterest pointOfInterest)
         {
             this.PointOfInterest = pointOfInterest;
-            CurrentCommand = EnumCommandTypes.GoToPosition;
 
+            EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
+            CurrentCommand = newCommand == null ? EnumCommandTypes.FollowPlayer : newCommand.Value;
+
+            // Set next pos
             NavMesh.CalculatePath(this.transform.position, this.PointOfInterest.GetPoint(), NavMesh.AllAreas, this.path1);
             if (this.path1.status == NavMeshPathStatus.PathPartial)
             {
@@ -507,6 +506,11 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToGoToPosition {this.PointOfInterest.GetPoint()}, nextpos {NextPos}");
+            PluginLoggerHook.LogDebug?.Invoke($"PointOfInterest");
+            foreach (var p in this.PointOfInterest.GetInterestPoints())
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"PointOfInterest {p.GetType()}");
+            }
         }
 
         public void SetCommandToFollowPlayer()

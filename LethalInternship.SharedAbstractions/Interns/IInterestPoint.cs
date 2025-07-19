@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using LethalInternship.SharedAbstractions.Enums;
+using UnityEngine;
 
 namespace LethalInternship.SharedAbstractions.Interns
 {
@@ -7,5 +8,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         Vector3 Point { get; }
 
         bool IsCompatibleWith(IInterestPoint other);
+
+        EnumCommandTypes? CommandType { get; }
     }
 }
