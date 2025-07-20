@@ -120,7 +120,7 @@ namespace LethalInternship.Core.Managers
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest.}");
                 worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
-                worldIcon.SetPositionUI(pointOfInterest.GetPoint());
+                worldIcon.SetPositionUI(pointOfInterestRendererService.GetUIIcon(pointOfInterest));
                 worldIcon.SetDefaultColor();
                 worldIcon.SetIconActive(true);
                 worldIconsToReturn.Add(worldIcon);
@@ -230,12 +230,13 @@ namespace LethalInternship.Core.Managers
                 case EnumUIButtonSelected.SendInternTo:
                     HideCommandsSingle();
                     InputManager.Instance.SetCurrentInputAction(EnumInputAction.SendingInternToLocation);
+                    SetPedestrianInputIcon();
                     break;
 
                 case EnumUIButtonSelected.SendAllInternsTo:
                     HideCommandsMultiple();
                     InputManager.Instance.SetCurrentInputAction(EnumInputAction.SendingAllInternsToLocation);
-
+                    SetPedestrianInputIcon();
                     break;
                 default:
                     break;

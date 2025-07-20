@@ -35,8 +35,8 @@ namespace LethalInternship.Core.Interns.AI.BT
 
             BehaviorTree = CreateTree();
 
-            //BTUtil.PrintTree(CreateTree());
-            //PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
+            BTUtil.PrintTree(CreateTree());
+            PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
         }
 
         public void TickTree(float deltaTime)
@@ -77,7 +77,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "GetClosestEntrance", new GetClosestEntrance() },
                 { "GoToEntrance", new GoToEntrance() },
                 { "GoToPosition", new GoToPosition() },
-                { "GoToVehicle", new GoToVehicle() },
                 { "GrabItemBehavior", new GrabItemBehavior() },
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
@@ -111,7 +110,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "TooFarFromPos", new TooFarFromPos() },
                 { "TooFarFromVehicle", new TooFarFromVehicle() }
             };
-            
         }
 
         private void InitContext(InternAI internAI)
@@ -171,53 +169,11 @@ namespace LethalInternship.Core.Interns.AI.BT
                 .Build();
         }
 
-        private IBehaviourTreeNode CreateSubTreeGoToPosition()
+        private IBehaviourTreeNode CreateSubTreeTakeEntrance()
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                .Selector("Go to position")
-                    .Sequence("Take entrance maybe")
-                        .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
-                        .Selector("Take entrance")
-                            .Sequence("Get entrance")
-                                .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
-                                .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
-                                .Do("teleportDebugToPos", t => actions["TeleportDebugToPos"].Action(BTContext))
-                            .End()
-
-                            .Sequence("Go to entrance")
-                                .Condition("<tooFarFromEntrance>", t => conditions["TooFarFromEntrance"].Condition(BTContext))
-                                .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
-                            .End()
-
-                            .Sequence("Exit not blocked, take entrance")
-                                .Condition("<exitNotBlocked>", t => conditions["ExitNotBlocked"].Condition(BTContext))
-                                .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
-                            .End()
-
-                            .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
-                        .End()
-                    .End()
-
-                    .Sequence("Go to position if too far")
-                        .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
-                        .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
-                    .End()
-
-                    .Sequence("Drop item if in ship")
-                        .Condition("hasItemAndInShip", t => conditions["HasItemAndInShip"].Condition(BTContext))
-                        .Do("dropItem", t => actions["DropItem"].Action(BTContext))
-                    .End()
-                .End()
-                .Build();
-        }
-
-        private IBehaviourTreeNode CreateSubTreeGoToObject()
-        {
-            var builder = new BehaviourTreeBuilder();
-            return builder
-                .Selector("Go to position")
-                    .Sequence("Take entrance maybe")
+                .Sequence("Take entrance maybe")
                         .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
                         .Selector("Take entrance")
                             .Sequence("Get entrance")
@@ -238,7 +194,49 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                             .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
                         .End()
+                .End()
+                .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubTreeExitVehicle()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Sequence("Intern in vehicle, exit")
+                            .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                            .Do("exitVehicle", t => actions["ExitVehicle"].Action(BTContext))
+                        .End()
+                   .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubTreeGoToPosition()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                .Selector("Go to position")
+                    .Splice(CreateSubTreeExitVehicle())
+                    .Splice(CreateSubTreeTakeEntrance())
+
+                    .Sequence("Go to position if too far")
+                        .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
+                        .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
+
+                    .Sequence("Drop item if in ship")
+                        .Condition("hasItemAndInShip", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                        .Do("dropItem", t => actions["DropItem"].Action(BTContext))
+                    .End()
+                .End()
+                .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubTreeGoToObject()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                .Selector("Go to position")
+                    .Splice(CreateSubTreeExitVehicle())
+                    .Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position")
                         .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
@@ -258,32 +256,11 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Do("inVehicle", t => actions["InVehicle"].Action(BTContext))
                     .End()
 
-                    .Sequence("Take entrance maybe")
-                        .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
-                        .Selector("Take entrance")
-                            .Sequence("Get entrance")
-                                .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
-                                .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
-                                .Do("enterVehicle", t => actions["EnterVehicle"].Action(BTContext))
-                            .End()
-
-                            .Sequence("Go to entrance")
-                                .Condition("<tooFarFromEntrance>", t => conditions["TooFarFromEntrance"].Condition(BTContext))
-                                .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
-                            .End()
-
-                            .Sequence("Exit not blocked, take entrance")
-                                .Condition("<exitNotBlocked>", t => conditions["ExitNotBlocked"].Condition(BTContext))
-                                .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
-                            .End()
-
-                            .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
-                        .End()
-                    .End()
+                    .Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to vehicle")
                         .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
-                        .Do("goToVehicle", t => actions["GoToVehicle"].Action(BTContext))
+                        .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
 
                     .Do("enterVehicle", t => actions["EnterVehicle"].Action(BTContext))
@@ -301,10 +278,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Splice(CreateSubTreeGoToVehicle())
                     .End()
 
-                    .Sequence("Intern in vehicle, exit")
-                        .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
-                        .Do("exitVehicle", t => actions["ExitVehicle"].Action(BTContext))
-                    .End()
+                    .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Follow player")
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))

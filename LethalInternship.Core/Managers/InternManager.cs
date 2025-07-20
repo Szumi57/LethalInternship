@@ -881,6 +881,17 @@ namespace LethalInternship.Core.Managers
 
         #region Point of interests
 
+        public bool CheckAndClearInvalidPointOfInterest(IPointOfInterest? pointOfInterest)
+        {
+            if (pointOfInterest != null && pointOfInterest.IsInvalid)
+            {
+                listPointOfInterest.Remove(pointOfInterest);
+                return true;
+            }
+
+            return false;
+        }
+
         public IPointOfInterest GetPointOfInterestOrDefaultInterestPoint(Vector3 pos)
         {
             IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == pos);

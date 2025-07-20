@@ -11,6 +11,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
     {
         public abstract Vector3 Point { get; }
         public abstract EnumCommandTypes? CommandType { get; }
+        public abstract bool IsInvalid { get; }
 
         protected virtual IEnumerable<Type> IncompatibleTypes => Enumerable.Empty<Type>();
 

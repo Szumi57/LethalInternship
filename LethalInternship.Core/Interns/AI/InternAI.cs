@@ -471,8 +471,8 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
-            // Do the AI calculation behaviour for the current state
-            //State.DoAI();
+            // Calculate next pos if necessary
+            CalculateNextPos();
 
             BTController.TickTree(AIIntervalTime);
 
@@ -484,7 +484,29 @@ namespace LethalInternship.Core.Interns.AI
 
         public IPointOfInterest? GetPointOfInterest()
         {
+            if (InternManager.Instance.CheckAndClearInvalidPointOfInterest(this.PointOfInterest))
+            {
+                this.PointOfInterest = null;
+                return null;
+            }
+
             return this.PointOfInterest;
+        }
+
+        public void CalculateNextPos()
+        {
+            Vector3 point = this.PointOfInterest == null ? NextPos : this.PointOfInterest.GetPoint();
+
+            // Set next pos
+            NavMesh.CalculatePath(this.transform.position, point, NavMesh.AllAreas, this.path1);
+            if (this.path1.status == NavMeshPathStatus.PathPartial)
+            {
+                NextPos = path1.corners[path1.corners.Length - 1];
+            }
+            else
+            {
+                NextPos = point;
+            }
         }
 
         public void SetCommandTo(IPointOfInterest pointOfInterest)
@@ -494,22 +516,11 @@ namespace LethalInternship.Core.Interns.AI
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
             CurrentCommand = newCommand == null ? EnumCommandTypes.FollowPlayer : newCommand.Value;
 
-            // Set next pos
-            NavMesh.CalculatePath(this.transform.position, this.PointOfInterest.GetPoint(), NavMesh.AllAreas, this.path1);
-            if (this.path1.status == NavMeshPathStatus.PathPartial)
-            {
-                NextPos = path1.corners[path1.corners.Length - 1];
-            }
-            else
-            {
-                NextPos = this.PointOfInterest.GetPoint();
-            }
-
-            PluginLoggerHook.LogDebug?.Invoke($"SetCommandToGoToPosition {this.PointOfInterest.GetPoint()}, nextpos {NextPos}");
+            PluginLoggerHook.LogDebug?.Invoke($"SetCommandTo {CurrentCommand}");
             PluginLoggerHook.LogDebug?.Invoke($"PointOfInterest");
-            foreach (var p in this.PointOfInterest.GetInterestPoints())
+            foreach (var p in this.PointOfInterest.GetListInterestPoints())
             {
-                PluginLoggerHook.LogDebug?.Invoke($"PointOfInterest {p.GetType()}");
+                PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
             }
         }
 
@@ -668,7 +679,7 @@ namespace LethalInternship.Core.Interns.AI
         /// <summary>
         /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
         /// </summary>
-        public void UpdateDestinationToAgent()
+        public void UpdateDestinationToAgent(bool calculatePartialPath = false, bool checkForPath = false)
         {
             if (agent.isActiveAndEnabled
                 && agent.isOnNavMesh
@@ -676,26 +687,29 @@ namespace LethalInternship.Core.Interns.AI
                 && !NpcController.Npc.isPlayerDead
                 && !StartOfRound.Instance.shipIsLeaving)
             {
-                TrySetDestinationToPosition(destination);
+                TrySetDestinationToPosition(destination, calculatePartialPath, checkForPath);
                 agent.SetDestination(destination);
             }
         }
 
-        public void OrderAgentAndBodyMoveToDestination()
+        public void OrderAgentAndBodyMoveToDestination(bool calculatePartialPath = false, bool checkForPath = false)
         {
             NpcController.OrderToMove();
-            UpdateDestinationToAgent();
+            UpdateDestinationToAgent(calculatePartialPath, checkForPath);
         }
 
-        public bool TrySetDestinationToPosition(Vector3 position, bool checkForPath = false)
+        public bool TrySetDestinationToPosition(Vector3 position, bool calculatePartialPath = false, bool checkForPath = false)
         {
-            NavMesh.CalculatePath(this.transform.position, position, NavMesh.AllAreas, this.path1);
-            if (this.path1.status == NavMeshPathStatus.PathPartial)
+            if (calculatePartialPath)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"TrySetDestinationToPosition CalculatePath {this.path1.status}");
-                return SetDestinationToPosition(path1.corners[path1.corners.Length - 1]);
+                NavMesh.CalculatePath(this.transform.position, position, NavMesh.AllAreas, this.path1);
+                if (this.path1.status == NavMeshPathStatus.PathPartial)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"TrySetDestinationToPosition CalculatePath {this.path1.status}");
+                    return SetDestinationToPosition(path1.corners[path1.corners.Length - 1]);
+                }
             }
-            return SetDestinationToPosition(position);
+            return SetDestinationToPosition(position, checkForPath);
         }
 
         public void StopMoving()
@@ -3415,6 +3429,8 @@ namespace LethalInternship.Core.Interns.AI
             {
                 ReviveCompanyHook.ReviveCompanySetPlayerDiedAt?.Invoke((int)Npc.playerClientId);
             }
+
+            PointOfInterest = null;
         }
 
         #endregion

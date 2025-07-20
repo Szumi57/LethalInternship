@@ -11,12 +11,28 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
     {
         private Dictionary<Type, IInterestPoint> interestPoints;
 
-        private readonly List<Type> PriorityOrder = new List<Type>()
+        private readonly List<Type> priorityOrder = new List<Type>()
         {
             typeof(DefaultInterestPoint),
             typeof(VehicleInterestPoint),
             typeof(ShipInterestPoint)
         };
+
+        public bool IsInvalid
+        {
+            get
+            {
+                foreach(IInterestPoint interestPoint in GetListInterestPoints())
+                {
+                    if (interestPoint.IsInvalid)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         public PointOfInterest()
         {
@@ -45,9 +61,14 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
             return true;
         }
 
-        public IEnumerable<IInterestPoint> GetInterestPoints()
+        public IEnumerable<IInterestPoint> GetListInterestPoints()
         {
             return interestPoints.Values;
+        }
+
+        public Dictionary<Type, IInterestPoint> GetDictTypeInterestPoints()
+        {
+            return interestPoints;
         }
 
         public EnumCommandTypes? GetCommand()
@@ -67,7 +88,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
 
         public Vector3 GetPoint()
         {
-            foreach (var type in PriorityOrder)
+            foreach (var type in priorityOrder)
             {
                 if (interestPoints.TryGetValue(type, out var interestPoint))
                 {

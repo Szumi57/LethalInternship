@@ -23,5 +23,15 @@ namespace LethalInternship.Core.UI.Renderers
 
             return null;
         }
+
+        public Vector3 GetUIPosOffset(IInterestPoint interestPoint)
+        {
+            if (wrappers.TryGetValue(interestPoint.GetType(), out var interestPointRendererWrapper))
+            {
+                return interestPointRendererWrapper.GetUIPos(interestPoint);
+            }
+            
+            return Vector3.zero;
+        }
     }
 }

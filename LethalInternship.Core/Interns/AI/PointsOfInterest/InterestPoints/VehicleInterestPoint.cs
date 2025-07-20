@@ -7,11 +7,13 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
 {
     public class VehicleInterestPoint : InterestPointBase
     {
-        public override Vector3 Point => GetVehiclePoint(vehicleController);
-
+        public VehicleController VehicleController => vehicleController;
         private VehicleController vehicleController;
+
+        public override Vector3 Point => GetVehiclePoint(vehicleController);
         protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(DefaultInterestPoint), typeof(ShipInterestPoint) };
         public override EnumCommandTypes? CommandType => EnumCommandTypes.GoToVehicle;
+        public override bool IsInvalid => vehicleController == null || vehicleController.carDestroyed;
 
         public VehicleInterestPoint(VehicleController vehicle)
         {
@@ -20,7 +22,12 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
 
         public static Vector3 GetVehiclePoint(VehicleController vehicleController)
         {
-            return vehicleController.transform.position + new Vector3(0f, 2f, 0f);
+            if (vehicleController == null)
+            {
+                return default(Vector3);
+            }
+
+            return vehicleController.transform.position;
         }
     }
 }

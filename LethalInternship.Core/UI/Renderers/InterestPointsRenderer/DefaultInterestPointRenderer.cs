@@ -11,5 +11,10 @@ namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
         {
             return PluginRuntimeProvider.Context.PedestrianIconImagePrefab;
         }
+
+        public Vector3 GetUIPos(DefaultInterestPoint interestPoint)
+        {
+            return interestPoint.Point;
+        }
     }
 }

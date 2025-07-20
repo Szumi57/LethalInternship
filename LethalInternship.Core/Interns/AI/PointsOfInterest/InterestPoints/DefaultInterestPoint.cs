@@ -13,6 +13,8 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
         protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(VehicleInterestPoint), typeof(ShipInterestPoint) };
         public override EnumCommandTypes? CommandType => EnumCommandTypes.GoToPosition;
 
+        public override bool IsInvalid => false;
+
         public DefaultInterestPoint(Vector3 position)
         {
             this.position = position;

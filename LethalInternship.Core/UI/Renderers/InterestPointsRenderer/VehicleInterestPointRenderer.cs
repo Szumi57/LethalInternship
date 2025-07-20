@@ -11,5 +11,15 @@ namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
         {
             return PluginRuntimeProvider.Context.VehicleIconImagePrefab;
         }
+
+        public Vector3 GetUIPos(VehicleInterestPoint interestPoint)
+        {
+            if (interestPoint.IsInvalid)
+            {
+                return default(Vector3);
+            }
+
+            return interestPoint.VehicleController.transform.position + new Vector3(0f, 3f, 0f); // no rotation need with just y
+        }
     }
 }

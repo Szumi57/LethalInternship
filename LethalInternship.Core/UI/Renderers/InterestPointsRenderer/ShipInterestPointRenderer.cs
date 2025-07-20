@@ -11,5 +11,10 @@ namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
         {
             return PluginRuntimeProvider.Context.ShipIconImagePrefab;
         }
+
+        public Vector3 GetUIPos(ShipInterestPoint interestPoint)
+        {
+            return interestPoint.HangarShipTransform.transform.position + interestPoint.HangarShipTransform.rotation * new Vector3(0f, 6f, -7f);
+        }
     }
 }
