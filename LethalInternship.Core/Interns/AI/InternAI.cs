@@ -517,7 +517,7 @@ namespace LethalInternship.Core.Interns.AI
             CurrentCommand = newCommand == null ? EnumCommandTypes.FollowPlayer : newCommand.Value;
 
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandTo {CurrentCommand}");
-            PluginLoggerHook.LogDebug?.Invoke($"PointOfInterest");
+            PluginLoggerHook.LogDebug?.Invoke($"VVV PointOfInterest VVV");
             foreach (var p in this.PointOfInterest.GetListInterestPoints())
             {
                 PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
