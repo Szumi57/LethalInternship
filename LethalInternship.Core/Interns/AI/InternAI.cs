@@ -1458,11 +1458,11 @@ namespace LethalInternship.Core.Interns.AI
                 PluginLoggerHook.LogDebug?.Invoke($"object {grabbableObject.name} pathfind is not reachable");
                 return false;
             }
-            NavMesh.CalculatePath(this.transform.position, grabbableObject.transform.position, NavMesh.AllAreas, this.path1);
-            if (this.path1.status == NavMeshPathStatus.PathPartial)
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"2 object {grabbableObject.name} pathfind is not reachable");
-            }
+            //NavMesh.CalculatePath(this.transform.position, grabbableObject.transform.position, NavMesh.AllAreas, this.path1);
+            //if (this.path1.status == NavMeshPathStatus.PathPartial)
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"2 object {grabbableObject.name} pathfind is not reachable");
+            //}
 
             return true;
         }
