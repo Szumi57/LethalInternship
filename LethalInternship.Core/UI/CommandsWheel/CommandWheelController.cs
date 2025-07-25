@@ -18,6 +18,7 @@ namespace LethalInternship.Core.UI.CommandsWheel
 
         private CommandButtonController closestButton;
         private RectTransform CanvasOverlayRectTransform;
+        private TMP_FontAsset font;
 
         // Start is called before the first frame update
         void Start()
@@ -109,6 +110,15 @@ namespace LethalInternship.Core.UI.CommandsWheel
                     minDist = dist;
                     minDistButton = button;
                 }
+
+                //RectTransformUtility.ScreenPointToLocalPointInRectangle(CanvasOverlayRectTransform, new Vector2(button.transform.localPosition.x, button.transform.localPosition.y), null, out Vector2 realButtonPos);
+                //RectTransformUtility.ScreenPointToLocalPointInRectangle(CanvasOverlayRectTransform, Mouse.current.position.ReadValue(), null, out Vector2 realMousePos);
+                //float dist = (realMousePos - realButtonPos).sqrMagnitude;
+                //if (dist < minDist)
+                //{
+                //    minDist = dist;
+                //    minDistButton = button;
+                //}
             }
 
             return minDistButton;
@@ -126,6 +136,12 @@ namespace LethalInternship.Core.UI.CommandsWheel
         public void CommandWheelMouseDown()
         {
             closestButton.Selected();
+        }
+
+        public void SetFont(TMP_FontAsset font)
+        {
+            this.font = font;
+            CommandDescription.font = font;
         }
     }
 

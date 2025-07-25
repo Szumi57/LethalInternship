@@ -49,7 +49,6 @@ namespace LethalInternship.Core.Managers
         private PointOfInterestRendererService pointOfInterestRendererService = null!;
 
         private PlayerControllerB localPlayerController = null!;
-        private IInternAI? currentCommandedIntern = null!;
         private bool InternsOwned;
         private IPointOfInterest? PointOfInterestInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
@@ -197,6 +196,7 @@ namespace LethalInternship.Core.Managers
                 commandButtonController.OnSelected += CommandWheelButtonController_OnSelected;
             }
             CommandsUIController = CommandsWheel.GetComponent<CommandsUIController>();
+            CommandsUIController.SetFont(HUDManager.Instance.statsUIElements.playerNamesText[0].font);
             CommandsWheel.SetActive(false);
         }
 
@@ -304,11 +304,19 @@ namespace LethalInternship.Core.Managers
 
         //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel {GroupCommandWheel.activeSelf}");
 
-        public void ShowCommandsWheel(IInternAI? internAIToManage = null)
+        public bool ShowCommandsWheel(IInternAI? internAIToManage = null)
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
-                return;
+                return false;
+            }
+            if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
+            {
+                return false;
+            }
+            if (InternManager.Instance.GetInternsAIOwnedByLocal().Length == 0)
+            {
+                return false;
             }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
@@ -316,7 +324,6 @@ namespace LethalInternship.Core.Managers
             Cursor.visible = true;
 
             InputManager.Instance.SetCurrentInputAction(EnumInputAction.None, internAIToManage);
-            currentCommandedIntern = internAIToManage;
 
             if (CoroutineUpdateRightPanel != null)
             {
@@ -325,6 +332,7 @@ namespace LethalInternship.Core.Managers
             CoroutineUpdateRightPanel = StartCoroutine(UpdateCommandsWheelUI(internAIToManage));
 
             CommandsWheel.SetActive(true);
+            return true;
         }
 
         public void HideCommandsWheel()
@@ -337,8 +345,6 @@ namespace LethalInternship.Core.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-
-            currentCommandedIntern = null;
 
             CommandsWheel.SetActive(false);
         }
@@ -373,6 +379,7 @@ namespace LethalInternship.Core.Managers
                     StringBuilder sb = new StringBuilder();
                     foreach (IInternAI intern in internsOwned)
                     {
+                        sb.Append("> ");
                         sb.Append(intern.Npc.playerUsername);
                         sb.Append("\n");
                     }
@@ -381,7 +388,7 @@ namespace LethalInternship.Core.Managers
                 else
                 {
                     CommandsUIController.SetTitleListInterns("Managing intern :");
-                    CommandsUIController.SetTextListInterns(internAIToManage.Npc.playerUsername);
+                    CommandsUIController.SetTextListInterns("> " + internAIToManage.Npc.playerUsername);
                 }
 
                 yield return null;

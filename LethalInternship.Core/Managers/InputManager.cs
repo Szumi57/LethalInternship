@@ -108,7 +108,7 @@ namespace LethalInternship.Core.Managers
                     GiveOrderFollowMe();
                     SetCurrentInputAction(EnumInputAction.None);
                     break;
-                    
+
                 case EnumInputAction.GoToShip:
                     GiveOrderGoToShip();
                     SetCurrentInputAction(EnumInputAction.None);
@@ -410,14 +410,18 @@ namespace LethalInternship.Core.Managers
                 }
 
                 // Command single intern
-                UIManager.Instance.ShowCommandsWheel(intern);
-                currentCommandedIntern = intern;
+                if (UIManager.Instance.ShowCommandsWheel(intern))
+                {
+                    currentCommandedIntern = intern;
+                }
                 return;
             }
 
             // Command all close interns
-            UIManager.Instance.ShowCommandsWheel();
-            currentCommandedIntern = null;
+            if (UIManager.Instance.ShowCommandsWheel())
+            {
+                currentCommandedIntern = null;
+            }
         }
 
         private void StartScanPositionCoroutine()
