@@ -17,7 +17,7 @@ Or point at one intern and open the menu with [Z] but give command ONLY to him.<
 I set it to false for now (interns can not lose the player) just to see if people like it better this way.
 
 ### Fixed
-- LethalMin compat
+- LethalMin v1.0.16 compat
 
 ## 0.20.1 [Alpha] - 2025-07-18
 Nothing, a thunderstore upload problem and the new version fixed nothing
