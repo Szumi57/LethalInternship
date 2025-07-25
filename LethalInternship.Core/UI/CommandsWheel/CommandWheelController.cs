@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.CommandButton;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System.Linq;
@@ -80,7 +81,14 @@ namespace LethalInternship.Core.UI.CommandsWheel
                         continue;
                     }
 
-                    CommandDescription.text = ((EnumInputAction)button.ID).ToString();
+                    if (UIConst.COMMANDS_BUTTON_STRING.Length <= button.ID)
+                    {
+                        CommandDescription.text = string.Empty;
+                    }
+                    else
+                    {
+                        CommandDescription.text = UIConst.COMMANDS_BUTTON_STRING[button.ID].ToString();
+                    }
                 }
                 else
                 {

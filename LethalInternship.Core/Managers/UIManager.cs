@@ -53,6 +53,7 @@ namespace LethalInternship.Core.Managers
         private IPointOfInterest? PointOfInterestInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
         private Coroutine CoroutineUpdateRightPanel = null!;
+        private IInternAI? internAIToManage;
 
         private void Awake()
         {
@@ -220,20 +221,14 @@ namespace LethalInternship.Core.Managers
             switch (enumInputAction)
             {
                 case EnumInputAction.GoToPosition:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction);
+                    InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
                     SetPedestrianInputIcon();
                     break;
 
                 case EnumInputAction.FollowMe:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction);
-                    break;
-
                 case EnumInputAction.GoToShip:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction);
-                    break;
-
                 case EnumInputAction.GoToVehicle:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction);
+                    InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
                     break;
 
                 default:
@@ -324,6 +319,7 @@ namespace LethalInternship.Core.Managers
             Cursor.visible = true;
 
             InputManager.Instance.SetCurrentInputAction(EnumInputAction.None, internAIToManage);
+            this.internAIToManage = internAIToManage;
 
             if (CoroutineUpdateRightPanel != null)
             {

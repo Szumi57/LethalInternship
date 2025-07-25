@@ -412,6 +412,7 @@ namespace LethalInternship.Core.Managers
                 // Command single intern
                 if (UIManager.Instance.ShowCommandsWheel(intern))
                 {
+                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern {intern.Npc.playerUsername}");
                     currentCommandedIntern = intern;
                 }
                 return;
@@ -420,6 +421,7 @@ namespace LethalInternship.Core.Managers
             // Command all close interns
             if (UIManager.Instance.ShowCommandsWheel())
             {
+                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
                 currentCommandedIntern = null;
             }
         }

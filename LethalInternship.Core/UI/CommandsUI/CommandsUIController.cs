@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.UI.CommandsWheel;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using TMPro;
 using UnityEngine;
@@ -37,6 +38,11 @@ namespace LethalInternship.Core.UI.CommandsUI
             ModNamePanelDescription.font = font;
 
             CommandWheelController.SetFont(this.font);
+        }
+
+        public void CommandUIMouseDown()
+        {
+            CommandWheelController.CommandWheelMouseDown();
         }
     }
 }

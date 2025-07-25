@@ -163,6 +163,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
         public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
         public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
+        public static readonly string TOOLTIP_COMMANDS = "Commands : [{0}]";
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
         public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
         
