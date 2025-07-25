@@ -8,7 +8,7 @@
             string.Empty, // 0 EnumInputAction
             "Choose a position", // GoToPosition
             "Follow me", // FollowMe
-            "Go to the ship", // GoToShip
+            "Go to the cruiser", // GoToShip
             "Go to the vehicle", // GoToVehicle
         };
     }

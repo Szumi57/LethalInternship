@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.20.2 [Alpha] - 2025-07-26
+First real update with the UI, it's still quite barebone for now.</br>
+Do not hesitate to report bugs on the github or the discord.
+
+### Added
+- Commands ! and the menu with it.</br>
+Open the menu for all interns with [Z] (configurable).</br>
+Or point at one intern and open the menu with [Z] but give command ONLY to him.</br>
+3 commands :</br>
+ 1. Choose a position : the player can choose a location where the intern will go. You can also point at the cruiser or the ship.</br>
+ 2. Go to the cruiser</br>
+ 3. Go to the ship</br>
+ New commands will be added in the future like autonomous roaming, attack monster, set a gathering loot point...
+- New config "Can lose the player", does the intern can lose the player if he goes too far ? default to false.</br>
+I set it to false for now (interns can not lose the player) just to see if people like it better this way.
+
+### Fixed
+- LethalMin compat
+
+## 0.20.1 [Alpha] - 2025-07-18
+Nothing, a thunderstore upload problem and the new version fixed nothing
+
 ## 0.20.0 [Alpha] - 2025-07-18
 Sorry for the wait, I think I needed to take a break...</br>
 This update is supposed to add commands with UI to the interns, it's on its way but not ready yet.</br>
