@@ -21,15 +21,17 @@ namespace LethalInternship.Core.Managers
     {
         public static InputManager Instance { get; private set; } = null!;
 
-        public EnumInputAction CurrentInputAction;
+        private EnumInputAction currentInputAction;
+        public EnumInputAction CurrentInputAction { get => currentInputAction; }
 
         private bool openCommandsInternInputIsPressed;
-        private IInternAI currentCommandedIntern = null!;
+        private IInternAI? currentCommandedIntern = null!;
         private LineRendererUtil LineRendererUtil = null!;
 
         private Coroutine? scanPositionCoroutine;
+        private Collider? lastColliderHit = null;
         private Vector3? lastNavMeshHitPoint = null;
-        private bool isValidNavMeshPoint;
+        private bool isPointedValid;
 
         private void Awake()
         {
@@ -40,48 +42,6 @@ namespace LethalInternship.Core.Managers
 
             Instance = this;
             AddEventHandlers();
-        }
-
-        private void Start()
-        {
-            CurrentInputAction = EnumInputAction.None;
-        }
-
-        private void Update()
-        {
-            if (GameNetworkManager.Instance == null
-                || GameNetworkManager.Instance.localPlayerController == null)
-            {
-                return;
-            }
-
-            if (LineRendererUtil == null)
-            {
-                LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
-            }
-
-            switch (CurrentInputAction)
-            {
-                case EnumInputAction.SendingInternToLocation:
-                case EnumInputAction.SendingAllInternsToLocation:
-                    StartScanPositionCoroutine();
-                    UIManager.Instance.ShowInputIcon(isValidNavMeshPoint);
-                    break;
-
-                case EnumInputAction.None:
-                default:
-                    StopScanPositionCoroutine();
-                    UIManager.Instance.HideInputIcon();
-                    break;
-            }
-
-            // Hide if another icon in center
-            if (UIManager.Instance.GetWorldIconInCenter() != null)
-            {
-                UIManager.Instance.HideInputIcon();
-            }
-
-            CheckOpenCommandsInput();
         }
 
         private void AddEventHandlers()
@@ -118,9 +78,61 @@ namespace LethalInternship.Core.Managers
             return inputAction.GetBindingDisplayString(bindingIndex);
         }
 
-        public void SetCurrentInputAction(EnumInputAction action)
+
+        private void Start()
         {
-            CurrentInputAction = action;
+            currentInputAction = EnumInputAction.None;
+        }
+
+        private void Update()
+        {
+            if (GameNetworkManager.Instance == null
+                || GameNetworkManager.Instance.localPlayerController == null)
+            {
+                return;
+            }
+
+            if (LineRendererUtil == null)
+            {
+                LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
+            }
+
+            switch (CurrentInputAction)
+            {
+                case EnumInputAction.GoToPosition:
+                    StartScanPositionCoroutine();
+                    UIManager.Instance.ShowInputIcon(isPointedValid);
+                    break;
+
+                case EnumInputAction.FollowMe:
+                    GiveOrderFollowMe();
+                    SetCurrentInputAction(EnumInputAction.None);
+                    break;
+
+                case EnumInputAction.GoToShip:
+                    GiveOrderGoToShip();
+                    SetCurrentInputAction(EnumInputAction.None);
+                    break;
+
+                case EnumInputAction.GoToVehicle:
+                    GiveOrderGoToVehicle();
+                    SetCurrentInputAction(EnumInputAction.None);
+                    break;
+
+                case EnumInputAction.None:
+                default:
+                    StopScanPositionCoroutine();
+                    UIManager.Instance.HideInputIcon();
+                    break;
+            }
+
+            // Hide if another icon in center
+            if (UIManager.Instance.GetPointOfInterestInCenter() != null)
+            {
+                UIManager.Instance.HideInputIcon();
+            }
+
+            CheckOpenCommandsInput();
         }
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)
@@ -170,6 +182,85 @@ namespace LethalInternship.Core.Managers
         }
 
         #region Command intern
+        private void GiveOrderFollowMe()
+        {
+            // Give order
+            if (currentCommandedIntern == null)
+            {
+                // All owned interns (later close interns)
+                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                foreach (IInternAI intern in internsOwned)
+                {
+                    intern.SetCommandToFollowPlayer();
+                }
+            }
+            else
+            {
+                // Current intern
+                currentCommandedIntern.SetCommandToFollowPlayer();
+            }
+            SetCurrentInputAction(EnumInputAction.None);
+        }
+
+        private void GiveOrderGoToShip()
+        {
+            Transform? shipTransform = GameObject.Find("HangarShip").GetComponent<Transform>();
+            if (shipTransform == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke("shipTransform not found !");
+                return;
+            }
+
+            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+            // Give order
+            if (currentCommandedIntern == null)
+            {
+                // All owned interns (later close interns)
+                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                foreach (IInternAI intern in internsOwned)
+                {
+                    intern.SetCommandTo(pointOfInterest);
+                }
+            }
+            else
+            {
+                // Current intern
+                currentCommandedIntern.SetCommandTo(pointOfInterest);
+            }
+        }
+
+        private void GiveOrderGoToVehicle()
+        {
+            VehicleController? vehicleController = InternManager.Instance.VehicleController;
+            if (vehicleController == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke("vehicleController not found !");
+                return;
+            }
+
+            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(vehicleController);
+            // Give order
+            if (currentCommandedIntern == null)
+            {
+                // All owned interns (later close interns)
+                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                foreach (IInternAI intern in internsOwned)
+                {
+                    intern.SetCommandTo(pointOfInterest);
+                }
+            }
+            else
+            {
+                // Current intern
+                currentCommandedIntern.SetCommandTo(pointOfInterest);
+            }
+        }
+
+        public void SetCurrentInputAction(EnumInputAction action, IInternAI? internAIToCommand = null)
+        {
+            currentInputAction = action;
+            this.currentCommandedIntern = internAIToCommand;
+        }
 
         private void Manage_performed(InputAction.CallbackContext obj)
         {
@@ -179,81 +270,60 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            IPointOfInterest? location;
-            switch (CurrentInputAction)
-            {
-                case EnumInputAction.SendingInternToLocation:
-                    location = GetDefaultPoint();
-                    if (location == null)
-                    {
-                        break;
-                    }
-
-                    // Current intern
-                    currentCommandedIntern.SetCommandToGoToPosition(location);
-
-                    CurrentInputAction = EnumInputAction.None;
-                    break;
-
-                case EnumInputAction.SendingAllInternsToLocation:
-                    location = GetDefaultPoint();
-                    if (location == null)
-                    {
-                        break;
-                    }
-
-                    // All owned interns (later close interns)
-                    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                    foreach (IInternAI intern in internsOwned)
-                    {
-                        intern.SetCommandToGoToPosition(location);
-                    }
-
-                    CurrentInputAction = EnumInputAction.None;
-                    break;
-
-                case EnumInputAction.None:
-                default:
-                    ManageIntern();
-                    break;
-            }
-        }
-
-        private IPointOfInterest? GetDefaultPoint()
-        {
-            Vector3? point;
+            // Check if we are giving orders
+            IPointOfInterest? pointOfInterest;
 
             // Get point in center
-            point = UIManager.Instance.GetWorldIconInCenter();
-            if (point == null)
+            pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
+
+            // No point of interest pointed
+            if (pointOfInterest == null)
             {
-                if (isValidNavMeshPoint
-                && lastNavMeshHitPoint.HasValue)
+                if (lastColliderHit != null && IsColliderFromVehicle(lastColliderHit))
                 {
-                    point = lastNavMeshHitPoint.Value;
+                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(lastColliderHit.gameObject.GetComponentInParent<VehicleController>());
+                }
+                else if (lastColliderHit != null && IsColliderFromShip(lastColliderHit))
+                {
+                    Transform? shipTransform = GetParentShip(lastColliderHit.gameObject.transform);
+                    if (shipTransform != null)
+                    {
+                        pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+                    }
+                }
+                else if (isPointedValid
+                         && lastNavMeshHitPoint.HasValue)
+                {
+                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastNavMeshHitPoint.Value);
                 }
             }
-
-            if (point != null)
+            if (pointOfInterest == null)
             {
-                return InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(point.Value);
+                return;
             }
 
-            return null;
+            if (CurrentInputAction == EnumInputAction.None)
+            {
+                ManageIntern();
+                return;
+            }
 
-            //GameObject[] allAINodes;
-            //if (lastNavMeshHitPoint.Value.y >= -80f)
-            //{
-            //    allAINodes = GameObject.FindGameObjectsWithTag("OutsideAINode");
-            //}
-            //else
-            //{
-            //    allAINodes = GameObject.FindGameObjectsWithTag("AINode");
-            //}
-
-            //return allAINodes.OrderBy(node => (node.transform.position - lastNavMeshHitPoint.Value).sqrMagnitude)
-            //                 .FirstOrDefault()
-            //                 .transform.position;
+            // Give orders
+            if (currentCommandedIntern == null)
+            {
+                // All owned interns (later close interns)
+                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                foreach (IInternAI intern in internsOwned)
+                {
+                    intern.SetCommandTo(pointOfInterest);
+                }
+            }
+            else
+            {
+                // Current intern
+                currentCommandedIntern.SetCommandTo(pointOfInterest);
+            }
+            SetCurrentInputAction(EnumInputAction.None);
         }
 
         private void ManageIntern()
@@ -303,7 +373,7 @@ namespace LethalInternship.Core.Managers
             if (!PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern.IsPressed())
             {
                 openCommandsInternInputIsPressed = false;
-                UIManager.Instance.HideCommands();
+                UIManager.Instance.HideCommandsWheel();
                 return;
             }
 
@@ -340,15 +410,20 @@ namespace LethalInternship.Core.Managers
                 }
 
                 // Command single intern
-                UIManager.Instance.ShowCommandsSingle();
-
-
-                currentCommandedIntern = intern;
+                if (UIManager.Instance.ShowCommandsWheel(intern))
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern {intern.Npc.playerUsername}");
+                    currentCommandedIntern = intern;
+                }
                 return;
             }
 
             // Command all close interns
-            UIManager.Instance.ShowCommandsMultiple();
+            if (UIManager.Instance.ShowCommandsWheel())
+            {
+                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
+                currentCommandedIntern = null;
+            }
         }
 
         private void StartScanPositionCoroutine()
@@ -372,22 +447,20 @@ namespace LethalInternship.Core.Managers
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
-            while (CurrentInputAction == EnumInputAction.SendingInternToLocation
-                    || CurrentInputAction == EnumInputAction.SendingAllInternsToLocation)
+            while (CurrentInputAction == EnumInputAction.GoToPosition)
             {
                 // Scan 3D world
                 Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
                 RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
                 if (raycastHits.Length == 0)
                 {
-                    isValidNavMeshPoint = false;
+                    isPointedValid = false;
                     yield return null;
                     continue;
                 }
 
                 Vector3? lastHitPoint = null;
                 raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
-                NavMeshHit hitMesh = new NavMeshHit();
                 NavMeshPath path = new NavMeshPath();
                 // Check if looking too far in the distance or at a valid position
                 foreach (var hit in raycastHits)
@@ -405,8 +478,26 @@ namespace LethalInternship.Core.Managers
                     lastHitPoint = hit.point;
 
                     // Check for what we hit
-                    UIManager.Instance.SetDefaultInputIcon();
-                    PluginLoggerHook.LogDebug?.Invoke($"hit.collider {hit.collider} {hit.collider.tag}");
+                    if (IsColliderFromVehicle(hit.collider))
+                    {
+                        lastColliderHit = hit.collider;
+                        isPointedValid = true;
+                        UIManager.Instance.SetVehicleInputIcon();
+                        break;
+                    }
+                    else if (IsColliderFromShip(hit.collider))
+                    {
+                        lastColliderHit = hit.collider;
+                        isPointedValid = true;
+                        UIManager.Instance.SetShipInputIcon();
+                        break;
+                    }
+                    lastColliderHit = null;
+
+                    // Pedestrian
+                    UIManager.Instance.SetPedestrianInputIcon();
+
+                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
 
                     NavMesh.CalculatePath(localPlayer.transform.position, hit.point, NavMesh.AllAreas, path);
                     if (path.status != NavMeshPathStatus.PathInvalid)
@@ -414,24 +505,63 @@ namespace LethalInternship.Core.Managers
                         lastNavMeshHitPoint = hit.point;
                     }
 
+                    if (lastHitPoint != null
+                        && lastNavMeshHitPoint != null)
+                    {
+                        isPointedValid = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
+                    }
+                    else
+                    {
+                        isPointedValid = false;
+                    }
+
                     break;
                 }
-
-                if (lastHitPoint != null
-                    && lastNavMeshHitPoint != null)
-                {
-                    isValidNavMeshPoint = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
-                }
-                else
-                {
-                    isValidNavMeshPoint = false;
-                }
-
                 yield return null;
             }
 
-            isValidNavMeshPoint = false;
+            isPointedValid = false;
             yield break;
+        }
+
+        private bool IsColliderFromVehicle(Collider? collider)
+        {
+            return collider?.gameObject.GetComponentInParent<VehicleController>();
+        }
+
+        private bool IsColliderFromShip(Collider? collider)
+        {
+            return IsParentShip(collider?.gameObject.transform);
+        }
+
+        private bool IsParentShip(Transform? transform)
+        {
+            if (transform == null)
+            {
+                return false;
+            }
+
+            if (transform.name == "HangarShip")
+            {
+                return true;
+            }
+
+            return IsParentShip(transform.parent);
+        }
+
+        private Transform? GetParentShip(Transform? transform)
+        {
+            if (transform == null)
+            {
+                return null;
+            }
+
+            if (transform.name == "HangarShip")
+            {
+                return transform;
+            }
+
+            return GetParentShip(transform.parent);
         }
 
         #endregion

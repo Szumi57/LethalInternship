@@ -1,6 +1,7 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
@@ -17,8 +18,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"{(ai.NpcController.Npc.transform.position - vehicleController.transform.position).magnitude}");
-            if ((ai.NpcController.Npc.transform.position - vehicleController.transform.position).sqrMagnitude < Const.DISTANCE_TO_CRUISER * Const.DISTANCE_TO_CRUISER)
+            Vector3 internPos = new Vector3(ai.NpcController.Npc.transform.position.x, 0f, ai.NpcController.Npc.transform.position.z);
+            Vector3 VehiclePos = new Vector3(vehicleController.transform.position.x, 0f, vehicleController.transform.position.z);
+            PluginLoggerHook.LogDebug?.Invoke($"{(internPos - VehiclePos).magnitude}");
+            if ((internPos - VehiclePos).sqrMagnitude < Const.DISTANCE_TO_CRUISER * Const.DISTANCE_TO_CRUISER)
             {
                 return false;
             }

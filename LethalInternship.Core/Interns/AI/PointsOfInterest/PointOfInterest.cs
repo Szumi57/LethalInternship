@@ -1,4 +1,6 @@
-﻿using LethalInternship.SharedAbstractions.Interns;
+﻿using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
+using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,24 +9,40 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
 {
     public class PointOfInterest : IPointOfInterest
     {
-        private Vector3 point;
         private Dictionary<Type, IInterestPoint> interestPoints;
 
-        public PointOfInterest(IInterestPoint interestPoint)
+        private readonly List<Type> priorityOrder = new List<Type>()
         {
-            point = interestPoint.Point;
+            typeof(DefaultInterestPoint),
+            typeof(VehicleInterestPoint),
+            typeof(ShipInterestPoint)
+        };
 
-            interestPoints = new Dictionary<Type, IInterestPoint>();
-            TryAddInterestPoint(interestPoint);
+        public bool IsInvalid
+        {
+            get
+            {
+                foreach(IInterestPoint interestPoint in GetListInterestPoints())
+                {
+                    if (interestPoint.IsInvalid)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
-        public Vector3 GetPoint()
+        public PointOfInterest()
         {
-            return point;
+            interestPoints = new Dictionary<Type, IInterestPoint>();
         }
 
         public bool TryAddInterestPoint<T>(T interestPointToAdd) where T : IInterestPoint
         {
+            // Dictionnary with Type as Key has to be populated by a method and the caller should infer the type
+            // ex: TryAddInterestPoint<DefaultInterestPoint>(new DefaultInterestPoint(key)) not use IInterestPoint
             foreach (var existing in interestPoints.Values)
             {
                 if (!interestPointToAdd.IsCompatibleWith(existing)
@@ -34,13 +52,56 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
                 }
             }
 
+            if (interestPoints.ContainsKey(typeof(T)))
+            {
+                return false;
+            }
+
             interestPoints[typeof(T)] = interestPointToAdd;
             return true;
         }
 
-        public IEnumerable<IInterestPoint> GetInterestPoints()
+        public IEnumerable<IInterestPoint> GetListInterestPoints()
         {
             return interestPoints.Values;
+        }
+
+        public Dictionary<Type, IInterestPoint> GetDictTypeInterestPoints()
+        {
+            return interestPoints;
+        }
+
+        public EnumCommandTypes? GetCommand()
+        {
+            foreach (IInterestPoint interestPoint in interestPoints.Values)
+            {
+                if (interestPoint.CommandType == null)
+                {
+                    continue;
+                }
+
+                return interestPoint.CommandType;
+            }
+
+            return null;
+        }
+
+        public Vector3 GetPoint()
+        {
+            foreach (var type in priorityOrder)
+            {
+                if (interestPoints.TryGetValue(type, out var interestPoint))
+                {
+                    return interestPoint.Point;
+                }
+            }
+
+            foreach (IInterestPoint interestPoint in interestPoints.Values)
+            {
+                return interestPoint.Point;
+            }
+
+            return new Vector3();
         }
     }
 }

@@ -17,6 +17,7 @@ namespace LethalInternship.SharedAbstractions.Configs
 
         public bool SpawnIdentitiesRandomly { get; }
 
+        public bool CanLosePlayer { get; }
         public bool FollowCrouchWithPlayer { get; }
         public bool ChangeSuitAutoBehaviour { get; }
         public bool GrabItemsNearEntrances { get; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LethalInternship.SharedAbstractions.Enums;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,14 +7,27 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
 {
     public class VehicleInterestPoint : InterestPointBase
     {
-        public override Vector3 Point => point;
+        public VehicleController VehicleController => vehicleController;
+        private VehicleController vehicleController;
 
-        private Vector3 point;
-        protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(DefaultInterestPoint) };
+        public override Vector3 Point => GetVehiclePoint(vehicleController);
+        protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(DefaultInterestPoint), typeof(ShipInterestPoint) };
+        public override EnumCommandTypes? CommandType => EnumCommandTypes.GoToVehicle;
+        public override bool IsInvalid => vehicleController == null || vehicleController.carDestroyed;
 
         public VehicleInterestPoint(VehicleController vehicle)
         {
-            point = vehicle.transform.position;
+            this.vehicleController = vehicle;
+        }
+
+        public static Vector3 GetVehiclePoint(VehicleController vehicleController)
+        {
+            if (vehicleController == null)
+            {
+                return default(Vector3);
+            }
+
+            return vehicleController.transform.position;
         }
     }
 }

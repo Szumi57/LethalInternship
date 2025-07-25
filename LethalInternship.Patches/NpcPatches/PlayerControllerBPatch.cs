@@ -923,8 +923,13 @@ namespace LethalInternship.Patches.NpcPatches
                 if (__instance.currentSuitID != 0
                     || internController.currentSuitID != __instance.currentSuitID)
                 {
-                    sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)));
+                    sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)))
+                      .AppendLine();
                 }
+
+                // Manage intern
+                sb.Append(string.Format(Const.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
+                    .AppendLine();
 
                 __instance.cursorTip.text = sb.ToString();
 

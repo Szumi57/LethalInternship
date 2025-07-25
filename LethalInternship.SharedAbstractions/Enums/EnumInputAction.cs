@@ -3,7 +3,9 @@
     public enum EnumInputAction
     {
         None = 0,
-        SendingInternToLocation,
-        SendingAllInternsToLocation,
+        GoToPosition,
+        FollowMe,
+        GoToShip,
+        GoToVehicle
     }
 }

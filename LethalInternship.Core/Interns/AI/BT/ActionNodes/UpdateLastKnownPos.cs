@@ -2,6 +2,7 @@
 using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -11,6 +12,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
+
+            if (!PluginRuntimeProvider.Context.Config.CanLosePlayer)
+            {
+                ai.TargetLastKnownPosition = ai.targetPlayer.transform.position;
+                return BehaviourTreeStatus.Success;
+            }
 
             float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
             float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;

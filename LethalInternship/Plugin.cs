@@ -60,8 +60,7 @@ namespace LethalInternship
 
         // UI
         internal static bool UIAssetsLoaded = false;
-        public static GameObject CommandsSingleInternUIPrefab = null!;
-        public static GameObject CommandsMultipleInternsUIPrefab = null!;
+        public static GameObject CommandsWheelUIPrefab = null!;
 
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
@@ -121,7 +120,8 @@ namespace LethalInternship
             }
 
             // Load UI prefabs
-            UIAssetsLoaded = false;// LoadUIPrefabs();
+            //UIAssetsLoaded = false;
+            UIAssetsLoaded = LoadUIPrefabs();
 
             InitSharedValues();
 
@@ -219,17 +219,10 @@ namespace LethalInternship
         private bool LoadUIPrefabs()
         {
             // Commands wheel
-            CommandsSingleInternUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsSingleIntern");
-            if (CommandsSingleInternUIPrefab == null)
+            CommandsWheelUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsWheel");
+            if (CommandsWheelUIPrefab == null)
             {
-                Logger.LogError($"Failed to load Commands UI prefab.");
-                return false;
-            }
-
-            CommandsMultipleInternsUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsMultipleInterns");
-            if (CommandsMultipleInternsUIPrefab == null)
-            {
-                Logger.LogError($"Failed to load Commands UI prefab.");
+                Logger.LogError($"Failed to load CommandsWheel UI prefab.");
                 return false;
             }
 
@@ -710,8 +703,7 @@ namespace LethalInternship
         public EnemyType InternNPCPrefab => Plugin.InternNPCPrefab;
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
-        public GameObject CommandsSingleInternUIPrefab => Plugin.CommandsSingleInternUIPrefab;
-        public GameObject CommandsMultipleInternsUIPrefab => Plugin.CommandsMultipleInternsUIPrefab;
+        public GameObject CommandsWheelUIPrefab => Plugin.CommandsWheelUIPrefab;
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;
