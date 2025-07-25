@@ -13,7 +13,7 @@ namespace LethalInternship.Patches.ModPatches.LethalMin
 
         public static bool IsGrabbableObjectHeldByPikminMod(GrabbableObject grabbableObject)
         {
-            List<PikminItem> listPickMinItems = PikminManager.GetPikminItemsInMap();
+            HashSet<PikminItem> listPickMinItems = PikminManager.instance.PikminItems;
             if (listPickMinItems == null
                 || listPickMinItems.Count == 0)
             {
@@ -23,8 +23,8 @@ namespace LethalInternship.Patches.ModPatches.LethalMin
             foreach (var item in listPickMinItems)
             {
                 if (item != null
-                    && item.Root == grabbableObject
-                    && item.PikminOnItem > 0)
+                    && item.ItemScript == grabbableObject
+                    && item.PikminOnItem.Count > 0)
                 {
                     return true;
                 }
