@@ -6,6 +6,10 @@
         GoToPosition,
         FollowMe,
         GoToShip,
-        GoToVehicle
+        GoToVehicle,
+        SetMeetingPoint,
+        SetGatheringPoint,
+        Attack,
+        Autonomous
     }
 }

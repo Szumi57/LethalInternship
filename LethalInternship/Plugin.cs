@@ -60,7 +60,7 @@ namespace LethalInternship
 
         // UI
         internal static bool UIAssetsLoaded = false;
-        public static GameObject CommandsWheelUIPrefab = null!;
+        public static GameObject MainUICommands = null!;
 
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
@@ -219,10 +219,10 @@ namespace LethalInternship
         private bool LoadUIPrefabs()
         {
             // Commands wheel
-            CommandsWheelUIPrefab = Plugin.ModAssets.LoadAsset<GameObject>("CommandsWheel");
-            if (CommandsWheelUIPrefab == null)
+            MainUICommands = Plugin.ModAssets.LoadAsset<GameObject>("MainUICommands");
+            if (MainUICommands == null)
             {
-                Logger.LogError($"Failed to load CommandsWheel UI prefab.");
+                Logger.LogError($"Failed to load MainUICommands prefab.");
                 return false;
             }
 
@@ -703,7 +703,7 @@ namespace LethalInternship
         public EnemyType InternNPCPrefab => Plugin.InternNPCPrefab;
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
-        public GameObject CommandsWheelUIPrefab => Plugin.CommandsWheelUIPrefab;
+        public GameObject MainUICommands => Plugin.MainUICommands;
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;

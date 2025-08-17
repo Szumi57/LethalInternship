@@ -30,9 +30,9 @@ namespace LethalInternship.Core.Managers
         public static UIManager Instance { get; private set; } = null!;
 
         // Commands wheel
-        public GameObject CommandsWheel = null!;
-        public bool IsCommandsWheelOpened { get { return CommandsWheel != null && CommandsWheel.activeSelf; } }
-        private CommandsUIController CommandsUIController = null!;
+        public GameObject MainUICommands = null!;
+        public bool IsMainUICommandsOpened { get { return MainUICommands != null && MainUICommands.activeSelf; } }
+        private CommandsMainUIController CommandsUIController = null!;
 
         // Canvas overlay
         public Canvas CanvasOverlay = null!;
@@ -185,26 +185,26 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool ??= new InputIconUIPool(CanvasOverlay);
 
             // Instantiating prefabs
-            CommandsWheel = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsWheelUIPrefab, HUDContainerParent);
-            foreach (CommandButtonController commandButtonController in CommandsWheel.GetComponentsInChildren<CommandButtonController>())
+            MainUICommands = GameObject.Instantiate(PluginRuntimeProvider.Context.MainUICommands, HUDContainerParent);
+            foreach (CommandButtonController commandButtonController in MainUICommands.GetComponentsInChildren<CommandButtonController>())
             {
                 if (commandButtonController == null)
                 {
                     continue;
                 }
 
-                PluginLoggerHook.LogDebug?.Invoke($"CommandsWheel commandButtonController id {commandButtonController.ID} event linkin");
+                PluginLoggerHook.LogDebug?.Invoke($"MainUICommands commandButtonController id {commandButtonController.ID} event linkin");
                 commandButtonController.OnSelected += CommandWheelButtonController_OnSelected;
             }
-            CommandsUIController = CommandsWheel.GetComponent<CommandsUIController>();
+            CommandsUIController = MainUICommands.GetComponent<CommandsMainUIController>();
             CommandsUIController.SetFont(HUDManager.Instance.statsUIElements.playerNamesText[0].font);
-            CommandsWheel.SetActive(false);
+            MainUICommands.SetActive(false);
         }
 
         private void CommandWheelButtonController_OnSelected(object sender, EventArgs e)
         {
             CommandButtonController commandButtonController = (CommandButtonController)sender;
-            PluginLoggerHook.LogDebug?.Invoke($"commandWheelButtonController? sender {commandButtonController.ID} {(EnumInputAction)commandButtonController.ID}, e {e}, interns ? {InternsOwned}");
+            PluginLoggerHook.LogDebug?.Invoke($"CommandButtonController? sender {commandButtonController.ID} {(EnumInputAction)commandButtonController.ID}, e {e}, interns ? {InternsOwned}");
 
             if (!InternsOwned)
             {
@@ -327,13 +327,13 @@ namespace LethalInternship.Core.Managers
             }
             CoroutineUpdateRightPanel = StartCoroutine(UpdateCommandsWheelUI(internAIToManage));
 
-            CommandsWheel.SetActive(true);
+            MainUICommands.SetActive(true);
             return true;
         }
 
         public void HideCommandsWheel()
         {
-            if (!IsCommandsWheelOpened)
+            if (!IsMainUICommandsOpened)
             {
                 return;
             }
@@ -342,7 +342,7 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            CommandsWheel.SetActive(false);
+            MainUICommands.SetActive(false);
         }
 
         public void ClearCursorTipText()
@@ -357,10 +357,10 @@ namespace LethalInternship.Core.Managers
         {
             yield return null;
 
-            while (IsCommandsWheelOpened)
+            while (IsMainUICommandsOpened)
             {
                 // Buttons
-                CommandButtonController? commandWheelController = CommandsUIController.CommandWheelController.GetGoToVehicleButton();
+                CommandButtonController? commandWheelController = CommandsUIController.CommandsPanelController.GetGoToVehicleButton();
                 if (commandWheelController != null)
                 {
                     commandWheelController.IsNotAvailable = InternManager.Instance.VehicleController == null;
