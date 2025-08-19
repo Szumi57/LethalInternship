@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.20.3 [Alpha] - 2025-08-19
+Little update this time with UI rework.</br>
+For LethalEmoteAPI, the patch on the mod side cannot activate because of the refactoring of LethalInternship (new dlls).</br>
+I don't know how to fix this for now.
+
+### Changed
+Modified the UI for the commands, the wheel system was just not good for me.</br>
+The new UI is more "blocky". Will be rework again I think.</br>
+Added the new buttons for later (deactivated).
+
+### Fixed
+- Fixed respawn of interns on a new moon, thanks Tails the Fox on Discord and Sky10rd on GitHub (issue [#88](https://github.com/Szumi57/LethalInternship/issues/88)) 
+
 ## 0.20.2 [Alpha] - 2025-07-26
 First real update with the UI, it's still quite barebone for now.</br>
 Do not hesitate to report bugs on the github or the discord.
