@@ -1,14 +1,12 @@
-﻿using LethalInternship.Core.UI.CommandsWheel;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+﻿using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using TMPro;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.CommandsUI
+namespace LethalInternship.Core.UI.CommandsControllers
 {
-    public class CommandsUIController : MonoBehaviour
+    public class CommandsMainUIController : MonoBehaviour
     {
-        public CommandWheelController CommandWheelController;
+        public CommandsPanelController CommandsPanelController;
         public TextMeshProUGUI TitleListInterns;
         public TextMeshProUGUI ListInterns;
         public TextMeshProUGUI ModNamePanelDescription;
@@ -37,12 +35,7 @@ namespace LethalInternship.Core.UI.CommandsUI
             ListInterns.font = font;
             ModNamePanelDescription.font = font;
 
-            CommandWheelController.SetFont(this.font);
-        }
-
-        public void CommandUIMouseDown()
-        {
-            CommandWheelController.CommandWheelMouseDown();
+            CommandsPanelController.SetFont(this.font);
         }
     }
 }

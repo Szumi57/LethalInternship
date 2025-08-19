@@ -16,6 +16,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         List<Component> ListModelReplacement { get; }
         GrabbableObject? HeldItem { get; set; }
 
+        GameObject GameObject { get; }
         ulong OwnerClientId { get; }
         bool IsOwner { get; }
         NetworkObject NetworkObject { get; }
