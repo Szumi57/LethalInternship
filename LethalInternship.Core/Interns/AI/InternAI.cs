@@ -45,9 +45,12 @@ namespace LethalInternship.Core.Interns.AI
         public INpcController NpcController => npcController;
         public PlayerControllerB Npc => npcController.Npc;
         public IInternIdentity InternIdentity { get => internIdentity; set => internIdentity = value; }
+
+        public GameObject GameObject => this.gameObject;
         public new ulong OwnerClientId => base.OwnerClientId;
         public new NetworkObject NetworkObject => base.NetworkObject;
         public Transform Transform => this.transform;
+
         public IRagdollInternBody RagdollInternBody { get => ragdollInternBody; set => ragdollInternBody = value; }
         public bool IsEnemyDead => base.isEnemyDead;
         public new bool IsSpawned => base.IsSpawned;

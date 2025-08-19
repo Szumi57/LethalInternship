@@ -547,12 +547,8 @@ namespace LethalInternship.Core.Managers
 
             NetworkObject networkObject;
             IInternAI internAI = AllInternAIs[indexNextIntern];
-            if (internAI != null)
-            {
-                // Use internAI if exists
-                networkObject = AllInternAIs[indexNextIntern].NetworkObject;
-            }
-            else
+            if (internAI == null
+                || internAI.NetworkObject == null)
             {
                 // Or spawn one (server only)
                 GameObject internPrefab = Object.Instantiate<GameObject>(PluginRuntimeProvider.Context.InternNPCPrefab.enemyPrefab);
@@ -561,6 +557,11 @@ namespace LethalInternship.Core.Managers
 
                 networkObject = internPrefab.GetComponentInChildren<NetworkObject>();
                 networkObject.Spawn(true);
+            }
+            else
+            {
+                // Use internAI if exists
+                networkObject = AllInternAIs[indexNextIntern].NetworkObject;
             }
 
             // Get an identity for the intern
