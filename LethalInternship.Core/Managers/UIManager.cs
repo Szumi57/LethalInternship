@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.Core.UI.CommandButton;
-using LethalInternship.Core.UI.CommandsUI;
+using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
@@ -93,7 +92,7 @@ namespace LethalInternship.Core.Managers
 
                 case EnumInputAction.None:
                 default:
-                    ClearCursorTipText();
+                    //ClearCursorTipText();
                     break;
             }
         }
@@ -370,7 +369,7 @@ namespace LethalInternship.Core.Managers
                 if (internAIToManage == null)
                 {
                     IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                    CommandsUIController.SetTitleListInterns("Managing interns in proximity :");
+                    CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_INTERNS);
 
                     StringBuilder sb = new StringBuilder();
                     foreach (IInternAI intern in internsOwned)
@@ -383,7 +382,7 @@ namespace LethalInternship.Core.Managers
                 }
                 else
                 {
-                    CommandsUIController.SetTitleListInterns("Managing intern :");
+                    CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_SINGLE_INTERN);
                     CommandsUIController.SetTextListInterns("> " + internAIToManage.Npc.playerUsername);
                 }
 

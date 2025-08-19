@@ -1,12 +1,11 @@
-﻿using LethalInternship.Core.UI.CommandButton;
-using LethalInternship.SharedAbstractions.Constants;
+﻿using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.CommandsWheel
+namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandsPanelController : MonoBehaviour
     {

@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace LethalInternship.Core.UI.CommandButton
+namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandButtonController : MonoBehaviour
     {
@@ -25,7 +25,7 @@ namespace LethalInternship.Core.UI.CommandButton
                 CommandFrameImage = GetComponent<Image>();
             }
             CommandFrameImage.sprite = UsedSpritesInAnimation[(int)SpriteForAnimation.WheelButtonFrameSelected];
-            SetTransparency(CommandFrameImage, 0f);
+            SetAlpha(CommandFrameImage, 0f);
 
             if (CommandIcon == null)
             {
@@ -58,11 +58,11 @@ namespace LethalInternship.Core.UI.CommandButton
             if (CommandIcon != null
                 && CommandIcon.color.a != transparency)
             {
-                SetTransparency(CommandIcon, transparency);
+                SetAlpha(CommandIcon, transparency);
             }
         }
 
-        private void SetTransparency(Image image, float transparency)
+        private void SetAlpha(Image image, float transparency)
         {
             Color alpha = image.color;
             alpha.a = transparency;
@@ -71,6 +71,7 @@ namespace LethalInternship.Core.UI.CommandButton
 
         public void Selected()
         {
+            DrawButtonNotHovered();
             OnSelected?.Invoke(this, null);
         }
 
@@ -83,8 +84,7 @@ namespace LethalInternship.Core.UI.CommandButton
 
             IsHovered = true;
 
-            SetTransparency(CommandFrameImage, 1f);
-            CommandIcon.color = new Color(0f, 0f, 0f);
+            DrawButtonHovered();
         }
 
         public void MouseLeave()
@@ -96,7 +96,18 @@ namespace LethalInternship.Core.UI.CommandButton
 
             IsHovered = false;
 
-            SetTransparency(CommandFrameImage, 0f);
+            DrawButtonNotHovered();
+        }
+
+        private void DrawButtonHovered()
+        {
+            SetAlpha(CommandFrameImage, 1f);
+            CommandIcon.color = new Color(0f, 0f, 0f);
+        }
+
+        private void DrawButtonNotHovered()
+        {
+            SetAlpha(CommandFrameImage, 0f);
             CommandIcon.color = new Color(255 / 255f, 255 / 255f, 255 / 255f);
         }
     }

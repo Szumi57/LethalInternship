@@ -1,9 +1,8 @@
-﻿using LethalInternship.Core.UI.CommandsWheel;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+﻿using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using TMPro;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.CommandsUI
+namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandsMainUIController : MonoBehaviour
     {
