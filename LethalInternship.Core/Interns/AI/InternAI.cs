@@ -587,6 +587,31 @@ namespace LethalInternship.Core.Interns.AI
             return false;
         }
 
+        public void FollowCrouchIfCanDo(bool panik = false)
+        {
+            if (panik
+                && NpcController.Npc.isCrouching)
+            {
+                NpcController.OrderToToggleCrouch();
+                return;
+            }
+
+            if (PluginRuntimeProvider.Context.Config.FollowCrouchWithPlayer
+                && targetPlayer != null)
+            {
+                if (targetPlayer.isCrouching
+                    && !NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+                else if (!targetPlayer.isCrouching
+                        && NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+            }
+        }
+
         public override void OnCollideWithPlayer(Collider other)
         {
             if (other.CompareTag("Player"))

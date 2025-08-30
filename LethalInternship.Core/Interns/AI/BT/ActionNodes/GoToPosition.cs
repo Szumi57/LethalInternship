@@ -28,6 +28,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             ai.NpcController.OrderToLookForward();
+            ai.FollowCrouchIfCanDo();
 
             ai.SetDestinationToPositionInternAI(ai.NextPos);
             ai.OrderAgentAndBodyMoveToDestination();

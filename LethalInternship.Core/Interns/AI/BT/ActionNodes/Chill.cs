@@ -23,6 +23,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Try play voice
             TryPlayCurrentStateVoiceAudio(ai);
 
+            // Crouch
+            ai.FollowCrouchIfCanDo();
+
             // Emotes
             ai.NpcController.MimicEmotes(ai.targetPlayer);
 
