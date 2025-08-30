@@ -34,10 +34,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private void TryPlayCurrentStateVoiceAudio(InternAI ai)
         {
+            EnumVoicesState voiceState = ai.CurrentCommand == EnumCommandTypes.FollowPlayer ? EnumVoicesState.Chilling : EnumVoicesState.Waiting;
+
             // Default states, wait for cooldown and if no one is talking close
             ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
-                VoiceState = EnumVoicesState.Chilling,
+                VoiceState = voiceState,
                 CanTalkIfOtherInternTalk = false,
                 WaitForCooldown = true,
                 CutCurrentVoiceStateToTalk = false,

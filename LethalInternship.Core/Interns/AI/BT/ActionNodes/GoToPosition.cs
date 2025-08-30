@@ -1,6 +1,8 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Constants;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Parameters;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -28,12 +30,35 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             ai.NpcController.OrderToLookForward();
-            ai.FollowCrouchIfCanDo();
 
             ai.SetDestinationToPositionInternAI(ai.NextPos);
             ai.OrderAgentAndBodyMoveToDestination();
 
+            if (ai.CurrentCommand == EnumCommandTypes.FollowPlayer)
+            {
+                ai.FollowCrouchIfCanDo();
+                TryPlayCurrentStateVoiceAudio(ai);
+            }
+
             return BehaviourTreeStatus.Success;
+        }
+
+        private void TryPlayCurrentStateVoiceAudio(InternAI ai)
+        {
+            // Priority state
+            // Stop talking and voice new state
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.FollowingPlayer,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = false,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = ai.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
     }
 }

@@ -516,7 +516,12 @@ namespace LethalInternship.Core.Interns.AI
             this.PointOfInterest = pointOfInterest;
 
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
-            CurrentCommand = newCommand == null ? EnumCommandTypes.FollowPlayer : newCommand.Value;
+            if(newCommand == null)
+            {
+                SetCommandToFollowPlayer();
+                return;
+            }
+            CurrentCommand = newCommand.Value;
 
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandTo {CurrentCommand}");
             PluginLoggerHook.LogDebug?.Invoke($"VVV PointOfInterest VVV");
@@ -524,6 +529,9 @@ namespace LethalInternship.Core.Interns.AI
             {
                 PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
             }
+
+            // Voice
+            TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
         }
 
         public void SetCommandToFollowPlayer()
@@ -531,6 +539,26 @@ namespace LethalInternship.Core.Interns.AI
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
+
+            // Voice
+            TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
+        }
+
+        private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = enumVoicesState,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = this.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
 
         #endregion

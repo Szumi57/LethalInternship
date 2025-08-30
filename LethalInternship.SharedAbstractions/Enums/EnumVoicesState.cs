@@ -3,6 +3,8 @@
     public enum EnumVoicesState
     {
         None = 0,
+        AttackingWithGun,
+        AttackingWithMelee,
         Chilling,
         EnteringCruiser,
         FollowingPlayer,
@@ -12,8 +14,12 @@
         LosingPlayer,
         Lost,
         LostAndFound,
+        OrderedToFollow,
+        OrderedToGoThere,
+        OrderedToStay,
         RunningFromMonster,
+        Sinking,
         SteppedOnTrap,
-        Sinking
+        Waiting,
     }
 }
