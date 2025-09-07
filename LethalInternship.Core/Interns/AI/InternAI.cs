@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.BT;
+using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
@@ -17,10 +18,12 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using Color = UnityEngine.Color;
 using Component = UnityEngine.Component;
 using Quaternion = UnityEngine.Quaternion;
 using Random = System.Random;
@@ -76,7 +79,7 @@ namespace LethalInternship.Core.Interns.AI
         public Vector3? TargetLastKnownPosition;
         public EntranceTeleport? ClosestEntrance;
         public Vector3 NextPos;
-        public bool CanRun = true;
+        public bool CanRun = true; // const for now
 
         public IPointOfInterest? PointOfInterest = null!;
 
@@ -111,7 +114,6 @@ namespace LethalInternship.Core.Interns.AI
         private bool animationCoroutineRagdollingRunning = false;
 
         private string stateIndicatorServer = string.Empty;
-        private Vector3 previousWantedDestination;
         private float updateDestinationIntervalInternAI;
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
@@ -227,7 +229,7 @@ namespace LethalInternship.Core.Interns.AI
             UpdateInternVoiceEffects();
 
             // Line renderer used for debugging stuff
-            LineRendererUtil = new LineRendererUtil(6, transform);
+            LineRendererUtil = new LineRendererUtil(20, transform);
 
             TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
@@ -516,7 +518,7 @@ namespace LethalInternship.Core.Interns.AI
             this.PointOfInterest = pointOfInterest;
 
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
-            if(newCommand == null)
+            if (newCommand == null)
             {
                 SetCommandToFollowPlayer();
                 return;
@@ -724,11 +726,7 @@ namespace LethalInternship.Core.Interns.AI
             moveTowardsDestination = true;
             movingTowardsTargetPlayer = false;
 
-            if (previousWantedDestination != position)
-            {
-                previousWantedDestination = position;
-                destination = position;
-            }
+            destination = position;
         }
 
         /// <summary>
@@ -755,17 +753,222 @@ namespace LethalInternship.Core.Interns.AI
 
         public bool TrySetDestinationToPosition(Vector3 position, bool calculatePartialPath = false, bool checkForPath = false)
         {
+            // Calculate path with entrances
+            // -----------------------------
+            var timerInitEntrances = new Stopwatch();
+            timerInitEntrances.Start();
+
+            // List<DJKPoint> init with entrances
+            List<IDJKPoint> DJKPoints = new List<IDJKPoint>();
+            int id = 0;
+            foreach (var entrance in EntrancesTeleportArray)
+            {
+                bool newDJKPoint = true;
+                foreach (var DJKP in DJKPoints)
+                {
+                    if (((DJKEntrancePoint)DJKP).TryAddOtherEntrance(entrance))
+                    {
+                        newDJKPoint = false;
+                        break;
+                    }
+                }
+
+                if (newDJKPoint)
+                {
+                    DJKPoints.Add(new DJKEntrancePoint(id++, entrance));
+                }
+            }
+
+            timerInitEntrances.Stop();
+            PluginLoggerHook.LogDebug?.Invoke($"timerInitEntrances {timerInitEntrances.Elapsed.TotalMilliseconds}ms | {timerInitEntrances.Elapsed.ToString("mm':'ss':'fffffff")}");
+            //PluginLoggerHook.LogDebug?.Invoke($"+++++++++ DJKPoints init with entrances");
+            //foreach (var point in DJKPoints)
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"{point.ToString()}");
+            //}
+
+            // Adding simple points
+            DJKSimplePoint source = new DJKSimplePoint(id++, this.transform.position, "Intern pos");
+            DJKSimplePoint dest = new DJKSimplePoint(id++, StartOfRound.Instance.localPlayerController.transform.position, "Destination");
+            DJKPoints.Add(source);
+            DJKPoints.Add(dest);
+            //PluginLoggerHook.LogDebug?.Invoke($"+++++++++ DJKPoints init with simple points");
+            //foreach (var point in DJKPoints)
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"{point.ToString()}");
+            //}
+
+            // Neighbors init
+            var timerNeighbors = new Stopwatch();
+            timerNeighbors.Start();
+
+            HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
+            foreach (var point1 in DJKPoints)
+            {
+                foreach (var point2 in DJKPoints)
+                {
+                    if (point1.Id == point2.Id
+                        || point1.IsNeighborExist(point2)
+                        || point2.IsNeighborExist(point1))
+                    {
+                        continue;
+                    }
+
+                    int idA = point1.Id, idB = point2.Id;
+                    if (idA > idB) (idA, idB) = (idB, idA);
+                    if (testedPairs.Contains((idA, idB)))
+                    {
+                        continue;
+                    }
+
+                    bool isNeighbors = false;
+                    foreach (Vector3 point1point in point1.GetAllPoints())
+                    {
+                        if (isNeighbors)
+                        {
+                            break;
+                        }
+
+                        foreach (Vector3 point2point in point2.GetAllPoints())
+                        {
+                            //var timerCalculatePath = new Stopwatch();
+                            //timerCalculatePath.Start();
+
+                            NavMesh.CalculatePath(point1point, point2point, NavMesh.AllAreas, this.path1);
+
+                            //timerCalculatePath.Stop();
+                            //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {point1.Id} - {point2.Id}{((this.path1.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+                            testedPairs.Add((idA, idB));
+
+                            if (this.path1.status == NavMeshPathStatus.PathComplete)
+                            {
+                                float distance = GetFullDistancePath(this.path1);
+                                point1.TryAddToNeighbors(point2, distance);
+                                point2.TryAddToNeighbors(point1, distance);
+
+                                isNeighbors = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            timerNeighbors.Stop();
+            PluginLoggerHook.LogDebug?.Invoke($"timerNeighbors {timerNeighbors.Elapsed.TotalMilliseconds}ms | {timerNeighbors.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+            //timer1.Stop();
+            //PluginLoggerHook.LogDebug?.Invoke($"Dijkstra init time {timer1.Elapsed.TotalMilliseconds}ms | {timer1.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+            PluginLoggerHook.LogDebug?.Invoke($"+++++++++ DJKPoints");
+            foreach (var point in DJKPoints)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"{point.ToString()}");
+            }
+
+            // Graph plot string to https://graphonline.top/
+            List<Tuple<int, int>> links = new List<Tuple<int, int>>();
+            foreach (var point in DJKPoints)
+            {
+                foreach (var point2 in point.Neighbors)
+                {
+                    bool linkNotHere = true;
+                    foreach (var link in links)
+                    {
+                        if ((link.Item1 == point.Id && link.Item2 == point2.neighbor.Id)
+                            || (link.Item1 == point2.neighbor.Id && link.Item2 == point.Id))
+                        {
+                            linkNotHere = false;
+                            break;
+                        }
+                    }
+
+                    if (linkNotHere)
+                    {
+                        links.Add(new Tuple<int, int>(point.Id, point2.neighbor.Id));
+                        PluginLoggerHook.LogDebug?.Invoke($"{point.Id}-({(int)Mathf.Sqrt(point2.weight)})-{point2.neighbor.Id}");
+                    }
+                }
+            }
+
+            // Dijkstra
+            var timer2 = new Stopwatch();
+            timer2.Start();
+
+            List<IDJKPoint> CalculatedPath = Dijkstra.Dijkstra.CalculatePath(DJKPoints, source, dest);
+
+            timer2.Stop();
+            PluginLoggerHook.LogDebug?.Invoke($"Dijkstra calculation {timer2.Elapsed.TotalMilliseconds}ms | {timer2.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+            string pathString = $"========== Path = ";
+            foreach (var point in CalculatedPath)
+            {
+                pathString += $"{point.Id} ";
+            }
+            PluginLoggerHook.LogDebug?.Invoke($"{pathString}");
+
+
+            //--------------------------
+            calculatePartialPath = true;
             if (calculatePartialPath)
             {
                 NavMesh.CalculatePath(this.transform.position, position, NavMesh.AllAreas, this.path1);
                 if (this.path1.status == NavMeshPathStatus.PathPartial)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"TrySetDestinationToPosition CalculatePath {this.path1.status}");
+                    PluginLoggerHook.LogDebug?.Invoke($"TrySetDestinationToPosition PathPartial {this.path1.status}");
+
+                    for (int i = 0; i < path1.corners.Length - 1; i++)
+                    {
+                        DrawUtil.DrawLine(LineRendererUtil.GetLineRenderer(), path1.corners[i], path1.corners[i + 1], Color.red);
+                        DrawUtil.DrawLine(LineRendererUtil.GetLineRenderer(), path1.corners[i], path1.corners[i] + new Vector3(0, 1, 0), Color.red);
+                    }
+
                     return SetDestinationToPosition(path1.corners[path1.corners.Length - 1]);
                 }
+                else
+                {
+                    for (int i = 0; i < path1.corners.Length - 1; i++)
+                    {
+                        DrawUtil.DrawLine(LineRendererUtil.GetLineRenderer(), path1.corners[i], path1.corners[i + 1], Color.white);
+                        DrawUtil.DrawLine(LineRendererUtil.GetLineRenderer(), path1.corners[i], path1.corners[i] + new Vector3(0, 1, 0), Color.white);
+                    }
+                }
             }
+
             return SetDestinationToPosition(position, checkForPath);
         }
+
+        private float GetFullDistancePath(NavMeshPath path)
+        {
+            var corners = path.corners;
+            float fullDistance = 0f;
+
+            for (int i = 1; i < corners.Length; i++)
+            {
+                fullDistance += (corners[i - 1] - corners[i]).sqrMagnitude;
+            }
+
+            return fullDistance;
+        }
+
+        //HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
+        //bool AlreadyTested(DJKPoint a, DJKPoint b)
+        //{
+        //    int idA = a.Id, idB = b.Id;
+        //    if (idA > idB) (idA, idB) = (idB, idA);
+
+        //    return testedPairs.Contains((idA, idB));
+        //}
+
+        //void MarkTested(DJKPoint a, DJKPoint b)
+        //{
+        //    int idA = a.Id, idB = b.Id;
+        //    if (idA > idB) (idA, idB) = (idB, idA);
+
+        //    testedPairs.Add((idA, idB));
+        //}
+
 
         public void StopMoving()
         {
@@ -4323,6 +4526,44 @@ namespace LethalInternship.Core.Interns.AI
             private float angle;
 
             private long timer = 50 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
+            {
+                if (!NeedToRecalculate())
+                {
+                    return angle;
+                }
+
+                CalculateAngleFOVWithLocalPlayer(localPlayerCameraTransform, internBodyPos);
+                return angle;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private void CalculateAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
+            {
+                angle = Vector3.Angle(localPlayerCameraTransform.forward, internBodyPos - localPlayerCameraTransform.position);
+            }
+        }
+
+        public class TimedSetDestination
+        {
+            private float angle;
+
+            private long timer = 500 * TimeSpan.TicksPerMillisecond;
             private long lastTimeCalculate;
 
             public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)

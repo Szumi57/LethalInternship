@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -40,6 +41,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     entrance = entrancesTeleportArray[i];
                 }
             }
+
             return entrance;
         }
     }

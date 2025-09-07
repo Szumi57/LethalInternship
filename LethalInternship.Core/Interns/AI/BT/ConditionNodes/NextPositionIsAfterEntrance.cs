@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
@@ -11,11 +12,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             if (ai.isOutside && nextPoint.y < -80f)
             {
+                PluginLoggerHook.LogDebug?.Invoke($"NextPositionIsAfterEntrance");
                 return true;
             }
 
             if (!ai.isOutside && nextPoint.y >= -80f)
             {
+            PluginLoggerHook.LogDebug?.Invoke($"NextPositionIsAfterEntrance");
                 return true;
             }
 

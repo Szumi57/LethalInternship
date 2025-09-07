@@ -35,7 +35,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             ai.NpcController.OrderToLookForward();
 
             ai.SetDestinationToPositionInternAI(ai.ClosestEntrance.entrancePoint.position);
-            ai.OrderAgentAndBodyMoveToDestination();
+            ai.OrderAgentAndBodyMoveToDestination(calculatePartialPath: true);
 
             return BehaviourTreeStatus.Success;
         }
