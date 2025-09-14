@@ -14,10 +14,8 @@ namespace LethalInternship.Core.Interns.AI.BT
         public IBehaviourTreeNode BehaviorTree = null!;
 
         // Routine controllers
-        private CoroutineController panikCoroutineController = null!;
-        private CoroutineController lookingAroundCoroutineController = null!;
-        private CoroutineController searchingWanderCoroutineController = null!;
         private SearchCoroutineController searchForPlayers = null!;
+        private List<CoroutineController> CoroutineControllers = null!;
 
         // Action nodes
         Dictionary<string, IBTAction> actions = null!;
@@ -41,24 +39,29 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public void TickTree(float deltaTime)
         {
-            panikCoroutineController.Reset();
-            lookingAroundCoroutineController.Reset();
-            searchingWanderCoroutineController.Reset();
             searchForPlayers.Reset();
+            foreach(var controller in CoroutineControllers)
+            {
+                controller.Reset();
+            }
 
             BehaviorTree.Tick(new TimeData(deltaTime));
 
-            panikCoroutineController.CheckCoroutine();
-            lookingAroundCoroutineController.CheckCoroutine();
-            searchingWanderCoroutineController.CheckCoroutine();
             searchForPlayers.CheckCoroutine();
+            foreach (var controller in CoroutineControllers)
+            {
+                controller.CheckCoroutine();
+            }
         }
 
         private void InitCoroutineControllers(InternAI internAI)
         {
-            panikCoroutineController = new CoroutineController(internAI);
-            lookingAroundCoroutineController = new CoroutineController(internAI);
-            searchingWanderCoroutineController = new CoroutineController(internAI);
+            CoroutineControllers = new List<CoroutineController>();
+            for(int i = 0; i < 4; i++)
+            {
+                CoroutineControllers.Add(new CoroutineController(internAI));
+            }
+
             searchForPlayers = new SearchCoroutineController(internAI);
         }
 
@@ -81,8 +84,8 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
-                { "SetNextPosTargetItem", new SetNextPosTargetItem() },
-                { "SetNextPosTargetLastKnownPosition", new SetNextPosTargetLastKnownPosition() },
+                { "SetNextPosTargetItem", new SetNextDestTargetItem() },
+                { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
                 { "TakeEntrance", new TakeEntrance() },
                 { "TeleportDebugToPos", new TeleportDebugToPos() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() }
@@ -117,10 +120,15 @@ namespace LethalInternship.Core.Interns.AI.BT
             BTContext = new BTContext()
             {
                 InternAI = internAI,
-                LookingAroundCoroutineController = this.lookingAroundCoroutineController,
-                PanikCoroutine = this.panikCoroutineController,
+
+                PathController = new Dijkstra.PathController(),
+
                 searchForPlayers = this.searchForPlayers,
-                searchingWanderCoroutineController = this.searchingWanderCoroutineController
+
+                LookingAroundCoroutineController = CoroutineControllers[0],
+                PanikCoroutine = CoroutineControllers[1],
+                searchingWanderCoroutineController = CoroutineControllers[2],
+                CalculatePathCoroutineController = CoroutineControllers[3],
             };
         }
 
@@ -283,7 +291,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Sequence("Follow player")
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
                         .Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
-                        .Do("SetNextPosTargetLastKnownPosition", t => actions["SetNextPosTargetLastKnownPosition"].Action(BTContext))
+                        .Do("SetNextDestTargetLastKnownPosition", t => actions["SetNextDestTargetLastKnownPosition"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
                             .Do("chill", t => actions["Chill"].Action(BTContext))

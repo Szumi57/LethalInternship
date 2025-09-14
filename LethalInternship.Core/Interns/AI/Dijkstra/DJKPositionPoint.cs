@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
-    public class DJKSimplePoint : IDJKPoint
+    public class DJKPositionPoint : IDJKPoint
     {
         public int Id { get; set; }
 
@@ -12,14 +12,15 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public Vector3 Position { get; set; }
         public List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
 
-        public DJKSimplePoint(int id, Vector3 position)
+        public DJKPositionPoint(int id, Vector3 position)
         {
             Id = id;
             Position = position;
             Neighbors = new List<(IDJKPoint neighbor, float weight)>();
+            Name = string.Empty;
         }
 
-        public DJKSimplePoint(int id, Vector3 position, string name)
+        public DJKPositionPoint(int id, Vector3 position, string name)
         {
             Name = name;
             Id = id;
@@ -46,6 +47,11 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public Vector3[] GetAllPoints()
         {
             return new Vector3[] { Position };
+        }
+
+        public Vector3 GetClosestPointFrom(Vector3 point)
+        {
+            return Position;
         }
 
         public override string ToString()

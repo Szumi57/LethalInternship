@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using UnityEngine;
+using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
@@ -23,7 +28,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
             for (int k = 0; k < n; k++)
             {
-                // Trouver le sommet non utilisé avec la plus petite distance
+                // Find the point unused with smallest distance
                 int u = -1;
                 for (int i = 0; i < n; i++)
                 {
@@ -32,7 +37,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 if (u == -1 || dist[u] == INF) break;
                 used[u] = true;
 
-                // Relaxation des voisins
+                // Check neighbors
                 foreach (var (neighbor, weight) in points[u].Neighbors)
                 {
                     int v = neighbor.Id;
@@ -44,7 +49,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
             }
 
-            // Reconstruction du chemin
+            // Reconstruct path
             List<IDJKPoint> path = new List<IDJKPoint>();
             for (int at = dest.Id; at != -1; at = prev[at])
             {
@@ -53,6 +58,82 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             path.Reverse();
 
             return path;
+        }
+
+        public static IEnumerator CalculateNeighbors(CalculateNeighborsParameters parameters)
+        {
+            // Neighbors init
+            NavMeshPath path = new NavMeshPath();
+
+            HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
+            foreach (var point1 in parameters.DJKPointsGraph)
+            {
+                foreach (var point2 in parameters.DJKPointsGraph)
+                {
+                    if (point1.Id == point2.Id
+                        || point1.IsNeighborExist(point2)
+                        || point2.IsNeighborExist(point1))
+                    {
+                        continue;
+                    }
+
+                    int idA = point1.Id, idB = point2.Id;
+                    if (idA > idB) (idA, idB) = (idB, idA);
+                    if (testedPairs.Contains((idA, idB)))
+                    {
+                        continue;
+                    }
+
+                    bool isNeighbors = false;
+                    foreach (Vector3 point1point in point1.GetAllPoints())
+                    {
+                        if (isNeighbors)
+                        {
+                            break;
+                        }
+
+                        foreach (Vector3 point2point in point2.GetAllPoints())
+                        {
+                            yield return null;
+
+                            //var timerCalculatePath = new Stopwatch();
+                            //timerCalculatePath.Start();
+
+                            NavMesh.CalculatePath(point1point, point2point, NavMesh.AllAreas, path);
+
+                            //timerCalculatePath.Stop();
+                            //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {point1.Id} - {point2.Id}{((this.path1.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+                            testedPairs.Add((idA, idB));
+
+                            if (path.status == NavMeshPathStatus.PathComplete)
+                            {
+                                float distance = GetFullDistancePath(path);
+                                point1.TryAddToNeighbors(point2, distance);
+                                point2.TryAddToNeighbors(point1, distance);
+
+                                isNeighbors = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            yield break;
+        }
+
+        private static float GetFullDistancePath(NavMeshPath path)
+        {
+            var corners = path.corners;
+            float fullDistance = 0f;
+
+            for (int i = 1; i < corners.Length; i++)
+            {
+                fullDistance += (corners[i - 1] - corners[i]).sqrMagnitude;
+            }
+
+            return fullDistance;
         }
     }
 }

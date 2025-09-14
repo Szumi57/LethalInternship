@@ -11,6 +11,8 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         bool IsNeighborExist(IDJKPoint neighbor);
         bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight);
+
         Vector3[] GetAllPoints();
+        Vector3 GetClosestPointFrom(Vector3 point);
     }
 }

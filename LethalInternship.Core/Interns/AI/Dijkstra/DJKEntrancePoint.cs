@@ -35,14 +35,14 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return false;
         }
 
-        public Vector3 GetClosestEntrancePoint(Vector3 sourcePoint)
+        public Vector3 GetClosestPointFrom(Vector3 point)
         {
             if (Entrance2 == null)
             {
                 return Entrance1.entrancePoint.position;
             }
 
-            if ((sourcePoint - Entrance1.entrancePoint.position).sqrMagnitude < (sourcePoint - Entrance2.entrancePoint.position).sqrMagnitude)
+            if ((point - Entrance1.entrancePoint.position).sqrMagnitude < (point - Entrance2.entrancePoint.position).sqrMagnitude)
             {
                 return Entrance1.entrancePoint.position;
             }

@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
+using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Utils;
@@ -22,6 +23,7 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
@@ -1773,6 +1775,21 @@ namespace LethalInternship.Core.Managers
 
         #endregion
 
+        #region Graph entrances
+
+        private TimedGetGraphEntrances getGraphEntrancesTimed = null!;
+        public List<IDJKPoint>? GetGraphEntrances()
+        {
+            if (getGraphEntrancesTimed == null)
+            {
+                getGraphEntrancesTimed = new TimedGetGraphEntrances();
+            }
+
+            return getGraphEntrancesTimed.GetGraphEntrances(this);
+        }
+
+        #endregion
+
         public class TimedOrderedInternBodiesDistanceListCheck
         {
             private List<IInternCullingBodyInfo> orderedInternBodiesDistanceList = null!;
@@ -1820,5 +1837,104 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        public class TimedGetGraphEntrances
+        {
+            private List<IDJKPoint>? DJKPointsGraph = null!;
+
+            private CalculateNeighborsParameters calculateNeighborsParameters = null!;
+            private Coroutine? calculateNeighborsCoroutine = null!;
+
+            private long timer = 5000 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public List<IDJKPoint>? GetGraphEntrances(MonoBehaviour coroutineLauncher)
+            {
+                if (DJKPointsGraph == null)
+                {
+                    DJKPointsGraph = new List<IDJKPoint>();
+                }
+
+                if (!NeedToRecalculate())
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
+                    return DJKPointsGraph;
+                }
+
+                // Construct graph entrances
+                EntranceTeleport[] entrancesTeleportArray = FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+                DJKPointsGraph = CalculateGraphEntrances(entrancesTeleportArray);
+
+                // Calculate Neighbors
+                if (calculateNeighborsCoroutine == null)
+                {
+                    calculateNeighborsParameters = new CalculateNeighborsParameters(DJKPointsGraph);
+                    calculateNeighborsCoroutine = coroutineLauncher.StartCoroutine(Dijkstra.CalculateNeighbors(calculateNeighborsParameters));
+                }
+
+                if (calculateNeighborsParameters.CalculateFinished)
+                {
+                    DJKPointsGraph = calculateNeighborsParameters.DJKPointsGraph;
+                    calculateNeighborsCoroutine = null;
+                    PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return graph");
+                    return DJKPointsGraph;
+                }
+
+                PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances calculating...");
+                return null;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private List<IDJKPoint> CalculateGraphEntrances(EntranceTeleport[] entrancesTeleportArray)
+            {
+                List<IDJKPoint> DJKPointsGraphEntrances = new List<IDJKPoint>();
+
+                var timerInitEntrances = new Stopwatch();
+                timerInitEntrances.Start();
+
+                // List<DJKPoint> init with entrances
+                int id = 0;
+                foreach (var entrance in entrancesTeleportArray)
+                {
+                    bool newDJKPoint = true;
+                    foreach (var DJKP in DJKPointsGraphEntrances)
+                    {
+                        if (((DJKEntrancePoint)DJKP).TryAddOtherEntrance(entrance))
+                        {
+                            newDJKPoint = false;
+                            break;
+                        }
+                    }
+
+                    if (newDJKPoint)
+                    {
+                        DJKPointsGraphEntrances.Add(new DJKEntrancePoint(id++, entrance));
+                    }
+                }
+
+                timerInitEntrances.Stop();
+                PluginLoggerHook.LogDebug?.Invoke($"timerInitEntrances {timerInitEntrances.Elapsed.TotalMilliseconds}ms | {timerInitEntrances.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+                //PluginLoggerHook.LogDebug?.Invoke($"+++++++++ DJKPoints init with entrances");
+                //foreach (var point in DJKPoints)
+                //{
+                //    PluginLoggerHook.LogDebug?.Invoke($"{point.ToString()}");
+                //}
+
+                return DJKPointsGraphEntrances;
+            }
+        }
     }
 }
