@@ -8,7 +8,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
         public bool Condition(BTContext context)
         {
             InternAI ai = context.InternAI;
-            Vector3 nextPoint = ai.PointOfInterest?.GetPoint() ?? ai.NextPos;
+            Vector3 nextPoint = ai.PointOfInterest?.GetPoint() ?? context.PathController.GetCurrentPoint(ai.transform.position);
 
             if (ai.isOutside && nextPoint.y < -80f)
             {

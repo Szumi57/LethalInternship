@@ -728,13 +728,9 @@ namespace LethalInternship.Core.Interns.AI
         /// </summary>
         public void UpdateDestinationToAgent(bool calculatePartialPath = false, bool checkForPath = false)
         {
-            if (agent.isActiveAndEnabled
-                && agent.isOnNavMesh
-                && !isEnemyDead
-                && !NpcController.Npc.isPlayerDead
-                && !StartOfRound.Instance.shipIsLeaving)
+            if (IsAgentInValidState() 
+                && agent.destination != base.destination)
             {
-                TrySetDestinationToPosition(destination, calculatePartialPath, checkForPath);
                 agent.SetDestination(destination);
             }
         }

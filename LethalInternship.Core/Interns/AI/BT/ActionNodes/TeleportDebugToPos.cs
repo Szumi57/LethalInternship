@@ -11,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             InternAI ai = context.InternAI;
 
-            ai.SyncTeleportIntern(ai.NextPos, !ai.isOutside, isUsingEntrance: false);
+            ai.SyncTeleportIntern(context.PathController.GetCurrentPoint(ai.transform.position), !ai.isOutside, isUsingEntrance: false);
             return BehaviourTreeStatus.Success;
         }
     }

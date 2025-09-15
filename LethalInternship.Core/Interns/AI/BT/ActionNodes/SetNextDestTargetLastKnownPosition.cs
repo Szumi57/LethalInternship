@@ -9,7 +9,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            PluginLoggerHook.LogDebug?.Invoke($"- SetNextDestTargetLastKnownPosition");
             context.PathController.SetNewDestination(ai.transform.position, ai.TargetLastKnownPosition.Value);
             
             return BehaviourTreeStatus.Success;

@@ -52,6 +52,23 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
         }
 
+        public Vector3 GetExitPointFrom(Vector3 point)
+        {
+            if (Entrance2 == null)
+            {
+                return Entrance1.entrancePoint.position;
+            }
+
+            if ((point - Entrance1.entrancePoint.position).sqrMagnitude < (point - Entrance2.entrancePoint.position).sqrMagnitude)
+            {
+                return Entrance2.entrancePoint.position;
+            }
+            else
+            {
+                return Entrance1.entrancePoint.position;
+            }
+        }
+
         public bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight)
         {
             if (!Neighbors.Any(x => x.neighbor.Id == neighborToAdd.Id))

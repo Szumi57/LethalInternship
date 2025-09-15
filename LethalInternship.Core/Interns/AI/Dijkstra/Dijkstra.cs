@@ -96,13 +96,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                         {
                             yield return null;
 
-                            //var timerCalculatePath = new Stopwatch();
-                            //timerCalculatePath.Start();
+                            var timerCalculatePath = new Stopwatch();
+                            timerCalculatePath.Start();
 
                             NavMesh.CalculatePath(point1point, point2point, NavMesh.AllAreas, path);
 
-                            //timerCalculatePath.Stop();
-                            //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {point1.Id} - {point2.Id}{((this.path1.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
+                            timerCalculatePath.Stop();
+                            PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {point1.Id} - {point2.Id}{((path.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
 
                             testedPairs.Add((idA, idB));
 
@@ -120,6 +120,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
             }
 
+            parameters.CalculateFinished = true;
             yield break;
         }
 

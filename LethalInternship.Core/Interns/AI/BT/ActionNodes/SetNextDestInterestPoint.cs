@@ -1,16 +1,21 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class SetNextDestTargetItem : IBTAction
+    public class SetNextDestInterestPoint : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
-            
-            context.PathController.SetNewDestination(ai.transform.position, ai.TargetItem.transform.position);
-            
+
+            IPointOfInterest? pointOfInterest = ai.GetPointOfInterest();
+            if (pointOfInterest != null)
+            {
+                context.PathController.SetNewDestination(ai.transform.position, pointOfInterest.GetPoint());
+            }
+
             return BehaviourTreeStatus.Success;
         }
     }

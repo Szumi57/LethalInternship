@@ -30,12 +30,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Check if destination reachable
-            path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination(ai.transform.position));
+            path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointFrom(ai.transform.position));
             if (path.status == NavMeshPathStatus.PathComplete)
             {
                 // Go directly to destination
-                PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 context.PathController.SetNextPointToDestination();
+                PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
+                PluginLoggerHook.LogDebug?.Invoke($"- Current path point {context.PathController.GetCurrentPoint().Id} IndexCurrentPoint={context.PathController.IndexCurrentPoint}");
                 return BehaviourTreeStatus.Success;
             }
 
@@ -44,7 +45,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (path.status == NavMeshPathStatus.PathComplete)
             {
                 // Go
-                PluginLoggerHook.LogDebug?.Invoke($"- Current path point reachable");
+                PluginLoggerHook.LogDebug?.Invoke($"- Current path point {context.PathController.GetCurrentPoint().Id} reachable");
                 return BehaviourTreeStatus.Success;
             }
 
@@ -61,25 +62,27 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (calculateNeighborsCoroutine == null)
             {
                 // Get entrances graph
-                List<IDJKPoint>? DJKPointsGraph = InternManager.Instance.GetGraphEntrances();
-                if (DJKPointsGraph == null)
+                List<IDJKPoint>? GraphEntrances = InternManager.Instance.GetGraphEntrances();
+                if (GraphEntrances == null)
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet, SetNextPointToDestination");
                     context.PathController.SetNextPointToDestination();
                     return;
                 }
 
+                List<IDJKPoint> DJKPointsGraph = new List<IDJKPoint>(GraphEntrances);
+
                 // Add source and dest
                 int id = DJKPointsGraph.Count;
-                source = new DJKPositionPoint(id++, context.PathController.GetSourcePoint(ai.transform.position), "Intern pos");
-                dest = new DJKPositionPoint(id++, context.PathController.GetDestination(ai.transform.position), "Destination");
+                source = new DJKPositionPoint(id++, context.PathController.GetSourcePoint().GetClosestPointFrom(ai.transform.position), "Intern pos");
+                dest = new DJKPositionPoint(id++, context.PathController.GetDestination().GetClosestPointFrom(ai.transform.position), "Destination");
                 DJKPointsGraph.Add(source);
                 DJKPointsGraph.Add(dest);
 
                 calculateNeighborsParameters = new CalculateNeighborsParameters(DJKPointsGraph);
 
                 // Calculate Neighbors
-                PluginLoggerHook.LogDebug?.Invoke($"- Calculating Neighbors ...");
+                PluginLoggerHook.LogDebug?.Invoke($"- CalculateGraphPath Calculating Neighbors ...");
                 calculateNeighborsCoroutine = ai.StartCoroutine(Dijkstra.Dijkstra.CalculateNeighbors(calculateNeighborsParameters));
             }
 
@@ -116,7 +119,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             private NavMeshPath path = new NavMeshPath();
 
             private Vector3? previousDestination;
-            private Vector3 currentDestination;
+            private Vector3? currentDestination;
 
             private long timer = 500 * TimeSpan.TicksPerMillisecond;
             private long lastTimeCalculate;

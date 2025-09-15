@@ -1,6 +1,8 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
@@ -11,12 +13,32 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            InternAI ai = context.InternAI;
+            // Check if we should take entrance
+            DJKEntrancePoint? entrancePoint = context.PathController.GetCurrentPoint() as DJKEntrancePoint;
+            if (entrancePoint != null)
+            {
+                // Take entrance
+                if (TakeEntrance(context.InternAI, entrancePoint))
+                {
+                    context.PathController.SetNextPoint();
+                }
+            }
+
+            PluginLoggerHook.LogDebug?.Invoke($"- GoToPosition IndexCurrentPoint={context.PathController.IndexCurrentPoint} Current path point {context.PathController.GetCurrentPoint().Id}");
+
+            // Go to position
+            MoveToPosition(context.InternAI, context.PathController.GetCurrentPoint());
+            return BehaviourTreeStatus.Success;
+        }
+
+        private void MoveToPosition(InternAI ai, IDJKPoint positionPoint)
+        {
+            Vector3 currentPoint = positionPoint.GetClosestPointFrom(ai.transform.position);
 
             if (ai.CanRun)
             {
-                float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-                float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+                float sqrHorizontalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+                float sqrVerticalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
 
                 if (sqrHorizontalDistanceWithTarget > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING
                      || sqrVerticalDistanceWithTarget > 0.3f * 0.3f)
@@ -31,7 +53,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             ai.NpcController.OrderToLookForward();
 
-            ai.SetDestinationToPositionInternAI(ai.NextPos);
+            PluginLoggerHook.LogDebug?.Invoke($"- GoToPosition currentPoint={currentPoint}");
+            ai.SetDestinationToPositionInternAI(currentPoint);
             ai.OrderAgentAndBodyMoveToDestination();
 
             if (ai.CurrentCommand == EnumCommandTypes.FollowPlayer)
@@ -39,8 +62,21 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 ai.FollowCrouchIfCanDo();
                 TryPlayCurrentStateVoiceAudio(ai);
             }
+        }
 
-            return BehaviourTreeStatus.Success;
+        private bool TakeEntrance(InternAI ai, DJKEntrancePoint entrance)
+        {
+            Vector3 entrancePoint = entrance.GetClosestPointFrom(ai.transform.position);
+
+            // Close enough to entrance
+            if ((ai.transform.position - entrancePoint).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"- TakeEntrance entrancePoint {entrancePoint}, exit {entrance.GetExitPointFrom(ai.transform.position)}");
+                ai.SyncTeleportIntern(entrance.GetExitPointFrom(ai.transform.position), !ai.isOutside, true);
+                return true;
+            }
+
+            return false;
         }
 
         private void TryPlayCurrentStateVoiceAudio(InternAI ai)

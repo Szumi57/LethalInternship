@@ -5,7 +5,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
     public class CalculateNeighborsParameters
     {
         public List<IDJKPoint> DJKPointsGraph { get; }
-        public bool CalculateFinished { get; }
+        public bool CalculateFinished { get; set; }
 
         public CalculateNeighborsParameters(List<IDJKPoint> dJKPointsGraph)
         {
