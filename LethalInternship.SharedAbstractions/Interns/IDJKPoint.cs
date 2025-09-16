@@ -10,6 +10,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
 
         bool IsNeighborExist(IDJKPoint neighbor);
+        float? GetNeighborDistanceIfExist(IDJKPoint neighbor);
         bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight);
 
         Vector3[] GetAllPoints();

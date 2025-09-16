@@ -33,6 +33,15 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return Neighbors.Any(x => x.neighbor.Id == neighbor.Id);
         }
 
+        public float? GetNeighborDistanceIfExist(IDJKPoint neighbor)
+        {
+            if (IsNeighborExist(neighbor))
+            {
+                return Neighbors.FirstOrDefault(x => x.neighbor.Id == neighbor.Id).weight;
+            }
+            return null;
+        }
+
         public bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight)
         {
             if (!Neighbors.Any(x => x.neighbor.Id == neighborToAdd.Id))

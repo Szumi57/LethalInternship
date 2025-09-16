@@ -24,7 +24,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"- GoToPosition IndexCurrentPoint={context.PathController.IndexCurrentPoint} Current path point {context.PathController.GetCurrentPoint().Id}");
+            PluginLoggerHook.LogDebug?.Invoke($"- GoToPosition IndexCurrentPoint={context.PathController.IndexCurrentPoint} Current path point {context.PathController.GetCurrentPoint().Id}, {context.PathController.GetPathString()}");
 
             // Go to position
             MoveToPosition(context.InternAI, context.PathController.GetCurrentPoint());
@@ -53,7 +53,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             ai.NpcController.OrderToLookForward();
 
-            PluginLoggerHook.LogDebug?.Invoke($"- GoToPosition currentPoint={currentPoint}");
             ai.SetDestinationToPositionInternAI(currentPoint);
             ai.OrderAgentAndBodyMoveToDestination();
 

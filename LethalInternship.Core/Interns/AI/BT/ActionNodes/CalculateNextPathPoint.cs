@@ -34,9 +34,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (path.status == NavMeshPathStatus.PathComplete)
             {
                 // Go directly to destination
+                //PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 context.PathController.SetNextPointToDestination();
-                PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
-                PluginLoggerHook.LogDebug?.Invoke($"- Current path point {context.PathController.GetCurrentPoint().Id} IndexCurrentPoint={context.PathController.IndexCurrentPoint}");
+                if (calculateNeighborsCoroutine != null)
+                {
+                    ai.StopCoroutine(calculateNeighborsCoroutine);
+                    calculateNeighborsCoroutine = null;
+                }
                 return BehaviourTreeStatus.Success;
             }
 
@@ -45,7 +49,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (path.status == NavMeshPathStatus.PathComplete)
             {
                 // Go
-                PluginLoggerHook.LogDebug?.Invoke($"- Current path point {context.PathController.GetCurrentPoint().Id} reachable");
+                //PluginLoggerHook.LogDebug?.Invoke($"- Current path point {context.PathController.GetCurrentPoint().Id} reachable");
+                if (calculateNeighborsCoroutine != null)
+                {
+                    ai.StopCoroutine(calculateNeighborsCoroutine);
+                    calculateNeighborsCoroutine = null;
+                }
                 return BehaviourTreeStatus.Success;
             }
 
@@ -74,7 +83,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
                 // Add source and dest
                 int id = DJKPointsGraph.Count;
-                source = new DJKPositionPoint(id++, context.PathController.GetSourcePoint().GetClosestPointFrom(ai.transform.position), "Intern pos");
+                source = new DJKPositionPoint(id++, ai.transform.position, "Intern pos");
                 dest = new DJKPositionPoint(id++, context.PathController.GetDestination().GetClosestPointFrom(ai.transform.position), "Destination");
                 DJKPointsGraph.Add(source);
                 DJKPointsGraph.Add(dest);
@@ -92,22 +101,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 calculateNeighborsCoroutine = null;
 
                 // log
-                PluginLoggerHook.LogDebug?.Invoke($"------- Graph");
-                foreach (var point in DJKPointsGraph)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"{point.ToString()}");
-                }
+                PluginLoggerHook.LogDebug?.Invoke($"------- {context.PathController.GetGraphString(DJKPointsGraph)}");
 
                 // Get full path
                 context.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(DJKPointsGraph, source, dest));
 
                 // log
-                string pathString = $"========== Path = ";
-                foreach (var point in context.PathController.DJKPointsPath)
-                {
-                    pathString += $"{point.Id} ";
-                }
-                PluginLoggerHook.LogDebug?.Invoke($"{pathString}");
+                PluginLoggerHook.LogDebug?.Invoke($"======= {context.PathController.GetPathString()}");
                 return;
             }
 

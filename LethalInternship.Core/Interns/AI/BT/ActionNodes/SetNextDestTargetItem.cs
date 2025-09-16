@@ -9,7 +9,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
             
-            context.PathController.SetNewDestination(ai.transform.position, ai.TargetItem.transform.position);
+            context.PathController.SetNewDestination(ai.TargetItem.transform.position);
             
             return BehaviourTreeStatus.Success;
         }

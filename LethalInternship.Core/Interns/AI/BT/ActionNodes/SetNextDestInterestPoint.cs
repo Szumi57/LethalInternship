@@ -13,7 +13,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             IPointOfInterest? pointOfInterest = ai.GetPointOfInterest();
             if (pointOfInterest != null)
             {
-                context.PathController.SetNewDestination(ai.transform.position, pointOfInterest.GetPoint());
+                context.PathController.SetNewDestination(pointOfInterest.GetPoint());
             }
 
             return BehaviourTreeStatus.Success;

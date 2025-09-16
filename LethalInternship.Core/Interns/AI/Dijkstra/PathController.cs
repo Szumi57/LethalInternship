@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
@@ -53,36 +54,19 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             IndexCurrentPoint = 1;
         }
 
-        public void SetNewDestination(Vector3 source, Vector3 dest)
+        public void SetNewDestination(Vector3 dest)
         {
-            SetNewDestination(new DJKPositionPoint(0, source), new DJKPositionPoint(1, dest));
+            SetNewDestination(new DJKPositionPoint(0, dest));
         }
 
-        public void SetNewDestination(IDJKPoint source, IDJKPoint dest)
+        public void SetNewDestination(IDJKPoint dest)
         {
-            sourcePoint = source;
             destinationPoint = dest;
-
-            //if (DJKPointsPath == null)
-            //{
-            //    DJKPointsPath = new List<IDJKPoint>() { source, dest };
-            //    IndexCurrentPoint = 1;
-            //}
-            //else if (DJKPointsPath.Count == 0)
-            //{
-            //    DJKPointsPath.Add(source);
-            //    DJKPointsPath.Add(dest);
-            //    IndexCurrentPoint = 1;
-            //}
-            //else
-            //{
-            //    int i = DJKPointsPath.Count;
-            //    source.Id = i++;
-            //    dest.Id = i++;
-            //    DJKPointsPath[0] = source;
-            //    DJKPointsPath[DJKPointsPath.Count - 1] = dest;
-            //    IndexCurrentPoint = IndexCurrentPoint == 0 ? 1 : IndexCurrentPoint;
-            //}
+            if (DJKPointsPath.Count > 0)
+            {
+                destinationPoint.Id = DJKPointsPath[DJKPointsPath.Count - 1].Id;
+                DJKPointsPath[DJKPointsPath.Count - 1] = destinationPoint;
+            }
         }
 
         public void SetNextPoint(int index)
@@ -92,7 +76,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public void SetNextPoint()
         {
-            IndexCurrentPoint++;
+            IndexCurrentPoint = IndexCurrentPoint + 1 >= DJKPointsPath.Count ? IndexCurrentPoint : IndexCurrentPoint + 1;
         }
 
         public void SetNextPointToDestination()
@@ -103,6 +87,40 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public bool IsCurrentPointDestination()
         {
             return IndexCurrentPoint == DJKPointsPath.Count - 1;
+        }
+
+        public string GetPathString()
+        {
+            string pathString = $"Path = ";
+            if (DJKPointsPath == null)
+            {
+                return string.Concat(pathString, " null");
+            }
+            else if (DJKPointsPath.Count == 0)
+            {
+                return string.Concat(pathString, " empty");
+            }
+            else
+            {
+                return string.Concat(pathString, string.Join(" ", DJKPointsPath.Select(x => x.Id)));
+            }
+        }
+
+        public string GetGraphString(List<IDJKPoint> graph)
+        {
+            string pathString = $"Graph({(graph == null ? 0 : graph.Count)}) = \r\n";
+            if (graph == null)
+            {
+                return string.Concat(pathString, " null");
+            }
+            else if (graph.Count == 0)
+            {
+                return string.Concat(pathString, " empty");
+            }
+            else
+            {
+                return string.Concat(pathString, string.Join("\r\n                                                              ", graph));
+            }
         }
     }
 }

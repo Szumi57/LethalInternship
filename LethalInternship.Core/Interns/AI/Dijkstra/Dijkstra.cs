@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -70,9 +71,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             {
                 foreach (var point2 in parameters.DJKPointsGraph)
                 {
-                    if (point1.Id == point2.Id
-                        || point1.IsNeighborExist(point2)
-                        || point2.IsNeighborExist(point1))
+                    if (point1.Id == point2.Id)
                     {
                         continue;
                     }
@@ -81,6 +80,21 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     if (idA > idB) (idA, idB) = (idB, idA);
                     if (testedPairs.Contains((idA, idB)))
                     {
+                        continue;
+                    }
+                    testedPairs.Add((idA, idB));
+
+                    // Add neighbors if exists
+                    float? distanceNeighbor = point1.GetNeighborDistanceIfExist(point2);
+                    if (distanceNeighbor != null)
+                    {
+                        point2.TryAddToNeighbors(point1, distanceNeighbor.Value);
+                        continue;
+                    }
+                    distanceNeighbor = point2.GetNeighborDistanceIfExist(point1);
+                    if (distanceNeighbor != null)
+                    {
+                        point1.TryAddToNeighbors(point2, distanceNeighbor.Value);
                         continue;
                     }
 
@@ -92,7 +106,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                             break;
                         }
 
-                        foreach (Vector3 point2point in point2.GetAllPoints())
+                        foreach (Vector3 point2point in point2.GetAllPoints().Where(p2 => Mathf.Abs(p2.y - point1point.y) < 100f))
                         {
                             yield return null;
 
@@ -103,8 +117,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
                             timerCalculatePath.Stop();
                             PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {point1.Id} - {point2.Id}{((path.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
-
-                            testedPairs.Add((idA, idB));
 
                             if (path.status == NavMeshPathStatus.PathComplete)
                             {
