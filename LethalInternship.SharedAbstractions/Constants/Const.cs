@@ -128,7 +128,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float TIMER_LOOKING_AROUND = 6f;
         public static readonly float DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION = 2f;
         public static readonly float WAIT_TIME_TO_TELEPORT = 1f;
-        public static readonly float DISTANCE_TO_ENTRANCE = 4f;
+        public static readonly float DISTANCE_TO_ENTRANCE = 1f;
         public static readonly float MIN_TIME_FREEZE_LOOKING_AROUND = 0.5f;
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
 

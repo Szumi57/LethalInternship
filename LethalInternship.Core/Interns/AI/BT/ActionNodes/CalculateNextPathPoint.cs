@@ -36,24 +36,18 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Go directly to destination
                 //PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 context.PathController.SetNextPointToDestination();
-                if (calculateNeighborsCoroutine != null)
-                {
-                    ai.StopCoroutine(calculateNeighborsCoroutine);
-                    calculateNeighborsCoroutine = null;
-                }
+
                 return BehaviourTreeStatus.Success;
             }
 
             // Check if current PathPoint reachable
             path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPoint(ai.transform.position));
-            if (path.status == NavMeshPathStatus.PathComplete)
+            if (path.status == NavMeshPathStatus.PathComplete
+                || (path.status == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete))
             {
-                // Go
-                //PluginLoggerHook.LogDebug?.Invoke($"- Current path point {context.PathController.GetCurrentPoint().Id} reachable");
-                if (calculateNeighborsCoroutine != null)
+                if (path.status == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete)
                 {
-                    ai.StopCoroutine(calculateNeighborsCoroutine);
-                    calculateNeighborsCoroutine = null;
+                    PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status force {path.status} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
                 }
                 return BehaviourTreeStatus.Success;
             }
@@ -75,7 +69,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (GraphEntrances == null)
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet, SetNextPointToDestination");
-                    context.PathController.SetNextPointToDestination();
+                    //context.PathController.SetNextPointToDestination();
                     return;
                 }
 
@@ -110,8 +104,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 PluginLoggerHook.LogDebug?.Invoke($"======= {context.PathController.GetPathString()}");
                 return;
             }
-
-            context.PathController.SetNextPointToDestination();
         }
 
         public class TimedCalculatePath

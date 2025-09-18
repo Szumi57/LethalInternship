@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
@@ -1844,7 +1845,7 @@ namespace LethalInternship.Core.Managers
             private CalculateNeighborsParameters calculateNeighborsParameters = null!;
             private Coroutine? calculateNeighborsCoroutine = null!;
 
-            private long timer = 5000 * TimeSpan.TicksPerMillisecond;
+            private long timer = 10000 * TimeSpan.TicksPerMillisecond;
             private long lastTimeCalculate;
 
             public List<IDJKPoint>? GetGraphEntrances(MonoBehaviour coroutineLauncher)
@@ -1857,6 +1858,7 @@ namespace LethalInternship.Core.Managers
                 if (!NeedToRecalculate())
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
+                    CleanNeighbors();
                     return DJKPointsGraph;
                 }
 
@@ -1875,7 +1877,7 @@ namespace LethalInternship.Core.Managers
                 {
                     DJKPointsGraph = calculateNeighborsParameters.DJKPointsGraph;
                     calculateNeighborsCoroutine = null;
-                    PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return graph");
+                    PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return graph calculated");
                     return DJKPointsGraph;
                 }
 
@@ -1901,9 +1903,6 @@ namespace LethalInternship.Core.Managers
             {
                 List<IDJKPoint> DJKPointsGraphEntrances = new List<IDJKPoint>();
 
-                var timerInitEntrances = new Stopwatch();
-                timerInitEntrances.Start();
-
                 // List<DJKPoint> init with entrances
                 int id = 0;
                 foreach (var entrance in entrancesTeleportArray)
@@ -1924,16 +1923,33 @@ namespace LethalInternship.Core.Managers
                     }
                 }
 
-                timerInitEntrances.Stop();
-                PluginLoggerHook.LogDebug?.Invoke($"timerInitEntrances {timerInitEntrances.Elapsed.TotalMilliseconds}ms | {timerInitEntrances.Elapsed.ToString("mm':'ss':'fffffff")}");
+                return DJKPointsGraphEntrances;
+            }
 
-                //PluginLoggerHook.LogDebug?.Invoke($"+++++++++ DJKPoints init with entrances");
-                //foreach (var point in DJKPoints)
+            private void CleanNeighbors()
+            {
+                if (DJKPointsGraph == null)
+                {
+                    return;
+                }
+
+                //PluginLoggerHook.LogDebug?.Invoke($"- CleanNeighbors before graph :");
+                //foreach (var point in DJKPointsGraph)
                 //{
-                //    PluginLoggerHook.LogDebug?.Invoke($"{point.ToString()}");
+                //    PluginLoggerHook.LogDebug?.Invoke($"- {point}");
                 //}
 
-                return DJKPointsGraphEntrances;
+                List<int> neighborsPresent = DJKPointsGraph.Select(x => x.Id).ToList();
+                foreach (var point in DJKPointsGraph)
+                {
+                    point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.neighbor.Id));
+                }
+
+                //PluginLoggerHook.LogDebug?.Invoke($"- CleanNeighbors after graph result :");
+                //foreach (var point in DJKPointsGraph)
+                //{
+                //    PluginLoggerHook.LogDebug?.Invoke($"- {point}");
+                //}
             }
         }
     }

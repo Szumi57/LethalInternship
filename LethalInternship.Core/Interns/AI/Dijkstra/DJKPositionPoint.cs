@@ -65,7 +65,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public override string ToString()
         {
-            string neighborsString = string.Join(",", Neighbors.Select(x => x.neighbor.Id));
+            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.neighbor.Id}({(int)Mathf.Sqrt(x.weight)})"));
 
             return $"DJKSimplePoint \"{Name}\" id:{Id}, Position: {Position}, Neighbors {{{neighborsString}}}";
         }

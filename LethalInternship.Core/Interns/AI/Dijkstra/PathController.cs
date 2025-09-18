@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -48,8 +49,15 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return destinationPoint;
         }
 
-        public void SetNewPath(List<IDJKPoint> dJKPoints)
+        public void SetNewPath(List<IDJKPoint>? dJKPoints)
         {
+            if (dJKPoints == null)
+            {
+                DJKPointsPath.Clear();
+                IndexCurrentPoint = 0;
+                return;
+            }
+
             DJKPointsPath = dJKPoints;
             IndexCurrentPoint = 1;
         }
@@ -98,17 +106,38 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
             else if (DJKPointsPath.Count == 0)
             {
-                return string.Concat(pathString, " empty");
+                return string.Concat(pathString, $" empty, dest {destinationPoint.Id}");
             }
             else
             {
-                return string.Concat(pathString, string.Join(" ", DJKPointsPath.Select(x => x.Id)));
+                float dist = 0;
+                pathString = string.Empty;
+                for (int i = 0; i < DJKPointsPath.Count; i++)
+                {
+                    IDJKPoint point = DJKPointsPath[i];
+
+                    if (i < DJKPointsPath.Count - 1)
+                    {
+                        dist += point.Neighbors.First(x => x.neighbor.Id == DJKPointsPath[i + 1].Id).weight;
+                    }
+
+                    if (Array.IndexOf(DJKPointsPath.ToArray(), point) == IndexCurrentPoint)
+                    {
+                        pathString += $" >{point.Id}<";
+                    }
+                    else
+                    {
+                        pathString += $" {point.Id}";
+                    }
+                }
+
+                return string.Concat($"Path ({(int)Mathf.Sqrt(dist)}m) = ", pathString);
             }
         }
 
         public string GetGraphString(List<IDJKPoint> graph)
         {
-            string pathString = $"Graph({(graph == null ? 0 : graph.Count)}) = \r\n";
+            string pathString = $"Graph({(graph == null ? 0 : graph.Count)})=";
             if (graph == null)
             {
                 return string.Concat(pathString, " null");
@@ -119,7 +148,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
             else
             {
-                return string.Concat(pathString, string.Join("\r\n                                                              ", graph));
+                return string.Concat(pathString, string.Join("\r\n                                                               ", graph));
             }
         }
     }

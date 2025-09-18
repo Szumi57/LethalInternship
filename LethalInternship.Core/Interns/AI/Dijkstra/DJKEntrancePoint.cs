@@ -110,14 +110,14 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public override string ToString()
         {
-            string neighborsString = string.Join(",", Neighbors.Select(x => x.neighbor.Id));
+            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.neighbor.Id}({(int)Mathf.Sqrt(x.weight)})"));
             string entrance2 = "null";
             if (Entrance2 != null)
             {
-                entrance2 = $"{Entrance2.name} {{{Entrance2.entrancePoint.position}}}";
+                entrance2 = $"{{{Entrance2.entrancePoint.position}}}";
             }
 
-            return $"DJKEntrancePoint id:{Id}, Entrance1: {Entrance1.name} {{{Entrance1.entrancePoint.position}}}, Entrance2: {entrance2}, Neighbors {{{neighborsString}}}";
+            return $"DJKEntrancePoint id:{Id}, Entrance1:{{{Entrance1.entrancePoint.position}}}, Entrance2: {entrance2}, Neighbors {{{neighborsString}}}";
         }
     }
 }
