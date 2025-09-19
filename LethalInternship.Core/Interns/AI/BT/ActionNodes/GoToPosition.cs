@@ -20,7 +20,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Take entrance
                 if (TakeEntrance(context.InternAI, entrancePoint))
                 {
-                    context.PathController.SetNextPoint();
+                    context.PathController.SetToNextPoint();
                 }
             }
 

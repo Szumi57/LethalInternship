@@ -36,12 +36,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Go directly to destination
                 //PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 context.PathController.SetNextPointToDestination();
-
                 return BehaviourTreeStatus.Success;
             }
-
+            
             // Check if current PathPoint reachable
-            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPoint(ai.transform.position));
+            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPoint(ai.transform.position, getRealCurrentPoint: true));
             if (path.status == NavMeshPathStatus.PathComplete
                 || (path.status == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete))
             {
@@ -49,7 +48,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status force {path.status} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
                 }
+
+                // Go
+                context.PathController.SetCurrentPointToReachable();
                 return BehaviourTreeStatus.Success;
+            }
+            else if (path.status == NavMeshPathStatus.PathPartial)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"- ?? next point to partial path");
+                context.PathController.SetNextPartialPoint(path.corners[path.corners.Length - 1]);
             }
 
             // Path partial, need to calculate further

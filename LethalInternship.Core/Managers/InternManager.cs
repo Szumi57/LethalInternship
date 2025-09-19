@@ -1858,7 +1858,6 @@ namespace LethalInternship.Core.Managers
                 if (!NeedToRecalculate())
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
-                    CleanNeighbors();
                     return DJKPointsGraph;
                 }
 
@@ -1924,32 +1923,6 @@ namespace LethalInternship.Core.Managers
                 }
 
                 return DJKPointsGraphEntrances;
-            }
-
-            private void CleanNeighbors()
-            {
-                if (DJKPointsGraph == null)
-                {
-                    return;
-                }
-
-                //PluginLoggerHook.LogDebug?.Invoke($"- CleanNeighbors before graph :");
-                //foreach (var point in DJKPointsGraph)
-                //{
-                //    PluginLoggerHook.LogDebug?.Invoke($"- {point}");
-                //}
-
-                List<int> neighborsPresent = DJKPointsGraph.Select(x => x.Id).ToList();
-                foreach (var point in DJKPointsGraph)
-                {
-                    point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.neighbor.Id));
-                }
-
-                //PluginLoggerHook.LogDebug?.Invoke($"- CleanNeighbors after graph result :");
-                //foreach (var point in DJKPointsGraph)
-                //{
-                //    PluginLoggerHook.LogDebug?.Invoke($"- {point}");
-                //}
             }
         }
     }
