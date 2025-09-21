@@ -2,9 +2,10 @@
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
 using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
-using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Events;
@@ -23,8 +24,6 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
@@ -305,6 +304,8 @@ namespace LethalInternship.Core.Managers
                 timerIsAnInternScheduledToLand = 0f;
                 isAnInternScheduledToLand = IdentityManager.Instance.IsAnIdentityToDrop();
             }
+
+            ProcessCalculatePathQueue();
         }
 
         /// <summary>
@@ -1776,7 +1777,7 @@ namespace LethalInternship.Core.Managers
 
         #endregion
 
-        #region Graph entrances
+        #region Graph and path calculation
 
         private TimedGetGraphEntrances getGraphEntrancesTimed = null!;
         public List<IDJKPoint>? GetGraphEntrances()
@@ -1787,6 +1788,92 @@ namespace LethalInternship.Core.Managers
             }
 
             return getGraphEntrancesTimed.GetGraphEntrances(this);
+        }
+
+        private int maxBatchesPerFrame = 1;
+        private int maxInstructionsPerFrame = 1;
+
+        private Dictionary<int, PathBatchRequest> activeBatches = new Dictionary<int, PathBatchRequest>();
+
+        public void RequestBatch(int idBatch, List<PathInstruction> instructions)
+        {
+            var newBatch = new PathBatchRequest(idBatch, instructions);
+
+            if (!activeBatches.TryGetValue(idBatch, out var batch))
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"RequestBatch NEW {idBatch} instrs:{instructions.Count}");
+            }
+            else
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"RequestBatch REPLACE {idBatch} instrs:{instructions.Count}");
+            }
+            activeBatches[idBatch] = newBatch;
+        }
+
+        private void ProcessCalculatePathQueue()
+        {
+            if (activeBatches.Count == 0) return;
+
+            int processedBatches = 0;
+            int processedInstructions = 0;
+
+            var sorted = activeBatches.Values
+                        .OrderBy(b => GetDistanceFromClosestPlayer(b))
+                        .ToList();
+
+            foreach (var batch in sorted)
+            {
+                if (processedBatches >= maxBatchesPerFrame) break;
+                if (processedInstructions >= maxInstructionsPerFrame) break;
+
+                if (!batch.HasRemaining)
+                {
+                    // batch vide => on supprime la trace
+                    activeBatches.Remove(batch.id);
+                    continue;
+                }
+
+                // Exécute une instruction seulement
+                var instr = batch.CurrentInstruction;
+                PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction batch {batch.id} i {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
+                ExecuteInstruction(instr);
+                batch.Advance();
+
+                processedInstructions++;
+                processedBatches++;
+
+                if (!batch.HasRemaining)
+                {
+                    activeBatches.Remove(batch.id);
+                }
+            }
+        }
+
+        private void ExecuteInstruction(PathInstruction instr)
+        {
+            NavMeshPath navPath = new NavMeshPath();
+
+            //var timerCalculatePath = new Stopwatch();
+            //timerCalculatePath.Start();
+            NavMesh.CalculatePath(instr.start, instr.target, NavMesh.AllAreas, navPath);
+            //timerCalculatePath.Stop();
+            //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {instr.startDJKPoint.Id} - {instr.targetDJKPoint.Id}{((navPath.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+            instr.callback?.Invoke(new PathResponse(navPath.status, navPath.corners, instr.startDJKPoint, instr.targetDJKPoint));
+        }
+
+        private float GetDistanceFromClosestPlayer(PathBatchRequest batch)
+        {
+            if (!batch.HasRemaining) return float.MaxValue;
+            if (batch.id < 0) return float.MinValue;
+
+            IInternAI? internAI = GetInternAI(batch.id);
+            if (internAI == null)
+            {
+                return float.MaxValue;
+            }
+
+            return internAI.GetClosestPlayerDistance();
         }
 
         #endregion
@@ -1841,9 +1928,8 @@ namespace LethalInternship.Core.Managers
         public class TimedGetGraphEntrances
         {
             private List<IDJKPoint>? DJKPointsGraph = null!;
-
-            private CalculateNeighborsParameters calculateNeighborsParameters = null!;
-            private Coroutine? calculateNeighborsCoroutine = null!;
+            private List<PathResponse> pendingPaths = new List<PathResponse>();
+            private int nbRequestsAsked;
 
             private long timer = 10000 * TimeSpan.TicksPerMillisecond;
             private long lastTimeCalculate;
@@ -1866,21 +1952,10 @@ namespace LethalInternship.Core.Managers
                 DJKPointsGraph = CalculateGraphEntrances(entrancesTeleportArray);
 
                 // Calculate Neighbors
-                if (calculateNeighborsCoroutine == null)
-                {
-                    calculateNeighborsParameters = new CalculateNeighborsParameters(DJKPointsGraph);
-                    calculateNeighborsCoroutine = coroutineLauncher.StartCoroutine(Dijkstra.CalculateNeighbors(calculateNeighborsParameters));
-                }
+                pendingPaths.Clear();
+                nbRequestsAsked = Dijkstra.CalculateNeighbors(DJKPointsGraph, idBatch: -1, OnPathCalculated);
+                PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances nbRequestsAsked {nbRequestsAsked} calculating...");
 
-                if (calculateNeighborsParameters.CalculateFinished)
-                {
-                    DJKPointsGraph = calculateNeighborsParameters.DJKPointsGraph;
-                    calculateNeighborsCoroutine = null;
-                    PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return graph calculated");
-                    return DJKPointsGraph;
-                }
-
-                PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances calculating...");
                 return null;
             }
 
@@ -1923,6 +1998,28 @@ namespace LethalInternship.Core.Managers
                 }
 
                 return DJKPointsGraphEntrances;
+            }
+
+            private void OnPathCalculated(PathResponse pathResponse)
+            {
+                pendingPaths.Add(pathResponse);
+                if (nbRequestsAsked == pendingPaths.Count)
+                {
+                    ProcessPendingPathCalculated();
+                }
+            }
+
+            private void ProcessPendingPathCalculated()
+            {
+                foreach (var pathResponse in pendingPaths)
+                {
+                    if (pathResponse.pathStatus == NavMeshPathStatus.PathComplete)
+                    {
+                        float distance = Dijkstra.GetFullDistancePath(pathResponse.path);
+                        pathResponse.startDJKPoint.TryAddToNeighbors(pathResponse.targetDJKPoint, distance);
+                        pathResponse.targetDJKPoint.TryAddToNeighbors(pathResponse.startDJKPoint, distance);
+                    }
+                }
             }
         }
     }

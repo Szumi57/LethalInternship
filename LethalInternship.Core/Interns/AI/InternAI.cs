@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.BT;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
@@ -18,8 +17,6 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -728,7 +725,7 @@ namespace LethalInternship.Core.Interns.AI
         /// </summary>
         public void UpdateDestinationToAgent(bool calculatePartialPath = false, bool checkForPath = false)
         {
-            if (IsAgentInValidState() 
+            if (IsAgentInValidState()
                 && agent.destination != base.destination)
             {
                 agent.SetDestination(destination);
@@ -4429,6 +4426,17 @@ namespace LethalInternship.Core.Interns.AI
             return this.AngleFOVWithLocalPlayerTimedCheck.GetAngleFOVWithLocalPlayer(localPlayerCameraTransform, internBodyPos);
         }
 
+        TimedGetClosestPlayerDistance GetClosestPlayerDistanceTimed = null!;
+        public float GetClosestPlayerDistance()
+        {
+            if (GetClosestPlayerDistanceTimed == null)
+            {
+                GetClosestPlayerDistanceTimed = new TimedGetClosestPlayerDistance();
+            }
+
+            return GetClosestPlayerDistanceTimed.GetClosestPlayerDistance(this.Npc.transform.position);
+        }
+
         public class TimedTouchingGroundCheck
         {
             private bool isTouchingGround = true;
@@ -4517,6 +4525,61 @@ namespace LethalInternship.Core.Interns.AI
             private void CalculateAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
             {
                 angle = Vector3.Angle(localPlayerCameraTransform.forward, internBodyPos - localPlayerCameraTransform.position);
+            }
+        }
+
+        public class TimedGetClosestPlayerDistance
+        {
+            private float distance;
+
+            private long timer = 1000 * TimeSpan.TicksPerMillisecond;
+            private long lastTimeCalculate;
+
+            public float GetClosestPlayerDistance(Vector3 internPos)
+            {
+                if (!NeedToRecalculate())
+                {
+                    return distance;
+                }
+
+                CalculateGetClosestPlayerDistance(internPos);
+                return distance;
+            }
+
+            private bool NeedToRecalculate()
+            {
+                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+                if (elapsedTime > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            private float CalculateGetClosestPlayerDistance(Vector3 internPos)
+            {
+                float minDistance = float.MaxValue;
+                for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
+                {
+                    PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
+                    if (!player.isPlayerControlled
+                        || player.isPlayerDead)
+                    {
+                        continue;
+                    }
+
+                    float currDist = (player.transform.position - internPos).sqrMagnitude;
+                    if (currDist < minDistance)
+                    {
+                        minDistance = currDist;
+                    }
+                }
+
+                return minDistance;
             }
         }
     }

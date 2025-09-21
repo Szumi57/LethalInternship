@@ -1,9 +1,8 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace LethalInternship.Core.Interns.AI.Dijkstra
+namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
     public class DJKEntrancePoint : IDJKPoint
     {

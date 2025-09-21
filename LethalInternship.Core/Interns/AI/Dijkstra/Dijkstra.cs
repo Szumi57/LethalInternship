@@ -1,7 +1,7 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System.Collections;
+﻿using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
+using LethalInternship.Core.Managers;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
@@ -61,15 +61,16 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return path;
         }
 
-        public static IEnumerator CalculateNeighbors(CalculateNeighborsParameters parameters)
+        public static int CalculateNeighbors(List<IDJKPoint> DJKPointsGraph, int idBatch, Action<PathResponse> callback)
         {
             // Neighbors init
             NavMeshPath path = new NavMeshPath();
+            var instructions = new List<PathInstruction>();
 
             HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
-            foreach (var point1 in parameters.DJKPointsGraph)
+            foreach (var point1 in DJKPointsGraph)
             {
-                foreach (var point2 in parameters.DJKPointsGraph)
+                foreach (var point2 in DJKPointsGraph)
                 {
                     if (point1.Id == point2.Id)
                     {
@@ -98,54 +99,34 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                         continue;
                     }
 
-                    bool isNeighbors = false;
                     foreach (Vector3 point1point in point1.GetAllPoints())
                     {
-                        if (isNeighbors)
-                        {
-                            break;
-                        }
-
                         foreach (Vector3 point2point in point2.GetAllPoints().Where(p2 => Mathf.Abs(p2.y - point1point.y) < 100f))
                         {
-                            yield return null;
-
-                            var timerCalculatePath = new Stopwatch();
-                            timerCalculatePath.Start();
-
-                            NavMesh.CalculatePath(point1point, point2point, NavMesh.AllAreas, path);
-
-                            timerCalculatePath.Stop();
-                            PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {point1.Id} - {point2.Id}{((path.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
-
-                            if (path.status == NavMeshPathStatus.PathComplete)
-                            {
-                                float distance = GetFullDistancePath(path);
-                                point1.TryAddToNeighbors(point2, distance);
-                                point2.TryAddToNeighbors(point1, distance);
-
-                                isNeighbors = true;
-                                break;
-                            }
+                            // Ask for calculate path
+                            instructions.Add(new PathInstruction(
+                                start: point1point,
+                                target: point2point,
+                                callback: callback,
+                                startDJKPoint: point1,
+                                targetDJKPoint: point2
+                            ));
                         }
                     }
                 }
             }
 
-            parameters.CalculateFinished = true;
-            yield break;
+            InternManager.Instance.RequestBatch(idBatch, instructions);
+            return instructions.Count;
         }
 
-        private static float GetFullDistancePath(NavMeshPath path)
+        public static float GetFullDistancePath(Vector3[] corners)
         {
-            var corners = path.corners;
             float fullDistance = 0f;
-
             for (int i = 1; i < corners.Length; i++)
             {
                 fullDistance += (corners[i - 1] - corners[i]).sqrMagnitude;
             }
-
             return fullDistance;
         }
     }

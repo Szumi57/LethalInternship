@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace LethalInternship.Core.Interns.AI.Dijkstra
+namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
     public class DJKPositionPoint : IDJKPoint
     {

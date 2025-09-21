@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.SharedAbstractions.Enums;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -77,5 +76,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         Vector3 GetBillBoardPosition(GameObject bodyModel);
 
         float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos);
+
+        float GetClosestPlayerDistance();
     }
 }
