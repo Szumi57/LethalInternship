@@ -25,7 +25,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" => {context.PathController.GetPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController.GetPathString()}");
 
             // Go to position
             MoveToPosition(context.InternAI, context.PathController.GetCurrentPoint());

@@ -1828,12 +1828,11 @@ namespace LethalInternship.Core.Managers
 
                 if (!batch.HasRemaining)
                 {
-                    // batch vide => on supprime la trace
                     activeBatches.Remove(batch.id);
                     continue;
                 }
 
-                // Exécute une instruction seulement
+                // Execute one instruction only
                 var instr = batch.CurrentInstruction;
                 PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction batch {batch.id} i {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
                 ExecuteInstruction(instr);
@@ -1859,7 +1858,7 @@ namespace LethalInternship.Core.Managers
             //timerCalculatePath.Stop();
             //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {instr.startDJKPoint.Id} - {instr.targetDJKPoint.Id}{((navPath.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
 
-            instr.callback?.Invoke(new PathResponse(navPath.status, navPath.corners, instr.startDJKPoint, instr.targetDJKPoint));
+            instr.callback?.Invoke(new PathResponse(instr.start, instr.target, navPath.status, navPath.corners, instr.startDJKPoint, instr.targetDJKPoint));
         }
 
         private float GetDistanceFromClosestPlayer(PathBatchRequest batch)
@@ -1943,6 +1942,7 @@ namespace LethalInternship.Core.Managers
 
                 if (!NeedToRecalculate())
                 {
+                    CleanNeighbors();
                     PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
                     return DJKPointsGraph;
                 }
@@ -1970,6 +1970,20 @@ namespace LethalInternship.Core.Managers
                 else
                 {
                     return false;
+                }
+            }
+
+            private void CleanNeighbors()
+            {
+                if (DJKPointsGraph == null)
+                {
+                    return;
+                }
+
+                List<int> neighborsPresent = DJKPointsGraph.Select(x => x.Id).ToList();
+                foreach (var point in DJKPointsGraph)
+                {
+                    point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.neighbor.Id));
                 }
             }
 
@@ -2003,7 +2017,7 @@ namespace LethalInternship.Core.Managers
             private void OnPathCalculated(PathResponse pathResponse)
             {
                 pendingPaths.Add(pathResponse);
-                if (nbRequestsAsked == pendingPaths.Count)
+                if (pendingPaths.Count >= nbRequestsAsked)
                 {
                     ProcessPendingPathCalculated();
                 }

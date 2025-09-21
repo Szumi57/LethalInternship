@@ -25,6 +25,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             ai.SyncTeleportInternVehicle(entryPointInternCruiser, enteringVehicle: false, vehicleController);
             vehicleController.SetVehicleCollisionForPlayer(true, ai.NpcController.Npc);
 
+            if (ai.NpcController.Npc.isCrouching)
+            {
+                ai.NpcController.OrderToToggleCrouch();
+            }
+
             return BehaviourTreeStatus.Success;
         }
 

@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
@@ -112,6 +111,18 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             currentPointReachable = true;
         }
 
+        public void SetCurrentPoint(Vector3 pos)
+        {
+            if (DJKPointsPath == null || DJKPointsPath.Count == 0)
+            {
+                DJKPointsPath = new List<IDJKPoint>() { new DJKPositionPoint(0, pos) };
+                IndexCurrentPoint = 0;
+                return;
+            }
+
+            DJKPointsPath[IndexCurrentPoint] = new DJKPositionPoint(DJKPointsPath[IndexCurrentPoint].Id, pos);
+        }
+
         public void SetToNextPoint()
         {
             IndexCurrentPoint = IndexCurrentPoint + 1 >= DJKPointsPath.Count ? IndexCurrentPoint : IndexCurrentPoint + 1;
@@ -147,9 +158,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 {
                     IDJKPoint point = DJKPointsPath[i];
 
+                    // Calculate distance neighbor
                     if (i < DJKPointsPath.Count - 1)
                     {
-                        dist += (int)Mathf.Sqrt(point.Neighbors.First(x => x.neighbor.Id == DJKPointsPath[i + 1].Id).weight);
+                        foreach (var n in point.Neighbors)
+                        {
+                            if (n.neighbor.Id == DJKPointsPath[i + 1].Id)
+                            {
+                                dist += (int)Mathf.Sqrt(n.weight);
+                                break;
+                            }
+                        }
                     }
 
                     if (Array.IndexOf(DJKPointsPath.ToArray(), point) == IndexCurrentPoint)
