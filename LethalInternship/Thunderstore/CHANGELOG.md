@@ -1,12 +1,13 @@
 # Changelog
 
 ## 0.20.4 [Alpha] - 2025-09-23
-Sorry, I needed to revamp the way the interns choose their path on the map, they now should pathfind better,</br>
+Sorry, I needed to revamp the way the interns choose their path on the map, they now should pathfind better.</br>
 Not much change for the players, but it took (again) quite some time.
 
 ### Fixed
 - Fix interns not crouching with players
 - Fix some voices that didn't play : following player, found loot, ordered to go somewhere, ordered to follow
+- Recent known bug : Multiplayer, another player cannot manage intern from another player, but still can grab/release intern to gain control of it
 
 ## 0.20.3 [Alpha] - 2025-08-19
 Little update this time with UI rework.</br>
