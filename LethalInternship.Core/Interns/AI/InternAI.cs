@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.BT;
+using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
@@ -75,8 +76,7 @@ namespace LethalInternship.Core.Interns.AI
         public GrabbableObject? TargetItem;
         public Vector3? TargetLastKnownPosition;
         public EntranceTeleport? ClosestEntrance;
-        public Vector3 NextPos;
-        public bool CanRun = true;
+        public bool CanRun = true; // const for now
 
         public IPointOfInterest? PointOfInterest = null!;
 
@@ -96,6 +96,7 @@ namespace LethalInternship.Core.Interns.AI
 
         public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
         public TimedAngleFOVWithLocalPlayerCheck AngleFOVWithLocalPlayerTimedCheck = null!;
+        private TimedGetClosestPlayerDistance GetClosestPlayerDistanceTimed = null!;
 
         public LineRendererUtil LineRendererUtil = null!;
 
@@ -111,7 +112,6 @@ namespace LethalInternship.Core.Interns.AI
         private bool animationCoroutineRagdollingRunning = false;
 
         private string stateIndicatorServer = string.Empty;
-        private Vector3 previousWantedDestination;
         private float updateDestinationIntervalInternAI;
         private float healthRegenerateTimerMax;
         private float timerCheckDoor;
@@ -227,7 +227,7 @@ namespace LethalInternship.Core.Interns.AI
             UpdateInternVoiceEffects();
 
             // Line renderer used for debugging stuff
-            LineRendererUtil = new LineRendererUtil(6, transform);
+            LineRendererUtil = new LineRendererUtil(20, transform);
 
             TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
@@ -473,9 +473,6 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
-            // Calculate next pos if necessary
-            CalculateNextPos();
-
             BTController.TickTree(AIIntervalTime);
 
             // Doors
@@ -495,28 +492,17 @@ namespace LethalInternship.Core.Interns.AI
             return this.PointOfInterest;
         }
 
-        public void CalculateNextPos()
-        {
-            Vector3 point = this.PointOfInterest == null ? NextPos : this.PointOfInterest.GetPoint();
-
-            // Set next pos
-            NavMesh.CalculatePath(this.transform.position, point, NavMesh.AllAreas, this.path1);
-            if (this.path1.status == NavMeshPathStatus.PathPartial)
-            {
-                NextPos = path1.corners[path1.corners.Length - 1];
-            }
-            else
-            {
-                NextPos = point;
-            }
-        }
-
         public void SetCommandTo(IPointOfInterest pointOfInterest)
         {
             this.PointOfInterest = pointOfInterest;
 
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
-            CurrentCommand = newCommand == null ? EnumCommandTypes.FollowPlayer : newCommand.Value;
+            if (newCommand == null)
+            {
+                SetCommandToFollowPlayer();
+                return;
+            }
+            CurrentCommand = newCommand.Value;
 
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandTo {CurrentCommand}");
             PluginLoggerHook.LogDebug?.Invoke($"VVV PointOfInterest VVV");
@@ -524,6 +510,9 @@ namespace LethalInternship.Core.Interns.AI
             {
                 PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
             }
+
+            // Voice
+            TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
         }
 
         public void SetCommandToFollowPlayer()
@@ -531,6 +520,26 @@ namespace LethalInternship.Core.Interns.AI
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
+
+            // Voice
+            TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
+        }
+
+        private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = enumVoicesState,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = this.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
 
         #endregion
@@ -585,6 +594,31 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             return false;
+        }
+
+        public void FollowCrouchIfCanDo(bool panik = false)
+        {
+            if (panik
+                && NpcController.Npc.isCrouching)
+            {
+                NpcController.OrderToToggleCrouch();
+                return;
+            }
+
+            if (PluginRuntimeProvider.Context.Config.FollowCrouchWithPlayer
+                && targetPlayer != null)
+            {
+                if (targetPlayer.isCrouching
+                    && !NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+                else if (!targetPlayer.isCrouching
+                        && NpcController.Npc.isCrouching)
+                {
+                    NpcController.OrderToToggleCrouch();
+                }
+            }
         }
 
         public override void OnCollideWithPlayer(Collider other)
@@ -662,6 +696,19 @@ namespace LethalInternship.Core.Interns.AI
             }
         }
 
+        public bool IsAgentInValidState()
+        {
+            if (agent.isActiveAndEnabled
+                && agent.isOnNavMesh
+                && !isEnemyDead
+                && !NpcController.Npc.isPlayerDead
+                && !StartOfRound.Instance.shipIsLeaving)
+            {
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Set the destination in <c>EnemyAI</c>, not on the agent
         /// </summary>
@@ -671,11 +718,7 @@ namespace LethalInternship.Core.Interns.AI
             moveTowardsDestination = true;
             movingTowardsTargetPlayer = false;
 
-            if (previousWantedDestination != position)
-            {
-                previousWantedDestination = position;
-                destination = position;
-            }
+            destination = position;
         }
 
         /// <summary>
@@ -683,13 +726,9 @@ namespace LethalInternship.Core.Interns.AI
         /// </summary>
         public void UpdateDestinationToAgent(bool calculatePartialPath = false, bool checkForPath = false)
         {
-            if (agent.isActiveAndEnabled
-                && agent.isOnNavMesh
-                && !isEnemyDead
-                && !NpcController.Npc.isPlayerDead
-                && !StartOfRound.Instance.shipIsLeaving)
+            if (IsAgentInValidState()
+                && agent.destination != base.destination)
             {
-                TrySetDestinationToPosition(destination, calculatePartialPath, checkForPath);
                 agent.SetDestination(destination);
             }
         }
@@ -698,20 +737,6 @@ namespace LethalInternship.Core.Interns.AI
         {
             NpcController.OrderToMove();
             UpdateDestinationToAgent(calculatePartialPath, checkForPath);
-        }
-
-        public bool TrySetDestinationToPosition(Vector3 position, bool calculatePartialPath = false, bool checkForPath = false)
-        {
-            if (calculatePartialPath)
-            {
-                NavMesh.CalculatePath(this.transform.position, position, NavMesh.AllAreas, this.path1);
-                if (this.path1.status == NavMeshPathStatus.PathPartial)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"TrySetDestinationToPosition CalculatePath {this.path1.status}");
-                    return SetDestinationToPosition(path1.corners[path1.corners.Length - 1]);
-                }
-            }
-            return SetDestinationToPosition(position, checkForPath);
         }
 
         public void StopMoving()
@@ -4212,95 +4237,14 @@ namespace LethalInternship.Core.Interns.AI
             return this.AngleFOVWithLocalPlayerTimedCheck.GetAngleFOVWithLocalPlayer(localPlayerCameraTransform, internBodyPos);
         }
 
-        public class TimedTouchingGroundCheck
+        public float GetClosestPlayerDistance()
         {
-            private bool isTouchingGround = true;
-            private RaycastHit groundHit;
-
-            private long timer = 200 * TimeSpan.TicksPerMillisecond;
-            private long lastTimeCalculate;
-
-            public bool IsTouchingGround(Vector3 internPosition)
+            if (GetClosestPlayerDistanceTimed == null)
             {
-                if (!NeedToRecalculate())
-                {
-                    return isTouchingGround;
-                }
-
-                CalculateTouchingGround(internPosition);
-                return isTouchingGround;
+                GetClosestPlayerDistanceTimed = new TimedGetClosestPlayerDistance();
             }
 
-            public RaycastHit GetGroundHit(Vector3 internPosition)
-            {
-                if (!NeedToRecalculate())
-                {
-                    return groundHit;
-                }
-
-                CalculateTouchingGround(internPosition);
-                return groundHit;
-            }
-
-            private bool NeedToRecalculate()
-            {
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timer)
-                {
-                    lastTimeCalculate = DateTime.Now.Ticks;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            private void CalculateTouchingGround(Vector3 internPosition)
-            {
-                isTouchingGround = Physics.Raycast(new Ray(internPosition + Vector3.up, -Vector3.up),
-                                                   out groundHit,
-                                                   2.5f,
-                                                   StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
-            }
-        }
-
-        public class TimedAngleFOVWithLocalPlayerCheck
-        {
-            private float angle;
-
-            private long timer = 50 * TimeSpan.TicksPerMillisecond;
-            private long lastTimeCalculate;
-
-            public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
-            {
-                if (!NeedToRecalculate())
-                {
-                    return angle;
-                }
-
-                CalculateAngleFOVWithLocalPlayer(localPlayerCameraTransform, internBodyPos);
-                return angle;
-            }
-
-            private bool NeedToRecalculate()
-            {
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timer)
-                {
-                    lastTimeCalculate = DateTime.Now.Ticks;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            private void CalculateAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
-            {
-                angle = Vector3.Angle(localPlayerCameraTransform.forward, internBodyPos - localPlayerCameraTransform.position);
-            }
+            return GetClosestPlayerDistanceTimed.GetClosestPlayerDistance(this.Npc.transform.position);
         }
     }
 }

@@ -23,6 +23,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Place intern in random spot
             Vector3 internPassengerPos = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomInCruiserPos();
             ai.SyncTeleportInternVehicle(internPassengerPos, enteringVehicle: true, vehicleController);
+            PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} EnterVehicle !");
 
             // random rotation
             float angleRandom = Random.Range(-180f, 180f);

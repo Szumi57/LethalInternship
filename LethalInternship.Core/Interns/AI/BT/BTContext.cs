@@ -1,5 +1,7 @@
 ﻿using LethalInternship.Core.Interns.AI.CoroutineControllers;
-using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.Core.Interns.AI.Dijkstra;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT
 {
@@ -7,9 +9,13 @@ namespace LethalInternship.Core.Interns.AI.BT
     {
         public InternAI InternAI { get; set; }
 
+        public PathController PathController { get; set; }
+
+        public SearchCoroutineController searchForPlayers { get; set; }
+
         public CoroutineController PanikCoroutine { get; set; }
         public CoroutineController LookingAroundCoroutineController { get; set; }
         public CoroutineController searchingWanderCoroutineController { get; set; }
-        public SearchCoroutineController searchForPlayers { get; set; }
+        public CoroutineController CalculatePathCoroutineController { get; set; }
     }
 }

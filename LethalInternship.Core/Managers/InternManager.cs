@@ -1,9 +1,11 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
+using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
-using LethalInternship.Core.Utils;
+using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Events;
@@ -302,6 +304,8 @@ namespace LethalInternship.Core.Managers
                 timerIsAnInternScheduledToLand = 0f;
                 isAnInternScheduledToLand = IdentityManager.Instance.IsAnIdentityToDrop();
             }
+
+            ProcessCalculatePathQueue();
         }
 
         /// <summary>
@@ -1773,52 +1777,104 @@ namespace LethalInternship.Core.Managers
 
         #endregion
 
-        public class TimedOrderedInternBodiesDistanceListCheck
+        #region Graph and path calculation
+
+        private TimedGetGraphEntrances getGraphEntrancesTimed = null!;
+        public List<IDJKPoint>? GetGraphEntrances()
         {
-            private List<IInternCullingBodyInfo> orderedInternBodiesDistanceList = null!;
-
-            private long timer = 200 * TimeSpan.TicksPerMillisecond;
-            private long lastTimeCalculate;
-
-            public List<IInternCullingBodyInfo> GetOrderedInternDistanceList(List<IInternCullingBodyInfo> internBodies)
+            if (getGraphEntrancesTimed == null)
             {
-                if (orderedInternBodiesDistanceList == null)
-                {
-                    orderedInternBodiesDistanceList = new List<IInternCullingBodyInfo>();
-                }
-
-                if (!NeedToRecalculate())
-                {
-                    return orderedInternBodiesDistanceList;
-                }
-
-                CalculateOrderedInternDistanceList(internBodies);
-                return orderedInternBodiesDistanceList;
+                getGraphEntrancesTimed = new TimedGetGraphEntrances();
             }
 
-            private bool NeedToRecalculate()
-            {
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timer)
-                {
-                    lastTimeCalculate = DateTime.Now.Ticks;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
+            return getGraphEntrancesTimed.GetGraphEntrances(this);
+        }
 
-            private void CalculateOrderedInternDistanceList(List<IInternCullingBodyInfo> internBodies)
+        private int maxBatchesPerFrame = 1;
+        private int maxInstructionsPerFrame = 1;
+
+        private Dictionary<int, PathBatchRequest> activeBatches = new Dictionary<int, PathBatchRequest>();
+
+        public void RequestBatch(int idBatch, List<PathInstruction> instructions)
+        {
+            var newBatch = new PathBatchRequest(idBatch, instructions);
+
+            //if (!activeBatches.TryGetValue(idBatch, out var batch))
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch NEW {idBatch} instrs:{instructions.Count}");
+            //}
+            //else
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch REPLACE {idBatch} instrs:{instructions.Count}");
+            //}
+            activeBatches[idBatch] = newBatch;
+        }
+
+        private void ProcessCalculatePathQueue()
+        {
+            if (activeBatches.Count == 0) return;
+
+            int processedBatches = 0;
+            int processedInstructions = 0;
+
+            var sorted = activeBatches.Values
+                        .OrderBy(b => GetDistanceFromClosestPlayer(b))
+                        .ToList();
+
+            foreach (var batch in sorted)
             {
-                orderedInternBodiesDistanceList.Clear();
-                orderedInternBodiesDistanceList.AddRange(internBodies);
-                orderedInternBodiesDistanceList = orderedInternBodiesDistanceList
-                                                    .OrderBy(x => x.GetSqrDistanceWithLocalPlayer())
-                                                    .ToList();
+                if (processedBatches >= maxBatchesPerFrame) break;
+                if (processedInstructions >= maxInstructionsPerFrame) break;
+
+                if (!batch.HasRemaining)
+                {
+                    activeBatches.Remove(batch.id);
+                    continue;
+                }
+
+                // Execute one instruction only
+                var instr = batch.CurrentInstruction;
+                //PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction batch {batch.id} i {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
+                ExecuteInstruction(instr);
+                batch.Advance();
+
+                processedInstructions++;
+                processedBatches++;
+
+                if (!batch.HasRemaining)
+                {
+                    activeBatches.Remove(batch.id);
+                }
             }
         }
 
+        private void ExecuteInstruction(PathInstruction instr)
+        {
+            NavMeshPath navPath = new NavMeshPath();
+
+            //var timerCalculatePath = new Stopwatch();
+            //timerCalculatePath.Start();
+            NavMesh.CalculatePath(instr.start, instr.target, NavMesh.AllAreas, navPath);
+            //timerCalculatePath.Stop();
+            //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {instr.startDJKPoint.Id} - {instr.targetDJKPoint.Id}{((navPath.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
+
+            instr.callback?.Invoke(new PathResponse(instr.start, instr.target, navPath.status, navPath.corners, instr.startDJKPoint, instr.targetDJKPoint));
+        }
+
+        private float GetDistanceFromClosestPlayer(PathBatchRequest batch)
+        {
+            if (!batch.HasRemaining) return float.MaxValue;
+            if (batch.id < 0) return float.MinValue;
+
+            IInternAI? internAI = GetInternAI(batch.id);
+            if (internAI == null)
+            {
+                return float.MaxValue;
+            }
+
+            return internAI.GetClosestPlayerDistance();
+        }
+
+        #endregion
     }
 }

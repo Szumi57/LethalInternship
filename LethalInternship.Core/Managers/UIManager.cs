@@ -99,6 +99,11 @@ namespace LethalInternship.Core.Managers
 
         private void ShowWorldIconUIs()
         {
+            if (worldIconUIPool == null)
+            {
+                return;
+            }
+
             PointOfInterestInCenter = null;
 
             // Check for interns owned
@@ -242,6 +247,11 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
+            if (inputIconUIPool == null)
+            {
+                return;
+            }
+
             InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }));
             inputIconUI.SetPositionUICenter();
             inputIconUI.SetColorIconValidOrNot(isValid);
@@ -254,6 +264,11 @@ namespace LethalInternship.Core.Managers
         public void HideInputIcon()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
+            {
+                return;
+            }
+
+            if (inputIconUIPool == null)
             {
                 return;
             }

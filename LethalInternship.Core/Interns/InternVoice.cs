@@ -3,7 +3,6 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
@@ -159,7 +158,6 @@ namespace LethalInternship.Core.Interns
 
         public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)
         {
-            StopAudioFadeOut();
             ResetAboutToTalk();
             string audioClipPath = GetRandomAudioClipByState(enumVoicesState, parameters);
             if (string.IsNullOrWhiteSpace(audioClipPath))

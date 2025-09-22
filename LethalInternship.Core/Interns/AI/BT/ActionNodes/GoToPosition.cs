@@ -1,6 +1,11 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Parameters;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -9,12 +14,32 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            InternAI ai = context.InternAI;
+            // Check if we should take entrance
+            DJKEntrancePoint? entrancePoint = context.PathController.GetCurrentPoint() as DJKEntrancePoint;
+            if (entrancePoint != null)
+            {
+                // Take entrance
+                if (TakeEntrance(context.InternAI, entrancePoint))
+                {
+                    context.PathController.SetToNextPoint();
+                }
+            }
+
+            //PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController.GetPathString()}");
+
+            // Go to position
+            MoveToPosition(context.InternAI, context.PathController.GetCurrentPoint());
+            return BehaviourTreeStatus.Success;
+        }
+
+        private void MoveToPosition(InternAI ai, IDJKPoint positionPoint)
+        {
+            Vector3 currentPoint = positionPoint.GetClosestPointFrom(ai.transform.position);
 
             if (ai.CanRun)
             {
-                float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-                float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+                float sqrHorizontalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+                float sqrVerticalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
 
                 if (sqrHorizontalDistanceWithTarget > Const.DISTANCE_START_RUNNING * Const.DISTANCE_START_RUNNING
                      || sqrVerticalDistanceWithTarget > 0.3f * 0.3f)
@@ -29,10 +54,47 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             ai.NpcController.OrderToLookForward();
 
-            ai.SetDestinationToPositionInternAI(ai.NextPos);
+            ai.SetDestinationToPositionInternAI(currentPoint);
             ai.OrderAgentAndBodyMoveToDestination();
 
-            return BehaviourTreeStatus.Success;
+            if (ai.CurrentCommand == EnumCommandTypes.FollowPlayer)
+            {
+                ai.FollowCrouchIfCanDo();
+                TryPlayCurrentStateVoiceAudio(ai);
+            }
+        }
+
+        private bool TakeEntrance(InternAI ai, DJKEntrancePoint entrance)
+        {
+            Vector3 entrancePoint = entrance.GetClosestPointFrom(ai.transform.position);
+
+            // Close enough to entrance
+            if ((ai.transform.position - entrancePoint).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)
+            {
+                //PluginLoggerHook.LogDebug?.Invoke($"- TakeEntrance entrancePoint {entrancePoint}, exit {entrance.GetExitPointFrom(ai.transform.position)}");
+                ai.SyncTeleportIntern(entrance.GetExitPointFrom(ai.transform.position), !ai.isOutside, true);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void TryPlayCurrentStateVoiceAudio(InternAI ai)
+        {
+            // Priority state
+            // Stop talking and voice new state
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.FollowingPlayer,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = true,
+                CutCurrentVoiceStateToTalk = false,
+                CanRepeatVoiceState = true,
+
+                ShouldSync = true,
+                IsInternInside = ai.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
     }
 }

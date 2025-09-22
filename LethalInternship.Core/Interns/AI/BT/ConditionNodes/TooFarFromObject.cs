@@ -7,6 +7,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
     {
         public bool Condition(BTContext context)
         {
+            if (!context.PathController.IsCurrentPointDestination())
+            {
+                // Current point is not destination (here object) so : too far
+                return true;
+            }
+
             InternAI ai = context.InternAI;
 
             if (ai.TargetItem == null)

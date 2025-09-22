@@ -14,10 +14,8 @@ namespace LethalInternship.Core.Interns.AI.BT
         public IBehaviourTreeNode BehaviorTree = null!;
 
         // Routine controllers
-        private CoroutineController panikCoroutineController = null!;
-        private CoroutineController lookingAroundCoroutineController = null!;
-        private CoroutineController searchingWanderCoroutineController = null!;
         private SearchCoroutineController searchForPlayers = null!;
+        private List<CoroutineController> CoroutineControllers = null!;
 
         // Action nodes
         Dictionary<string, IBTAction> actions = null!;
@@ -41,24 +39,29 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public void TickTree(float deltaTime)
         {
-            panikCoroutineController.Reset();
-            lookingAroundCoroutineController.Reset();
-            searchingWanderCoroutineController.Reset();
             searchForPlayers.Reset();
+            foreach(var controller in CoroutineControllers)
+            {
+                controller.Reset();
+            }
 
             BehaviorTree.Tick(new TimeData(deltaTime));
 
-            panikCoroutineController.CheckCoroutine();
-            lookingAroundCoroutineController.CheckCoroutine();
-            searchingWanderCoroutineController.CheckCoroutine();
             searchForPlayers.CheckCoroutine();
+            foreach (var controller in CoroutineControllers)
+            {
+                controller.CheckCoroutine();
+            }
         }
 
         private void InitCoroutineControllers(InternAI internAI)
         {
-            panikCoroutineController = new CoroutineController(internAI);
-            lookingAroundCoroutineController = new CoroutineController(internAI);
-            searchingWanderCoroutineController = new CoroutineController(internAI);
+            CoroutineControllers = new List<CoroutineController>();
+            for(int i = 0; i < 4; i++)
+            {
+                CoroutineControllers.Add(new CoroutineController(internAI));
+            }
+
             searchForPlayers = new SearchCoroutineController(internAI);
         }
 
@@ -67,24 +70,21 @@ namespace LethalInternship.Core.Interns.AI.BT
             // Action nodes
             actions = new Dictionary<string, IBTAction>()
             {
+                { "CalculateNextPathPoint", new CalculateNextPathPoint() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
-                { "ChillFrontOfEntrance", new ChillFrontOfEntrance() },
                 { "DropItem", new DropItem() },
                 { "EnterVehicle", new EnterVehicle() },
                 { "ExitVehicle", new ExitVehicle() },
                 { "FleeFromEnemy", new FleeFromEnemy() },
-                { "GetClosestEntrance", new GetClosestEntrance() },
-                { "GoToEntrance", new GoToEntrance() },
                 { "GoToPosition", new GoToPosition() },
                 { "GrabItemBehavior", new GrabItemBehavior() },
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
-                { "SetNextPosTargetItem", new SetNextPosTargetItem() },
-                { "SetNextPosTargetLastKnownPosition", new SetNextPosTargetLastKnownPosition() },
-                { "TakeEntrance", new TakeEntrance() },
-                { "TeleportDebugToPos", new TeleportDebugToPos() },
+                { "SetNextDestInterestPoint", new SetNextDestInterestPoint() },
+                { "SetNextDestTargetItem", new SetNextDestTargetItem() },
+                { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() }
             };
 
@@ -92,7 +92,6 @@ namespace LethalInternship.Core.Interns.AI.BT
             conditions = new Dictionary<string, IBTCondition>()
             {
                 { "EnemySeen", new EnemySeen() },
-                { "ExitNotBlocked", new ExitNotBlocked() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
@@ -102,10 +101,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
                 { "IsObjectToGrab", new IsObjectToGrab() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
-                { "NextPositionIsAfterEntrance", new NextPositionIsAfterEntrance() },
-                { "NotValidEntrance", new NotValidEntrance() },
                 { "TargetValid", new TargetValid() },
-                { "TooFarFromEntrance", new TooFarFromEntrance() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
                 { "TooFarFromVehicle", new TooFarFromVehicle() }
@@ -117,10 +113,15 @@ namespace LethalInternship.Core.Interns.AI.BT
             BTContext = new BTContext()
             {
                 InternAI = internAI,
-                LookingAroundCoroutineController = this.lookingAroundCoroutineController,
-                PanikCoroutine = this.panikCoroutineController,
+
+                PathController = new Dijkstra.PathController(),
+
                 searchForPlayers = this.searchForPlayers,
-                searchingWanderCoroutineController = this.searchingWanderCoroutineController
+
+                LookingAroundCoroutineController = CoroutineControllers[0],
+                PanikCoroutine = CoroutineControllers[1],
+                searchingWanderCoroutineController = CoroutineControllers[2],
+                CalculatePathCoroutineController = CoroutineControllers[3],
             };
         }
 
@@ -136,6 +137,8 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Command go to position")
                         .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
+                        .Do("SetNextDestInterestPoint", t => actions["SetNextDestInterestPoint"].Action(BTContext))
+                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to position")
                             .Splice(CreateSubTreeGoToPosition())
                             .Do("Chill", t => actions["Chill"].Action(BTContext))
@@ -149,7 +152,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Fetch object")
                         .Condition("<IsObjectToGrab>", t => conditions["IsObjectToGrab"].Condition(BTContext))
-                        .Do("SetNextPosTargetItem", t => actions["SetNextPosTargetItem"].Action(BTContext))
                         .Selector("Should go to position")
                             .Splice(CreateSubTreeGoToObject())
                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
@@ -165,35 +167,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
                     .Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
 
-                .End()
-                .Build();
-        }
-
-        private IBehaviourTreeNode CreateSubTreeTakeEntrance()
-        {
-            var builder = new BehaviourTreeBuilder();
-            return builder
-                .Sequence("Take entrance maybe")
-                        .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
-                        .Selector("Take entrance")
-                            .Sequence("Get entrance")
-                                .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
-                                .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
-                                .Do("teleportDebugToPos", t => actions["TeleportDebugToPos"].Action(BTContext))
-                            .End()
-
-                            .Sequence("Go to entrance")
-                                .Condition("tooFarFromEntrance", t => conditions["TooFarFromEntrance"].Condition(BTContext))
-                                .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
-                            .End()
-
-                            .Sequence("Exit not blocked, take entrance")
-                                .Condition("exitNotBlocked", t => conditions["ExitNotBlocked"].Condition(BTContext))
-                                .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
-                            .End()
-
-                            .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
-                        .End()
                 .End()
                 .Build();
         }
@@ -215,7 +188,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Splice(CreateSubTreeExitVehicle())
-                    .Splice(CreateSubTreeTakeEntrance())
+                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position if too far")
                         .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
@@ -236,10 +209,12 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Splice(CreateSubTreeExitVehicle())
-                    .Splice(CreateSubTreeTakeEntrance())
+                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position")
                         .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
+                        .Do("SetNextDestTargetItem", t => actions["SetNextDestTargetItem"].Action(BTContext))
+                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
                 .End()
@@ -256,10 +231,12 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Do("inVehicle", t => actions["InVehicle"].Action(BTContext))
                     .End()
 
-                    .Splice(CreateSubTreeTakeEntrance())
+                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to vehicle")
                         .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
+                        .Do("SetNextDestInterestPoint", t => actions["SetNextDestInterestPoint"].Action(BTContext))
+                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
 
@@ -283,7 +260,8 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Sequence("Follow player")
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
                         .Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
-                        .Do("SetNextPosTargetLastKnownPosition", t => actions["SetNextPosTargetLastKnownPosition"].Action(BTContext))
+                        .Do("SetNextDestTargetLastKnownPosition", t => actions["SetNextDestTargetLastKnownPosition"].Action(BTContext))
+                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
                             .Do("chill", t => actions["Chill"].Action(BTContext))
