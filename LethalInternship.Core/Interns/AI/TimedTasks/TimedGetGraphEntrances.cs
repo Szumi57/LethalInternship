@@ -29,7 +29,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             if (!NeedToRecalculate())
             {
                 CleanNeighbors();
-                PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
+                //PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
                 return DJKPointsGraph;
             }
 
@@ -40,7 +40,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             // Calculate Neighbors
             pendingPaths.Clear();
             nbRequestsAsked = Dijkstra.Dijkstra.CalculateNeighbors(DJKPointsGraph, idBatch: -1, OnPathCalculated);
-            PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances nbRequestsAsked {nbRequestsAsked} calculating...");
+            //PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances nbRequestsAsked {nbRequestsAsked} calculating...");
 
             return null;
         }

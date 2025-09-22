@@ -1799,14 +1799,14 @@ namespace LethalInternship.Core.Managers
         {
             var newBatch = new PathBatchRequest(idBatch, instructions);
 
-            if (!activeBatches.TryGetValue(idBatch, out var batch))
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"RequestBatch NEW {idBatch} instrs:{instructions.Count}");
-            }
-            else
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"RequestBatch REPLACE {idBatch} instrs:{instructions.Count}");
-            }
+            //if (!activeBatches.TryGetValue(idBatch, out var batch))
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch NEW {idBatch} instrs:{instructions.Count}");
+            //}
+            //else
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch REPLACE {idBatch} instrs:{instructions.Count}");
+            //}
             activeBatches[idBatch] = newBatch;
         }
 
@@ -1834,7 +1834,7 @@ namespace LethalInternship.Core.Managers
 
                 // Execute one instruction only
                 var instr = batch.CurrentInstruction;
-                PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction batch {batch.id} i {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
+                //PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction batch {batch.id} i {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
                 ExecuteInstruction(instr);
                 batch.Advance();
 

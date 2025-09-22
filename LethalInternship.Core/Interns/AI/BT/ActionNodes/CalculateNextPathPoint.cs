@@ -59,7 +59,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 if (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status {path.PathStatus} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
+                    //PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status {path.PathStatus} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
                 }
 
                 // Go
@@ -67,7 +67,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- ?? next point to partial path");
+                //PluginLoggerHook.LogDebug?.Invoke($"- ?? next point to partial path");
                 context.PathController.SetCurrentPoint(path.Path.corners[path.Path.corners.Length - 1]);
 
                 // Try to still calculate
@@ -94,7 +94,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             List<IDJKPoint>? GraphEntrances = InternManager.Instance.GetGraphEntrances();
             if (GraphEntrances == null || GraphEntrances.Count == 0)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
+                //PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
                 return;
             }
 
@@ -142,13 +142,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"------- {currentContext.PathController.GetGraphString(DJKPointsGraph)}");
+            //PluginLoggerHook.LogDebug?.Invoke($"------- {currentContext.PathController.GetGraphString(DJKPointsGraph)}");
 
             // Get full path
             currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(DJKPointsGraph, source, dest));
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetPathString()}");
+            //PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetPathString()}");
         }
     }
 }
