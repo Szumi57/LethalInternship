@@ -10,9 +10,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public List<IDJKPoint> DJKPointsPath { get; set; }
         public int IndexCurrentPoint { get; set; }
 
-        private IDJKPoint? partialNextPoint;
-        private bool currentPointReachable;
-
         private IDJKPoint sourcePoint;
         private IDJKPoint destinationPoint;
 
@@ -29,21 +26,12 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 return destinationPoint;
             }
 
-            if (getRealCurrentPoint
-                 || currentPointReachable)
+            if (DJKPointsPath.Count == 1)
             {
-                if (DJKPointsPath.Count == 1)
-                {
-                    return DJKPointsPath[0];
-                }
-                return DJKPointsPath[IndexCurrentPoint];
-            }
-            else if (partialNextPoint != null)
-            {
-                return partialNextPoint;
+                return DJKPointsPath[0];
             }
 
-            return destinationPoint;
+            return DJKPointsPath[IndexCurrentPoint];
         }
 
         public Vector3 GetCurrentPoint(Vector3 currentPos, bool getRealCurrentPoint = false)
@@ -92,25 +80,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
         }
 
-        public void SetNextPartialPoint(Vector3 nextPartialPoint)
-        {
-            if (DJKPointsPath == null || DJKPointsPath.Count == 0)
-            {
-                DJKPointsPath = new List<IDJKPoint>() { new DJKPositionPoint(0, nextPartialPoint) };
-                IndexCurrentPoint = 0;
-                currentPointReachable = false;
-                return;
-            }
-
-            partialNextPoint = new DJKPositionPoint(DJKPointsPath[IndexCurrentPoint].Id, nextPartialPoint);
-            currentPointReachable = false;
-        }
-
-        public void SetCurrentPointToReachable()
-        {
-            currentPointReachable = true;
-        }
-
         public void SetCurrentPoint(Vector3 pos)
         {
             if (DJKPointsPath == null || DJKPointsPath.Count == 0)
@@ -131,7 +100,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public void SetNextPointToDestination()
         {
             IndexCurrentPoint = DJKPointsPath.Count - 1;
-            currentPointReachable = true;
         }
 
         public bool IsCurrentPointDestination()
@@ -173,7 +141,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
                     if (Array.IndexOf(DJKPointsPath.ToArray(), point) == IndexCurrentPoint)
                     {
-                        pathString += $" >{point.Id}{(currentPointReachable ? "" : "?")}<";
+                        pathString += $" >{point.Id}<";
                     }
                     else
                     {

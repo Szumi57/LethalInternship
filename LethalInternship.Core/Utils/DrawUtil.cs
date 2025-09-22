@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using UnityEngine;
+using UnityEngine.AI;
 
 namespace LethalInternship.Core.Utils
 {
@@ -31,6 +33,30 @@ namespace LethalInternship.Core.Utils
             lr.endWidth = 0.1f;
             lr.SetPosition(0, start);
             lr.SetPosition(1, end);
+        }
+
+        public static void DrawPath(LineRendererUtil lineRendererUtil, NavMeshPath path)
+        {
+            if (path.status == NavMeshPathStatus.PathPartial)
+            {
+                for (int i = 0; i < path.corners.Length - 1; i++)
+                {
+                    DrawUtil.DrawLine(lineRendererUtil.GetLineRenderer(), path.corners[i], path.corners[i + 1], Color.red);
+                    DrawUtil.DrawLine(lineRendererUtil.GetLineRenderer(), path.corners[i], path.corners[i] + new Vector3(0, 1, 0), Color.red);
+                }
+            }
+            else if (path.status == NavMeshPathStatus.PathComplete)
+            {
+                for (int i = 0; i < path.corners.Length - 1; i++)
+                {
+                    DrawUtil.DrawLine(lineRendererUtil.GetLineRenderer(), path.corners[i], path.corners[i + 1], Color.white);
+                    DrawUtil.DrawLine(lineRendererUtil.GetLineRenderer(), path.corners[i], path.corners[i] + new Vector3(0, 1, 0), Color.white);
+                }
+            }
+            else
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"DrawPath PathInvalid");
+            }
         }
     }
 }

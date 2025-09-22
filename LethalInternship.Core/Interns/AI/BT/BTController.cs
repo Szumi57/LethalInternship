@@ -73,13 +73,10 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
-                { "ChillFrontOfEntrance", new ChillFrontOfEntrance() },
                 { "DropItem", new DropItem() },
                 { "EnterVehicle", new EnterVehicle() },
                 { "ExitVehicle", new ExitVehicle() },
                 { "FleeFromEnemy", new FleeFromEnemy() },
-                { "GetClosestEntrance", new GetClosestEntrance() },
-                { "GoToEntrance", new GoToEntrance() },
                 { "GoToPosition", new GoToPosition() },
                 { "GrabItemBehavior", new GrabItemBehavior() },
                 { "InVehicle", new InVehicle() },
@@ -88,8 +85,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "SetNextDestInterestPoint", new SetNextDestInterestPoint() },
                 { "SetNextDestTargetItem", new SetNextDestTargetItem() },
                 { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
-                { "TakeEntrance", new TakeEntrance() },
-                { "TeleportDebugToPos", new TeleportDebugToPos() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() }
             };
 
@@ -97,7 +92,6 @@ namespace LethalInternship.Core.Interns.AI.BT
             conditions = new Dictionary<string, IBTCondition>()
             {
                 { "EnemySeen", new EnemySeen() },
-                { "ExitNotBlocked", new ExitNotBlocked() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
@@ -107,10 +101,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
                 { "IsObjectToGrab", new IsObjectToGrab() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
-                { "NextPositionIsAfterEntrance", new NextPositionIsAfterEntrance() },
-                { "NotValidEntrance", new NotValidEntrance() },
                 { "TargetValid", new TargetValid() },
-                { "TooFarFromEntrance", new TooFarFromEntrance() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
                 { "TooFarFromVehicle", new TooFarFromVehicle() }
@@ -179,35 +170,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                 .End()
                 .Build();
         }
-
-        //private IBehaviourTreeNode CreateSubTreeTakeEntrance()
-        //{
-        //    var builder = new BehaviourTreeBuilder();
-        //    return builder
-        //        .Sequence("Take entrance maybe")
-        //                .Condition("<nextPositionIsAfterEntrance>", t => conditions["NextPositionIsAfterEntrance"].Condition(BTContext))
-        //                .Selector("Take entrance")
-        //                    .Sequence("Get entrance")
-        //                        .Do("getClosestEntrance", t => actions["GetClosestEntrance"].Action(BTContext))
-        //                        .Condition("<notValidEntrance>", t => conditions["NotValidEntrance"].Condition(BTContext))
-        //                        .Do("teleportDebugToPos", t => actions["TeleportDebugToPos"].Action(BTContext))
-        //                    .End()
-
-        //                    .Sequence("Go to entrance")
-        //                        .Condition("tooFarFromEntrance", t => conditions["TooFarFromEntrance"].Condition(BTContext))
-        //                        .Do("Go to entrance", t => actions["GoToEntrance"].Action(BTContext))
-        //                    .End()
-
-        //                    .Sequence("Exit not blocked, take entrance")
-        //                        .Condition("exitNotBlocked", t => conditions["ExitNotBlocked"].Condition(BTContext))
-        //                        .Do("takeEntrance", t => actions["TakeEntrance"].Action(BTContext))
-        //                    .End()
-
-        //                    .Do("chillFrontOfEntrance", t => actions["ChillFrontOfEntrance"].Action(BTContext))
-        //                .End()
-        //        .End()
-        //        .Build();
-        //}
 
         private IBehaviourTreeNode CreateSubTreeExitVehicle()
         {

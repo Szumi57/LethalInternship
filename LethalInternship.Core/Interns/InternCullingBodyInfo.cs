@@ -1,7 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Linq;
 using UnityEngine;
