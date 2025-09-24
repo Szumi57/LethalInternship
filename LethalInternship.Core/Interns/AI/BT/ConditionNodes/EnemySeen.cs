@@ -8,7 +8,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
         {
             InternAI ai = context.InternAI;
 
-            if (ai.CurrentEnemy != null)
+            if (context.CurrentEnemy != null)
             {
                 return true;
             }
@@ -25,7 +25,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
 
-            ai.CurrentEnemy = enemyAI;
+            context.CurrentEnemy = enemyAI;
             return true;
         }
     }

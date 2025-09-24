@@ -15,7 +15,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             if (!PluginRuntimeProvider.Context.Config.CanLosePlayer)
             {
-                ai.TargetLastKnownPosition = ai.targetPlayer.transform.position;
+                context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
                 return BehaviourTreeStatus.Success;
             }
 
@@ -24,14 +24,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
                     && sqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
             {
-                ai.TargetLastKnownPosition = ai.targetPlayer.transform.position;
+                context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
             }
             else
             {
                 PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
                 if (target != null)
                 {
-                    ai.TargetLastKnownPosition = target.transform.position;
+                    context.TargetLastKnownPosition = target.transform.position;
                 }
                 else
                 {
@@ -39,7 +39,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     if ((ai.isOutside && ai.targetPlayer.isInsideFactory)
                         || (!ai.isOutside && !ai.targetPlayer.isInsideFactory))
                     {
-                        ai.TargetLastKnownPosition = ai.targetPlayer.transform.position;
+                        context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
                     }
                 }
             }

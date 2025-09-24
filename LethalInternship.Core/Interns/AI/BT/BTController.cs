@@ -188,7 +188,6 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Splice(CreateSubTreeExitVehicle())
-                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position if too far")
                         .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
@@ -209,7 +208,6 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Splice(CreateSubTreeExitVehicle())
-                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position")
                         .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
@@ -230,8 +228,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
                         .Do("inVehicle", t => actions["InVehicle"].Action(BTContext))
                     .End()
-
-                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to vehicle")
                         .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))

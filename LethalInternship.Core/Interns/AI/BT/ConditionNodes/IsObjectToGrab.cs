@@ -25,7 +25,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             // Voice
             TryPlayCurrentStateVoiceAudio(ai);
 
-            ai.TargetItem = grabbableObject;
+            context.TargetItem = grabbableObject;
             return true;
         }
 

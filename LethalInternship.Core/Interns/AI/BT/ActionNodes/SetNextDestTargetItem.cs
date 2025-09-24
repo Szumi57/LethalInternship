@@ -7,9 +7,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            InternAI ai = context.InternAI;
-            
-            context.PathController.SetNewDestination(ai.TargetItem.transform.position);
+            if (context.TargetItem == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("TargetItem is null");
+                return BehaviourTreeStatus.Failure;
+            }
+
+            context.PathController.SetNewDestination(context.TargetItem.transform.position);
             
             return BehaviourTreeStatus.Success;
         }

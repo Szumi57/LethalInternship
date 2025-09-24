@@ -71,14 +71,9 @@ namespace LethalInternship.Core.Interns.AI
 
         public BTController BTController = null!;
 
-        public EnumCommandTypes CurrentCommand;
-        public EnemyAI? CurrentEnemy;
-        public GrabbableObject? TargetItem;
-        public Vector3? TargetLastKnownPosition;
-        public EntranceTeleport? ClosestEntrance;
-        public bool CanRun = true; // const for now
-
         public IPointOfInterest? PointOfInterest = null!;
+        public EnumCommandTypes CurrentCommand;
+        public bool CanRun = true; // const for now
 
         public AudioSource InternVoice = null!;
         /// <summary>
@@ -101,7 +96,6 @@ namespace LethalInternship.Core.Interns.AI
         public LineRendererUtil LineRendererUtil = null!;
 
         private EnumStateControllerMovement StateControllerMovement;
-        private InteractTrigger[] laddersInteractTrigger = null!;
         private DoorLock[] doorLocksArray = null!;
         private Dictionary<string, Component> dictComponentByCollider = null!;
 
