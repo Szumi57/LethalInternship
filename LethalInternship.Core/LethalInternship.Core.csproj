@@ -84,6 +84,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Interns\AI\Dijkstra\PathRequests\" />
+  </ItemGroup>
+
 	<Target Name="NetcodePatch" AfterTargets="PostBuildEvent">
 		<Exec Command="netcode-patch &quot;$(TargetPath)&quot; @(ReferencePathWithRefAssemblies->'&quot;%(Identity)&quot;', ' ')" />
 	</Target>

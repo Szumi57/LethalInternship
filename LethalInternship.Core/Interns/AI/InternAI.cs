@@ -113,12 +113,6 @@ namespace LethalInternship.Core.Interns.AI
         private void Awake()
         {
             // Behaviour states
-            enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumAIStates)).Length];
-            int index = 0;
-            foreach (var state in (EnumAIStates[])Enum.GetValues(typeof(EnumAIStates)))
-            {
-                enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
-            }
             currentBehaviourStateIndex = -1;
         }
 
@@ -454,9 +448,7 @@ namespace LethalInternship.Core.Interns.AI
         /// Where the AI begin its calculations.
         /// </summary>
         /// <remarks>
-        /// For the behaviour of the AI, we use a State pattern,
-        /// with the class <see cref="AIState"><c>AIState</c></see> 
-        /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
+        /// For the behaviour of the AI, we use a behaviour tree
         /// </remarks>
         public override void DoAIInterval()
         {

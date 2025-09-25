@@ -1,10 +1,10 @@
-﻿using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
+﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
@@ -61,11 +61,11 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return path;
         }
 
-        public static int CalculateNeighbors(List<IDJKPoint> DJKPointsGraph, int idBatch, Action<PathResponse> callback)
+        public static void CalculateNeighborsDeferred(List<IDJKPoint> DJKPointsGraph, 
+                                                      int idBatch, Action onBatchComplete)
         {
             // Neighbors init
-            NavMeshPath path = new NavMeshPath();
-            var instructions = new List<PathInstruction>();
+            var instructions = new List<IInstruction>();
 
             HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
             foreach (var point1 in DJKPointsGraph)
@@ -99,15 +99,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                         continue;
                     }
 
+                    int groupId = InternManager.Instance.GetNewInstructionGroupId();
                     foreach (Vector3 point1point in point1.GetAllPoints())
                     {
                         foreach (Vector3 point2point in point2.GetAllPoints().Where(p2 => Mathf.Abs(p2.y - point1point.y) < 100f))
                         {
                             // Ask for calculate path
-                            instructions.Add(new PathInstruction(
+                            instructions.Add(new InstructionCalculatePathSimple(
+                                idBatch,
+                                groupId,
                                 start: point1point,
                                 target: point2point,
-                                callback: callback,
                                 startDJKPoint: point1,
                                 targetDJKPoint: point2
                             ));
@@ -116,8 +118,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
             }
 
-            InternManager.Instance.RequestBatch(idBatch, instructions);
-            return instructions.Count;
+            InternManager.Instance.RequestBatch(idBatch, instructions, onBatchComplete);
         }
 
         public static float GetFullDistancePath(Vector3[] corners)

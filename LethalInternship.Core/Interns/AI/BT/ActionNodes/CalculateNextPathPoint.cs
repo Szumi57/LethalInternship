@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
-using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -15,8 +14,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         private BTContext currentContext = null!;
         private List<IDJKPoint> DJKPointsGraph = null!;
-        private List<PathResponse> pendingPaths = new List<PathResponse>();
-        private int nbRequestsAsked;
 
         private TimedCalculatePath calculateDestinationPathTimed = new TimedCalculatePath();
         private TimedCalculatePath calculateNextPointPathTimed = new TimedCalculatePath();
@@ -94,7 +91,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             List<IDJKPoint>? GraphEntrances = InternManager.Instance.GetGraphEntrances();
             if (GraphEntrances == null || GraphEntrances.Count == 0)
             {
-                //PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
+                PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
                 return;
             }
 
@@ -108,47 +105,19 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             DJKPointsGraph.Add(dest);
 
             // Calculate Neighbors
-            pendingPaths.Clear();
-            nbRequestsAsked = Dijkstra.Dijkstra.CalculateNeighbors(DJKPointsGraph, idBatch: (int)ai.Npc.playerClientId, OnPathCalculated);
+            Dijkstra.Dijkstra.CalculateNeighborsDeferred(DJKPointsGraph, idBatch: (int)ai.Npc.playerClientId, OnBatchCompleted);
         }
 
-        private void OnPathCalculated(PathResponse pathResponse)
+        private void OnBatchCompleted()
         {
-            pendingPaths.Add(pathResponse);
-            if (pendingPaths.Count >= nbRequestsAsked)
-            {
-                ProcessPendingPathCalculated();
-            }
-        }
-
-        private void ProcessPendingPathCalculated()
-        {
-            foreach (var pathResponse in pendingPaths)
-            {
-                if (pathResponse.pathStatus == NavMeshPathStatus.PathComplete)
-                {
-                    float distance = Dijkstra.Dijkstra.GetFullDistancePath(pathResponse.path);
-                    distance = distance < 1 ? 1 : distance;
-                    pathResponse.startDJKPoint.TryAddToNeighbors(pathResponse.targetDJKPoint, distance);
-                    pathResponse.targetDJKPoint.TryAddToNeighbors(pathResponse.startDJKPoint, distance);
-                }
-                else if (pathResponse.pathStatus == NavMeshPathStatus.PathPartial)
-                {
-                    float distance = Dijkstra.Dijkstra.GetFullDistancePath(pathResponse.path);
-                    distance += 100000000f;
-                    pathResponse.startDJKPoint.TryAddToNeighbors(pathResponse.targetDJKPoint, distance);
-                    pathResponse.targetDJKPoint.TryAddToNeighbors(pathResponse.startDJKPoint, distance);
-                }
-            }
-
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"------- {currentContext.PathController.GetGraphString(DJKPointsGraph)}");
+            PluginLoggerHook.LogDebug?.Invoke($"------- {currentContext.PathController.GetGraphString(DJKPointsGraph)}");
 
             // Get full path
             currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(DJKPointsGraph, source, dest));
 
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetPathString()}");
         }
     }
 }

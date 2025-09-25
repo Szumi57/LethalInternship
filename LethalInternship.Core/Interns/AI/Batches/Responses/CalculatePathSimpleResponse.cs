@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using LethalInternship.Core.Interns.AI.Dijkstra;
+using UnityEngine;
 using UnityEngine.AI;
 
-namespace LethalInternship.Core.Interns.AI.Dijkstra.PathRequests
+namespace LethalInternship.Core.Interns.AI.Batches.Responses
 {
-    public struct PathResponse
+    public struct CalculatePathSimpleResponse
     {
         public Vector3 start;
         public Vector3 target;
@@ -14,7 +15,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.PathRequests
         public IDJKPoint startDJKPoint;
         public IDJKPoint targetDJKPoint;
 
-        public PathResponse(Vector3 start, Vector3 target, NavMeshPathStatus pathStatus, Vector3[] path, IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint)
+        public CalculatePathSimpleResponse(Vector3 start, Vector3 target, NavMeshPathStatus pathStatus, Vector3[] path, IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint)
         {
             this.start = start;
             this.target = target;
