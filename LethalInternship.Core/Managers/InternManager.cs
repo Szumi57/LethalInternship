@@ -2,7 +2,6 @@
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
 using LethalInternship.Core.Interns.AI.Batches;
-using LethalInternship.Core.Interns.AI.Batches.Instructions;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
@@ -1838,7 +1837,6 @@ namespace LethalInternship.Core.Managers
 
                 // Execute one instruction only
                 var instr = batch.CurrentInstruction;
-                PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction {((InstructionCalculatePathSimple)instr).startDJKPoint.Id}-{((InstructionCalculatePathSimple)instr).targetDJKPoint.Id} batch {batch.id} groupid {instr.GroupId} {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
                 ExecuteInstruction(instr);
                 batch.Advance();
 

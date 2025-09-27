@@ -125,7 +125,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             {
                 fullDistance += (corners[i - 1] - corners[i]).sqrMagnitude;
             }
-            return fullDistance;
+
+            return fullDistance < 1f ? 1f : fullDistance;
+        }
+
+        public static float ApplyPartialPathPenalty(float dist, Vector3 lastCorner, Vector3 target)
+        {
+            return dist + (lastCorner - target).sqrMagnitude * 1000f;
         }
     }
 }

@@ -41,7 +41,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Check if current PathPoint reachable
-            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPoint(ai.transform.position, getRealCurrentPoint: true));
+            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPoint(ai.transform.position));
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
@@ -61,10 +61,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
-                context.PathController.SetCurrentPoint(path.Path.corners[path.Path.corners.Length - 1], "PartialPoint");
+                context.PathController.SetCurrentPoint(path.Path.corners[^1], "PartialPoint");
 
                 // Try to still calculate
-                CalculateGraphPath(context);
+                if (context.PathController.IsPathNotValid())
+                {
+                    CalculateGraphPath(context);
+                }
                 return BehaviourTreeStatus.Success;
             }
 

@@ -3,7 +3,6 @@ using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
@@ -12,6 +11,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class GoToPosition : IBTAction
     {
+        private const float MIN_DISTANCE_HOR = 1f;
+
         public BehaviourTreeStatus Action(BTContext context)
         {
             // Check if we should take entrance
@@ -25,17 +26,22 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
 
+            Vector3 currentPoint = context.PathController.GetCurrentPoint(context.InternAI.transform.position);
+            // Check for to distance to current point
+            if (CloseEnoughOfCurrentPoint(context.InternAI, currentPoint))
+            {
+                context.PathController.SetToNextPoint();
+            }
+
             PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController.GetPathString()}");
 
             // Go to position
-            MoveToPosition(context.InternAI, context.PathController.GetCurrentPoint());
+            MoveToPosition(context.InternAI, currentPoint);
             return BehaviourTreeStatus.Success;
         }
 
-        private void MoveToPosition(InternAI ai, IDJKPoint positionPoint)
+        private void MoveToPosition(InternAI ai, Vector3 currentPoint)
         {
-            Vector3 currentPoint = positionPoint.GetClosestPointFrom(ai.transform.position);
-
             if (ai.CanRun)
             {
                 float sqrHorizontalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
@@ -73,6 +79,19 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"- TakeEntrance entrancePoint {entrancePoint}, exit {entrance.GetExitPointFrom(ai.transform.position)}");
                 ai.SyncTeleportIntern(entrance.GetExitPointFrom(ai.transform.position), !ai.isOutside, true);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool CloseEnoughOfCurrentPoint(InternAI ai, Vector3 currentPoint)
+        {
+            float sqrHorizontalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            float sqrVerticalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+            if (sqrHorizontalDistance < MIN_DISTANCE_HOR * MIN_DISTANCE_HOR
+                && sqrVerticalDistance < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
+            {
                 return true;
             }
 

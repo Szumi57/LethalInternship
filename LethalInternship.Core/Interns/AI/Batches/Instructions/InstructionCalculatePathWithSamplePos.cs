@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using UnityEngine;
 using UnityEngine.AI;
@@ -40,30 +41,29 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             if (NavMesh.SamplePosition(target, out hitEnd, samplePosDist, NavMesh.AllAreas))
             {
                 NavMesh.CalculatePath(start, hitEnd.position, NavMesh.AllAreas, navPath);
+                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos samplePosDist {samplePosDist}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+            }
+            else if (NavMesh.SamplePosition(target, out hitEnd, 10f, NavMesh.AllAreas))
+            {
+                NavMesh.CalculatePath(start, hitEnd.position, NavMesh.AllAreas, navPath);
+                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos samplePosDist 10, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             }
             else
             {
                 NavMesh.CalculatePath(start, target, NavMesh.AllAreas, navPath);
+                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos SamplePosition failed, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             }
 
-            if (navPath.status == NavMeshPathStatus.PathComplete)
+            float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
+            if (navPath.status == NavMeshPathStatus.PathPartial)
             {
-                float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
-                distance = distance < 1 ? 1 : distance;
-                startDJKPoint.TryAddToNeighbors(targetDJKPoint, distance);
-                targetDJKPoint.TryAddToNeighbors(startDJKPoint, distance);
-
-                InternManager.Instance.CancelGroup(IdBatch, GroupId);
+                distance = Dijkstra.Dijkstra.ApplyPartialPathPenalty(distance, navPath.corners[^1], target);
             }
-            else if (navPath.status == NavMeshPathStatus.PathPartial)
-            {
-                float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
-                distance += 100000000f;
-                startDJKPoint.TryAddToNeighbors(targetDJKPoint, distance);
-                targetDJKPoint.TryAddToNeighbors(startDJKPoint, distance);
 
-                InternManager.Instance.CancelGroup(IdBatch, GroupId);
-            }
+            startDJKPoint.TryAddToNeighbors(targetDJKPoint, distance);
+            targetDJKPoint.TryAddToNeighbors(startDJKPoint, distance);
+
+            InternManager.Instance.CancelGroup(IdBatch, GroupId);
         }
     }
 }
