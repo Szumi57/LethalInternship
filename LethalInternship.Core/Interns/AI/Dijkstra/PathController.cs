@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -65,9 +66,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
         }
 
-        public void SetNewDestination(Vector3 dest)
+        public void SetNewDestinationPositionPoint(Vector3 dest, string name)
         {
-            SetNewDestination(new DJKPositionPoint(0, dest));
+            SetNewDestination(new DJKPositionPoint(0, dest, name));
         }
 
         public void SetNewDestination(IDJKPoint dest)
@@ -80,7 +81,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
         }
 
-        public void SetCurrentPoint(Vector3 pos)
+        public void SetCurrentPoint(Vector3 pos, string name = "")
         {
             if (DJKPointsPath == null || DJKPointsPath.Count == 0)
             {
@@ -89,7 +90,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 return;
             }
 
-            DJKPointsPath[IndexCurrentPoint] = new DJKPositionPoint(DJKPointsPath[IndexCurrentPoint].Id, pos);
+            DJKPointsPath[IndexCurrentPoint] = new DJKPositionPoint(DJKPointsPath[IndexCurrentPoint].Id, pos, name);
         }
 
         public void SetToNextPoint()

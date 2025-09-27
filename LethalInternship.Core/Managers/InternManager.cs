@@ -3,7 +3,6 @@ using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
 using LethalInternship.Core.Interns.AI.Batches;
 using LethalInternship.Core.Interns.AI.Batches.Instructions;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;

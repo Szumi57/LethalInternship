@@ -1,6 +1,8 @@
-﻿using LethalInternship.Core.Interns.AI.Dijkstra;
-using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Parameters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     public class TimedGetGraphEntrances
     {
         private List<IDJKPoint>? DJKPointsGraph = null!;
-        private List<IDJKPoint>? TempDJKPointsGraph = null!;
+        private List<IDJKPoint> TempDJKPointsGraph = null!;
 
         private long timer = 10000 * TimeSpan.TicksPerMillisecond;
         private long lastTimeCalculate;
@@ -36,7 +38,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             TempDJKPointsGraph = CalculateGraphEntrances(entrancesTeleportArray);
 
             // Calculate Neighbors
-            Dijkstra.Dijkstra.CalculateNeighborsDeferred(TempDJKPointsGraph, idBatch: -1, OnBatchComplete);
+            CalculateNeighbors();
 
             return DJKPointsGraph;
         }
@@ -94,6 +96,19 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
 
             return DJKPointsGraphEntrances;
+        }
+
+        private void CalculateNeighbors()
+        {
+            int idBatch = -1;
+            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(TempDJKPointsGraph);
+            List<IInstruction> instructionsToProcess = new List<IInstruction>();
+            foreach (var instrParams in instructions)
+            {
+                instructionsToProcess.Add(instrParams.targetDJKPoint.GenerateInstruction(idBatch, instrParams));
+            }
+
+            InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchComplete);
         }
 
         private void OnBatchComplete()

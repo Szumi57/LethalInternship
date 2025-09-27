@@ -1,7 +1,6 @@
-﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
-using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Interns;
-using System;
+using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -61,11 +60,10 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return path;
         }
 
-        public static void CalculateNeighborsDeferred(List<IDJKPoint> DJKPointsGraph, 
-                                                      int idBatch, Action onBatchComplete)
+        public static List<InstructionParameters> GenerateWorkCalculateNeighbors(List<IDJKPoint> DJKPointsGraph)
         {
             // Neighbors init
-            var instructions = new List<IInstruction>();
+            var instructions = new List<InstructionParameters>();
 
             HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
             foreach (var point1 in DJKPointsGraph)
@@ -105,8 +103,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                         foreach (Vector3 point2point in point2.GetAllPoints().Where(p2 => Mathf.Abs(p2.y - point1point.y) < 100f))
                         {
                             // Ask for calculate path
-                            instructions.Add(new InstructionCalculatePathSimple(
-                                idBatch,
+                            instructions.Add(new InstructionParameters(
                                 groupId,
                                 start: point1point,
                                 target: point2point,
@@ -118,7 +115,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
             }
 
-            InternManager.Instance.RequestBatch(idBatch, instructions, onBatchComplete);
+            return instructions;
         }
 
         public static float GetFullDistancePath(Vector3[] corners)

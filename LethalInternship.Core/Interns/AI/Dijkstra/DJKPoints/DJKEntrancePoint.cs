@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
+using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Parameters;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -105,6 +108,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             }
 
             return points.ToArray();
+        }
+
+        public IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
+        {
+            return new InstructionCalculatePathSimple(
+                                idBatch,
+                                instructionToProcess.groupId,
+                                start: instructionToProcess.start,
+                                target: instructionToProcess.target,
+                                startDJKPoint: instructionToProcess.startDJKPoint,
+                                targetDJKPoint: instructionToProcess.targetDJKPoint);
         }
 
         public override string ToString()

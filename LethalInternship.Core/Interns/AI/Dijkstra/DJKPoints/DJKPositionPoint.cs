@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
+using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Parameters;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -61,6 +64,18 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public Vector3 GetClosestPointFrom(Vector3 point)
         {
             return Position;
+        }
+
+        public IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
+        {
+            return new InstructionCalculatePathWithSamplePos(
+                                idBatch,
+                                instructionToProcess.groupId,
+                                start: instructionToProcess.start,
+                                target: instructionToProcess.target,
+                                startDJKPoint: instructionToProcess.startDJKPoint,
+                                targetDJKPoint: instructionToProcess.targetDJKPoint,
+                                samplePosDist: 2f);
         }
 
         public override string ToString()

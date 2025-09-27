@@ -1,5 +1,4 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -13,7 +12,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             IPointOfInterest? pointOfInterest = ai.GetPointOfInterest();
             if (pointOfInterest != null)
             {
-                context.PathController.SetNewDestination(pointOfInterest.GetPoint());
+                context.PathController.SetNewDestinationPositionPoint(pointOfInterest.GetPoint(), "InterestPoint");
             }
 
             return BehaviourTreeStatus.Success;

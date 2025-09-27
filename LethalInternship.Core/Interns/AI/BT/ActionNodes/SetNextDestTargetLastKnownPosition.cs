@@ -13,7 +13,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            context.PathController.SetNewDestination(context.TargetLastKnownPosition.Value);
+            context.PathController.SetNewDestinationPositionPoint(context.TargetLastKnownPosition.Value, "TargetLastKnownPosition");
             
             return BehaviourTreeStatus.Success;
         }

@@ -1,10 +1,10 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
+using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
 using UnityEngine.AI;
 
@@ -20,9 +20,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private DJKPositionPoint source = null!;
         private DJKPositionPoint dest = null!;
-
-        private long timerCalculatePathPartial = 3000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
 
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -64,17 +61,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
-                //PluginLoggerHook.LogDebug?.Invoke($"- ?? next point to partial path");
-                context.PathController.SetCurrentPoint(path.Path.corners[path.Path.corners.Length - 1]);
+                context.PathController.SetCurrentPoint(path.Path.corners[path.Path.corners.Length - 1], "PartialPoint");
 
                 // Try to still calculate
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timerCalculatePathPartial)
-                {
-                    lastTimeCalculate = DateTime.Now.Ticks;
-                    CalculateGraphPath(context);
-                }
-
+                CalculateGraphPath(context);
                 return BehaviourTreeStatus.Success;
             }
 
@@ -105,7 +95,19 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             DJKPointsGraph.Add(dest);
 
             // Calculate Neighbors
-            Dijkstra.Dijkstra.CalculateNeighborsDeferred(DJKPointsGraph, idBatch: (int)ai.Npc.playerClientId, OnBatchCompleted);
+            CalculateNeighbors((int)ai.Npc.playerClientId);
+        }
+
+        private void CalculateNeighbors(int idBatch)
+        {
+            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(DJKPointsGraph);
+            List<IInstruction> instructionsToProcess = new List<IInstruction>();
+            foreach (var instrParams in instructions)
+            {
+                instructionsToProcess.Add(instrParams.targetDJKPoint.GenerateInstruction(idBatch, instrParams));
+            }
+
+            InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchCompleted);
         }
 
         private void OnBatchCompleted()
