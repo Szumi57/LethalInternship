@@ -54,6 +54,11 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
                 PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos SamplePosition failed, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             }
 
+            if (navPath.status == NavMeshPathStatus.PathInvalid)
+            {
+                return;
+            }
+
             float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
             if (navPath.status == NavMeshPathStatus.PathPartial)
             {

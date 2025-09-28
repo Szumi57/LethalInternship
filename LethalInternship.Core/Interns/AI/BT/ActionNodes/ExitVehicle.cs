@@ -3,6 +3,7 @@ using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -15,14 +16,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {
-                PluginLoggerHook.LogError?.Invoke("EnterVehicle action, vehicleController is null !");
+                PluginLoggerHook.LogError?.Invoke("ExitVehicle action, vehicleController is null !");
                 return BehaviourTreeStatus.Failure;
             }
 
-            Vector3 entryPointInternCruiser = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomEntryPosCruiser();
+            Vector3 exitPointInternCruiser = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomEntryPosCruiser();
+            NavMeshHit hitEnd;
+            if (NavMesh.SamplePosition(exitPointInternCruiser, out hitEnd, 2f, NavMesh.AllAreas))
+            {
+                PluginLoggerHook.LogDebug?.Invoke("-> ExitVehicle use SamplePosition");
+                exitPointInternCruiser = hitEnd.position;
+            }
 
             // Exit vehicle cruiser
-            ai.SyncTeleportInternVehicle(entryPointInternCruiser, enteringVehicle: false, vehicleController);
+            ai.SyncTeleportInternVehicle(exitPointInternCruiser, enteringVehicle: false, vehicleController);
             vehicleController.SetVehicleCollisionForPlayer(true, ai.NpcController.Npc);
 
             if (ai.NpcController.Npc.isCrouching)

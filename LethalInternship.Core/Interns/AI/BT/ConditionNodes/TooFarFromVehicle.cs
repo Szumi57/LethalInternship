@@ -9,12 +9,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
     {
         public bool Condition(BTContext context)
         {
-            if (!context.PathController.IsCurrentPointDestination())
-            {
-                // Current point is not destination (here Vehicle) so : too far
-                return true;
-            }
-
             InternAI ai = context.InternAI;
 
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
@@ -26,7 +20,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             Vector3 internPos = new Vector3(ai.NpcController.Npc.transform.position.x, 0f, ai.NpcController.Npc.transform.position.z);
             Vector3 VehiclePos = new Vector3(vehicleController.transform.position.x, 0f, vehicleController.transform.position.z);
-            //PluginLoggerHook.LogDebug?.Invoke($"TooFarFromVehicle ? {(internPos - VehiclePos).magnitude}");
+            //PluginLoggerHook.LogDebug?.Invoke($"TooFarFromVehicle ? {(internPos - VehiclePos).magnitude} ({Const.DISTANCE_TO_CRUISER})");
             if ((internPos - VehiclePos).sqrMagnitude < Const.DISTANCE_TO_CRUISER * Const.DISTANCE_TO_CRUISER)
             {
                 return false;

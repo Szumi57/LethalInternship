@@ -6,6 +6,7 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -92,8 +93,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             // Add source and dest
             int id = DJKPointsGraph.Count;
-            source = new DJKPositionPoint(id++, ai.transform.position, "Intern pos");
-            dest = new DJKPositionPoint(id++, context.PathController.GetDestination().GetClosestPointFrom(ai.transform.position), "Destination");
+            Vector3 internPos = ai.transform.position;
+            if (NavMesh.SamplePosition(internPos, out NavMeshHit hitEnd, 2f, NavMesh.AllAreas))
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"Using internpos sampled position, diff dist {(internPos - hitEnd.position).magnitude}");
+                internPos = hitEnd.position;
+            }
+
+            source = new DJKPositionPoint(id++, internPos, "Intern pos");
+            dest = new DJKPositionPoint(id++, context.PathController.GetDestination().GetClosestPointFrom(internPos), "Destination");
             DJKPointsGraph.Add(source);
             DJKPointsGraph.Add(dest);
 
