@@ -100,7 +100,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     int groupId = InternManager.Instance.GetNewInstructionGroupId();
                     foreach (Vector3 point1point in point1.GetAllPoints())
                     {
-                        foreach (Vector3 point2point in point2.GetAllPoints().Where(p2 => Mathf.Abs(p2.y - point1point.y) < 100f))
+                        foreach (Vector3 point2point in point2.GetNearbyPoints(point1point))
                         {
                             // Ask for calculate path
                             instructions.Add(new InstructionParameters(

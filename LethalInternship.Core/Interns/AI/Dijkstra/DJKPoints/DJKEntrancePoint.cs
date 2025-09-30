@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
@@ -15,9 +16,11 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 
         public List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
 
-        public DJKEntrancePoint(int id, EntranceTeleport entrance)
+        private List<(Vector3 previousNeighborPoint, Vector3 thisPoint)> reachablePoints;
+
+        public DJKEntrancePoint(EntranceTeleport entrance)
         {
-            Id = id;
+            Id = 0;
             Entrance1 = entrance;
 
             Neighbors = new List<(IDJKPoint neighbor, float weight)>();
@@ -37,7 +40,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return false;
         }
 
-        public Vector3 GetClosestPointFrom(Vector3 point)
+        public Vector3 GetClosestPointTo(Vector3 point)
         {
             if (Entrance2 == null)
             {
@@ -108,6 +111,23 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             }
 
             return points.ToArray();
+        }
+
+        public Vector3[] GetNearbyPoints(Vector3 point)
+        {
+            List<Vector3> points = new List<Vector3>
+            {
+                Entrance1.entrancePoint.position
+            };
+            if (Entrance2 != null)
+            {
+                points.Add(Entrance2.entrancePoint.position);
+            }
+
+            return points
+                        .Where(p => (p - point).sqrMagnitude <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                        .OrderBy(p => (p - point).sqrMagnitude)
+                        .ToArray();
         }
 
         public IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)

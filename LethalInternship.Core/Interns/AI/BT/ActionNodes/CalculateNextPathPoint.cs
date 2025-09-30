@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
@@ -14,7 +15,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     public class CalculateNextPathPoint : IBTAction
     {
         private BTContext currentContext = null!;
-        private List<IDJKPoint> DJKPointsGraph = null!;
+        private GraphController graph = null!;
 
         private TimedCalculatePath calculateDestinationPathTimed = new TimedCalculatePath();
         private TimedCalculatePath calculateNextPointPathTimed = new TimedCalculatePath();
@@ -32,7 +33,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Check if destination reachable
-            TimedCalculatePathResponse path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointFrom(ai.transform.position));
+            TimedCalculatePathResponse path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointTo(ai.transform.position));
             if (path.PathStatus == NavMeshPathStatus.PathComplete)
             {
                 // Go directly to destination
@@ -62,7 +63,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
-                context.PathController.SetCurrentPoint(path.Path.corners[^1], "PartialPoint");
+                context.PathController.SetCurrentPoint(new DJKPositionPoint(path.Path.corners[^1], "PartialPoint"));
 
                 // Try to still calculate
                 if (context.PathController.IsPathNotValid())
@@ -82,17 +83,16 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             InternAI ai = context.InternAI;
 
             // Get entrances graph
-            List<IDJKPoint>? GraphEntrances = InternManager.Instance.GetGraphEntrances();
-            if (GraphEntrances == null || GraphEntrances.Count == 0)
+            GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
+            if (GraphEntrances == null || GraphEntrances.DJKPoints.Count == 0)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
                 return;
             }
 
-            DJKPointsGraph = new List<IDJKPoint>(GraphEntrances);
+            graph = new GraphController(GraphEntrances);
 
             // Add source and dest
-            int id = DJKPointsGraph.Count;
             Vector3 internPos = ai.transform.position;
             if (NavMesh.SamplePosition(internPos, out NavMeshHit hitEnd, 2f, NavMesh.AllAreas))
             {
@@ -100,10 +100,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 internPos = hitEnd.position;
             }
 
-            source = new DJKPositionPoint(id++, internPos, "Intern pos");
-            dest = new DJKPositionPoint(id++, context.PathController.GetDestination().GetClosestPointFrom(internPos), "Destination");
-            DJKPointsGraph.Add(source);
-            DJKPointsGraph.Add(dest);
+            source = new DJKPositionPoint(internPos, "Intern pos");
+            dest = new DJKPositionPoint(context.PathController.GetDestination().GetClosestPointTo(internPos), "Destination");
+            graph.AddPoint(source);
+            graph.AddPoint(dest);
 
             // Calculate Neighbors
             CalculateNeighbors((int)ai.Npc.playerClientId);
@@ -111,7 +111,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private void CalculateNeighbors(int idBatch)
         {
-            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(DJKPointsGraph);
+            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(graph.DJKPoints);
             List<IInstruction> instructionsToProcess = new List<IInstruction>();
             foreach (var instrParams in instructions)
             {
@@ -124,13 +124,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"------- {currentContext.PathController.GetGraphString(DJKPointsGraph)}");
+            PluginLoggerHook.LogDebug?.Invoke($"------- {graph}");
 
             // Get full path
-            currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(DJKPointsGraph, source, dest));
+            currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints, source, dest));
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController}");
         }
     }
 }

@@ -2,6 +2,7 @@
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
 using LethalInternship.Core.Interns.AI.Batches;
+using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
@@ -1783,7 +1784,7 @@ namespace LethalInternship.Core.Managers
         private int nextInstructionGroupId = 1;
         public int GetNewInstructionGroupId() => nextInstructionGroupId++;
         
-        public List<IDJKPoint>? GetGraphEntrances()
+        public GraphController? GetGraphEntrances()
         {
             if (getGraphEntrancesTimed == null)
             {

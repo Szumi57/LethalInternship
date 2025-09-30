@@ -33,7 +33,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 context.PathController.SetToNextPoint();
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController.GetPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController}");
 
             // Go to position
             MoveToPosition(context.InternAI, currentPoint);
@@ -72,7 +72,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private bool TakeEntrance(InternAI ai, DJKEntrancePoint entrance)
         {
-            Vector3 entrancePoint = entrance.GetClosestPointFrom(ai.transform.position);
+            Vector3 entrancePoint = entrance.GetClosestPointTo(ai.transform.position);
 
             // Close enough to entrance
             if ((ai.transform.position - entrancePoint).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)

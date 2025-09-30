@@ -2,6 +2,9 @@
 using LethalInternship.Core.Interns.AI.BT.ActionNodes;
 using LethalInternship.Core.Interns.AI.BT.ConditionNodes;
 using LethalInternship.Core.Interns.AI.CoroutineControllers;
+using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -110,11 +113,17 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         private void InitContext(InternAI internAI)
         {
+            DJKPointMapper mapper = new DJKPointMapper();
+            mapper.Register<DefaultInterestPoint>(ip => new DJKPositionPoint(ip.Point));
+            mapper.Register<ShipInterestPoint>(ip => new DJKPositionPoint(ip.Point));
+            mapper.Register<VehicleInterestPoint>(ip => new DJKPositionPoint(ip.Point));
+
             BTContext = new BTContext()
             {
                 InternAI = internAI,
 
-                PathController = new Dijkstra.PathController(),
+                PathController = new PathController(),
+                DJKPointMapper = mapper,
 
                 searchForPlayers = this.searchForPlayers,
 

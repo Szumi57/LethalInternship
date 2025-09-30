@@ -1,25 +1,25 @@
-﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+﻿using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
     public class TimedGetGraphEntrances
     {
-        private List<IDJKPoint>? DJKPointsGraph = null!;
-        private List<IDJKPoint> TempDJKPointsGraph = null!;
+        private GraphController? graph = null!;
+        private GraphController tempGraph = null!;
 
         private long timer = 10000 * TimeSpan.TicksPerMillisecond;
         private long lastTimeCalculate;
 
         private bool IsCalculating = false;
 
-        public List<IDJKPoint>? GetGraphEntrances()
+        public GraphController? GetGraphEntrances()
         {
             if (!NeedToRecalculate()
                 || IsCalculating)
@@ -29,18 +29,21 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
                     PluginLoggerHook.LogDebug?.Invoke($"CalculateGraphEntrances Calculating");
                 }
 
-                CleanNeighbors();
-                return DJKPointsGraph;
+                if (graph != null)
+                {
+                    graph.CleanNeighbors();
+                }
+                return graph;
             }
 
             // Construct graph entrances
             EntranceTeleport[] entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
-            TempDJKPointsGraph = CalculateGraphEntrances(entrancesTeleportArray);
+            tempGraph = CalculateGraphEntrances(entrancesTeleportArray);
 
             // Calculate Neighbors
             CalculateNeighbors();
 
-            return DJKPointsGraph;
+            return graph;
         }
 
         private bool NeedToRecalculate()
@@ -57,30 +60,15 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
         }
 
-        private void CleanNeighbors()
+        private GraphController CalculateGraphEntrances(EntranceTeleport[] entrancesTeleportArray)
         {
-            if (DJKPointsGraph == null)
-            {
-                return;
-            }
-
-            List<int> neighborsPresent = DJKPointsGraph.Select(x => x.Id).ToList();
-            foreach (var point in DJKPointsGraph)
-            {
-                point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.neighbor.Id));
-            }
-        }
-
-        private List<IDJKPoint> CalculateGraphEntrances(EntranceTeleport[] entrancesTeleportArray)
-        {
-            List<IDJKPoint> DJKPointsGraphEntrances = new List<IDJKPoint>();
+            GraphController graphEntrancesController = new GraphController();
 
             // List<DJKPoint> init with entrances
-            int id = 0;
             foreach (var entrance in entrancesTeleportArray)
             {
                 bool newDJKPoint = true;
-                foreach (var DJKP in DJKPointsGraphEntrances)
+                foreach (var DJKP in graphEntrancesController.DJKPoints)
                 {
                     if (((DJKEntrancePoint)DJKP).TryAddOtherEntrance(entrance))
                     {
@@ -91,17 +79,17 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
                 if (newDJKPoint)
                 {
-                    DJKPointsGraphEntrances.Add(new DJKEntrancePoint(id++, entrance));
+                    graphEntrancesController.AddPoint(new DJKEntrancePoint(entrance));
                 }
             }
 
-            return DJKPointsGraphEntrances;
+            return graphEntrancesController;
         }
 
         private void CalculateNeighbors()
         {
             int idBatch = -1;
-            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(TempDJKPointsGraph);
+            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(tempGraph.DJKPoints);
             List<IInstruction> instructionsToProcess = new List<IInstruction>();
             foreach (var instrParams in instructions)
             {
@@ -113,7 +101,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private void OnBatchComplete()
         {
-            DJKPointsGraph = new List<IDJKPoint>(TempDJKPointsGraph);
+            graph = new GraphController(tempGraph);
             IsCalculating = false;
         }
     }

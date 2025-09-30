@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -13,7 +14,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            context.PathController.SetNewDestinationPositionPoint(context.TargetLastKnownPosition.Value, "TargetLastKnownPosition");
+            context.PathController.SetNewDestination(new DJKPositionPoint(context.TargetLastKnownPosition.Value, "TargetLastKnownPosition"));
             
             return BehaviourTreeStatus.Success;
         }

@@ -8,6 +8,7 @@ namespace LethalInternship.SharedAbstractions.Interns
     public interface IPointOfInterest
     {
         bool IsInvalid { get; }
+        IInterestPoint? GetInterestPoint();
         Vector3 GetPoint();
         bool TryAddInterestPoint<T>(T interestPointToAdd) where T : IInterestPoint;
         IEnumerable<IInterestPoint> GetListInterestPoints();

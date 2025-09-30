@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
@@ -15,18 +16,18 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public Vector3 Position { get; set; }
         public List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
 
-        public DJKPositionPoint(int id, Vector3 position)
+        public DJKPositionPoint(Vector3 position)
         {
-            Id = id;
+            Id = 0;
             Position = position;
             Neighbors = new List<(IDJKPoint neighbor, float weight)>();
             Name = string.Empty;
         }
 
-        public DJKPositionPoint(int id, Vector3 position, string name)
+        public DJKPositionPoint(Vector3 position, string name)
         {
             Name = name;
-            Id = id;
+            Id = 0;
             Position = position;
             Neighbors = new List<(IDJKPoint neighbor, float weight)>();
         }
@@ -61,9 +62,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return new Vector3[] { Position };
         }
 
-        public Vector3 GetClosestPointFrom(Vector3 point)
+        public Vector3 GetClosestPointTo(Vector3 point)
         {
             return Position;
+        }
+
+        public Vector3[] GetNearbyPoints(Vector3 point)
+        {
+            List<Vector3> points = new List<Vector3> { Position };
+            return points
+                        .Where(p => (p - point).sqrMagnitude <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                        .ToArray();
         }
 
         public IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)

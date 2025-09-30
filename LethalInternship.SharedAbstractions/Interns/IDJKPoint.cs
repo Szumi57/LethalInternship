@@ -15,7 +15,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight);
 
         Vector3[] GetAllPoints();
-        Vector3 GetClosestPointFrom(Vector3 point);
+        Vector3 GetClosestPointTo(Vector3 point);
+        Vector3[] GetNearbyPoints(Vector3 point);
 
         IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess);
     }

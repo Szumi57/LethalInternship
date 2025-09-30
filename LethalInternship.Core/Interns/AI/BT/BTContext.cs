@@ -9,6 +9,7 @@ namespace LethalInternship.Core.Interns.AI.BT
         public InternAI InternAI { get; set; }
 
         public PathController PathController { get; set; }
+        public DJKPointMapper DJKPointMapper { get; set; }
 
         public SearchCoroutineController searchForPlayers { get; set; }
 

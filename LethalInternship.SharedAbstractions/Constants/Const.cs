@@ -156,6 +156,8 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
 
+        public static readonly float OUTSIDE_INSIDE_DISTANCE_LIMIT = 100f;
+
         // Tips
         public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
         public static readonly string TOOLTIP_TAKE_ITEM = "Take my item : [{0}]";

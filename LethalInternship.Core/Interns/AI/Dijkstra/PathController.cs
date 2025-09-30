@@ -42,7 +42,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public Vector3 GetCurrentPoint(Vector3 currentPos)
         {
-            return GetCurrentPoint().GetClosestPointFrom(currentPos);
+            return GetCurrentPoint().GetClosestPointTo(currentPos);
         }
 
         public IDJKPoint GetDestination()
@@ -66,11 +66,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
         }
 
-        public void SetNewDestinationPositionPoint(Vector3 dest, string name)
-        {
-            SetNewDestination(new DJKPositionPoint(0, dest, name));
-        }
-
         public void SetNewDestination(IDJKPoint dest)
         {
             destinationPoint = dest;
@@ -81,16 +76,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
         }
 
-        public void SetCurrentPoint(Vector3 pos, string name = "")
+        public void SetCurrentPoint(IDJKPoint newCurrentPoint)
         {
             if (DJKPointsPath == null || DJKPointsPath.Count == 0)
             {
-                DJKPointsPath = new List<IDJKPoint>() { new DJKPositionPoint(0, pos) };
+                DJKPointsPath = new List<IDJKPoint>() { newCurrentPoint };
                 IndexCurrentPoint = 0;
                 return;
             }
 
-            DJKPointsPath[IndexCurrentPoint] = new DJKPositionPoint(DJKPointsPath[IndexCurrentPoint].Id, pos, name);
+            newCurrentPoint.Id = DJKPointsPath[IndexCurrentPoint].Id;
+            DJKPointsPath[IndexCurrentPoint] = newCurrentPoint;
         }
 
         public void SetToNextPoint()
@@ -119,7 +115,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return DJKPointsPath == null || DJKPointsPath.Count < 2;
         }
 
-        public string GetPathString()
+        public override string ToString()
         {
             string pathString = $"Path = ";
             if (DJKPointsPath == null)
@@ -162,23 +158,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
 
                 return string.Concat($"Path ({dist}m) = ", pathString);
-            }
-        }
-
-        public string GetGraphString(List<IDJKPoint> graph)
-        {
-            string pathString = $"Graph({(graph == null ? 0 : graph.Count)})=";
-            if (graph == null)
-            {
-                return string.Concat(pathString, " null");
-            }
-            else if (graph.Count == 0)
-            {
-                return string.Concat(pathString, " empty");
-            }
-            else
-            {
-                return string.Concat(pathString, string.Join("\r\n                                                               ", graph));
             }
         }
     }
