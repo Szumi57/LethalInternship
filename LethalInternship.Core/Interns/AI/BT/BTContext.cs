@@ -15,6 +15,8 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public EnemyAI? CurrentEnemy;
         public GrabbableObject? TargetItem;
+        
+        // No use for now, target always known
         public Vector3? TargetLastKnownPosition;
 
         public CoroutineController PanikCoroutine { get; set; }

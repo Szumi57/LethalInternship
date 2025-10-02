@@ -12,7 +12,6 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     public class TimedGetGraphEntrances
     {
         private GraphController? graph = null!;
-        private GraphController tempGraph = null!;
 
         private long timer = 10000 * TimeSpan.TicksPerMillisecond;
         private long lastTimeCalculate;
@@ -21,16 +20,17 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         public GraphController? GetGraphEntrances()
         {
-            if (!NeedToRecalculate()
-                || IsCalculating)
+            if (IsCalculating)
             {
-                if (IsCalculating)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"CalculateGraphEntrances Calculating");
-                }
+                PluginLoggerHook.LogDebug?.Invoke($"CalculateGraphEntrances Calculating");
+                return null;
+            }
 
+            if (!NeedToRecalculate())
+            {
                 if (graph != null)
                 {
+                    PluginLoggerHook.LogDebug?.Invoke($"GetGraphEntrances CleanNeighbors...");
                     graph.CleanNeighbors();
                 }
                 return graph;
@@ -38,12 +38,12 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
             // Construct graph entrances
             EntranceTeleport[] entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
-            tempGraph = CalculateGraphEntrances(entrancesTeleportArray);
+            graph = CalculateGraphEntrances(entrancesTeleportArray);
 
             // Calculate Neighbors
-            CalculateNeighbors();
+            CalculateNeighbors(graph);
 
-            return graph;
+            return null;
         }
 
         private bool NeedToRecalculate()
@@ -86,10 +86,10 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             return graphEntrancesController;
         }
 
-        private void CalculateNeighbors()
+        private void CalculateNeighbors(GraphController graphToCalculate)
         {
             int idBatch = -1;
-            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(tempGraph.DJKPoints);
+            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(graphToCalculate.DJKPoints);
             List<IInstruction> instructionsToProcess = new List<IInstruction>();
             foreach (var instrParams in instructions)
             {
@@ -97,11 +97,12 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
 
             InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchComplete);
+            IsCalculating = true;
         }
 
         private void OnBatchComplete()
         {
-            graph = new GraphController(tempGraph);
+            //graph = new GraphController(tempGraph);
             IsCalculating = false;
         }
     }

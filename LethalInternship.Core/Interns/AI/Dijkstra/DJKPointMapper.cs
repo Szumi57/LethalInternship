@@ -22,7 +22,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 return func(interestPoint);
             }
 
-            return new DJKPositionPoint(interestPoint.Point);
+            return new DJKStaticPoint(interestPoint.Point);
         }
     }
 }

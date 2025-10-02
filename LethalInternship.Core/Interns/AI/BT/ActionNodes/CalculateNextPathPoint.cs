@@ -20,8 +20,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private TimedCalculatePath calculateDestinationPathTimed = new TimedCalculatePath();
         private TimedCalculatePath calculateNextPointPathTimed = new TimedCalculatePath();
 
-        private DJKPositionPoint source = null!;
-        private DJKPositionPoint dest = null!;
+        private IDJKPoint source = null!;
+        private IDJKPoint dest = null!;
 
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -43,7 +43,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Check if current PathPoint reachable
-            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPoint(ai.transform.position));
+            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPointPos(ai.transform.position));
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
@@ -63,7 +63,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
-                context.PathController.SetCurrentPoint(new DJKPositionPoint(path.Path.corners[^1], "PartialPoint"));
+                context.PathController.SetCurrentPoint(new DJKStaticPoint(path.Path.corners[^1], "PartialPoint"));
 
                 // Try to still calculate
                 if (context.PathController.IsPathNotValid())
@@ -100,8 +100,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 internPos = hitEnd.position;
             }
 
-            source = new DJKPositionPoint(internPos, "Intern pos");
-            dest = new DJKPositionPoint(context.PathController.GetDestination().GetClosestPointTo(internPos), "Destination");
+            source = new DJKStaticPoint(internPos, "Intern pos");
+            dest = context.PathController.GetDestination();
             graph.AddPoint(source);
             graph.AddPoint(dest);
 

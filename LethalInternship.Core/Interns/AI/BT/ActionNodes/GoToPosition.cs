@@ -26,14 +26,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
 
-            Vector3 currentPoint = context.PathController.GetCurrentPoint(context.InternAI.transform.position);
+            Vector3 currentPoint = context.PathController.GetCurrentPointPos(context.InternAI.transform.position);
             // Check for to distance to current point
             if (CloseEnoughOfCurrentPoint(context.InternAI, currentPoint))
             {
                 context.PathController.SetToNextPoint();
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController}");
+            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
             // Go to position
             MoveToPosition(context.InternAI, currentPoint);

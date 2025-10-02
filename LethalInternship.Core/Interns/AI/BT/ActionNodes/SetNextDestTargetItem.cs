@@ -14,7 +14,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            context.PathController.SetNewDestination(new DJKPositionPoint(context.TargetItem.transform.position, "TargetItem"));
+            context.PathController.SetNewDestination(new DJKStaticPoint(context.TargetItem.transform.position, "TargetItem"));
             
             return BehaviourTreeStatus.Success;
         }

@@ -13,14 +13,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             DJKPoints = new List<IDJKPoint>();
         }
 
-        public GraphController(List<IDJKPoint> graph)
-        {
-            DJKPoints = new List<IDJKPoint>(graph);
-        }
-
         public GraphController(GraphController graph)
         {
-            DJKPoints = new List<IDJKPoint>(graph.DJKPoints);
+            DJKPoints = graph.DJKPoints.Select(p => (IDJKPoint)p.Clone()).ToList();
         }
 
         public void AddPoint(IDJKPoint point)
@@ -34,7 +29,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             List<int> neighborsPresent = DJKPoints.Select(x => x.Id).ToList();
             foreach (var point in DJKPoints)
             {
-                point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.neighbor.Id));
+                point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.idNeighbor));
             }
         }
 

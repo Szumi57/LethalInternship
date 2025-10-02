@@ -2,7 +2,6 @@
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
@@ -38,9 +37,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 used[u] = true;
 
                 // Check neighbors
-                foreach (var (neighbor, weight) in points[u].Neighbors)
+                foreach (var (idNeighbor, neighborPos, weight) in points[u].Neighbors)
                 {
-                    int v = neighbor.Id;
+                    int v = idNeighbor;
                     if (!used[v] && dist[u] + weight < dist[v])
                     {
                         dist[v] = dist[u] + weight;
@@ -64,8 +63,8 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         {
             // Neighbors init
             var instructions = new List<InstructionParameters>();
-
             HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
+
             foreach (var point1 in DJKPointsGraph)
             {
                 foreach (var point2 in DJKPointsGraph)
@@ -83,17 +82,8 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     }
                     testedPairs.Add((idA, idB));
 
-                    // Add neighbors if exists
-                    float? distanceNeighbor = point1.GetNeighborDistanceIfExist(point2);
-                    if (distanceNeighbor != null)
+                    if (point1.IsNeighborExist(point2.Id))
                     {
-                        point2.TryAddToNeighbors(point1, distanceNeighbor.Value);
-                        continue;
-                    }
-                    distanceNeighbor = point2.GetNeighborDistanceIfExist(point1);
-                    if (distanceNeighbor != null)
-                    {
-                        point1.TryAddToNeighbors(point2, distanceNeighbor.Value);
                         continue;
                     }
 
@@ -131,7 +121,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public static float ApplyPartialPathPenalty(float dist, Vector3 lastCorner, Vector3 target)
         {
-            return dist + (lastCorner - target).sqrMagnitude * 1000f;
+            return dist + (lastCorner - target).sqrMagnitude * 10000f;
         }
     }
 }

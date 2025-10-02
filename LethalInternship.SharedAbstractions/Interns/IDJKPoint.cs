@@ -1,18 +1,20 @@
 ﻿using LethalInternship.SharedAbstractions.Parameters;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace LethalInternship.SharedAbstractions.Interns
 {
-    public interface IDJKPoint
+    public interface IDJKPoint : ICloneable
     {
         int Id { get; set; }
+        List<(int idNeighbor, Vector3 neighborPos, float weight)> Neighbors { get; }
 
-        List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
+        Vector3 GetNeighborPos(int idNeighbor);
+        void SetNeighborPos(int idNeighbor, Vector3 newPos);
 
-        bool IsNeighborExist(IDJKPoint neighbor);
-        float? GetNeighborDistanceIfExist(IDJKPoint neighbor);
-        bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight);
+        bool IsNeighborExist(int idNeighbor);
+        bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float weight);
 
         Vector3[] GetAllPoints();
         Vector3 GetClosestPointTo(Vector3 point);

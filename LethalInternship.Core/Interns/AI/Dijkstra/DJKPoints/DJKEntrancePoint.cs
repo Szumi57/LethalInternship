@@ -14,16 +14,25 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public EntranceTeleport Entrance1 { get; set; }
         public EntranceTeleport? Entrance2 { get; set; }
 
-        public List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
-
-        private List<(Vector3 previousNeighborPoint, Vector3 thisPoint)> reachablePoints;
+        public List<(int idNeighbor, Vector3 neighborPos, float weight)> Neighbors { get; private set; }
 
         public DJKEntrancePoint(EntranceTeleport entrance)
         {
             Id = 0;
             Entrance1 = entrance;
 
-            Neighbors = new List<(IDJKPoint neighbor, float weight)>();
+            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
+        }
+
+        public object Clone()
+        {
+            var copy = new DJKEntrancePoint(Entrance1);
+            copy.Entrance2 = Entrance2; 
+            copy.Id = Id;
+            copy.Neighbors = Neighbors
+                .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
+                .ToList();
+            return copy;
         }
 
         public bool TryAddOtherEntrance(EntranceTeleport entrance2)
@@ -74,29 +83,31 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             }
         }
 
-        public bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight)
+        public bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float weight)
         {
-            if (!Neighbors.Any(x => x.neighbor.Id == neighborToAdd.Id))
+            if (!Neighbors.Any(x => x.idNeighbor == idNeighborToAdd))
             {
-                Neighbors.Add((neighborToAdd, weight));
+                Neighbors.Add((idNeighborToAdd, neighborToAddPos, weight));
                 return true;
             }
 
             return false;
         }
 
-        public bool IsNeighborExist(IDJKPoint neighbor)
+        public bool IsNeighborExist(int idNeighbor)
         {
-            return Neighbors.Any(x => x.neighbor.Id == neighbor.Id);
+            return Neighbors.Any(x => x.idNeighbor == idNeighbor);
         }
 
-        public float? GetNeighborDistanceIfExist(IDJKPoint neighbor)
+        public Vector3 GetNeighborPos(int idNeighbor)
         {
-            if (IsNeighborExist(neighbor))
-            {
-                return Neighbors.FirstOrDefault(x => x.neighbor.Id == neighbor.Id).weight;
-            }
-            return null;
+            return Neighbors.First(x => x.idNeighbor == idNeighbor).neighborPos;
+        }
+
+        public void SetNeighborPos(int idNeighbor, Vector3 newPos)
+        {
+            var neighbor = Neighbors.First(x => x.idNeighbor == idNeighbor);
+            neighbor.neighborPos = newPos;
         }
 
         public Vector3[] GetAllPoints()
@@ -125,7 +136,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             }
 
             return points
-                        .Where(p => (p - point).sqrMagnitude <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                        .Where(p => p.y - point.y <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
                         .OrderBy(p => (p - point).sqrMagnitude)
                         .ToArray();
         }
@@ -143,7 +154,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 
         public override string ToString()
         {
-            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.neighbor.Id}({(int)Mathf.Sqrt(x.weight)})"));
+            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.idNeighbor}({(int)Mathf.Sqrt(x.weight)})"));
             string entrance2 = "null";
             if (Entrance2 != null)
             {

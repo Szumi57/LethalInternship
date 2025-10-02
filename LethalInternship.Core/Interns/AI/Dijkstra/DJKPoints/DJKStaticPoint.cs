@@ -8,49 +8,50 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
-    public class DJKPositionPoint : IDJKPoint
+    public class DJKStaticPoint : IDJKPoint
     {
         public int Id { get; set; }
 
         public string Name { get; set; }
         public Vector3 Position { get; set; }
-        public List<(IDJKPoint neighbor, float weight)> Neighbors { get; }
+        public List<(int idNeighbor, Vector3 neighborPos, float weight)> Neighbors { get; private set; }
 
-        public DJKPositionPoint(Vector3 position)
+        public DJKStaticPoint(Vector3 position)
         {
             Id = 0;
             Position = position;
-            Neighbors = new List<(IDJKPoint neighbor, float weight)>();
+            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
             Name = string.Empty;
         }
 
-        public DJKPositionPoint(Vector3 position, string name)
+        public DJKStaticPoint(Vector3 position, string name)
         {
             Name = name;
             Id = 0;
             Position = position;
-            Neighbors = new List<(IDJKPoint neighbor, float weight)>();
+            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
         }
 
-        public bool IsNeighborExist(IDJKPoint neighbor)
+        public object Clone()
         {
-            return Neighbors.Any(x => x.neighbor.Id == neighbor.Id);
+            var copy = new DJKStaticPoint(Position, Name);
+            copy.Id = Id;
+            copy.Neighbors = Neighbors
+                .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
+                .ToList();
+            return copy;
         }
 
-        public float? GetNeighborDistanceIfExist(IDJKPoint neighbor)
+        public bool IsNeighborExist(int idNeighbor)
         {
-            if (IsNeighborExist(neighbor))
+            return Neighbors.Any(x => x.idNeighbor == idNeighbor);
+        }
+
+        public bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float weight)
+        {
+            if (!Neighbors.Any(x => x.idNeighbor == idNeighborToAdd))
             {
-                return Neighbors.FirstOrDefault(x => x.neighbor.Id == neighbor.Id).weight;
-            }
-            return null;
-        }
-
-        public bool TryAddToNeighbors(IDJKPoint neighborToAdd, float weight)
-        {
-            if (!Neighbors.Any(x => x.neighbor.Id == neighborToAdd.Id))
-            {
-                Neighbors.Add((neighborToAdd, weight));
+                Neighbors.Add((idNeighborToAdd, neighborToAddPos, weight));
                 return true;
             }
 
@@ -67,11 +68,22 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return Position;
         }
 
+        public Vector3 GetNeighborPos(int idNeighbor)
+        {
+            return Neighbors.First(x => x.idNeighbor == idNeighbor).neighborPos;
+        }
+
+        public void SetNeighborPos(int idNeighbor, Vector3 newPos)
+        {
+            var neighbor = Neighbors.First(x => x.idNeighbor == idNeighbor);
+            neighbor.neighborPos = newPos;
+        }
+
         public Vector3[] GetNearbyPoints(Vector3 point)
         {
             List<Vector3> points = new List<Vector3> { Position };
             return points
-                        .Where(p => (p - point).sqrMagnitude <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                        .Where(p => p.y - point.y <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
                         .ToArray();
         }
 
@@ -89,9 +101,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 
         public override string ToString()
         {
-            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.neighbor.Id}({(int)Mathf.Sqrt(x.weight)})"));
+            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.idNeighbor}({(int)Mathf.Sqrt(x.weight)})"));
 
-            return $"DJKSimplePoint \"{Name}\" id:{Id}, Position: {Position}, Neighbors {{{neighborsString}}}";
+            return $"DJKStaticPoint \"{Name}\" id:{Id}, Position: {Position}, Neighbors {{{neighborsString}}}";
         }
     }
 }

@@ -114,9 +114,9 @@ namespace LethalInternship.Core.Interns.AI.BT
         private void InitContext(InternAI internAI)
         {
             DJKPointMapper mapper = new DJKPointMapper();
-            mapper.Register<DefaultInterestPoint>(ip => new DJKPositionPoint(ip.Point));
-            mapper.Register<ShipInterestPoint>(ip => new DJKPositionPoint(ip.Point));
-            mapper.Register<VehicleInterestPoint>(ip => new DJKPositionPoint(ip.Point));
+            mapper.Register<DefaultInterestPoint>(ip => new DJKStaticPoint(ip.Point));
+            mapper.Register<ShipInterestPoint>(ip => new DJKStaticPoint(ip.Point));
+            mapper.Register<VehicleInterestPoint>(ip => new DJKStaticPoint(ip.Point));
 
             BTContext = new BTContext()
             {
@@ -263,8 +263,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Follow player")
+                        // no use for update last known pos, even with config, it just not work for now
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
-                        .Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
+                        //.Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
                         .Do("SetNextDestTargetLastKnownPosition", t => actions["SetNextDestTargetLastKnownPosition"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")

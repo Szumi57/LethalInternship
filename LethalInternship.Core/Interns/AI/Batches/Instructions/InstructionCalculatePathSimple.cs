@@ -46,8 +46,8 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
                 distance = Dijkstra.Dijkstra.ApplyPartialPathPenalty(distance, navPath.corners[^1], target);
             }
 
-            startDJKPoint.TryAddToNeighbors(targetDJKPoint, distance);
-            targetDJKPoint.TryAddToNeighbors(startDJKPoint, distance);
+            startDJKPoint.TryAddToNeighbors(targetDJKPoint.Id, target, distance);
+            targetDJKPoint.TryAddToNeighbors(startDJKPoint.Id, start, distance);
 
             InternManager.Instance.CancelGroup(IdBatch, GroupId);
         }

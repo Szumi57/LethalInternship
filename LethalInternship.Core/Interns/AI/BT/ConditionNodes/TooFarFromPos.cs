@@ -15,7 +15,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             InternAI ai = context.InternAI;
 
-            Vector3 currentPoint = context.PathController.GetCurrentPoint(ai.transform.position);
+            Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
 
             float sqrHorizontalDistance = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
             float sqrVerticalDistance = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
