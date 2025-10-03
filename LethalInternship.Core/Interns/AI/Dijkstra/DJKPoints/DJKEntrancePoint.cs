@@ -8,13 +8,10 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
-    public class DJKEntrancePoint : IDJKPoint
+    public class DJKEntrancePoint : DJKPointBase
     {
-        public int Id { get; set; }
         public EntranceTeleport Entrance1 { get; set; }
         public EntranceTeleport? Entrance2 { get; set; }
-
-        public List<(int idNeighbor, Vector3 neighborPos, float weight)> Neighbors { get; private set; }
 
         public DJKEntrancePoint(EntranceTeleport entrance)
         {
@@ -24,7 +21,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
         }
 
-        public object Clone()
+        public override object Clone()
         {
             var copy = new DJKEntrancePoint(Entrance1);
             copy.Entrance2 = Entrance2; 
@@ -49,23 +46,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return false;
         }
 
-        public Vector3 GetClosestPointTo(Vector3 point)
-        {
-            if (Entrance2 == null)
-            {
-                return Entrance1.entrancePoint.position;
-            }
-
-            if ((point - Entrance1.entrancePoint.position).sqrMagnitude < (point - Entrance2.entrancePoint.position).sqrMagnitude)
-            {
-                return Entrance1.entrancePoint.position;
-            }
-            else
-            {
-                return Entrance2.entrancePoint.position;
-            }
-        }
-
         public Vector3 GetExitPointFrom(Vector3 point)
         {
             if (Entrance2 == null)
@@ -83,34 +63,24 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             }
         }
 
-        public bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float weight)
+        public override Vector3 GetClosestPointTo(Vector3 point)
         {
-            if (!Neighbors.Any(x => x.idNeighbor == idNeighborToAdd))
+            if (Entrance2 == null)
             {
-                Neighbors.Add((idNeighborToAdd, neighborToAddPos, weight));
-                return true;
+                return Entrance1.entrancePoint.position;
             }
 
-            return false;
+            if ((point - Entrance1.entrancePoint.position).sqrMagnitude < (point - Entrance2.entrancePoint.position).sqrMagnitude)
+            {
+                return Entrance1.entrancePoint.position;
+            }
+            else
+            {
+                return Entrance2.entrancePoint.position;
+            }
         }
 
-        public bool IsNeighborExist(int idNeighbor)
-        {
-            return Neighbors.Any(x => x.idNeighbor == idNeighbor);
-        }
-
-        public Vector3 GetNeighborPos(int idNeighbor)
-        {
-            return Neighbors.First(x => x.idNeighbor == idNeighbor).neighborPos;
-        }
-
-        public void SetNeighborPos(int idNeighbor, Vector3 newPos)
-        {
-            var neighbor = Neighbors.First(x => x.idNeighbor == idNeighbor);
-            neighbor.neighborPos = newPos;
-        }
-
-        public Vector3[] GetAllPoints()
+        public override Vector3[] GetAllPoints()
         {
             List<Vector3> points = new List<Vector3>
             {
@@ -124,7 +94,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return points.ToArray();
         }
 
-        public Vector3[] GetNearbyPoints(Vector3 point)
+        public override Vector3[] GetNearbyPoints(Vector3 point)
         {
             List<Vector3> points = new List<Vector3>
             {
@@ -141,7 +111,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
                         .ToArray();
         }
 
-        public IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
+        public override IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
         {
             return new InstructionCalculatePathSimple(
                                 idBatch,

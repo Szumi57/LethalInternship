@@ -130,7 +130,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints, source, dest));
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController}");
+            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetFullPathString()}");
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
@@ -60,18 +59,10 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
             else
             {
-                PluginLoggerHook.LogDebug?.Invoke($"GetCurrentPointPos DJKPointsPath[IndexCurrentPoint - 1] {DJKPointsPath[IndexCurrentPoint - 1].Id} :");
-                foreach (var a in DJKPointsPath[IndexCurrentPoint - 1].Neighbors)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"neighbors {a.idNeighbor} {a.neighborPos}");
-                }
-                PluginLoggerHook.LogDebug?.Invoke($"GetCurrentPointPos DJKPointsPath[IndexCurrentPoint] {DJKPointsPath[IndexCurrentPoint].Id}");
-
                 Vector3 currentPointPos = DJKPointsPath[IndexCurrentPoint - 1].GetNeighborPos(DJKPointsPath[IndexCurrentPoint].Id);
                 Vector3 trueCurrentPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(actorPos);
                 if ((trueCurrentPointPos - currentPointPos).sqrMagnitude > 0.5f * 0.5f)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"using true current point pos {currentPointPos}");
                     return trueCurrentPointPos;
                 }
 
@@ -113,9 +104,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             {
                 ResetPathAndIndex();
             }
-
-            //destinationPoint.Id = DJKPointsPath[DJKPointsPath.Count - 1].Id;
-            //DJKPointsPath[DJKPointsPath.Count - 1] = destinationPoint;
         }
 
         public void SetCurrentPoint(IDJKPoint newCurrentPoint)
@@ -128,6 +116,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
 
             newCurrentPoint.Id = DJKPointsPath[IndexCurrentPoint].Id;
+            newCurrentPoint.SetNeighbors(DJKPointsPath[IndexCurrentPoint].Neighbors
+                                                .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
+                                                .ToList());
             DJKPointsPath[IndexCurrentPoint] = newCurrentPoint;
         }
 
@@ -157,6 +148,37 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return DJKPointsPath == null || DJKPointsPath.Count < 2;
         }
 
+        public string GetFullPathString()
+        {
+            string pathString = $"Path = ";
+            if (DJKPointsPath == null)
+            {
+                return string.Concat(pathString, " null");
+            }
+            else if (DJKPointsPath.Count == 0)
+            {
+                return string.Concat(pathString, $" empty, dest {destinationPoint}");
+            }
+            else
+            {
+                pathString = string.Empty;
+                for (int i = 0; i < DJKPointsPath.Count; i++)
+                {
+                    IDJKPoint point = DJKPointsPath[i];
+                    if (i < DJKPointsPath.Count - 1)
+                    {
+                        pathString += $"{point.Id} => {point.GetNeighborPos(DJKPointsPath[i + 1].Id)}";
+                    }
+                    else
+                    {
+                        pathString += $"{point.Id}";
+                    }
+                }
+
+                return string.Concat($"Path = ", pathString);
+            }
+        }
+
         public override string ToString()
         {
             string pathString = $"Path = ";
@@ -166,7 +188,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
             else if (DJKPointsPath.Count == 0)
             {
-                return string.Concat(pathString, $" empty, dest {destinationPoint.Id}");
+                return string.Concat(pathString, $" empty, dest {destinationPoint}");
             }
             else
             {

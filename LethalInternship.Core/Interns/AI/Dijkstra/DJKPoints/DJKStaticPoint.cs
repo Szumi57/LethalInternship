@@ -8,13 +8,10 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
-    public class DJKStaticPoint : IDJKPoint
+    public class DJKStaticPoint : DJKPointBase
     {
-        public int Id { get; set; }
-
         public string Name { get; set; }
         public Vector3 Position { get; set; }
-        public List<(int idNeighbor, Vector3 neighborPos, float weight)> Neighbors { get; private set; }
 
         public DJKStaticPoint(Vector3 position)
         {
@@ -32,7 +29,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
         }
 
-        public object Clone()
+        public override object Clone()
         {
             var copy = new DJKStaticPoint(Position, Name);
             copy.Id = Id;
@@ -42,44 +39,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return copy;
         }
 
-        public bool IsNeighborExist(int idNeighbor)
-        {
-            return Neighbors.Any(x => x.idNeighbor == idNeighbor);
-        }
-
-        public bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float weight)
-        {
-            if (!Neighbors.Any(x => x.idNeighbor == idNeighborToAdd))
-            {
-                Neighbors.Add((idNeighborToAdd, neighborToAddPos, weight));
-                return true;
-            }
-
-            return false;
-        }
-
-        public Vector3[] GetAllPoints()
+        public override Vector3[] GetAllPoints()
         {
             return new Vector3[] { Position };
         }
 
-        public Vector3 GetClosestPointTo(Vector3 point)
+        public override Vector3 GetClosestPointTo(Vector3 point)
         {
             return Position;
         }
 
-        public Vector3 GetNeighborPos(int idNeighbor)
-        {
-            return Neighbors.First(x => x.idNeighbor == idNeighbor).neighborPos;
-        }
-
-        public void SetNeighborPos(int idNeighbor, Vector3 newPos)
-        {
-            var neighbor = Neighbors.First(x => x.idNeighbor == idNeighbor);
-            neighbor.neighborPos = newPos;
-        }
-
-        public Vector3[] GetNearbyPoints(Vector3 point)
+        public override Vector3[] GetNearbyPoints(Vector3 point)
         {
             List<Vector3> points = new List<Vector3> { Position };
             return points
@@ -87,7 +57,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
                         .ToArray();
         }
 
-        public IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
+        public override IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
         {
             return new InstructionCalculatePathWithSamplePos(
                                 idBatch,
