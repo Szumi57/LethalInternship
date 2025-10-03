@@ -27,9 +27,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             float? fearRange = ai.GetFearRangeForEnemies(context.CurrentEnemy);
             if (!fearRange.HasValue)
             {
+                PluginLoggerHook.LogDebug?.Invoke($"FleeFromEnemy fearRange is null, ignoring enemy \"{context.CurrentEnemy.enemyType.enemyName}\"");
                 panikCoroutine.StopCoroutine();
-                PluginLoggerHook.LogError?.Invoke("fearRange is null");
-                return BehaviourTreeStatus.Failure;
+                context.CurrentEnemy = null;
+                return BehaviourTreeStatus.Success;
             }
 
             // Keep coroutine
