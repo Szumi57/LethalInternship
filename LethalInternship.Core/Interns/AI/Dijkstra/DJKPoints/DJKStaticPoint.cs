@@ -14,19 +14,17 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public Vector3 Position { get; set; }
 
         public DJKStaticPoint(Vector3 position)
+            : base()
         {
-            Id = 0;
             Position = position;
-            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
             Name = string.Empty;
         }
 
         public DJKStaticPoint(Vector3 position, string name)
+            : base()
         {
             Name = name;
-            Id = 0;
             Position = position;
-            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
         }
 
         public override object Clone()

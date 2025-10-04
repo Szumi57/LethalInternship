@@ -47,23 +47,20 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float INTERN_OBJECT_AWARNESS = 3f;
         public static readonly float INTERN_OBJECT_RANGE = 15f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
-        public static readonly float COLLISION_RANGE = 2.8f;
         public static readonly float CLIMB_SPEED = 8f;
         public static readonly int INIT_RAGDOLL_ID = -2;
 
-        public static readonly float AGENT_SPEED = 3.5f;
-        public static readonly float AGENT_SPEED_CROUCH = 1.75f;
         public static readonly float BASE_MAX_SPEED = 0.9f;
-        public static readonly float BASE_MIN_SPEED = 0.01f;
         public static readonly float BODY_TURNSPEED = 6f;
         public static readonly float CAMERA_TURNSPEED = 4f;
 
         public static readonly float DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 1f;
-        public static readonly float DISTANCE_CHECK_FOR_HOLES = 2.5f;
         public static readonly float DISTANCE_ITEMS_TO_ENTRANCE = 6f;
 
         public static readonly int COMPANY_BUILDING_MOON_ID = 3;
-        public static readonly float SHIP_EXPANDING_BOUNDS_DIFFERENCE = 10f;
+
+        public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
+        public static readonly float TIMER_CHECK_DOOR = 0.9f;
 
         // NpcController
         public static readonly int PLAYER_MASK = 8;
@@ -109,54 +106,45 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly int CROUCHING_IDLE_STATE_HASH = 1917280335;
         public static readonly int CROUCHING_WALKING_STATE_HASH = -483816927;
 
-        // Commands
-        public static readonly int MAX_COMMANDS_QUEUE = 10;
-
-        // SearchingForPlayerState 
+        // Looking for player 
         public static readonly float MIN_TIME_SPRINT_SEARCH_WANDER = 1f;
         public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 3f;
 
-        // GetCloseToPlayerState
+        // Go to position
         public static readonly float DISTANCE_START_RUNNING = 8f;
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 4f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;
+        public static readonly float DISTANCE_TO_ENTRANCE = 1f;
+        public static readonly float OUTSIDE_INSIDE_DISTANCE_LIMIT = 100f;
+
+        // Update last known pos
         public static readonly float DISTANCE_AWARENESS_HOR = 50f;
         public static readonly float DISTANCE_AWARENESS_VER = 50f;
 
-        // JustLostPlayerState
+        // Looking around
         public static readonly float TIMER_LOOKING_AROUND = 6f;
-        public static readonly float DISTANCE_STOP_SPRINT_LAST_KNOWN_POSITION = 2f;
-        public static readonly float WAIT_TIME_TO_TELEPORT = 1f;
-        public static readonly float DISTANCE_TO_ENTRANCE = 1f;
         public static readonly float MIN_TIME_FREEZE_LOOKING_AROUND = 0.5f;
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
 
-        // Stuck
-        public static readonly float TIMER_STUCK_TOO_MUCH = 2f;
-
-        // Player in ShipState
-        public static readonly float DISTANCE_TO_SHIP_BOUND_CLOSEST_POINT = 1f;
-        public static readonly float DISTANCE_OF_DROPPED_OBJECT_SHIP_BOUND_CLOSEST_POINT = 2f;
-
-        // Player in cruiser vehicle
+        // Cruiser vehicle
         public static readonly float DISTANCE_TO_CRUISER = 6f;
 
-        public static readonly Vector3 POS1_ENTRY_INTERN_CRUISER = new Vector3(-0.5f, -1f, -5.5f);
-        public static readonly Vector3 POS2_ENTRY_INTERN_CRUISER = new Vector3(0.9f, -1f, -5.5f);
+        // Front
+        public static readonly Vector3 LEFT_FRONT_POS_CRUISER = new Vector3(-0.75f, -1f, 5.5f);
+        public static readonly Vector3 RIGHT_FRONT_POS_CRUISER = new Vector3(1.2f, -1f, 5.5f);
+        // Center
+        public static readonly Vector3 LEFT_CENTER_POS_CRUISER = new Vector3(-2f, -1f, 0f);
+        public static readonly Vector3 RIGHT_CENTER_POS_CRUISER = new Vector3(2.5f, -1f, 0f);
+        // Back
+        public static readonly Vector3 LEFT_BACK_POS_CRUISER = new Vector3(-0.75f, -1f, -5.5f);
+        public static readonly Vector3 RIGHT_BACK_POS_CRUISER = new Vector3(1.2f, -1f, -5.5f);
+        // Inside cruiser
+        public static readonly Vector3 FIRST_CORNER_INSIDE_CRUISER = new Vector3(-0.5f, -0.5f, -0.4f);
+        public static readonly Vector3 SECOND_CORNER_INSIDE_CRUISER = new Vector3(0.9f, -0.5f, -2.5f);
 
-        public static readonly Vector3 FIRST_CORNER_INTERN_IN_CRUISER = new Vector3(-0.5f, -0.5f, -0.4f);
-        public static readonly Vector3 SECOND_CORNER_INTERN_IN_CRUISER = new Vector3(0.9f, -0.5f, -2.5f);
-
-        // PanikState
-        public static readonly float DISTANCE_FLEEING = 20f;
+        // Panik
         public static readonly float DISTANCE_FLEEING_NO_LOS = 5f;
-
-        public static readonly float DISTANCE_NPCBODY_FROM_LADDER = 2;
-        public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
-        public static readonly float TIMER_CHECK_DOOR = 0.9f;
-
-        public static readonly float OUTSIDE_INSIDE_DISTANCE_LIMIT = 100f;
 
         // Tips
         public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
@@ -168,6 +156,5 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly string TOOLTIP_COMMANDS = "Commands : [{0}]";
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
         public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
-        
     }
 }

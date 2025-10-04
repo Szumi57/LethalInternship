@@ -429,19 +429,30 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            if (ShouldDoAIInterval())
+            {
+                DoAIInterval();
+            }
+        }
+
+        private bool ShouldDoAIInterval()
+        {
             // Update interval timer for AI calculation
             if (updateDestinationIntervalInternAI >= 0f)
             {
                 updateDestinationIntervalInternAI -= Time.deltaTime;
+                return false;
             }
-            else
-            {
-                SetAgent(enabled: true);
 
-                // Do the actual AI calculation
-                DoAIInterval();
-                updateDestinationIntervalInternAI = AIIntervalTime;
+            if (InternManager.Instance.GetCurrentBatch() == (int)Npc.playerClientId)
+            {
+                //PluginLoggerHook.LogDebug?.Invoke($"Current batch for intern ! id {Npc.playerClientId}");
+                return false;
             }
+
+            // Reset time
+            updateDestinationIntervalInternAI = AIIntervalTime;
+            return true;
         }
 
         /// <summary>
@@ -452,6 +463,8 @@ namespace LethalInternship.Core.Interns.AI
         /// </remarks>
         public override void DoAIInterval()
         {
+            SetAgent(enabled: true);
+
             if (isEnemyDead
                 || NpcController.Npc.isPlayerDead
                 || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
@@ -497,6 +510,9 @@ namespace LethalInternship.Core.Interns.AI
                 PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
             }
 
+            // AI batch
+            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+
             // Voice
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
         }
@@ -506,6 +522,9 @@ namespace LethalInternship.Core.Interns.AI
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
+
+            // AI batch
+            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
 
             // Voice
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
@@ -4019,6 +4038,7 @@ namespace LethalInternship.Core.Interns.AI
         public void StopSinkingState()
         {
             NpcController.Npc.isSinking = false;
+            NpcController.Npc.statusEffectAudio.volume = 0f;
             NpcController.Npc.statusEffectAudio.Stop();
             NpcController.Npc.voiceMuffledByEnemy = false;
             NpcController.Npc.sourcesCausingSinking = 0;

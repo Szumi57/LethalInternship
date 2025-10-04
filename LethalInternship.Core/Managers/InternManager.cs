@@ -1783,7 +1783,7 @@ namespace LethalInternship.Core.Managers
 
         private int nextInstructionGroupId = 1;
         public int GetNewInstructionGroupId() => nextInstructionGroupId++;
-        
+
         public GraphController? GetGraphEntrances()
         {
             if (getGraphEntrancesTimed == null)
@@ -1796,6 +1796,7 @@ namespace LethalInternship.Core.Managers
 
         private int maxBatchesPerFrame = 1;
         private int maxInstructionsPerFrame = 1;
+        private int currentBatch = -2;
 
         private Dictionary<int, BatchRequest> activeBatches = new Dictionary<int, BatchRequest>();
 
@@ -1816,6 +1817,7 @@ namespace LethalInternship.Core.Managers
 
         private void ProcessCalculatePathQueue()
         {
+            currentBatch = -2;
             if (activeBatches.Count == 0) return;
 
             int processedBatches = 0;
@@ -1843,11 +1845,12 @@ namespace LethalInternship.Core.Managers
 
                 processedInstructions++;
                 processedBatches++;
+                currentBatch = batch.id;
 
                 if (!batch.HasRemaining)
                 {
                     batch.onBatchComplete?.Invoke();
-                    activeBatches.Remove(batch.id);
+                    CancelBatch(batch.id);
                 }
             }
         }
@@ -1874,6 +1877,16 @@ namespace LethalInternship.Core.Managers
             }
             foreach (var idBatch in toRemove)
                 activeBatches.Remove(idBatch);
+        }
+
+        public void CancelBatch(int idBatch)
+        {
+            activeBatches.Remove(idBatch);
+        }
+
+        public int GetCurrentBatch()
+        {
+            return currentBatch;
         }
 
         private void ExecuteInstruction(IInstruction instr)

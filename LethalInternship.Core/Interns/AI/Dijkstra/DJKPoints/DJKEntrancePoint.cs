@@ -14,11 +14,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public EntranceTeleport? Entrance2 { get; set; }
 
         public DJKEntrancePoint(EntranceTeleport entrance)
+            : base()
         {
-            Id = 0;
             Entrance1 = entrance;
-
-            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
         }
 
         public override object Clone()

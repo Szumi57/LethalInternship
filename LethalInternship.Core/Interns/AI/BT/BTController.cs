@@ -116,7 +116,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             DJKPointMapper mapper = new DJKPointMapper();
             mapper.Register<DefaultInterestPoint>(ip => new DJKStaticPoint(ip.Point));
             mapper.Register<ShipInterestPoint>(ip => new DJKStaticPoint(ip.Point));
-            mapper.Register<VehicleInterestPoint>(ip => new DJKStaticPoint(ip.Point));
+            mapper.Register<VehicleInterestPoint>(ip => new DJKVehiclePoint(ip.VehicleTransform, "Cruiser"));
 
             BTContext = new BTContext()
             {

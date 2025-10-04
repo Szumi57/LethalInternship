@@ -2292,6 +2292,7 @@ namespace LethalInternship.Core.Interns
                 drowningTimer -= Time.deltaTime / 10f;
                 if (drowningTimer < 0f)
                 {
+                    setFaceUnderwater = false;
                     drowningTimer = 1f;
                     PluginLoggerHook.LogDebug?.Invoke($"SyncKillIntern from drowning for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
                     Npc.KillPlayer(Vector3.zero, spawnBody: true, CauseOfDeath.Drowning, 0, default);

@@ -40,18 +40,20 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             NavMeshHit hitEnd;
             if (NavMesh.SamplePosition(target, out hitEnd, samplePosDist, NavMesh.AllAreas))
             {
+                target = hitEnd.position;
                 NavMesh.CalculatePath(start, hitEnd.position, NavMesh.AllAreas, navPath);
-                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos samplePosDist {samplePosDist}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePath SamplePos({samplePosDist}), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             }
             else if (NavMesh.SamplePosition(target, out hitEnd, 10f, NavMesh.AllAreas))
             {
+                target = hitEnd.position;
                 NavMesh.CalculatePath(start, hitEnd.position, NavMesh.AllAreas, navPath);
-                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos samplePosDist 10, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePath SamplePos(10), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             }
             else
             {
                 NavMesh.CalculatePath(start, target, NavMesh.AllAreas, navPath);
-                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWithSamplePos SamplePosition failed, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+                PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathWith SamplePos(failed), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             }
 
             if (navPath.status == NavMeshPathStatus.PathInvalid)
@@ -59,16 +61,19 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
                 return;
             }
 
+            // Valid path
             float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
             if (navPath.status == NavMeshPathStatus.PathPartial)
             {
                 distance = Dijkstra.Dijkstra.ApplyPartialPathPenalty(distance, navPath.corners[^1], target);
             }
+            else if (navPath.status == NavMeshPathStatus.PathComplete)
+            {
+                InternManager.Instance.CancelGroup(IdBatch, GroupId);
+            }
 
             startDJKPoint.TryAddToNeighbors(targetDJKPoint.Id, target, distance);
             targetDJKPoint.TryAddToNeighbors(startDJKPoint.Id, start, distance);
-
-            InternManager.Instance.CancelGroup(IdBatch, GroupId);
         }
     }
 }

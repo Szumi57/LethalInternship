@@ -6,7 +6,7 @@ using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.Batches.Instructions
 {
-    public class InstructionCalculatePathSimple : IInstruction
+    public class InstructionCalculatePathMultPointsSamplePos : IInstruction
     {
         public int IdBatch { get; private set; }
         public int GroupId { get; private set; }
@@ -17,11 +17,14 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
         public IDJKPoint startDJKPoint;
         public IDJKPoint targetDJKPoint;
 
+        public float samplePosDist;
+
         private NavMeshPath navPath = new NavMeshPath();
 
-        public InstructionCalculatePathSimple(int idBatch, int groupId,
-                                              Vector3 start, Vector3 target,
-                                              IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint)
+        public InstructionCalculatePathMultPointsSamplePos(int idBatch, int groupId,
+                                                           Vector3 start, Vector3 target,
+                                                           IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint,
+                                                           float samplePosDist)
         {
             IdBatch = idBatch;
             GroupId = groupId;
@@ -29,12 +32,19 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             this.target = target;
             this.startDJKPoint = startDJKPoint;
             this.targetDJKPoint = targetDJKPoint;
+            this.samplePosDist = samplePosDist;
         }
 
         public void Execute()
         {
+            NavMeshHit hitEnd;
+            if (NavMesh.SamplePosition(target, out hitEnd, samplePosDist, NavMesh.AllAreas))
+            {
+                target = hitEnd.position;
+            }
+
             NavMesh.CalculatePath(start, target, NavMesh.AllAreas, navPath);
-            PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathSimple {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+            PluginLoggerHook.LogDebug?.Invoke($"{(navPath.status == NavMeshPathStatus.PathComplete ? "+" : "")}Execute CalculatePathMultPoints SamplePos({samplePosDist}), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             if (navPath.status == NavMeshPathStatus.PathInvalid)
             {
                 return;

@@ -17,6 +17,12 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public abstract Vector3 GetClosestPointTo(Vector3 point);
         public abstract Vector3[] GetNearbyPoints(Vector3 point);
 
+        public DJKPointBase()
+        {
+            Id = 0;
+            Neighbors = new List<(int idNeighbor, Vector3 neighborPos, float weight)>();
+        }
+
         public Vector3 GetNeighborPos(int idNeighbor)
         {
             return Neighbors.First(x => x.idNeighbor == idNeighbor).neighborPos;
@@ -38,15 +44,25 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             neighbor.neighborPos = newPos;
         }
 
-        public bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float weight)
+        public bool TryAddToNeighbors(int idNeighborToAdd, Vector3 neighborToAddPos, float newWeight)
         {
-            if (!Neighbors.Any(x => x.idNeighbor == idNeighborToAdd))
+            for (int i = 0; i < Neighbors.Count; i++)
             {
-                Neighbors.Add((idNeighborToAdd, neighborToAddPos, weight));
-                return true;
+                var (idNeighbor, neighborPos, existingWeight) = Neighbors[i];
+
+                if (idNeighbor == idNeighborToAdd)
+                {
+                    if (newWeight < existingWeight)
+                    {
+                        Neighbors[i] = (idNeighborToAdd, neighborToAddPos, newWeight);
+                        return true;
+                    }
+                    return false;
+                }
             }
 
-            return false;
+            Neighbors.Add((idNeighborToAdd, neighborToAddPos, newWeight));
+            return true;
         }
     }
 }

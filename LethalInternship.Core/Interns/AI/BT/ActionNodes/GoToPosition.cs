@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -15,28 +16,41 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             // Check if we should take entrance
             DJKEntrancePoint? entrancePoint = context.PathController.GetCurrentPoint() as DJKEntrancePoint;
             if (entrancePoint != null)
             {
                 // Take entrance
-                if (TakeEntrance(context.InternAI, entrancePoint))
+                if (TakeEntrance(ai, entrancePoint))
                 {
                     context.PathController.SetToNextPoint();
                 }
             }
 
-            Vector3 currentPoint = context.PathController.GetCurrentPointPos(context.InternAI.transform.position);
+            Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
+            PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
+
+            // todo remove
+            DJKVehiclePoint? vPoint = context.PathController.GetCurrentPoint() as DJKVehiclePoint;
+            if (vPoint != null)
+            {
+                var a = vPoint.GetAllPoints();
+                foreach(var p in a )
+                {
+                    DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), p, p + new Vector3(0, 5f, 0), Color.magenta);
+                }
+            }
+
+            // Go to position
+            MoveToPosition(ai, currentPoint);
+
             // Check for to distance to current point
-            if (CloseEnoughOfCurrentPoint(context.InternAI, currentPoint))
+            if (CloseEnoughOfCurrentPoint(ai, currentPoint))
             {
                 context.PathController.SetToNextPoint();
             }
-
-            PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController} {currentPoint}");
-
-            // Go to position
-            MoveToPosition(context.InternAI, currentPoint);
             return BehaviourTreeStatus.Success;
         }
 

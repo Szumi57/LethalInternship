@@ -3,6 +3,7 @@ using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
+using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
@@ -36,8 +37,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             TimedCalculatePathResponse path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointTo(ai.transform.position));
             if (path.PathStatus == NavMeshPathStatus.PathComplete)
             {
+                PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
+                DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
                 // Go directly to destination
-                //PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 context.PathController.SetNextPointToDestination();
                 return BehaviourTreeStatus.Success;
             }
@@ -58,6 +60,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     //PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status {path.PathStatus} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
                 }
 
+                DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
+
                 // Go
                 return BehaviourTreeStatus.Success;
             }
@@ -70,6 +74,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 {
                     CalculateGraphPath(context);
                 }
+
+                DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
+
                 return BehaviourTreeStatus.Success;
             }
 
@@ -96,7 +103,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             Vector3 internPos = ai.transform.position;
             if (NavMesh.SamplePosition(internPos, out NavMeshHit hitEnd, 2f, NavMesh.AllAreas))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"Using internpos sampled position, diff dist {(internPos - hitEnd.position).magnitude}");
+                float diff = (internPos - hitEnd.position).sqrMagnitude;
+                if (diff > 0.1f * 0.1f)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"Using internpos sampled position, diff dist {Mathf.Sqrt(diff)}");
+                }
                 internPos = hitEnd.position;
             }
 
