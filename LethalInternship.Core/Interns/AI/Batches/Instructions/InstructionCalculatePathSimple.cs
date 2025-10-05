@@ -34,7 +34,7 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
         public void Execute()
         {
             NavMesh.CalculatePath(start, target, NavMesh.AllAreas, navPath);
-            PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathSimple {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+            //PluginLoggerHook.LogDebug?.Invoke($"Execute InstructionCalculatePathSimple {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             if (navPath.status == NavMeshPathStatus.PathInvalid)
             {
                 return;

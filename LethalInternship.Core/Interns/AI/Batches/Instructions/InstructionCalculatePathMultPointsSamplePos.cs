@@ -44,7 +44,7 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             }
 
             NavMesh.CalculatePath(start, target, NavMesh.AllAreas, navPath);
-            PluginLoggerHook.LogDebug?.Invoke($"{(navPath.status == NavMeshPathStatus.PathComplete ? "+" : "")}Execute CalculatePathMultPoints SamplePos({samplePosDist}), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
+            //PluginLoggerHook.LogDebug?.Invoke($"{(navPath.status == NavMeshPathStatus.PathComplete ? "+" : "")}Execute CalculatePathMultPoints SamplePos({samplePosDist}), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             if (navPath.status == NavMeshPathStatus.PathInvalid)
             {
                 return;

@@ -63,12 +63,6 @@ namespace LethalInternship.Core.Interns.AI
         private IInternIdentity internIdentity = null!;
         private IRagdollInternBody ragdollInternBody = null!;
 
-        /// <summary>
-        /// Dictionnary of the recently dropped object on the ground.
-        /// The intern will not try to grab them for a certain time (<see cref="Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS"><c>Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS</c></see>).
-        /// </summary>
-        public static Dictionary<GrabbableObject, float> DictJustDroppedItems = new Dictionary<GrabbableObject, float>();
-
         public BTController BTController = null!;
 
         public IPointOfInterest? PointOfInterest = null!;
@@ -1316,122 +1310,6 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         /// <summary>
-        /// Check all object array <c>HoarderBugAI.grabbableObjectsInMap</c>, 
-        /// if intern is close and can see an item to grab.
-        /// </summary>
-        /// <returns><c>GrabbableObject</c> if intern sees an item he can grab, else null.</returns>
-        public GrabbableObject? LookingForObjectToGrab()
-        {
-            for (int i = 0; i < HoarderBugAI.grabbableObjectsInMap.Count; i++)
-            {
-                GameObject gameObject = HoarderBugAI.grabbableObjectsInMap[i];
-                if (gameObject == null)
-                {
-                    HoarderBugAI.grabbableObjectsInMap.TrimExcess();
-                    continue;
-                }
-
-                // Object not outside when ai inside and vice versa
-                Vector3 gameObjectPosition = gameObject.transform.position;
-                if (isOutside && gameObjectPosition.y < -100f)
-                {
-                    continue;
-                }
-                else if (!isOutside && gameObjectPosition.y > -80f)
-                {
-                    continue;
-                }
-
-                // Object in range ?
-                float sqrDistanceEyeGameObject = (gameObjectPosition - eye.position).sqrMagnitude;
-                if (sqrDistanceEyeGameObject > Const.INTERN_OBJECT_RANGE * Const.INTERN_OBJECT_RANGE)
-                {
-                    continue;
-                }
-
-                // Black listed ? 
-                if (IsGrabbableObjectBlackListed(gameObject))
-                {
-                    continue;
-                }
-
-                // Get grabbable object infos
-                GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
-                if (grabbableObject == null)
-                {
-                    continue;
-                }
-
-                // Object on ship
-                if (grabbableObject.isInElevator
-                    || grabbableObject.isInShipRoom)
-                {
-                    continue;
-                }
-
-                // Object in cruiser vehicle
-                if (grabbableObject.transform.parent != null
-                    && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
-                {
-                    continue;
-                }
-
-                // Object in a container mod of some sort ?
-                if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
-                {
-                    if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
-                    {
-                        continue;
-                    }
-                }
-
-                // Is a pickmin (LethalMin mod) holding the object ?
-                if (PluginRuntimeProvider.Context.IsModLethalMinLoaded)
-                {
-                    if (LethalMinHook.IsGrabbableObjectHeldByPikminMod?.Invoke(grabbableObject) ?? false)
-                    {
-                        continue;
-                    }
-                }
-
-                // Grabbable object ?
-                if (!IsGrabbableObjectGrabbable(grabbableObject))
-                {
-                    continue;
-                }
-
-                // Object close to awareness distance ?
-                if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"awareness {grabbableObject.name}");
-                }
-                // Object visible ?
-                else if (!Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
-                {
-                    Vector3 to = gameObjectPosition - eye.position;
-                    if (Vector3.Angle(eye.forward, to) < Const.INTERN_FOV)
-                    {
-                        // Object in FOV
-                        PluginLoggerHook.LogDebug?.Invoke($"LOS {grabbableObject.name}");
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Object not in line of sight
-                    continue;
-                }
-
-                return grabbableObject;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Check all conditions for deciding if an item is grabbable or not.
         /// </summary>
         /// <param name="grabbableObject">Item to check</param>
@@ -1461,12 +1339,9 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             // Item just dropped, should wait a bit before grab it again
-            if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
+            if (InternManager.Instance.IsGrabbableObjectJustDropped(grabbableObject))
             {
-                if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
-                {
-                    return false;
-                }
+                return false;
             }
 
             // Is item too close to entrance (with config option enabled)
@@ -1482,15 +1357,15 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             // Trim dictionnary if too large
-            TrimDictJustDroppedItems();
+            InternManager.Instance.TrimDictJustDroppedItems();
 
             // Is the item reachable with the agent pathfind ? (only owner knows and calculate) real position of ai intern)
-            if (IsOwner
-                && PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"object {grabbableObject.name} pathfind is not reachable");
-                return false;
-            }
+            //if (IsOwner
+            //    && PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"object {grabbableObject.name} pathfind is not reachable");
+            //    return false;
+            //}
             //NavMesh.CalculatePath(this.transform.position, grabbableObject.transform.position, NavMesh.AllAreas, this.path1);
             //if (this.path1.status == NavMeshPathStatus.PathPartial)
             //{
@@ -1498,22 +1373,6 @@ namespace LethalInternship.Core.Interns.AI
             //}
 
             return true;
-        }
-
-        /// <summary>
-        /// Trim dictionnary if too large, trim only the dropped item since a long time
-        /// </summary>
-        private static void TrimDictJustDroppedItems()
-        {
-            if (DictJustDroppedItems != null && DictJustDroppedItems.Count > 20)
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"TrimDictJustDroppedItems Count{DictJustDroppedItems.Count}");
-                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS);
-                foreach (var item in itemsToClean)
-                {
-                    DictJustDroppedItems.Remove(item.Key);
-                }
-            }
         }
 
         public void SetInternInElevator()
@@ -1563,48 +1422,6 @@ namespace LethalInternship.Core.Interns.AI
             {
                 NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItem);
             }
-        }
-
-        private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
-        {
-            // Bee nest
-            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
-                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
-            {
-                return true;
-            }
-
-            // Dead bodies
-            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
-                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
-                && gameObjectToEvaluate.tag == "PhysicsProp"
-                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
-            {
-                return true;
-            }
-
-            // Maneater
-            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
-                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
-            {
-                return true;
-            }
-
-            // Wheelbarrow
-            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
-                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
-            {
-                return true;
-            }
-
-            // ShoppingCart
-            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
-                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private void InitImportantColliders()
@@ -2817,7 +2634,7 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
             NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
-            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
+            InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
             HeldItem = null;
             NpcController.Npc.isHoldingObject = false;
             NpcController.Npc.currentlyHeldObjectServer = null;

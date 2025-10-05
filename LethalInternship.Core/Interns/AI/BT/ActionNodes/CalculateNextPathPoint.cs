@@ -37,7 +37,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             TimedCalculatePathResponse path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointTo(ai.transform.position));
             if (path.PathStatus == NavMeshPathStatus.PathComplete)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
+                //PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
                 // Go directly to destination
                 context.PathController.SetNextPointToDestination();
@@ -135,13 +135,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"------- {graph}");
+            //PluginLoggerHook.LogDebug?.Invoke($"------- {graph}");
 
             // Get full path
             currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints, source, dest));
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetFullPathString()}");
+            //PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetFullPathString()}");
         }
     }
 }

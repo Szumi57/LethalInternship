@@ -30,18 +30,18 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
-            PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
+            //PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
             // todo remove
-            DJKVehiclePoint? vPoint = context.PathController.GetCurrentPoint() as DJKVehiclePoint;
-            if (vPoint != null)
-            {
-                var a = vPoint.GetAllPoints();
-                foreach(var p in a )
-                {
-                    DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), p, p + new Vector3(0, 5f, 0), Color.magenta);
-                }
-            }
+            //DJKVehiclePoint? vPoint = context.PathController.GetCurrentPoint() as DJKVehiclePoint;
+            //if (vPoint != null)
+            //{
+            //    var a = vPoint.GetAllPoints();
+            //    foreach(var p in a )
+            //    {
+            //        DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), p, p + new Vector3(0, 5f, 0), Color.magenta);
+            //    }
+            //}
 
             // Go to position
             MoveToPosition(ai, currentPoint);
