@@ -1,141 +1,141 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- BepInEx Properties -->
-  <PropertyGroup>
+	<!-- BepInEx Properties -->
+	<PropertyGroup>
 		<!-- This is the name of your mod. This will be used by tcli when building our Thunderstore package. -->
-    <AssemblyName>LethalInternship</AssemblyName>
-    <Product>LethalInternship</Product>
-    <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>0.20.5</Version>
-  </PropertyGroup>
+		<AssemblyName>LethalInternship</AssemblyName>
+		<Product>LethalInternship</Product>
+		<!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
+		<Version>0.20.5</Version>
+	</PropertyGroup>
 
-  <!-- Project Properties -->
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>LethalInternship</RootNamespace>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
+	<!-- Project Properties -->
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<RootNamespace>LethalInternship</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
 
-  <!-- Thunderstore CLI stuff -->
-  <PropertyGroup>
-    <!-- Your Thunderstore Team name. This will be used by tcli when building our Thunderstore package. -->
-    <ThunderstoreTeam>Szumi57</ThunderstoreTeam>
-    <!-- Configure description for Thunderstore at ./Thunderstore/thunderstore.toml -->
-  </PropertyGroup>
+	<!-- Thunderstore CLI stuff -->
+	<PropertyGroup>
+		<!-- Your Thunderstore Team name. This will be used by tcli when building our Thunderstore package. -->
+		<ThunderstoreTeam>Szumi57</ThunderstoreTeam>
+		<!-- Configure description for Thunderstore at ./Thunderstore/thunderstore.toml -->
+	</PropertyGroup>
 
-  <!-- Enable Nullable for better IDE null-checking -->
-  <PropertyGroup>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<!-- Enable Nullable for better IDE null-checking -->
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <!-- Set NuGet Sources -->
-  <PropertyGroup>
-    <RestoreAdditionalProjectSources>
-      https://api.nuget.org/v3/index.json;
-      https://nuget.bepinex.dev/v3/index.json
-    </RestoreAdditionalProjectSources>
-  </PropertyGroup>
+	<!-- Set NuGet Sources -->
+	<PropertyGroup>
+		<RestoreAdditionalProjectSources>
+			https://api.nuget.org/v3/index.json;
+			https://nuget.bepinex.dev/v3/index.json
+		</RestoreAdditionalProjectSources>
+	</PropertyGroup>
 
-  <!-- Disable Publicizer Warnings -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);CS0436</NoWarn>
-  </PropertyGroup>
+	<!-- Disable Publicizer Warnings -->
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);CS0436</NoWarn>
+	</PropertyGroup>
 
-  <!-- Embed Debug Symbols for Easier Debugging -->
-  <PropertyGroup>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>embedded</DebugType>
-    <!--
+	<!-- Embed Debug Symbols for Easier Debugging -->
+	<PropertyGroup>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>embedded</DebugType>
+		<!--
     Trim the project path to prevent players from potentially
     viewing Private Information in stack traces.
     -->
-    <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=./</PathMap>
-    <IncludeSymbols>True</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <Optimize>False</Optimize>
-    <DebugType>embedded</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <Optimize>False</Optimize>
-    <DebugType>embedded</DebugType>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="lib\**" />
-    <EmbeddedResource Remove="lib\**" />
-    <None Remove="lib\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="Configs\ConfigIdentities.json" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Configs\ConfigIdentities.json" />
-  </ItemGroup>
+		<PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=./</PathMap>
+		<IncludeSymbols>True</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<Optimize>False</Optimize>
+		<DebugType>embedded</DebugType>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<Optimize>False</Optimize>
+		<DebugType>embedded</DebugType>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Remove="lib\**" />
+		<EmbeddedResource Remove="lib\**" />
+		<None Remove="lib\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Remove="Configs\ConfigIdentities.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Configs\ConfigIdentities.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
-    <PackageReference Include="BepInEx.Core" Version="5.*" />
-    <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
-    <PackageReference Include="Evaisa.LethalLib" Version="1.1.1" />
-    <PackageReference Include="Mono.pdb2mdb" Version="0.1.0.20130128" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Rune580.Mods.LethalCompany.InputUtils" Version="0.7.10" />
-    <PackageReference Include="UnityEngine.Modules" Version="2022.3.9" IncludeAssets="compile" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+		<PackageReference Include="BepInEx.Core" Version="5.*" />
+		<PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
+		<PackageReference Include="Evaisa.LethalLib" Version="1.1.1" />
+		<PackageReference Include="Mono.pdb2mdb" Version="0.1.0.20130128" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Rune580.Mods.LethalCompany.InputUtils" Version="0.7.10" />
+		<PackageReference Include="UnityEngine.Modules" Version="2022.3.62" IncludeAssets="compile" />
+	</ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
-  </ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+	</ItemGroup>
 
-  <!-- References - Game Assemblies -->
+	<!-- References - Game Assemblies -->
 
-  <!-- Package References - Game Assemblies -->
-  <ItemGroup Condition="$(CI) == 'true'">
-    <PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\lib\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\lib\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="com.sigurd.csync">
-      <HintPath>..\lib\mods\com.sigurd.csync.dll</HintPath>
-    </Reference>
-    <Reference Include="LethalInternship.Core">
-      <HintPath>..\LethalInternship.Core\bin\Release\netstandard2.1\LethalInternship.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="LethalInternship.SharedAbstractions">
-      <HintPath>..\LethalInternship.SharedAbstractions\bin\Release\netstandard2.1\LethalInternship.SharedAbstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Animation.Rigging">
-      <HintPath>..\lib\Unity.Animation.Rigging.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Collections">
-      <HintPath>..\lib\Unity.Collections.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.InputSystem">
-      <HintPath>..\lib\Unity.InputSystem.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Netcode.Runtime">
-      <HintPath>..\lib\Unity.Netcode.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>..\lib\Unity.TextMeshPro.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>lib\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>..\lib\UnityEngine.UI.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<!-- Package References - Game Assemblies -->
+	<ItemGroup Condition="$(CI) == 'true'">
+		<PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>..\lib\Assembly-CSharp.dll</HintPath>
+		</Reference>
+		<Reference Include="Assembly-CSharp-firstpass">
+			<HintPath>..\lib\Assembly-CSharp-firstpass.dll</HintPath>
+		</Reference>
+		<Reference Include="com.sigurd.csync">
+			<HintPath>..\lib\mods\com.sigurd.csync.dll</HintPath>
+		</Reference>
+		<Reference Include="LethalInternship.Core">
+			<HintPath>..\LethalInternship.Core\bin\Release\netstandard2.1\LethalInternship.Core.dll</HintPath>
+		</Reference>
+		<Reference Include="LethalInternship.SharedAbstractions">
+			<HintPath>..\LethalInternship.SharedAbstractions\bin\Release\netstandard2.1\LethalInternship.SharedAbstractions.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.Animation.Rigging">
+			<HintPath>..\lib\Unity.Animation.Rigging.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.Collections">
+			<HintPath>..\lib\Unity.Collections.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.InputSystem">
+			<HintPath>..\lib\Unity.InputSystem.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.Netcode.Runtime">
+			<HintPath>..\lib\Unity.Netcode.Runtime.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.TextMeshPro">
+			<HintPath>..\lib\Unity.TextMeshPro.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>lib\UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.UI">
+			<HintPath>..\lib\UnityEngine.UI.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
-  <!-- Allows us to use Rpc methods. See https://github.com/EvaisaDev/UnityNetcodePatcher -->
-  <!-- This MSBuild option does not work in Visual Studio, using cli option for now
+	<!-- Allows us to use Rpc methods. See https://github.com/EvaisaDev/UnityNetcodePatcher -->
+	<!-- This MSBuild option does not work in Visual Studio, using cli option for now
   <ItemGroup>
     <PackageReference Include="Evaisa.NetcodePatcher.MSBuild" Version="3.*" PrivateAssets="all" />
   </ItemGroup>
@@ -143,13 +143,13 @@
     <NetcodePatch Include="$(TargetPath)" />
   </ItemGroup>
   -->
-  <Target Name="NetcodePatch" AfterTargets="PostBuildEvent">
-    <Exec Command="dotnet netcode-patch &quot;$(TargetPath)&quot; @(ReferencePathWithRefAssemblies->'&quot;%(Identity)&quot;', ' ')" />
-  </Target>
+	<Target Name="NetcodePatch" AfterTargets="PostBuildEvent">
+		<Exec Command="netcode-patch -uv 2022.3.62 -nv 1.12.0 -tv 1.0.0 &quot;$(TargetPath)&quot; @(ReferencePathWithRefAssemblies->'&quot;%(Identity)&quot;', ' ')" />
+	</Target>
 
-  <!-- Build our Thunderstore package when making a release build. This does not publish our package. -->
-  <!-- For more information about tcli, see https://github.com/thunderstore-io/thunderstore-cli/wiki -->
-  <Target Name="PackThunderstore" DependsOnTargets="NetcodePatch" AfterTargets="PostBuildEvent" Condition="$(Configuration) == 'Release'">
-    <Exec Command="dotnet tcli build --config-path &quot;$(ProjectDir)Thunderstore/thunderstore.toml&quot; --package-version $(Version) --package-name $(AssemblyName) --package-namespace $(ThunderstoreTeam)" />
-  </Target>
+	<!-- Build our Thunderstore package when making a release build. This does not publish our package. -->
+	<!-- For more information about tcli, see https://github.com/thunderstore-io/thunderstore-cli/wiki -->
+	<Target Name="PackThunderstore" DependsOnTargets="NetcodePatch" AfterTargets="PostBuildEvent" Condition="$(Configuration) == 'Release'">
+		<Exec Command="dotnet tcli build --config-path &quot;$(ProjectDir)Thunderstore/thunderstore.toml&quot; --package-version $(Version) --package-name $(AssemblyName) --package-namespace $(ThunderstoreTeam)" />
+	</Target>
 </Project>
