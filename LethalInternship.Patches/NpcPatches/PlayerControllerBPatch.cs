@@ -635,7 +635,7 @@ namespace LethalInternship.Patches.NpcPatches
                 for (var i = 0; i < codes.Count - 6; i++)
                 {
                     if (codes[i].ToString().StartsWith("nop NULL")// 53
-                        && codes[i + 6].ToString().StartsWith("call static float UnityEngine.Vector3::Distance(UnityEngine.Vector3 a, UnityEngine.Vector3 b)"))// 59
+                        && codes[i + 9].ToString().StartsWith("call static float UnityEngine.Vector3::Distance(UnityEngine.Vector3 a, UnityEngine.Vector3 b)"))// 62
                     {
                         startIndex = i;
                         break;

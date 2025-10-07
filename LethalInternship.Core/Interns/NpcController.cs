@@ -2342,7 +2342,11 @@ namespace LethalInternship.Core.Interns
         private Vector3 GetBillBoardPositionModelReplacementAPI(Vector3 lastPosition)
         {
             Vector3? billBoardPosition = null;
-            billBoardPosition = ModelReplacementAPIHook.GetBillBoardPositionModelReplacementAPI?.Invoke(InternAIController);
+
+            if (PluginRuntimeProvider.Context.IsModModelReplacementAPILoaded)
+            {
+                billBoardPosition = ModelReplacementAPIHook.GetBillBoardPositionModelReplacementAPI?.Invoke(InternAIController);
+            }
 
             if (billBoardPosition == null)
             {

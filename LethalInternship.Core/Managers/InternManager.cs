@@ -6,6 +6,7 @@ using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Events;
@@ -81,6 +82,7 @@ namespace LethalInternship.Core.Managers
         public List<int> HeldInternsLocalPlayer { get => heldInternsLocalPlayer; set => heldInternsLocalPlayer = value; }
         public new bool IsServer => base.IsServer;
         public VehicleController? VehicleController { get => vehicleController; }
+        public List<IBodyReplacementBase> ListBodyReplacementOnDeadBodies { get => listBodyReplacementOnDeadBodies; set => listBodyReplacementOnDeadBodies = value; }
 
         private int allEntitiesCount;
         public bool LandingStatusAllowed;
@@ -94,6 +96,7 @@ namespace LethalInternship.Core.Managers
         public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
         public List<IInternCullingBodyInfo> InternBodiesSpawned = null!;
         public IInternCullingBodyInfo[] OrderedInternBodiesInFOV = new IInternCullingBodyInfo[PluginRuntimeProvider.Context.Config.MaxInternsAvailable * 2];
+        private List<IBodyReplacementBase> listBodyReplacementOnDeadBodies = new List<IBodyReplacementBase>();
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners { get => dictEnemyAINoiseListeners; }
         private Dictionary<EnemyAI, INoiseListener> dictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();

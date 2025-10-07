@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+﻿using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -37,6 +38,11 @@ namespace LethalInternship.Core.Utils
 
         public static void DrawPath(LineRendererUtil lineRendererUtil, NavMeshPath path)
         {
+            if (!DebugConst.DRAW_LINES)
+            {
+                return;
+            }
+
             if (path.status == NavMeshPathStatus.PathPartial)
             {
                 for (int i = 0; i < path.corners.Length - 1; i++)

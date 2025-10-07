@@ -3,10 +3,9 @@ using LethalInternship.Core.Interns.AI.BT;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
-using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -56,7 +55,7 @@ namespace LethalInternship.Core.Interns.AI
         public bool IsEnemyDead => base.isEnemyDead;
         public new bool IsSpawned => base.IsSpawned;
         public bool AnimationCoroutineRagdollingRunning => animationCoroutineRagdollingRunning;
-        public List<Component> ListModelReplacement { get => listModelReplacement; set => listModelReplacement = value; }
+        public List<IBodyReplacementBase> ListModelReplacement { get => listModelReplacement; set => listModelReplacement = value; }
         public GrabbableObject? HeldItem { get => heldItem; set => heldItem = value; }
 
         private INpcController npcController = null!;
@@ -80,7 +79,7 @@ namespace LethalInternship.Core.Interns.AI
         public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
         public float TimeSinceTeleporting = 0f;
 
-        private List<Component> listModelReplacement = null!;
+        private List<IBodyReplacementBase> listModelReplacement = null!;
         public EntranceTeleport[] EntrancesTeleportArray = null!;
 
         public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
@@ -175,7 +174,7 @@ namespace LethalInternship.Core.Interns.AI
             InitImportantColliders();
 
             // Model replacements
-            listModelReplacement = new List<Component>();
+            listModelReplacement = new List<IBodyReplacementBase>();
 
             // Grabbableobject
             InternManager.Instance.RegisterItems();
