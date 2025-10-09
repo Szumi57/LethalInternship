@@ -349,6 +349,7 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.FlowermanAIPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.FlowerSnakeEnemyPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.ForestGiantAIPatch"));
+            _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.GiantKiwiAIPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.JesterAIPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.MaskedPlayerEnemyPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.MouthDogAIPatch"));

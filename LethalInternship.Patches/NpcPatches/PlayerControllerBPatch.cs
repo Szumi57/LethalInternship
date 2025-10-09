@@ -937,17 +937,6 @@ namespace LethalInternship.Patches.NpcPatches
             }
         }
 
-        [HarmonyPatch("IVisibleThreat.GetThreatTransform")]
-        [HarmonyPostfix]
-        static void GetThreatTransform_PostFix(PlayerControllerB __instance, ref Transform __result)
-        {
-            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
-            if (internAI != null)
-            {
-                __result = internAI.Transform;
-            }
-        }
-
         /// <summary>
         /// See <see cref="StopHoldInteractionOnTrigger_PreFix"><c>StopHoldInteractionOnTrigger_PreFix</c></see>
         /// </summary>

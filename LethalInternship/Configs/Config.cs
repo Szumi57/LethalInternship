@@ -42,6 +42,7 @@ namespace LethalInternship.Configs
         public bool GrabManeaterBaby => grabManeaterBaby.Value;
         public bool GrabWheelbarrow => grabWheelbarrow.Value;
         public bool GrabShoppingCart => grabShoppingCart.Value;
+        public bool GrabKiwiBabyItem => grabKiwiBabyItem.Value;
         public bool TeleportedInternDropItems => teleportedInternDropItems.Value;
         public string VolumeVoicesMultiplierInterns => volumeVoicesMultiplierInterns.Value;
         public int Talkativeness => talkativeness.Value;
@@ -80,6 +81,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] private SyncedEntry<bool> grabManeaterBaby;
         [SyncedEntryField] private SyncedEntry<bool> grabWheelbarrow;
         [SyncedEntryField] private SyncedEntry<bool> grabShoppingCart;
+        [SyncedEntryField] private SyncedEntry<bool> grabKiwiBabyItem;
 
         // Teleporters
         [SyncedEntryField] private SyncedEntry<bool> teleportedInternDropItems;
@@ -203,9 +205,14 @@ namespace LethalInternship.Configs
                                       "Should the intern try to grab the wheelbarrow (mod) ?");
 
             grabShoppingCart = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                      "Grab the shppping cart",
+                                      "Grab the shopping cart",
                                       defaultVal: false,
                                       "Should the intern try to grab the shopping cart (mod) ?");
+
+            grabKiwiBabyItem = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                      "Grab the kiwi/sapsucker egg",
+                                      defaultVal: false,
+                                      "Should the intern try to grab kiwi/sapsucker egg?");
 
             // Teleporters
             teleportedInternDropItems = cfg.BindSyncedEntry(ConfigConst.ConfigSectionTeleporters,

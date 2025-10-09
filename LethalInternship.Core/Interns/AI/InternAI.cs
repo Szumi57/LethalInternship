@@ -1008,7 +1008,7 @@ namespace LethalInternship.Core.Interns.AI
         public float? GetFearRangeForEnemies(EnemyAI enemy)
         {
             //PluginLoggerHook.LogDebug?.Invoke($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
-            switch (enemy.enemyType.enemyName)
+            switch (enemy.enemyType.enemyName) // using enemyName
             {
                 case "Crawler":
                 case "MouthDog":
@@ -1024,6 +1024,7 @@ namespace LethalInternship.Core.Interns.AI
                 case "Clay Surgeon":
                 case "Flowerman":
                 case "Bush Wolf":
+                case "GiantKiwi":
                     return 5f;
 
                 case "Puffer":
@@ -3244,7 +3245,8 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.setPositionOfDeadPlayer = true;
             NpcController.Npc.snapToServerPosition = false;
             NpcController.Npc.causeOfDeath = causeOfDeath;
-            if (spawnBody)
+            if (spawnBody 
+                && NpcController.Npc.deadBody != null)
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
                 ResizeRagdoll(NpcController.Npc.deadBody.transform);

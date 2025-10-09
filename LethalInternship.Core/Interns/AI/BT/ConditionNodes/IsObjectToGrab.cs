@@ -189,6 +189,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return true;
             }
 
+            // Baby kiwi egg
+            if (!PluginRuntimeProvider.Context.Config.GrabKiwiBabyItem
+                && gameObjectToEvaluate.name.Contains("KiwiBabyItem"))
+            {
+                return true;
+            }
+
             return false;
         }
 

@@ -31,6 +31,9 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
         public static readonly MethodInfo IsPlayerInternControlledAndOwnerMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternControlledAndOwner(new PlayerControllerB()));
         public static readonly MethodInfo GetDamageFromSlimeIfInternMethod = SymbolExtensions.GetMethodInfo(() => GetDamageFromSlimeIfIntern(new PlayerControllerB()));
+        public static readonly MethodInfo IsThreatInternMethod = SymbolExtensions.GetMethodInfo(() => IsThreatIntern(new PlayerControllerB()));
+
+        public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");   
 
         public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
         public static readonly MethodInfo SyncLandFromJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncLandFromJump(new ulong(), new bool()));
@@ -180,6 +183,15 @@ namespace LethalInternship.Patches.Utils
         private static int GetDamageFromSlimeIfIntern(PlayerControllerB player)
         {
             return InternManagerProvider.Instance.GetDamageFromSlimeIfIntern(player);
+        }
+        private static bool IsThreatIntern(IVisibleThreat threat)
+        {
+            PlayerControllerB internController = threat.GetThreatTransform().gameObject.GetComponent<PlayerControllerB>();
+            if (internController == null)
+            {
+                return false;
+            }
+            return InternManagerProvider.Instance.IsPlayerIntern(internController);
         }
 
         private static bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)
