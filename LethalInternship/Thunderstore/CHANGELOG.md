@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.21.0 [Alpha] - 2025-10-09
+## 0.21.1 [Alpha] - 2025-??-??
+
+### Fixed
+
+## 0.21.0 [Alpha] - 2025-10-10
 Hi, I decided to bump the number to 0.21 with the new v73 update.</br>
 Little update : v73 update compat, lots of refactoring for the movement and decision making for intern's pathfind.
 
@@ -11,7 +15,7 @@ Little update : v73 update compat, lots of refactoring for the movement and deci
 - Fix ModelReplacementAPI needed to be in the plugins loaded or else, TypeLoadException from Unity
 - Compat with LethalEmotesAPI (causing terminal freeze and game unplayable) fixed by ToastedOven, you can use LethalEmotesAPI versions >= 1.17.1
 
-## 0.20.4 [Alpha] - 2025-09-23
+## 0.20.4 [Alpha] - 2025-09-22
 Sorry, I needed to revamp the way the interns choose their path on the map, they now should pathfind better.</br>
 Not much change for the players, but it took (again) quite some time.
 
@@ -33,7 +37,7 @@ Added the new buttons for later (deactivated).
 ### Fixed
 - Fixed respawn of interns on a new moon, thanks Tails the Fox on Discord and Sky10rd on GitHub (issue [#88](https://github.com/Szumi57/LethalInternship/issues/88)) 
 
-## 0.20.2 [Alpha] - 2025-07-26
+## 0.20.2 [Alpha] - 2025-07-25
 First real update with the UI, it's still quite barebone for now.</br>
 Do not hesitate to report bugs on the github or the discord.
 
