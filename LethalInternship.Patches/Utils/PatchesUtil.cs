@@ -1,10 +1,12 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalInternship.Patches.Utils
@@ -31,7 +33,8 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo DisableOriginalGameDebugLogsMethod = SymbolExtensions.GetMethodInfo(() => DisableOriginalGameDebugLogs());
         public static readonly MethodInfo IsPlayerInternControlledAndOwnerMethod = SymbolExtensions.GetMethodInfo(() => IsPlayerInternControlledAndOwner(new PlayerControllerB()));
         public static readonly MethodInfo GetDamageFromSlimeIfInternMethod = SymbolExtensions.GetMethodInfo(() => GetDamageFromSlimeIfIntern(new PlayerControllerB()));
-        public static readonly MethodInfo IsThreatInternMethod = SymbolExtensions.GetMethodInfo(() => IsThreatIntern(new PlayerControllerB()));
+        public static readonly MethodInfo SyncWatchingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncWatchingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
+        public static readonly MethodInfo SyncAttackingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncAttackingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
 
         public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");   
 
@@ -184,14 +187,43 @@ namespace LethalInternship.Patches.Utils
         {
             return InternManagerProvider.Instance.GetDamageFromSlimeIfIntern(player);
         }
-        private static bool IsThreatIntern(IVisibleThreat threat)
+        private static bool SyncWatchingThreatIfIntern(GiantKiwiAI giantKiwiAI, IVisibleThreat threat)
         {
             PlayerControllerB internController = threat.GetThreatTransform().gameObject.GetComponent<PlayerControllerB>();
             if (internController == null)
             {
                 return false;
             }
-            return InternManagerProvider.Instance.IsPlayerIntern(internController);
+
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)internController.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return false;
+            }
+
+            internAI.SyncWatchingThreatGiantKiwiServerRpc(giantKiwiAI.GetComponent<NetworkObject>());
+
+            return true;
+        }
+        private static bool SyncAttackingThreatIfIntern(GiantKiwiAI giantKiwiAI, IVisibleThreat threat)
+        {
+            PlayerControllerB internController = threat.GetThreatTransform().gameObject.GetComponent<PlayerControllerB>();
+            if (internController == null)
+            {
+                return false;
+            }
+
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)internController.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return false;
+            }
+
+            internAI.SyncAttackingThreatGiantKiwiServerRpc(giantKiwiAI.GetComponent<NetworkObject>());
+
+            return true;
         }
 
         private static bool IsAnInternAiOwnerOfObject(GrabbableObject grabbableObject)

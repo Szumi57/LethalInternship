@@ -79,5 +79,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos);
 
         float GetClosestPlayerDistance();
+
+        // GiantKiwi
+        void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
+        void SyncAttackingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
     }
 }

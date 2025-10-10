@@ -38,11 +38,14 @@ namespace LethalInternship.Patches.EnemiesPatches
 
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
-                    new CodeInstruction(codes[startIndex]), // ldarg.0 NULL
-                    new CodeInstruction(codes[startIndex+2]), // ldfld IVisibleThreat GiantKiwiAI::watchingThreat
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsThreatInternMethod),
+                    new CodeInstruction(codes[startIndex]),              // ldarg.0 NULL [Label76]
+                    new CodeInstruction(codes[startIndex].opcode, null), // ldarg.0 NULL
+                    new CodeInstruction(codes[startIndex+2]),            // ldfld IVisibleThreat GiantKiwiAI::watchingThreat
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.SyncWatchingThreatIfInternMethod),
                     new CodeInstruction(OpCodes.Brtrue, labelToJumpTo),
                 };
+                codes[startIndex].labels.Clear(); // [Label76]
+
                 //-----------------------------
                 codes.InsertRange(startIndex, codesToAdd);
                 startIndex = -1;
@@ -79,11 +82,15 @@ namespace LethalInternship.Patches.EnemiesPatches
 
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
-                    new CodeInstruction(codes[startIndex]), // ldarg.0 NULL
-                    new CodeInstruction(codes[startIndex+2]), // ldfld IVisibleThreat GiantKiwiAI::watchingThreat
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsThreatInternMethod),
+                    new CodeInstruction(codes[startIndex]),              // ldarg.0 NULL [Label12]
+                    new CodeInstruction(codes[startIndex].opcode, null), // ldarg.0 NULL
+                    new CodeInstruction(codes[startIndex+2]),            // ldfld IVisibleThreat GiantKiwiAI::watchingThreat
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.SyncAttackingThreatIfInternMethod),
                     new CodeInstruction(OpCodes.Brtrue, labelToJumpTo),
                 };
+
+                codes[startIndex].labels.Clear();
+
                 //-----------------------------
                 codes.InsertRange(startIndex, codesToAdd);
                 startIndex = -1;

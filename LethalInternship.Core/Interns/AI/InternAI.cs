@@ -3245,19 +3245,22 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.setPositionOfDeadPlayer = true;
             NpcController.Npc.snapToServerPosition = false;
             NpcController.Npc.causeOfDeath = causeOfDeath;
-            if (spawnBody 
-                && NpcController.Npc.deadBody != null)
+            if (spawnBody)
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
-                ResizeRagdoll(NpcController.Npc.deadBody.transform);
-                // Replace body position or else disappear with shotgun or knife (don't know why)
-                NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
-                // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
-                NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
-                InternIdentity.DeadBody = NpcController.Npc.deadBody;
 
-                // Register body for animation culling
-                InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, HasInternModelReplacementAPI());
+                if (NpcController.Npc.deadBody != null)
+                {
+                    ResizeRagdoll(NpcController.Npc.deadBody.transform);
+                    // Replace body position or else disappear with shotgun or knife (don't know why)
+                    NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
+                    // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
+                    NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
+                    InternIdentity.DeadBody = NpcController.Npc.deadBody;
+
+                    // Register body for animation culling
+                    InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, HasInternModelReplacementAPI());
+                }
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -4070,5 +4073,69 @@ namespace LethalInternship.Core.Interns.AI
 
             return GetClosestPlayerDistanceTimed.GetClosestPlayerDistance(this.Npc.transform.position);
         }
+
+        #region GiantKiwi stuff
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            SyncWatchingThreatGiantKiwiClientRpc(giantKiwiNOR);
+        }
+
+        [ClientRpc]
+        private void SyncWatchingThreatGiantKiwiClientRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            giantKiwiNOR.TryGet(out NetworkObject giantKiwiNO);
+            GiantKiwiAI? giantKiwiAI = giantKiwiNO.gameObject.GetComponent<GiantKiwiAI>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncWatchingThreatGiantKiwiClientRpc intern {Npc.playerClientId} giantKiwiNOR -> giantKiwiAI null");
+                return;
+            }
+
+            Type typeGiantKiwiAI = giantKiwiAI.GetType();
+            IVisibleThreat? watchingThreat = this.npcController.Npc.GetComponent<IVisibleThreat>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncWatchingThreatGiantKiwiClientRpc intern {Npc.playerClientId} no IVisibleThreat");
+                return;
+            }
+
+            typeGiantKiwiAI.GetField("watchingThreat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(giantKiwiAI, watchingThreat);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncAttackingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            SyncAttackingThreatGiantKiwiClientRpc(giantKiwiNOR);
+        }
+
+        [ClientRpc]
+        private void SyncAttackingThreatGiantKiwiClientRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            giantKiwiNOR.TryGet(out NetworkObject giantKiwiNO);
+            GiantKiwiAI? giantKiwiAI = giantKiwiNO.gameObject.GetComponent<GiantKiwiAI>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncAttackingThreatGiantKiwiClientRpc intern {Npc.playerClientId} giantKiwiNOR -> giantKiwiAI null");
+                return;
+            }
+
+            Type typeGiantKiwiAI = giantKiwiAI.GetType();
+            IVisibleThreat? attackingThreat = this.npcController.Npc.GetComponent<IVisibleThreat>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncAttackingThreatGiantKiwiClientRpc intern {Npc.playerClientId} no IVisibleThreat");
+                return;
+            }
+
+            typeGiantKiwiAI.GetField("watchingThreat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(giantKiwiAI, attackingThreat);
+            typeGiantKiwiAI.GetField("attackingThreat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(giantKiwiAI, attackingThreat);
+
+            giantKiwiAI.Screech(enraged: true);
+            giantKiwiAI.SwitchToBehaviourStateOnLocalClient(stateIndex: 2);
+        }
+
+        #endregion
     }
 }
