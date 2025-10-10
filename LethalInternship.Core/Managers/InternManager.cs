@@ -1,11 +1,12 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
+using LethalInternship.Core.Interns.AI.Batches;
 using LethalInternship.Core.Interns.AI.Dijkstra;
-using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
 using LethalInternship.Core.Interns.AI.PointsOfInterest;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Events;
@@ -81,6 +82,7 @@ namespace LethalInternship.Core.Managers
         public List<int> HeldInternsLocalPlayer { get => heldInternsLocalPlayer; set => heldInternsLocalPlayer = value; }
         public new bool IsServer => base.IsServer;
         public VehicleController? VehicleController { get => vehicleController; }
+        public List<IBodyReplacementBase> ListBodyReplacementOnDeadBodies { get => listBodyReplacementOnDeadBodies; set => listBodyReplacementOnDeadBodies = value; }
 
         private int allEntitiesCount;
         public bool LandingStatusAllowed;
@@ -94,6 +96,7 @@ namespace LethalInternship.Core.Managers
         public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
         public List<IInternCullingBodyInfo> InternBodiesSpawned = null!;
         public IInternCullingBodyInfo[] OrderedInternBodiesInFOV = new IInternCullingBodyInfo[PluginRuntimeProvider.Context.Config.MaxInternsAvailable * 2];
+        private List<IBodyReplacementBase> listBodyReplacementOnDeadBodies = new List<IBodyReplacementBase>();
 
         public Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners { get => dictEnemyAINoiseListeners; }
         private Dictionary<EnemyAI, INoiseListener> dictEnemyAINoiseListeners = new Dictionary<EnemyAI, INoiseListener>();
@@ -1780,24 +1783,29 @@ namespace LethalInternship.Core.Managers
         #region Graph and path calculation
 
         private TimedGetGraphEntrances getGraphEntrancesTimed = null!;
-        public List<IDJKPoint>? GetGraphEntrances()
+
+        private int nextInstructionGroupId = 1;
+        public int GetNewInstructionGroupId() => nextInstructionGroupId++;
+
+        public GraphController? GetGraphEntrances()
         {
             if (getGraphEntrancesTimed == null)
             {
                 getGraphEntrancesTimed = new TimedGetGraphEntrances();
             }
 
-            return getGraphEntrancesTimed.GetGraphEntrances(this);
+            return getGraphEntrancesTimed.GetGraphEntrances();
         }
 
         private int maxBatchesPerFrame = 1;
         private int maxInstructionsPerFrame = 1;
+        private int currentBatch = -2;
 
-        private Dictionary<int, PathBatchRequest> activeBatches = new Dictionary<int, PathBatchRequest>();
+        private Dictionary<int, BatchRequest> activeBatches = new Dictionary<int, BatchRequest>();
 
-        public void RequestBatch(int idBatch, List<PathInstruction> instructions)
+        public void RequestBatch(int idBatch, List<IInstruction> instructions, Action? onBatchComplete = null)
         {
-            var newBatch = new PathBatchRequest(idBatch, instructions);
+            var newBatch = new BatchRequest(idBatch, instructions, onBatchComplete);
 
             //if (!activeBatches.TryGetValue(idBatch, out var batch))
             //{
@@ -1812,6 +1820,7 @@ namespace LethalInternship.Core.Managers
 
         private void ProcessCalculatePathQueue()
         {
+            currentBatch = -2;
             if (activeBatches.Count == 0) return;
 
             int processedBatches = 0;
@@ -1834,34 +1843,61 @@ namespace LethalInternship.Core.Managers
 
                 // Execute one instruction only
                 var instr = batch.CurrentInstruction;
-                //PluginLoggerHook.LogDebug?.Invoke($"ExecuteInstruction batch {batch.id} i {batch.currentIndex + 1}/{batch.instructions.Count} {(batch.currentIndex + 1 == batch.instructions.Count ? "**" : "")}");
                 ExecuteInstruction(instr);
                 batch.Advance();
 
                 processedInstructions++;
                 processedBatches++;
+                currentBatch = batch.id;
 
                 if (!batch.HasRemaining)
                 {
-                    activeBatches.Remove(batch.id);
+                    batch.onBatchComplete?.Invoke();
+                    CancelBatch(batch.id);
                 }
             }
         }
 
-        private void ExecuteInstruction(PathInstruction instr)
+        public void CancelGroup(int idBatch, int groupId)
         {
-            NavMeshPath navPath = new NavMeshPath();
+            if (activeBatches.TryGetValue(idBatch, out var batch))
+            {
+                batch.CancelInstructionsInGroup(groupId);
 
-            //var timerCalculatePath = new Stopwatch();
-            //timerCalculatePath.Start();
-            NavMesh.CalculatePath(instr.start, instr.target, NavMesh.AllAreas, navPath);
-            //timerCalculatePath.Stop();
-            //PluginLoggerHook.LogDebug?.Invoke($"CalculatePath {instr.startDJKPoint.Id} - {instr.targetDJKPoint.Id}{((navPath.status == NavMeshPathStatus.PathComplete) ? "+" : "")} {timerCalculatePath.Elapsed.TotalMilliseconds}ms | {timerCalculatePath.Elapsed.ToString("mm':'ss':'fffffff")}");
-
-            instr.callback?.Invoke(new PathResponse(instr.start, instr.target, navPath.status, navPath.corners, instr.startDJKPoint, instr.targetDJKPoint));
+                if (!batch.HasRemaining)
+                    activeBatches.Remove(idBatch);
+            }
         }
 
-        private float GetDistanceFromClosestPlayer(PathBatchRequest batch)
+        public void CancelGroupGlobal(int groupId)
+        {
+            var toRemove = new List<int>();
+            foreach (var kvp in activeBatches)
+            {
+                kvp.Value.CancelInstructionsInGroup(groupId);
+                if (!kvp.Value.HasRemaining)
+                    toRemove.Add(kvp.Key);
+            }
+            foreach (var idBatch in toRemove)
+                activeBatches.Remove(idBatch);
+        }
+
+        public void CancelBatch(int idBatch)
+        {
+            activeBatches.Remove(idBatch);
+        }
+
+        public int GetCurrentBatch()
+        {
+            return currentBatch;
+        }
+
+        private void ExecuteInstruction(IInstruction instr)
+        {
+            instr.Execute();
+        }
+
+        private float GetDistanceFromClosestPlayer(BatchRequest batch)
         {
             if (!batch.HasRemaining) return float.MaxValue;
             if (batch.id < 0) return float.MinValue;
@@ -1873,6 +1909,62 @@ namespace LethalInternship.Core.Managers
             }
 
             return internAI.GetClosestPlayerDistance();
+        }
+
+        #endregion
+
+        #region Items global
+
+        private TimedGetGrabbableObjectsList getGrabbableObjectsListTimed = null!;
+
+        /// <summary>
+        /// Dictionnary of the recently dropped object on the ground.
+        /// The intern will not try to grab them for a certain time (<see cref="Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS"><c>Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS</c></see>).
+        /// </summary>
+        public Dictionary<GrabbableObject, float> DictJustDroppedItems = new Dictionary<GrabbableObject, float>();
+
+        public void AddToDictJustDroppedItems(GrabbableObject grabbableObject)
+        {
+            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
+        }
+
+        public bool IsGrabbableObjectJustDropped(GrabbableObject grabbableObject)
+        {
+            if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
+            {
+                if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Trim dictionnary if too large, trim only the dropped item since a long time
+        /// </summary>
+        public void TrimDictJustDroppedItems()
+        {
+            if (DictJustDroppedItems != null && DictJustDroppedItems.Count > 20)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"TrimDictJustDroppedItems Count{DictJustDroppedItems.Count}");
+                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS);
+                foreach (var item in itemsToClean)
+                {
+                    DictJustDroppedItems.Remove(item.Key);
+                }
+            }
+        }
+
+        public List<GameObject> GetGrabbableObjectsList()
+        {
+            if (getGrabbableObjectsListTimed == null)
+            {
+                getGrabbableObjectsListTimed = new TimedGetGrabbableObjectsList();
+            }
+
+            return getGrabbableObjectsListTimed.GetGrabbableObjectsList();
         }
 
         #endregion

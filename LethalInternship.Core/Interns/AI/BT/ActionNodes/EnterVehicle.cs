@@ -42,9 +42,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private Vector3 GetNextRandomInCruiserPos()
         {
-            float x = Random.Range(Const.FIRST_CORNER_INTERN_IN_CRUISER.x, Const.SECOND_CORNER_INTERN_IN_CRUISER.x);
-            float y = Random.Range(Const.FIRST_CORNER_INTERN_IN_CRUISER.y, Const.SECOND_CORNER_INTERN_IN_CRUISER.y);
-            float z = Random.Range(Const.FIRST_CORNER_INTERN_IN_CRUISER.z, Const.SECOND_CORNER_INTERN_IN_CRUISER.z);
+            float x = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.x, Const.SECOND_CORNER_INSIDE_CRUISER.x);
+            float y = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.y, Const.SECOND_CORNER_INSIDE_CRUISER.y);
+            float z = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.z, Const.SECOND_CORNER_INSIDE_CRUISER.z);
 
             return new Vector3(x, y, z);
         }

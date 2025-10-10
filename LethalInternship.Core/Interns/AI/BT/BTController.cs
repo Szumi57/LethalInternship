@@ -2,6 +2,9 @@
 using LethalInternship.Core.Interns.AI.BT.ActionNodes;
 using LethalInternship.Core.Interns.AI.BT.ConditionNodes;
 using LethalInternship.Core.Interns.AI.CoroutineControllers;
+using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -110,11 +113,17 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         private void InitContext(InternAI internAI)
         {
+            DJKPointMapper mapper = new DJKPointMapper();
+            mapper.Register<DefaultInterestPoint>(ip => new DJKStaticPoint(ip.Point));
+            mapper.Register<ShipInterestPoint>(ip => new DJKStaticPoint(ip.Point));
+            mapper.Register<VehicleInterestPoint>(ip => new DJKVehiclePoint(ip.VehicleTransform, "Cruiser"));
+
             BTContext = new BTContext()
             {
                 InternAI = internAI,
 
-                PathController = new Dijkstra.PathController(),
+                PathController = new PathController(),
+                DJKPointMapper = mapper,
 
                 searchForPlayers = this.searchForPlayers,
 
@@ -188,7 +197,6 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Splice(CreateSubTreeExitVehicle())
-                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position if too far")
                         .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
@@ -209,7 +217,6 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Go to position")
                     .Splice(CreateSubTreeExitVehicle())
-                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to position")
                         .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
@@ -230,8 +237,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
                         .Do("inVehicle", t => actions["InVehicle"].Action(BTContext))
                     .End()
-
-                    //.Splice(CreateSubTreeTakeEntrance())
 
                     .Sequence("Go to vehicle")
                         .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
@@ -258,8 +263,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Follow player")
+                        // no use for update last known pos, even with config, it just not work for now
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
-                        .Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
+                        //.Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
                         .Do("SetNextDestTargetLastKnownPosition", t => actions["SetNextDestTargetLastKnownPosition"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")

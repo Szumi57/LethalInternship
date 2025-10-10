@@ -4,7 +4,7 @@
     {
         public bool Condition(BTContext context)
         {
-            return context.InternAI.TargetLastKnownPosition != null;
+            return context.TargetLastKnownPosition != null;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -12,30 +12,50 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class GoToPosition : IBTAction
     {
+        private const float MIN_DISTANCE_HOR = 1f;
+
         public BehaviourTreeStatus Action(BTContext context)
         {
+            InternAI ai = context.InternAI;
+
             // Check if we should take entrance
             DJKEntrancePoint? entrancePoint = context.PathController.GetCurrentPoint() as DJKEntrancePoint;
             if (entrancePoint != null)
             {
                 // Take entrance
-                if (TakeEntrance(context.InternAI, entrancePoint))
+                if (TakeEntrance(ai, entrancePoint))
                 {
                     context.PathController.SetToNextPoint();
                 }
             }
 
-            //PluginLoggerHook.LogDebug?.Invoke($"\"{context.InternAI.Npc.playerUsername}\" {context.InternAI.Npc.playerClientId} => {context.PathController.GetPathString()}");
+            Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
+            //PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
+
+            // todo remove
+            //DJKVehiclePoint? vPoint = context.PathController.GetCurrentPoint() as DJKVehiclePoint;
+            //if (vPoint != null)
+            //{
+            //    var a = vPoint.GetAllPoints();
+            //    foreach(var p in a )
+            //    {
+            //        DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), p, p + new Vector3(0, 5f, 0), Color.magenta);
+            //    }
+            //}
 
             // Go to position
-            MoveToPosition(context.InternAI, context.PathController.GetCurrentPoint());
+            MoveToPosition(ai, currentPoint);
+
+            // Check for to distance to current point
+            if (CloseEnoughOfCurrentPoint(ai, currentPoint))
+            {
+                context.PathController.SetToNextPoint();
+            }
             return BehaviourTreeStatus.Success;
         }
 
-        private void MoveToPosition(InternAI ai, IDJKPoint positionPoint)
+        private void MoveToPosition(InternAI ai, Vector3 currentPoint)
         {
-            Vector3 currentPoint = positionPoint.GetClosestPointFrom(ai.transform.position);
-
             if (ai.CanRun)
             {
                 float sqrHorizontalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
@@ -66,13 +86,26 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private bool TakeEntrance(InternAI ai, DJKEntrancePoint entrance)
         {
-            Vector3 entrancePoint = entrance.GetClosestPointFrom(ai.transform.position);
+            Vector3 entrancePoint = entrance.GetClosestPointTo(ai.transform.position);
 
             // Close enough to entrance
             if ((ai.transform.position - entrancePoint).sqrMagnitude < Const.DISTANCE_TO_ENTRANCE * Const.DISTANCE_TO_ENTRANCE)
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"- TakeEntrance entrancePoint {entrancePoint}, exit {entrance.GetExitPointFrom(ai.transform.position)}");
                 ai.SyncTeleportIntern(entrance.GetExitPointFrom(ai.transform.position), !ai.isOutside, true);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool CloseEnoughOfCurrentPoint(InternAI ai, Vector3 currentPoint)
+        {
+            float sqrHorizontalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            float sqrVerticalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+            if (sqrHorizontalDistance < MIN_DISTANCE_HOR * MIN_DISTANCE_HOR
+                && sqrVerticalDistance < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
+            {
                 return true;
             }
 

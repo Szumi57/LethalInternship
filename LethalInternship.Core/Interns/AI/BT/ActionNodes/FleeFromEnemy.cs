@@ -18,26 +18,27 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             InternAI ai = context.InternAI;
             CoroutineController panikCoroutine = context.PanikCoroutine;
 
-            if (ai.CurrentEnemy == null)
+            if (context.CurrentEnemy == null)
             {
-                PluginLoggerHook.LogError?.Invoke("CurrentEnemy is null");
+                PluginLoggerHook.LogError?.Invoke("FleeFromEnemy Action, CurrentEnemy is null");
                 return BehaviourTreeStatus.Failure;
             }
 
-            float? fearRange = ai.GetFearRangeForEnemies(ai.CurrentEnemy);
+            float? fearRange = ai.GetFearRangeForEnemies(context.CurrentEnemy);
             if (!fearRange.HasValue)
             {
+                PluginLoggerHook.LogDebug?.Invoke($"FleeFromEnemy fearRange is null, ignoring enemy \"{context.CurrentEnemy.enemyType.enemyName}\"");
                 panikCoroutine.StopCoroutine();
-                PluginLoggerHook.LogError?.Invoke("fearRange is null");
-                return BehaviourTreeStatus.Failure;
+                context.CurrentEnemy = null;
+                return BehaviourTreeStatus.Success;
             }
 
             // Keep coroutine
             panikCoroutine.KeepAlive();
 
             // Check to see if the intern can see the enemy, or enemy has line of sight to intern
-            float sqrDistanceToEnemy = (ai.NpcController.Npc.transform.position - ai.CurrentEnemy.transform.position).sqrMagnitude;
-            if (Physics.Linecast(ai.CurrentEnemy.transform.position, ai.NpcController.Npc.gameplayCamera.transform.position,
+            float sqrDistanceToEnemy = (ai.NpcController.Npc.transform.position - context.CurrentEnemy.transform.position).sqrMagnitude;
+            if (Physics.Linecast(context.CurrentEnemy.transform.position, ai.NpcController.Npc.gameplayCamera.transform.position,
                                  StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore))
             {
                 // If line of sight broke
@@ -45,7 +46,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
                 {
                     panikCoroutine.StopCoroutine();
-                    ai.CurrentEnemy = null;
+                    context.CurrentEnemy = null;
                     return BehaviourTreeStatus.Success;
                 }
             }
@@ -54,7 +55,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Far enough from enemy
             if (sqrDistanceToEnemy > fearRange * fearRange)
             {
-                ai.CurrentEnemy = null;
+                context.CurrentEnemy = null;
                 panikCoroutine.StopCoroutine();
                 return BehaviourTreeStatus.Success;
             }
@@ -63,7 +64,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // If enemy still too close, and destination reached, restart the panic routine
             if ((ai.destination - ai.NpcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
             {
-                panikCoroutine.RestartCoroutine(ChooseFleeingNodeFromPosition(ai, ai.CurrentEnemy.transform, fearRange.Value));
+                panikCoroutine.RestartCoroutine(ChooseFleeingNodeFromPosition(ai, context.CurrentEnemy.transform, fearRange.Value));
             }
 
             // Sprint of course

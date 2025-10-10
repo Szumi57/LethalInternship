@@ -22,7 +22,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
         {
             get
             {
-                foreach(IInterestPoint interestPoint in GetListInterestPoints())
+                foreach (IInterestPoint interestPoint in GetListInterestPoints())
                 {
                     if (interestPoint.IsInvalid)
                     {
@@ -86,22 +86,28 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
             return null;
         }
 
-        public Vector3 GetPoint()
+        public IInterestPoint? GetInterestPoint()
         {
             foreach (var type in priorityOrder)
             {
                 if (interestPoints.TryGetValue(type, out var interestPoint))
                 {
-                    return interestPoint.Point;
+                    return interestPoint;
                 }
             }
 
             foreach (IInterestPoint interestPoint in interestPoints.Values)
             {
-                return interestPoint.Point;
+                return interestPoint;
             }
 
-            return new Vector3();
+            return null;
+        }
+
+        public Vector3 GetPoint()
+        {
+            IInterestPoint? interestPoint = GetInterestPoint();
+            return interestPoint == null ? new Vector3() : interestPoint.Point;
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
@@ -10,7 +12,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public List<IDJKPoint> DJKPointsPath { get; set; }
         public int IndexCurrentPoint { get; set; }
 
-        private IDJKPoint sourcePoint;
         private IDJKPoint destinationPoint;
 
         public PathController()
@@ -19,9 +20,15 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             IndexCurrentPoint = 0;
         }
 
-        public IDJKPoint GetCurrentPoint(bool getRealCurrentPoint = false)
+        public void ResetPathAndIndex()
         {
-            if (DJKPointsPath.Count == 0)
+            IndexCurrentPoint = 0;
+            DJKPointsPath.Clear();
+        }
+
+        public IDJKPoint GetCurrentPoint()
+        {
+            if (DJKPointsPath == null || DJKPointsPath.Count == 0)
             {
                 return destinationPoint;
             }
@@ -34,16 +41,35 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return DJKPointsPath[IndexCurrentPoint];
         }
 
-        public Vector3 GetCurrentPoint(Vector3 currentPos, bool getRealCurrentPoint = false)
+        public Vector3 GetCurrentPointPos(Vector3 actorPos)
         {
-            return GetCurrentPoint(getRealCurrentPoint).GetClosestPointFrom(currentPos);
+            if (DJKPointsPath == null || DJKPointsPath.Count == 0)
+            {
+                return destinationPoint.GetClosestPointTo(actorPos);
+            }
+
+            if (DJKPointsPath.Count == 1)
+            {
+                return DJKPointsPath[0].GetClosestPointTo(actorPos);
+            }
+
+            if (IndexCurrentPoint == 0)
+            {
+                return DJKPointsPath[0].GetClosestPointTo(actorPos);
+            }
+            else
+            {
+                Vector3 currentPointPos = DJKPointsPath[IndexCurrentPoint - 1].GetNeighborPos(DJKPointsPath[IndexCurrentPoint].Id);
+                Vector3 trueCurrentPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(actorPos);
+                if ((trueCurrentPointPos - currentPointPos).sqrMagnitude > 0.5f * 0.5f)
+                {
+                    return trueCurrentPointPos;
+                }
+
+                return currentPointPos;
+            }
         }
 
-        public IDJKPoint GetSourcePoint()
-        {
-            return sourcePoint;
-
-        }
         public IDJKPoint GetDestination()
         {
             return destinationPoint;
@@ -58,43 +84,53 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 return;
             }
 
-            DJKPointsPath = dJKPoints;
+            DJKPointsPath = dJKPoints.Select(p => (IDJKPoint)p.Clone()).ToList();
             if (DJKPointsPath.Count > 1)
             {
                 IndexCurrentPoint = 1;
             }
         }
 
-        public void SetNewDestination(Vector3 dest)
-        {
-            SetNewDestination(new DJKPositionPoint(0, dest));
-        }
-
         public void SetNewDestination(IDJKPoint dest)
         {
             destinationPoint = dest;
-            if (DJKPointsPath.Count > 0)
+
+            if (DJKPointsPath.Count <= 0)
             {
-                destinationPoint.Id = DJKPointsPath[DJKPointsPath.Count - 1].Id;
-                DJKPointsPath[DJKPointsPath.Count - 1] = destinationPoint;
+                return;
+            }
+
+            if (dest.GetType() != DJKPointsPath[DJKPointsPath.Count - 1].GetType())
+            {
+                ResetPathAndIndex();
             }
         }
 
-        public void SetCurrentPoint(Vector3 pos)
+        public void SetCurrentPoint(IDJKPoint newCurrentPoint)
         {
             if (DJKPointsPath == null || DJKPointsPath.Count == 0)
             {
-                DJKPointsPath = new List<IDJKPoint>() { new DJKPositionPoint(0, pos) };
+                DJKPointsPath = new List<IDJKPoint>() { newCurrentPoint };
                 IndexCurrentPoint = 0;
                 return;
             }
 
-            DJKPointsPath[IndexCurrentPoint] = new DJKPositionPoint(DJKPointsPath[IndexCurrentPoint].Id, pos);
+            newCurrentPoint.Id = DJKPointsPath[IndexCurrentPoint].Id;
+            newCurrentPoint.SetNeighbors(DJKPointsPath[IndexCurrentPoint].Neighbors
+                                                .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
+                                                .ToList());
+            DJKPointsPath[IndexCurrentPoint] = newCurrentPoint;
         }
 
         public void SetToNextPoint()
         {
-            IndexCurrentPoint = IndexCurrentPoint + 1 >= DJKPointsPath.Count ? IndexCurrentPoint : IndexCurrentPoint + 1;
+            if (IndexCurrentPoint == DJKPointsPath.Count - 1)
+            {
+                ResetPathAndIndex();
+                return;
+            }
+
+            IndexCurrentPoint = IndexCurrentPoint + 1;
         }
 
         public void SetNextPointToDestination()
@@ -104,10 +140,15 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public bool IsCurrentPointDestination()
         {
-            return IndexCurrentPoint == DJKPointsPath.Count - 1;
+            return IndexCurrentPoint == DJKPointsPath.Count - 1 && GetCurrentPoint() == destinationPoint;
         }
 
-        public string GetPathString()
+        public bool IsPathNotValid()
+        {
+            return DJKPointsPath == null || DJKPointsPath.Count < 2;
+        }
+
+        public string GetFullPathString()
         {
             string pathString = $"Path = ";
             if (DJKPointsPath == null)
@@ -116,7 +157,38 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
             else if (DJKPointsPath.Count == 0)
             {
-                return string.Concat(pathString, $" empty, dest {destinationPoint.Id}");
+                return string.Concat(pathString, $" empty, dest {destinationPoint}");
+            }
+            else
+            {
+                pathString = string.Empty;
+                for (int i = 0; i < DJKPointsPath.Count; i++)
+                {
+                    IDJKPoint point = DJKPointsPath[i];
+                    if (i < DJKPointsPath.Count - 1)
+                    {
+                        pathString += $"{point.Id} => {point.GetNeighborPos(DJKPointsPath[i + 1].Id)}";
+                    }
+                    else
+                    {
+                        pathString += $"{point.Id}";
+                    }
+                }
+
+                return string.Concat($"Path = ", pathString);
+            }
+        }
+
+        public override string ToString()
+        {
+            string pathString = $"Path = ";
+            if (DJKPointsPath == null)
+            {
+                return string.Concat(pathString, " null");
+            }
+            else if (DJKPointsPath.Count == 0)
+            {
+                return string.Concat(pathString, $" empty, dest {destinationPoint}");
             }
             else
             {
@@ -131,7 +203,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     {
                         foreach (var n in point.Neighbors)
                         {
-                            if (n.neighbor.Id == DJKPointsPath[i + 1].Id)
+                            if (n.idNeighbor == DJKPointsPath[i + 1].Id)
                             {
                                 dist += (int)Mathf.Sqrt(n.weight);
                                 break;
@@ -150,23 +222,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
 
                 return string.Concat($"Path ({dist}m) = ", pathString);
-            }
-        }
-
-        public string GetGraphString(List<IDJKPoint> graph)
-        {
-            string pathString = $"Graph({(graph == null ? 0 : graph.Count)})=";
-            if (graph == null)
-            {
-                return string.Concat(pathString, " null");
-            }
-            else if (graph.Count == 0)
-            {
-                return string.Concat(pathString, " empty");
-            }
-            else
-            {
-                return string.Concat(pathString, string.Join("\r\n                                                               ", graph));
             }
         }
     }

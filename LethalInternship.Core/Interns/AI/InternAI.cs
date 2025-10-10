@@ -3,10 +3,9 @@ using LethalInternship.Core.Interns.AI.BT;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
-using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -56,29 +55,18 @@ namespace LethalInternship.Core.Interns.AI
         public bool IsEnemyDead => base.isEnemyDead;
         public new bool IsSpawned => base.IsSpawned;
         public bool AnimationCoroutineRagdollingRunning => animationCoroutineRagdollingRunning;
-        public List<Component> ListModelReplacement { get => listModelReplacement; set => listModelReplacement = value; }
+        public List<IBodyReplacementBase> ListModelReplacement { get => listModelReplacement; set => listModelReplacement = value; }
         public GrabbableObject? HeldItem { get => heldItem; set => heldItem = value; }
 
         private INpcController npcController = null!;
         private IInternIdentity internIdentity = null!;
         private IRagdollInternBody ragdollInternBody = null!;
 
-        /// <summary>
-        /// Dictionnary of the recently dropped object on the ground.
-        /// The intern will not try to grab them for a certain time (<see cref="Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS"><c>Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS</c></see>).
-        /// </summary>
-        public static Dictionary<GrabbableObject, float> DictJustDroppedItems = new Dictionary<GrabbableObject, float>();
-
         public BTController BTController = null!;
 
-        public EnumCommandTypes CurrentCommand;
-        public EnemyAI? CurrentEnemy;
-        public GrabbableObject? TargetItem;
-        public Vector3? TargetLastKnownPosition;
-        public EntranceTeleport? ClosestEntrance;
-        public bool CanRun = true; // const for now
-
         public IPointOfInterest? PointOfInterest = null!;
+        public EnumCommandTypes CurrentCommand;
+        public bool CanRun = true; // const for now
 
         public AudioSource InternVoice = null!;
         /// <summary>
@@ -91,7 +79,7 @@ namespace LethalInternship.Core.Interns.AI
         public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
         public float TimeSinceTeleporting = 0f;
 
-        private List<Component> listModelReplacement = null!;
+        private List<IBodyReplacementBase> listModelReplacement = null!;
         public EntranceTeleport[] EntrancesTeleportArray = null!;
 
         public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
@@ -101,7 +89,6 @@ namespace LethalInternship.Core.Interns.AI
         public LineRendererUtil LineRendererUtil = null!;
 
         private EnumStateControllerMovement StateControllerMovement;
-        private InteractTrigger[] laddersInteractTrigger = null!;
         private DoorLock[] doorLocksArray = null!;
         private Dictionary<string, Component> dictComponentByCollider = null!;
 
@@ -119,12 +106,6 @@ namespace LethalInternship.Core.Interns.AI
         private void Awake()
         {
             // Behaviour states
-            enemyBehaviourStates = new EnemyBehaviourState[Enum.GetNames(typeof(EnumAIStates)).Length];
-            int index = 0;
-            foreach (var state in (EnumAIStates[])Enum.GetValues(typeof(EnumAIStates)))
-            {
-                enemyBehaviourStates[index++] = new EnemyBehaviourState() { name = state.ToString() };
-            }
             currentBehaviourStateIndex = -1;
         }
 
@@ -193,7 +174,7 @@ namespace LethalInternship.Core.Interns.AI
             InitImportantColliders();
 
             // Model replacements
-            listModelReplacement = new List<Component>();
+            listModelReplacement = new List<IBodyReplacementBase>();
 
             // Grabbableobject
             InternManager.Instance.RegisterItems();
@@ -441,31 +422,42 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            if (ShouldDoAIInterval())
+            {
+                DoAIInterval();
+            }
+        }
+
+        private bool ShouldDoAIInterval()
+        {
             // Update interval timer for AI calculation
             if (updateDestinationIntervalInternAI >= 0f)
             {
                 updateDestinationIntervalInternAI -= Time.deltaTime;
+                return false;
             }
-            else
-            {
-                SetAgent(enabled: true);
 
-                // Do the actual AI calculation
-                DoAIInterval();
-                updateDestinationIntervalInternAI = AIIntervalTime;
+            if (InternManager.Instance.GetCurrentBatch() == (int)Npc.playerClientId)
+            {
+                //PluginLoggerHook.LogDebug?.Invoke($"Current batch for intern ! id {Npc.playerClientId}");
+                return false;
             }
+
+            // Reset time
+            updateDestinationIntervalInternAI = AIIntervalTime;
+            return true;
         }
 
         /// <summary>
         /// Where the AI begin its calculations.
         /// </summary>
         /// <remarks>
-        /// For the behaviour of the AI, we use a State pattern,
-        /// with the class <see cref="AIState"><c>AIState</c></see> 
-        /// that we instanciate with one of the behaviour corresponding to <see cref="EnumAIStates"><c>EnumAIStates</c></see>.
+        /// For the behaviour of the AI, we use a behaviour tree
         /// </remarks>
         public override void DoAIInterval()
         {
+            SetAgent(enabled: true);
+
             if (isEnemyDead
                 || NpcController.Npc.isPlayerDead
                 || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
@@ -511,6 +503,9 @@ namespace LethalInternship.Core.Interns.AI
                 PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
             }
 
+            // AI batch
+            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+
             // Voice
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
         }
@@ -520,6 +515,9 @@ namespace LethalInternship.Core.Interns.AI
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
+
+            // AI batch
+            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
 
             // Voice
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
@@ -1010,7 +1008,7 @@ namespace LethalInternship.Core.Interns.AI
         public float? GetFearRangeForEnemies(EnemyAI enemy)
         {
             //PluginLoggerHook.LogDebug?.Invoke($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
-            switch (enemy.enemyType.enemyName)
+            switch (enemy.enemyType.enemyName) // using enemyName
             {
                 case "Crawler":
                 case "MouthDog":
@@ -1026,6 +1024,7 @@ namespace LethalInternship.Core.Interns.AI
                 case "Clay Surgeon":
                 case "Flowerman":
                 case "Bush Wolf":
+                case "GiantKiwi":
                     return 5f;
 
                 case "Puffer":
@@ -1311,122 +1310,6 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         /// <summary>
-        /// Check all object array <c>HoarderBugAI.grabbableObjectsInMap</c>, 
-        /// if intern is close and can see an item to grab.
-        /// </summary>
-        /// <returns><c>GrabbableObject</c> if intern sees an item he can grab, else null.</returns>
-        public GrabbableObject? LookingForObjectToGrab()
-        {
-            for (int i = 0; i < HoarderBugAI.grabbableObjectsInMap.Count; i++)
-            {
-                GameObject gameObject = HoarderBugAI.grabbableObjectsInMap[i];
-                if (gameObject == null)
-                {
-                    HoarderBugAI.grabbableObjectsInMap.TrimExcess();
-                    continue;
-                }
-
-                // Object not outside when ai inside and vice versa
-                Vector3 gameObjectPosition = gameObject.transform.position;
-                if (isOutside && gameObjectPosition.y < -100f)
-                {
-                    continue;
-                }
-                else if (!isOutside && gameObjectPosition.y > -80f)
-                {
-                    continue;
-                }
-
-                // Object in range ?
-                float sqrDistanceEyeGameObject = (gameObjectPosition - eye.position).sqrMagnitude;
-                if (sqrDistanceEyeGameObject > Const.INTERN_OBJECT_RANGE * Const.INTERN_OBJECT_RANGE)
-                {
-                    continue;
-                }
-
-                // Black listed ? 
-                if (IsGrabbableObjectBlackListed(gameObject))
-                {
-                    continue;
-                }
-
-                // Get grabbable object infos
-                GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
-                if (grabbableObject == null)
-                {
-                    continue;
-                }
-
-                // Object on ship
-                if (grabbableObject.isInElevator
-                    || grabbableObject.isInShipRoom)
-                {
-                    continue;
-                }
-
-                // Object in cruiser vehicle
-                if (grabbableObject.transform.parent != null
-                    && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
-                {
-                    continue;
-                }
-
-                // Object in a container mod of some sort ?
-                if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
-                {
-                    if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
-                    {
-                        continue;
-                    }
-                }
-
-                // Is a pickmin (LethalMin mod) holding the object ?
-                if (PluginRuntimeProvider.Context.IsModLethalMinLoaded)
-                {
-                    if (LethalMinHook.IsGrabbableObjectHeldByPikminMod?.Invoke(grabbableObject) ?? false)
-                    {
-                        continue;
-                    }
-                }
-
-                // Grabbable object ?
-                if (!IsGrabbableObjectGrabbable(grabbableObject))
-                {
-                    continue;
-                }
-
-                // Object close to awareness distance ?
-                if (sqrDistanceEyeGameObject < Const.INTERN_OBJECT_AWARNESS * Const.INTERN_OBJECT_AWARNESS)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"awareness {grabbableObject.name}");
-                }
-                // Object visible ?
-                else if (!Physics.Linecast(eye.position, gameObjectPosition, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
-                {
-                    Vector3 to = gameObjectPosition - eye.position;
-                    if (Vector3.Angle(eye.forward, to) < Const.INTERN_FOV)
-                    {
-                        // Object in FOV
-                        PluginLoggerHook.LogDebug?.Invoke($"LOS {grabbableObject.name}");
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Object not in line of sight
-                    continue;
-                }
-
-                return grabbableObject;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Check all conditions for deciding if an item is grabbable or not.
         /// </summary>
         /// <param name="grabbableObject">Item to check</param>
@@ -1456,12 +1339,9 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             // Item just dropped, should wait a bit before grab it again
-            if (DictJustDroppedItems.TryGetValue(grabbableObject, out float justDroppedItemTime))
+            if (InternManager.Instance.IsGrabbableObjectJustDropped(grabbableObject))
             {
-                if (Time.realtimeSinceStartup - justDroppedItemTime < Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
-                {
-                    return false;
-                }
+                return false;
             }
 
             // Is item too close to entrance (with config option enabled)
@@ -1477,15 +1357,15 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             // Trim dictionnary if too large
-            TrimDictJustDroppedItems();
+            InternManager.Instance.TrimDictJustDroppedItems();
 
             // Is the item reachable with the agent pathfind ? (only owner knows and calculate) real position of ai intern)
-            if (IsOwner
-                && PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"object {grabbableObject.name} pathfind is not reachable");
-                return false;
-            }
+            //if (IsOwner
+            //    && PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke($"object {grabbableObject.name} pathfind is not reachable");
+            //    return false;
+            //}
             //NavMesh.CalculatePath(this.transform.position, grabbableObject.transform.position, NavMesh.AllAreas, this.path1);
             //if (this.path1.status == NavMeshPathStatus.PathPartial)
             //{
@@ -1493,22 +1373,6 @@ namespace LethalInternship.Core.Interns.AI
             //}
 
             return true;
-        }
-
-        /// <summary>
-        /// Trim dictionnary if too large, trim only the dropped item since a long time
-        /// </summary>
-        private static void TrimDictJustDroppedItems()
-        {
-            if (DictJustDroppedItems != null && DictJustDroppedItems.Count > 20)
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"TrimDictJustDroppedItems Count{DictJustDroppedItems.Count}");
-                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS);
-                foreach (var item in itemsToClean)
-                {
-                    DictJustDroppedItems.Remove(item.Key);
-                }
-            }
         }
 
         public void SetInternInElevator()
@@ -1558,48 +1422,6 @@ namespace LethalInternship.Core.Interns.AI
             {
                 NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItem);
             }
-        }
-
-        private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
-        {
-            // Bee nest
-            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
-                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
-            {
-                return true;
-            }
-
-            // Dead bodies
-            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
-                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
-                && gameObjectToEvaluate.tag == "PhysicsProp"
-                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
-            {
-                return true;
-            }
-
-            // Maneater
-            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
-                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
-            {
-                return true;
-            }
-
-            // Wheelbarrow
-            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
-                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
-            {
-                return true;
-            }
-
-            // ShoppingCart
-            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
-                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private void InitImportantColliders()
@@ -2812,7 +2634,7 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, true);
             NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
-            DictJustDroppedItems[grabbableObject] = Time.realtimeSinceStartup;
+            InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
             HeldItem = null;
             NpcController.Npc.isHoldingObject = false;
             NpcController.Npc.currentlyHeldObjectServer = null;
@@ -3426,15 +3248,19 @@ namespace LethalInternship.Core.Interns.AI
             if (spawnBody)
             {
                 NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
-                ResizeRagdoll(NpcController.Npc.deadBody.transform);
-                // Replace body position or else disappear with shotgun or knife (don't know why)
-                NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
-                // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
-                NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
-                InternIdentity.DeadBody = NpcController.Npc.deadBody;
 
-                // Register body for animation culling
-                InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, HasInternModelReplacementAPI());
+                if (NpcController.Npc.deadBody != null)
+                {
+                    ResizeRagdoll(NpcController.Npc.deadBody.transform);
+                    // Replace body position or else disappear with shotgun or knife (don't know why)
+                    NpcController.Npc.deadBody.transform.position = NpcController.Npc.transform.position + Vector3.up + positionOffset;
+                    // Need to be set to true (don't know why) (so many mysteries unsolved tonight)
+                    NpcController.Npc.deadBody.canBeGrabbedBackByPlayers = true;
+                    InternIdentity.DeadBody = NpcController.Npc.deadBody;
+
+                    // Register body for animation culling
+                    InternManager.Instance.RegisterInternBodyForAnimationCulling(NpcController.Npc.deadBody, HasInternModelReplacementAPI());
+                }
             }
             NpcController.Npc.physicsParent = null;
             NpcController.Npc.overridePhysicsParent = null;
@@ -4033,6 +3859,7 @@ namespace LethalInternship.Core.Interns.AI
         public void StopSinkingState()
         {
             NpcController.Npc.isSinking = false;
+            NpcController.Npc.statusEffectAudio.volume = 0f;
             NpcController.Npc.statusEffectAudio.Stop();
             NpcController.Npc.voiceMuffledByEnemy = false;
             NpcController.Npc.sourcesCausingSinking = 0;
@@ -4246,5 +4073,69 @@ namespace LethalInternship.Core.Interns.AI
 
             return GetClosestPlayerDistanceTimed.GetClosestPlayerDistance(this.Npc.transform.position);
         }
+
+        #region GiantKiwi stuff
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            SyncWatchingThreatGiantKiwiClientRpc(giantKiwiNOR);
+        }
+
+        [ClientRpc]
+        private void SyncWatchingThreatGiantKiwiClientRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            giantKiwiNOR.TryGet(out NetworkObject giantKiwiNO);
+            GiantKiwiAI? giantKiwiAI = giantKiwiNO.gameObject.GetComponent<GiantKiwiAI>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncWatchingThreatGiantKiwiClientRpc intern {Npc.playerClientId} giantKiwiNOR -> giantKiwiAI null");
+                return;
+            }
+
+            Type typeGiantKiwiAI = giantKiwiAI.GetType();
+            IVisibleThreat? watchingThreat = this.npcController.Npc.GetComponent<IVisibleThreat>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncWatchingThreatGiantKiwiClientRpc intern {Npc.playerClientId} no IVisibleThreat");
+                return;
+            }
+
+            typeGiantKiwiAI.GetField("watchingThreat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(giantKiwiAI, watchingThreat);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncAttackingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            SyncAttackingThreatGiantKiwiClientRpc(giantKiwiNOR);
+        }
+
+        [ClientRpc]
+        private void SyncAttackingThreatGiantKiwiClientRpc(NetworkObjectReference giantKiwiNOR)
+        {
+            giantKiwiNOR.TryGet(out NetworkObject giantKiwiNO);
+            GiantKiwiAI? giantKiwiAI = giantKiwiNO.gameObject.GetComponent<GiantKiwiAI>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncAttackingThreatGiantKiwiClientRpc intern {Npc.playerClientId} giantKiwiNOR -> giantKiwiAI null");
+                return;
+            }
+
+            Type typeGiantKiwiAI = giantKiwiAI.GetType();
+            IVisibleThreat? attackingThreat = this.npcController.Npc.GetComponent<IVisibleThreat>();
+            if (giantKiwiAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncAttackingThreatGiantKiwiClientRpc intern {Npc.playerClientId} no IVisibleThreat");
+                return;
+            }
+
+            typeGiantKiwiAI.GetField("watchingThreat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(giantKiwiAI, attackingThreat);
+            typeGiantKiwiAI.GetField("attackingThreat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(giantKiwiAI, attackingThreat);
+
+            giantKiwiAI.Screech(enraged: true);
+            giantKiwiAI.SwitchToBehaviourStateOnLocalClient(stateIndex: 2);
+        }
+
+        #endregion
     }
 }

@@ -1,11 +1,10 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using ModelReplacement;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
@@ -38,18 +37,18 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
         public static void RemoveInternModelReplacement(IInternAI internAI, bool forceRemove = false)
         {
-            BodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.Select(x => (BodyReplacementBase)x).ToArray();
+            IBodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.ToArray();
             //PluginLoggerHook.LogDebug?.Invoke($"RemovePlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
-            foreach (BodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
+            foreach (IBodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
             {
-                if (!forceRemove && BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
+                if (!forceRemove && InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
                 {
                     continue;
                 }
 
                 internAI.ListModelReplacement.Remove(bodyReplacementBase);
                 bodyReplacementBase.IsActive = false;
-                UnityEngine.Object.Destroy(bodyReplacementBase);
+                UnityEngine.Object.Destroy((Object)bodyReplacementBase.BodyReplacementBase);
             }
         }
 
@@ -147,24 +146,24 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
         public static void CleanListBodyReplacementOnDeadBodies()
         {
-            for (int i = 0; i < BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Count; i++)
+            for (int i = 0; i < InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Count; i++)
             {
-                var bodyReplacementBase = BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies[i];
+                IBodyReplacementBase bodyReplacementBase = InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies[i];
                 if (bodyReplacementBase == null
-                    || bodyReplacementBase.deadBody == null)
+                    || bodyReplacementBase.DeadBody == null)
                 {
                     continue;
                 }
 
-                if (!StartOfRound.Instance.shipBounds.bounds.Contains(bodyReplacementBase.deadBody.transform.position))
+                if (!StartOfRound.Instance.shipBounds.bounds.Contains(bodyReplacementBase.DeadBody.transform.position))
                 {
                     bodyReplacementBase.IsActive = false;
-                    UnityEngine.Object.Destroy(bodyReplacementBase);
-                    BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies[i] = null!;
+                    UnityEngine.Object.Destroy((Object)bodyReplacementBase.BodyReplacementBase);
+                    InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies[i] = null!;
                 }
             }
-            BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies = BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Where(x => x != null
-                                                                                                                                        && x.deadBody != null).ToList();
+            InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies = InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Where(x => x != null
+                                                                                                                                                    && x.DeadBody != null).ToList();
         }
     }
 }

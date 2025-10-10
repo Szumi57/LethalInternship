@@ -3,7 +3,6 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using ModelReplacement;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -12,8 +11,6 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
     [HarmonyPatch(typeof(BodyReplacementBase))]
     public class BodyReplacementBasePatch
     {
-        public static List<BodyReplacementBase> ListBodyReplacementOnDeadBodies = new List<BodyReplacementBase>();
-
         [HarmonyPatch("LateUpdate")]
         [HarmonyPrefix]
         static bool LateUpdate_Prefix(BodyReplacementBase __instance, ref GameObject ___replacementDeadBody)
@@ -44,17 +41,18 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 return false;
             }
 
+            Component instanceComponent = (Component)__instance; // Dodge the BodyReplacementBase compiler link with ListBodyReplacementOnDeadBodies
             if (__instance.controller.deadBody != null
-                && !ListBodyReplacementOnDeadBodies.Contains(__instance))
+                && !InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Any(x => x.BodyReplacementBase == instanceComponent))
             {
-                ListBodyReplacementOnDeadBodies.Add(__instance);
+                InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Add(new BodyReplacementAdapter(instanceComponent));
                 __instance.viewState.ReportBodyReplacementRemoval();
                 __instance.cosmeticAvatar = __instance.ragdollAvatar;
                 CreateAndParentRagdoll_ReversePatch(__instance, __instance.controller.deadBody);
                 internAI.InternIdentity.BodyReplacementBase = __instance;
             }
 
-            if (ListBodyReplacementOnDeadBodies.Contains(__instance))
+            if (InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Any(x => x.BodyReplacementBase == instanceComponent))
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"{internAI.NpcController.Npc.playerUsername} {__instance.GetInstanceID()} only ragdoll update, {__instance.controller.deadBody}");
                 UpdateModelReplacement(__instance);

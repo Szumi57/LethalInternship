@@ -2292,6 +2292,7 @@ namespace LethalInternship.Core.Interns
                 drowningTimer -= Time.deltaTime / 10f;
                 if (drowningTimer < 0f)
                 {
+                    setFaceUnderwater = false;
                     drowningTimer = 1f;
                     PluginLoggerHook.LogDebug?.Invoke($"SyncKillIntern from drowning for LOCAL client #{Npc.NetworkManager.LocalClientId}, intern object: Intern #{Npc.playerClientId}");
                     Npc.KillPlayer(Vector3.zero, spawnBody: true, CauseOfDeath.Drowning, 0, default);
@@ -2341,7 +2342,11 @@ namespace LethalInternship.Core.Interns
         private Vector3 GetBillBoardPositionModelReplacementAPI(Vector3 lastPosition)
         {
             Vector3? billBoardPosition = null;
-            billBoardPosition = ModelReplacementAPIHook.GetBillBoardPositionModelReplacementAPI?.Invoke(InternAIController);
+
+            if (PluginRuntimeProvider.Context.IsModModelReplacementAPILoaded)
+            {
+                billBoardPosition = ModelReplacementAPIHook.GetBillBoardPositionModelReplacementAPI?.Invoke(InternAIController);
+            }
 
             if (billBoardPosition == null)
             {

@@ -15,6 +15,8 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
         public override EnumCommandTypes? CommandType => EnumCommandTypes.GoToVehicle;
         public override bool IsInvalid => vehicleController == null || vehicleController.carDestroyed;
 
+        public Transform VehicleTransform => vehicleController.transform;
+
         public VehicleInterestPoint(VehicleController vehicle)
         {
             this.vehicleController = vehicle;

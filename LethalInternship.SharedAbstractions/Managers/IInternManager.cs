@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         bool IsServer { get; }
         Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners { get; }
         VehicleController? VehicleController { get; }
+        List<IBodyReplacementBase> ListBodyReplacementOnDeadBodies { get; set; }
 
         IInternAI? GetInternAI(int playerClientId);
         void ManagePoolOfInterns();

@@ -14,7 +14,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            context.LookingAroundCoroutineController.StartCoroutine(LookingAroundEnumerator(ai));
+            context.LookingAroundCoroutineController.StartCoroutine(LookingAroundEnumerator(ai, context));
             context.LookingAroundCoroutineController.KeepAlive();
 
             ai.StopMoving();
@@ -26,7 +26,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         /// Coroutine for making intern turn his body to look around him
         /// </summary>
         /// <returns></returns>
-        private IEnumerator LookingAroundEnumerator(InternAI ai)
+        private IEnumerator LookingAroundEnumerator(InternAI ai, BTContext context)
         {
             lookingAroundTimer = 0f;
             yield return null;
@@ -42,7 +42,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 PluginLoggerHook.LogDebug?.Invoke($"{ai.NpcController.Npc.playerUsername} Looking around to find player {lookingAroundTimer}/{Const.TIMER_LOOKING_AROUND}");
             }
 
-            ai.TargetLastKnownPosition = null;
+            context.TargetLastKnownPosition = null;
             ai.targetPlayer = null;
             yield break;
         }

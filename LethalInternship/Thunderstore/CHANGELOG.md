@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.21.0 [Alpha] - 2025-10-09
+Hi, I decided to bump the number to 0.21 with the new v73 update.</br>
+Little update : v73 update compat, lots of refactoring for the movement and decision making for intern's pathfind.
+
+### Fixed
+- Fix compat with v73 LethalCompany update, specifically Unity update, specifically netcode-patcher update to 4.4.2
+- Fix problem when hoarding bug were calming down but intern think it's still a menace.
+- Fix GiantKiwi/Sapsucker compat, the interns ignore the eggs now (new config in "Grab the kiwi/sapsucker egg" in section "Behaviour", default to false)
+- Fix ModelReplacementAPI needed to be in the plugins loaded or else, TypeLoadException from Unity
+- Compat with LethalEmotesAPI (causing terminal freeze and game unplayable) fixed by ToastedOven, you can use LethalEmotesAPI versions >= 1.17.1
+
 ## 0.20.4 [Alpha] - 2025-09-23
 Sorry, I needed to revamp the way the interns choose their path on the map, they now should pathfind better.</br>
 Not much change for the players, but it took (again) quite some time.

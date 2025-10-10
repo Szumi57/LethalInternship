@@ -26,6 +26,7 @@ namespace LethalInternship.SharedAbstractions.Configs
         public bool GrabManeaterBaby { get; }
         public bool GrabWheelbarrow { get; }
         public bool GrabShoppingCart { get; }
+        public bool GrabKiwiBabyItem { get; }
 
         public bool TeleportedInternDropItems { get; }
 

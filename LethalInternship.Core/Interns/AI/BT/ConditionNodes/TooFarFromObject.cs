@@ -7,21 +7,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
     {
         public bool Condition(BTContext context)
         {
-            if (!context.PathController.IsCurrentPointDestination())
-            {
-                // Current point is not destination (here object) so : too far
-                return true;
-            }
-
             InternAI ai = context.InternAI;
 
-            if (ai.TargetItem == null)
+            if (context.TargetItem == null)
             {
-                PluginLoggerHook.LogError?.Invoke("targetItem is null");
+                PluginLoggerHook.LogError?.Invoke("TooFarFromObject action, targetItem is null");
                 return false;
             }
 
-            float sqrMagDistanceItem = (ai.TargetItem.transform.position - ai.NpcController.Npc.transform.position).sqrMagnitude;
+            float sqrMagDistanceItem = (context.TargetItem.transform.position - ai.NpcController.Npc.transform.position).sqrMagnitude;
             // Close enough to item for grabbing
             if (sqrMagDistanceItem < ai.NpcController.Npc.grabDistance * ai.NpcController.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale)
             {

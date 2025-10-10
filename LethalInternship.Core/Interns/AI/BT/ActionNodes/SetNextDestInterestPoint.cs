@@ -11,10 +11,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             InternAI ai = context.InternAI;
 
             IPointOfInterest? pointOfInterest = ai.GetPointOfInterest();
-            if (pointOfInterest != null)
+            if (pointOfInterest == null)
             {
-                context.PathController.SetNewDestination(pointOfInterest.GetPoint());
+                PluginLoggerHook.LogError?.Invoke("SetNextDestInterestPoint pointOfInterest is null");
+                return BehaviourTreeStatus.Failure;
             }
+
+            IInterestPoint? interestPoint = pointOfInterest.GetInterestPoint();
+            if (interestPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetNextDestInterestPoint interestPoint is null");
+                return BehaviourTreeStatus.Failure;
+            }
+
+            context.PathController.SetNewDestination(context.DJKPointMapper.Map(interestPoint));
 
             return BehaviourTreeStatus.Success;
         }

@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -7,9 +8,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            InternAI ai = context.InternAI;
-            
-            context.PathController.SetNewDestination(ai.TargetItem.transform.position);
+            if (context.TargetItem == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetNextDestTargetItem TargetItem is null");
+                return BehaviourTreeStatus.Failure;
+            }
+
+            context.PathController.SetNewDestination(new DJKStaticPoint(context.TargetItem.transform.position, "TargetItem"));
             
             return BehaviourTreeStatus.Success;
         }

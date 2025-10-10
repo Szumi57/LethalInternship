@@ -1,46 +1,47 @@
 ﻿using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
-using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Parameters;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
     public class TimedGetGraphEntrances
     {
-        private List<IDJKPoint>? DJKPointsGraph = null!;
-        private List<PathResponse> pendingPaths = new List<PathResponse>();
-        private int nbRequestsAsked;
+        private GraphController? graph = null!;
 
         private long timer = 10000 * TimeSpan.TicksPerMillisecond;
         private long lastTimeCalculate;
 
-        public List<IDJKPoint>? GetGraphEntrances(MonoBehaviour coroutineLauncher)
+        private bool IsCalculating = false;
+
+        public GraphController? GetGraphEntrances()
         {
-            if (DJKPointsGraph == null)
+            if (IsCalculating)
             {
-                DJKPointsGraph = new List<IDJKPoint>();
+                PluginLoggerHook.LogDebug?.Invoke($"CalculateGraphEntrances Calculating");
+                return null;
             }
 
             if (!NeedToRecalculate())
             {
-                CleanNeighbors();
-                //PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances return cache");
-                return DJKPointsGraph;
+                if (graph != null)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"GetGraphEntrances CleanNeighbors...");
+                    graph.CleanNeighbors();
+                }
+                return graph;
             }
 
             // Construct graph entrances
             EntranceTeleport[] entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
-            DJKPointsGraph = CalculateGraphEntrances(entrancesTeleportArray);
+            graph = CalculateGraphEntrances(entrancesTeleportArray);
 
             // Calculate Neighbors
-            pendingPaths.Clear();
-            nbRequestsAsked = Dijkstra.Dijkstra.CalculateNeighbors(DJKPointsGraph, idBatch: -1, OnPathCalculated);
-            //PluginLoggerHook.LogDebug?.Invoke($"- TimedGetGraphEntrances nbRequestsAsked {nbRequestsAsked} calculating...");
+            CalculateNeighbors(graph);
 
             return null;
         }
@@ -59,30 +60,15 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
         }
 
-        private void CleanNeighbors()
+        private GraphController CalculateGraphEntrances(EntranceTeleport[] entrancesTeleportArray)
         {
-            if (DJKPointsGraph == null)
-            {
-                return;
-            }
-
-            List<int> neighborsPresent = DJKPointsGraph.Select(x => x.Id).ToList();
-            foreach (var point in DJKPointsGraph)
-            {
-                point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.neighbor.Id));
-            }
-        }
-
-        private List<IDJKPoint> CalculateGraphEntrances(EntranceTeleport[] entrancesTeleportArray)
-        {
-            List<IDJKPoint> DJKPointsGraphEntrances = new List<IDJKPoint>();
+            GraphController graphEntrancesController = new GraphController();
 
             // List<DJKPoint> init with entrances
-            int id = 0;
             foreach (var entrance in entrancesTeleportArray)
             {
                 bool newDJKPoint = true;
-                foreach (var DJKP in DJKPointsGraphEntrances)
+                foreach (var DJKP in graphEntrancesController.DJKPoints)
                 {
                     if (((DJKEntrancePoint)DJKP).TryAddOtherEntrance(entrance))
                     {
@@ -93,33 +79,31 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
                 if (newDJKPoint)
                 {
-                    DJKPointsGraphEntrances.Add(new DJKEntrancePoint(id++, entrance));
+                    graphEntrancesController.AddPoint(new DJKEntrancePoint(entrance));
                 }
             }
 
-            return DJKPointsGraphEntrances;
+            return graphEntrancesController;
         }
 
-        private void OnPathCalculated(PathResponse pathResponse)
+        private void CalculateNeighbors(GraphController graphToCalculate)
         {
-            pendingPaths.Add(pathResponse);
-            if (pendingPaths.Count >= nbRequestsAsked)
+            int idBatch = -1;
+            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(graphToCalculate.DJKPoints);
+            List<IInstruction> instructionsToProcess = new List<IInstruction>();
+            foreach (var instrParams in instructions)
             {
-                ProcessPendingPathCalculated();
+                instructionsToProcess.Add(instrParams.targetDJKPoint.GenerateInstruction(idBatch, instrParams));
             }
+
+            InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchComplete);
+            IsCalculating = true;
         }
 
-        private void ProcessPendingPathCalculated()
+        private void OnBatchComplete()
         {
-            foreach (var pathResponse in pendingPaths)
-            {
-                if (pathResponse.pathStatus == NavMeshPathStatus.PathComplete)
-                {
-                    float distance = Dijkstra.Dijkstra.GetFullDistancePath(pathResponse.path);
-                    pathResponse.startDJKPoint.TryAddToNeighbors(pathResponse.targetDJKPoint, distance);
-                    pathResponse.targetDJKPoint.TryAddToNeighbors(pathResponse.startDJKPoint, distance);
-                }
-            }
+            //graph = new GraphController(tempGraph);
+            IsCalculating = false;
         }
     }
 }

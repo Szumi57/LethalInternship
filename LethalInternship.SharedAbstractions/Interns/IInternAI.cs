@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Adapters;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         IInternIdentity InternIdentity { get; set; }
         IRagdollInternBody RagdollInternBody { get; set; }
         bool AnimationCoroutineRagdollingRunning { get; }
-        List<Component> ListModelReplacement { get; }
+        List<IBodyReplacementBase> ListModelReplacement { get; }
         GrabbableObject? HeldItem { get; set; }
 
         GameObject GameObject { get; }
@@ -78,5 +79,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos);
 
         float GetClosestPlayerDistance();
+
+        // GiantKiwi
+        void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
+        void SyncAttackingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
+using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 {
@@ -41,17 +43,17 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
             string suitNameToReplace = string.Empty;
             bool shouldAddNewBodyReplacement = true;
-            BodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.Select(x => (BodyReplacementBase)x).ToArray();
+            IBodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.ToArray();
             //PluginLoggerHook.LogDebug?.Invoke($"{player.playerUsername} SetPlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
-            foreach (BodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
+            foreach (IBodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
             {
-                if (BodyReplacementBasePatch.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
+                if (InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Contains(bodyReplacementBase))
                 {
                     continue;
                 }
 
-                if (bodyReplacementBase.GetType() == type
-                    && bodyReplacementBase.suitName == unlockableName)
+                if (bodyReplacementBase.TypeReplacement == type
+                    && bodyReplacementBase.SuitName == unlockableName)
                 {
                     //PluginLoggerHook.LogDebug?.Invoke($"{player.playerUsername} shouldAddNewBodyReplacement false");
                     shouldAddNewBodyReplacement = false;
@@ -59,10 +61,10 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 else
                 {
                     PluginLoggerHook.LogInfo?.Invoke($"Patch LethalInternship, intern {player.playerUsername}, Model Replacement change detected {bodyReplacementBase.GetType()} => {type}, changing model.");
-                    suitNameToReplace = bodyReplacementBase.suitName;
+                    suitNameToReplace = bodyReplacementBase.SuitName;
                     internAI.ListModelReplacement.Remove(bodyReplacementBase);
                     bodyReplacementBase.IsActive = false;
-                    UnityEngine.Object.Destroy(bodyReplacementBase);
+                    UnityEngine.Object.Destroy((Object)bodyReplacementBase.BodyReplacementBase);
                     shouldAddNewBodyReplacement = true;
                 }
             }
@@ -73,8 +75,8 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 && internAI.NpcController.Npc.isPlayerControlled)
             {
                 PluginLoggerHook.LogInfo?.Invoke($"Patch LethalInternship, intern {player.playerUsername}, Suit Change detected {suitNameToReplace} => {currentSuitID} {unlockableName}, Replacing {type}.");
-                BodyReplacementBase bodyReplacementBaseToAdd = (BodyReplacementBase)player.gameObject.AddComponent(type);
-                bodyReplacementBaseToAdd.suitName = unlockableName;
+                BodyReplacementAdapter bodyReplacementBaseToAdd = new BodyReplacementAdapter(player.gameObject.AddComponent(type));
+                bodyReplacementBaseToAdd.SuitName = unlockableName;
                 internAI.ListModelReplacement.Add(bodyReplacementBaseToAdd);
             }
 

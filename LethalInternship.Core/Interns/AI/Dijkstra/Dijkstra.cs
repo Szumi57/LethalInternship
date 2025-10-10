@@ -1,10 +1,8 @@
-﻿using LethalInternship.Core.Interns.AI.Dijkstra.PathRequests;
-using LethalInternship.Core.Managers;
-using System;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
@@ -39,9 +37,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 used[u] = true;
 
                 // Check neighbors
-                foreach (var (neighbor, weight) in points[u].Neighbors)
+                foreach (var (idNeighbor, neighborPos, weight) in points[u].Neighbors)
                 {
-                    int v = neighbor.Id;
+                    int v = idNeighbor;
                     if (!used[v] && dist[u] + weight < dist[v])
                     {
                         dist[v] = dist[u] + weight;
@@ -61,13 +59,12 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return path;
         }
 
-        public static int CalculateNeighbors(List<IDJKPoint> DJKPointsGraph, int idBatch, Action<PathResponse> callback)
+        public static List<InstructionParameters> GenerateWorkCalculateNeighbors(List<IDJKPoint> DJKPointsGraph)
         {
             // Neighbors init
-            NavMeshPath path = new NavMeshPath();
-            var instructions = new List<PathInstruction>();
-
+            var instructions = new List<InstructionParameters>();
             HashSet<(int, int)> testedPairs = new HashSet<(int, int)>();
+
             foreach (var point1 in DJKPointsGraph)
             {
                 foreach (var point2 in DJKPointsGraph)
@@ -85,29 +82,21 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     }
                     testedPairs.Add((idA, idB));
 
-                    // Add neighbors if exists
-                    float? distanceNeighbor = point1.GetNeighborDistanceIfExist(point2);
-                    if (distanceNeighbor != null)
+                    if (point1.IsNeighborExist(point2.Id))
                     {
-                        point2.TryAddToNeighbors(point1, distanceNeighbor.Value);
-                        continue;
-                    }
-                    distanceNeighbor = point2.GetNeighborDistanceIfExist(point1);
-                    if (distanceNeighbor != null)
-                    {
-                        point1.TryAddToNeighbors(point2, distanceNeighbor.Value);
                         continue;
                     }
 
+                    int groupId = InternManager.Instance.GetNewInstructionGroupId();
                     foreach (Vector3 point1point in point1.GetAllPoints())
                     {
-                        foreach (Vector3 point2point in point2.GetAllPoints().Where(p2 => Mathf.Abs(p2.y - point1point.y) < 100f))
+                        foreach (Vector3 point2point in point2.GetNearbyPoints(point1point))
                         {
                             // Ask for calculate path
-                            instructions.Add(new PathInstruction(
+                            instructions.Add(new InstructionParameters(
+                                groupId,
                                 start: point1point,
                                 target: point2point,
-                                callback: callback,
                                 startDJKPoint: point1,
                                 targetDJKPoint: point2
                             ));
@@ -116,8 +105,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
             }
 
-            InternManager.Instance.RequestBatch(idBatch, instructions);
-            return instructions.Count;
+            return instructions;
         }
 
         public static float GetFullDistancePath(Vector3[] corners)
@@ -127,7 +115,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             {
                 fullDistance += (corners[i - 1] - corners[i]).sqrMagnitude;
             }
-            return fullDistance;
+
+            return fullDistance < 1f ? 1f : fullDistance;
+        }
+
+        public static float ApplyPartialPathPenalty(float dist, Vector3 lastCorner, Vector3 target)
+        {
+            return dist + (lastCorner - target).sqrMagnitude * 10000f;
         }
     }
 }

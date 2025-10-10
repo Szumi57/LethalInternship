@@ -1,6 +1,5 @@
 ﻿using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Interns.AI.Dijkstra;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT
@@ -10,8 +9,15 @@ namespace LethalInternship.Core.Interns.AI.BT
         public InternAI InternAI { get; set; }
 
         public PathController PathController { get; set; }
+        public DJKPointMapper DJKPointMapper { get; set; }
 
         public SearchCoroutineController searchForPlayers { get; set; }
+
+        public EnemyAI? CurrentEnemy;
+        public GrabbableObject? TargetItem;
+        
+        // No use for now, target always known
+        public Vector3? TargetLastKnownPosition;
 
         public CoroutineController PanikCoroutine { get; set; }
         public CoroutineController LookingAroundCoroutineController { get; set; }
