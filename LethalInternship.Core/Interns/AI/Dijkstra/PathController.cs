@@ -19,12 +19,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             IndexCurrentPoint = 0;
         }
 
-        public void FullReset()
-        {
-            destinationPoint = null!;
-            ResetPathAndIndex();
-        }
-
         public void ResetPathAndIndex()
         {
             IndexCurrentPoint = 0;

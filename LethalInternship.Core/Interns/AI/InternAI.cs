@@ -506,8 +506,7 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             // AI
-            BTController.ResetContext();
-            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+            BTController.ResetContextNewCommandToInterestPoint(pointOfInterest);
 
             // Voice
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
@@ -520,8 +519,7 @@ namespace LethalInternship.Core.Interns.AI
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
 
             // AI
-            BTController.ResetContext();
-            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+            BTController.ResetContextNewCommandFollowPlayer();
 
             // Voice
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
@@ -534,8 +532,7 @@ namespace LethalInternship.Core.Interns.AI
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToScavengingMode");
 
             // AI
-            BTController.ResetContext();
-            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+            BTController.ResetContextNewCommandToScavenging();
 
             // Voice
             //TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);

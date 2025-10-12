@@ -5,9 +5,11 @@ using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 
 namespace LethalInternship.Core.Interns.AI.BT
@@ -88,8 +90,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
-                { "SetNextDestInterestPoint", new SetNextDestInterestPoint() },
-                { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
                 { "SetNextDestToShip", new SetNextDestToShip() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() }
             };
@@ -139,11 +139,29 @@ namespace LethalInternship.Core.Interns.AI.BT
             };
         }
 
-        public void ResetContext()
+        public void ResetContextNewCommandFollowPlayer()
         {
-            BTContext.PathController.ResetPathAndIndex();
+            BTContext.PathController.SetNewDestination(new DJKMovingPoint(BTContext.InternAI.targetPlayer.transform, $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}"));
             BTContext.TargetItem = null;
-            BTContext.TargetLastKnownPosition = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandToInterestPoint(IPointOfInterest pointOfInterest)
+        {
+            IInterestPoint? interestPoint = pointOfInterest.GetInterestPoint();
+            if (interestPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetNextDestInterestPoint interestPoint is null");
+                return;
+            }
+
+            BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandToScavenging()
+        {
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 
         private IBehaviourTreeNode CreateTree()
@@ -158,7 +176,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Command go to position")
                         .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
-                        .Do("SetNextDestInterestPoint", t => actions["SetNextDestInterestPoint"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to position")
                             .Splice(CreateSubTreeGoToPosition())
@@ -280,7 +297,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Go to vehicle")
                         .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
-                        .Do("SetNextDestInterestPoint", t => actions["SetNextDestInterestPoint"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
@@ -306,7 +322,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                         // no use for update last known pos, even with config, it just not work for now
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
                         //.Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
-                        .Do("SetNextDestTargetLastKnownPosition", t => actions["SetNextDestTargetLastKnownPosition"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
