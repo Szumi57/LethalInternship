@@ -71,16 +71,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 int indexItemToGrab = GetIndexMinPath();
                 if (indexItemToGrab >= 0)
                 {
-                    // Item still grabbable ?
-                    GrabbableObject grabbableObjectToGrab = itemsToCheck[indexItemToGrab];
-                    if (!ai.IsGrabbableObjectGrabbable(grabbableObjectToGrab))
-                    {
-                        PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInMap item no grabbable actually");
-                        return ReturnSuccessAndClear(context);
-                    }
-
                     // Path to one item found
-                    context.TargetItem = grabbableObjectToGrab;
+                    context.TargetItem = itemsToCheck[indexItemToGrab];
                     PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}");
                     context.PathController = tempPaths[indexItemToGrab];
 

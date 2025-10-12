@@ -505,7 +505,8 @@ namespace LethalInternship.Core.Interns.AI
                 PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
             }
 
-            // AI batch
+            // AI
+            BTController.ResetContext();
             InternManager.Instance.CancelBatch((int)Npc.playerClientId);
 
             // Voice
@@ -518,7 +519,8 @@ namespace LethalInternship.Core.Interns.AI
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
 
-            // AI batch
+            // AI
+            BTController.ResetContext();
             InternManager.Instance.CancelBatch((int)Npc.playerClientId);
 
             // Voice
@@ -531,7 +533,8 @@ namespace LethalInternship.Core.Interns.AI
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToScavengingMode");
 
-            // AI batch
+            // AI
+            BTController.ResetContext();
             InternManager.Instance.CancelBatch((int)Npc.playerClientId);
 
             // Voice

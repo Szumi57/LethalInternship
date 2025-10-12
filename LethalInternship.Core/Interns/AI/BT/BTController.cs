@@ -74,7 +74,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             actions = new Dictionary<string, IBTAction>()
             {
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
-                { "CancelScavengingIf", new CancelScavengingIf() },
+                { "CancelGoToItem", new CancelGoToItem() },
                 { "CheckForItemsInMap", new CheckForItemsInMap() },
                 { "CheckForItemsInRange", new CheckForItemsInRange() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
@@ -107,8 +107,8 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
-                { "IsItemFound", new IsItemFound() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
+                { "IsTargetItemValid", new IsTargetItemValid() },
                 { "TargetValid", new TargetValid() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
@@ -139,6 +139,13 @@ namespace LethalInternship.Core.Interns.AI.BT
             };
         }
 
+        public void ResetContext()
+        {
+            BTContext.PathController.ResetPathAndIndex();
+            BTContext.TargetItem = null;
+            BTContext.TargetLastKnownPosition = null;
+        }
+
         private IBehaviourTreeNode CreateTree()
         {
             var builder = new BehaviourTreeBuilder();
@@ -167,7 +174,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Sequence("Fetch object")
                         .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
                         .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
-                        .Condition("<IsItemFound>", t => conditions["IsItemFound"].Condition(BTContext))
+                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
                         .Selector("Should go to item")
                             .Splice(CreateSubTreeGoToObject())
                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
@@ -188,13 +195,13 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
                                 .Selector("Cancel scavenging ?")
                                     .Sequence("Go grab if item found")
-                                        .Condition("<IsItemFound>", t => conditions["IsItemFound"].Condition(BTContext))
+                                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
                                         .Selector("Go to object or grab")
                                             .Splice(CreateSubTreeGoToObject())
                                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
                                         .End()
-                                     .End()
-                                    .Do("CancelScavengingIf", t => actions["CancelScavengingIf"].Action(BTContext))
+                                    .End()
+                                    .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
                                 .End()
                             .End()
 

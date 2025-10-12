@@ -1,23 +1,33 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
-namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
+namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class IsItemFound : IBTCondition
+    public class CancelGoToItem : IBTAction
     {
-        public bool Condition(BTContext context)
+        public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
-
             if (context.TargetItem == null)
             {
-                return false;
+                if (context.nbItemsToCheck == 0)
+                {
+                    ai.SetCommandToFollowPlayer();
+                }
+                return BehaviourTreeStatus.Success;
+            }
+
+            if (!context.InternAI.IsGrabbableObjectGrabbable(context.TargetItem))
+            {
+                context.TargetItem = null;
+                return BehaviourTreeStatus.Success;
             }
 
             // Voice
             TryPlayCurrentStateVoiceAudio(ai);
-            return true;
+            return BehaviourTreeStatus.Success;
         }
 
         private void TryPlayCurrentStateVoiceAudio(InternAI ai)
