@@ -1949,10 +1949,12 @@ namespace LethalInternship.Core.Managers
             if (DictJustDroppedItems != null && DictJustDroppedItems.Count > 20)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"TrimDictJustDroppedItems Count{DictJustDroppedItems.Count}");
-                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS);
+                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
+                                                       .Select(x => x.Key)
+                                                       .ToList();
                 foreach (var item in itemsToClean)
                 {
-                    DictJustDroppedItems.Remove(item.Key);
+                    DictJustDroppedItems.Remove(item);
                 }
             }
         }

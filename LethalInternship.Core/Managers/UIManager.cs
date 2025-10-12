@@ -232,6 +232,7 @@ namespace LethalInternship.Core.Managers
                 case EnumInputAction.FollowMe:
                 case EnumInputAction.GoToShip:
                 case EnumInputAction.GoToVehicle:
+                case EnumInputAction.Scavenging:
                     InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
                     break;
 

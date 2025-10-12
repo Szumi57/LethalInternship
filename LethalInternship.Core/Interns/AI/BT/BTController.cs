@@ -74,7 +74,9 @@ namespace LethalInternship.Core.Interns.AI.BT
             actions = new Dictionary<string, IBTAction>()
             {
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
-                { "CheckForItemsToGrab", new CheckForItemsToGrab() },
+                { "CancelScavengingIf", new CancelScavengingIf() },
+                { "CheckForItemsInMap", new CheckForItemsInMap() },
+                { "CheckForItemsInRange", new CheckForItemsInRange() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
                 { "DropItem", new DropItem() },
@@ -88,19 +90,21 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "LookingForPlayer", new LookingForPlayer() },
                 { "SetNextDestInterestPoint", new SetNextDestInterestPoint() },
                 { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
+                { "SetNextDestToShip", new SetNextDestToShip() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() }
             };
 
             // Condition nodes
             conditions = new Dictionary<string, IBTCondition>()
             {
-                { "CanCheckForItems", new CanCheckForItems() },
+                { "AreHandsFree", new AreHandsFree() },
                 { "EnemySeen", new EnemySeen() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
                 { "IsCommandWait", new IsCommandThis(EnumCommandTypes.Wait) },
+                { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
                 { "IsItemFound", new IsItemFound() },
@@ -161,10 +165,10 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .End()
 
                     .Sequence("Fetch object")
-                        .Condition("<CanCheckForItems>", t => conditions["CanCheckForItems"].Condition(BTContext))
-                        .Do("CheckForItemsToGrab", t => actions["CheckForItemsToGrab"].Action(BTContext))
+                        .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
+                        .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
                         .Condition("<IsItemFound>", t => conditions["IsItemFound"].Condition(BTContext))
-                        .Selector("Should go to position")
+                        .Selector("Should go to item")
                             .Splice(CreateSubTreeGoToObject())
                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
                         .End()
@@ -175,6 +179,33 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<TargetValid>", t => conditions["TargetValid"].Condition(BTContext))
                         .Splice(CreateSubTreeFollowPlayer())
                     .End()
+
+                    .Sequence("Command scavenging")
+                        .Condition("<isCommand ScavengingMode>", t => conditions["IsCommandScavengingMode"].Condition(BTContext))
+                        .Selector("Return to ship or scavenge ?")
+                            .Sequence("Look for items if hands free")
+                                .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
+                                .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
+                                .Selector("Cancel scavenging ?")
+                                    .Sequence("Go grab if item found")
+                                        .Condition("<IsItemFound>", t => conditions["IsItemFound"].Condition(BTContext))
+                                        .Selector("Go to object or grab")
+                                            .Splice(CreateSubTreeGoToObject())
+                                            .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
+                                        .End()
+                                     .End()
+                                    .Do("CancelScavengingIf", t => actions["CancelScavengingIf"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Return to ship")
+                                .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
+                                .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                                .Splice(CreateSubTreeGoToPosition())
+                            .End()
+                        .End()
+                    .End()
+
 
                     .Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
                     .Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))

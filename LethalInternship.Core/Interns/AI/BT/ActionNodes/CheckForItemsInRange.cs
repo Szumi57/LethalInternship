@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class CheckForItemsToGrab : IBTAction
+    public class CheckForItemsInRange : IBTAction
     {
         private int itemIndex = 0;
         private List<GrabbableObject> itemsToCheck = new List<GrabbableObject>();
@@ -24,15 +24,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            if (context.TargetItem != null 
+            if (context.TargetItem != null
                 && ai.IsGrabbableObjectGrabbable(context.TargetItem))
             {
                 return BehaviourTreeStatus.Success;
             }
 
-            if (itemIndex == 0)
+            if (itemsToCheck.Count == 0)
             {
-                itemsToCheck = LookingForItemsToGrab(ai);
+                itemsToCheck = LookingForItemsToGrabInRange(ai);
                 if (itemsToCheck.Count == 0)
                 {
                     context.TargetItem = null;
@@ -47,9 +47,19 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 itemIndex = 0;
                 int indexItemToGrab = GetIndexMinPath();
-                if(indexItemToGrab < 0)
+                if (indexItemToGrab < 0)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"-- no path to no items found");
+                    itemsToCheck.Clear();
+                    PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInRange no path to no items found");
+                    return BehaviourTreeStatus.Success;
+                }
+
+                // Item still grabbable ?
+                GrabbableObject grabbableObjectToGrab = itemsToCheck[indexItemToGrab];
+                if (!ai.IsGrabbableObjectGrabbable(grabbableObjectToGrab))
+                {
+                    itemsToCheck.Clear();
+                    PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInRange item no grabbable actually");
                     return BehaviourTreeStatus.Success;
                 }
 
@@ -69,7 +79,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         /// if intern is close and can see an item to grab.
         /// </summary>
         /// <returns><c>GrabbableObject</c>GrabbableObject to try to grab</returns>
-        private List<GrabbableObject> LookingForItemsToGrab(InternAI ai)
+        private List<GrabbableObject> LookingForItemsToGrabInRange(InternAI ai)
         {
             var items = new List<GrabbableObject>();
             var grabbableObjectsList = InternManager.Instance.GetGrabbableObjectsList();
@@ -100,7 +110,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
 
                 // Black listed ? 
-                if (IsGrabbableObjectBlackListed(gameObject))
+                if (ai.IsGrabbableObjectBlackListed(gameObject))
                 {
                     continue;
                 }
@@ -151,55 +161,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             return items;
         }
 
-        private bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
-        {
-            // Bee nest
-            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
-                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
-            {
-                return true;
-            }
-
-            // Dead bodies
-            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
-                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
-                && gameObjectToEvaluate.tag == "PhysicsProp"
-                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
-            {
-                return true;
-            }
-
-            // Maneater
-            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
-                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
-            {
-                return true;
-            }
-
-            // Wheelbarrow
-            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
-                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
-            {
-                return true;
-            }
-
-            // ShoppingCart
-            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
-                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
-            {
-                return true;
-            }
-
-            // Baby kiwi egg
-            if (!PluginRuntimeProvider.Context.Config.GrabKiwiBabyItem
-                && gameObjectToEvaluate.name.Contains("KiwiBabyItem"))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
         private void CalculatePathToItem(BTContext context, GrabbableObject grabbableObject)
         {
             InternAI ai = context.InternAI;
@@ -242,7 +203,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             tempPaths[itemIndex] = pathCalculated;
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrab itemIndex {itemIndex} ======= {tempPaths[itemIndex].GetFullPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ======= {tempPaths[itemIndex].GetFullPathString()}");
 
             itemIndex++;
         }
@@ -254,7 +215,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             for (int i = 0; i < tempPaths.Length; i++)
             {
                 PathController tempPath = tempPaths[i];
-                if (tempPath.IsPathNotValid())
+                if (tempPath == null || tempPath.IsPathNotValid())
                 {
                     continue;
                 }

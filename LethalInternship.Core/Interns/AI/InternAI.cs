@@ -525,6 +525,19 @@ namespace LethalInternship.Core.Interns.AI
             TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
         }
 
+        public void SetCommandToScavenging()
+        {
+            CurrentCommand = EnumCommandTypes.ScavengingMode;
+            this.PointOfInterest = null;
+            PluginLoggerHook.LogDebug?.Invoke($"SetCommandToScavengingMode");
+
+            // AI batch
+            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+
+            // Voice
+            //TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
+        }
+
         private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
         {
             // Default states, wait for cooldown and if no one is talking close
@@ -1318,9 +1331,56 @@ namespace LethalInternship.Core.Interns.AI
                 }
             }
 
-            
-
             return true;
+        }
+
+        public bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
+        {
+            // Bee nest
+            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
+                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
+            {
+                return true;
+            }
+
+            // Dead bodies
+            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
+                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
+                && gameObjectToEvaluate.tag == "PhysicsProp"
+                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
+            {
+                return true;
+            }
+
+            // Maneater
+            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
+                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
+            {
+                return true;
+            }
+
+            // Wheelbarrow
+            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
+                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
+            {
+                return true;
+            }
+
+            // ShoppingCart
+            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
+                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
+            {
+                return true;
+            }
+
+            // Baby kiwi egg
+            if (!PluginRuntimeProvider.Context.Config.GrabKiwiBabyItem
+                && gameObjectToEvaluate.name.Contains("KiwiBabyItem"))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void SetInternInElevator()

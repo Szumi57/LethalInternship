@@ -61,7 +61,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 {
                     ai.NpcController.OrderToSprint();
                 }
-                else if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_STOP_RUNNING * Const.DISTANCE_STOP_RUNNING)
+                else //if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_STOP_RUNNING * Const.DISTANCE_STOP_RUNNING)
                 {
                     ai.NpcController.OrderToStopSprint();
                 }

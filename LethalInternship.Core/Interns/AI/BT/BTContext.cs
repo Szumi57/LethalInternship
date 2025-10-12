@@ -14,7 +14,10 @@ namespace LethalInternship.Core.Interns.AI.BT
         public SearchCoroutineController searchForPlayers { get; set; }
 
         public EnemyAI? CurrentEnemy;
+
+        // Items
         public GrabbableObject? TargetItem;
+        public int nbItemsToCheck;
         
         // No use for now, target always known
         public Vector3? TargetLastKnownPosition;

@@ -111,7 +111,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 3f;
 
         // Go to position
-        public static readonly float DISTANCE_START_RUNNING = 8f;
+        public static readonly float DISTANCE_START_RUNNING = 2f;
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 4f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;

@@ -10,10 +10,14 @@
 
         public static string[] COMMANDS_BUTTON_STRING = {
             string.Empty, // 0 EnumInputAction
-            "Choose a position", // GoToPosition
-            "Follow me", // FollowMe
-            "Go to the cruiser", // GoToShip
-            "Go to the vehicle", // GoToVehicle
+            "Choose a position", // 1 GoToPosition
+            "Follow me", // 2 FollowMe
+            "Go to the cruiser", // 3 GoToShip
+            "Go to the vehicle", // 4 GoToVehicle
+            "",
+            "",
+            "",
+            "Go scavenging" // 8 Scavenging
         };
     }
 }

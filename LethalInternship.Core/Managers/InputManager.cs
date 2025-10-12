@@ -119,6 +119,11 @@ namespace LethalInternship.Core.Managers
                     SetCurrentInputAction(EnumInputAction.None);
                     break;
 
+                case EnumInputAction.Scavenging:
+                    GiveOrderGoScavenging();
+                    SetCurrentInputAction(EnumInputAction.None);
+                    break;
+
                 case EnumInputAction.None:
                 default:
                     StopScanPositionCoroutine();
@@ -207,7 +212,7 @@ namespace LethalInternship.Core.Managers
             Transform? shipTransform = GameObject.Find("HangarShip").GetComponent<Transform>();
             if (shipTransform == null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("shipTransform not found !");
+                PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");
                 return;
             }
 
@@ -253,6 +258,25 @@ namespace LethalInternship.Core.Managers
             {
                 // Current intern
                 currentCommandedIntern.SetCommandTo(pointOfInterest);
+            }
+        }
+
+        private void GiveOrderGoScavenging()
+        {
+            // Give order
+            if (currentCommandedIntern == null)
+            {
+                // All owned interns (later close interns)
+                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                foreach (IInternAI intern in internsOwned)
+                {
+                    intern.SetCommandToScavenging();
+                }
+            }
+            else
+            {
+                // Current intern
+                currentCommandedIntern.SetCommandToScavenging();
             }
         }
 

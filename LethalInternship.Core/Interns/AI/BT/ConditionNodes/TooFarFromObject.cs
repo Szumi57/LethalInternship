@@ -16,10 +16,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
 
-            float grabDist = ai.NpcController.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale * 1.1f;
-            float sqrHorizontalDistance = Vector3.Scale(context.TargetItem.transform.position - ai.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-            float sqrVerticalDistance = Vector3.Scale(context.TargetItem.transform.position - (ai.transform.position + new Vector3(0, 1.7f, 0)), new Vector3(0, 1, 0)).sqrMagnitude;
+            float grabDist = ai.NpcController.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale * 1.2f;
+            float sqrHorizontalDistance = Vector3.Scale(context.TargetItem.transform.position - ai.transform.position, new Vector3(1f, 0, 1f)).sqrMagnitude;
+            float sqrVerticalDistance = Vector3.Scale(context.TargetItem.transform.position - (ai.transform.position + new Vector3(0, 1.7f, 0)), new Vector3(0, 1f, 0)).sqrMagnitude;
             // Close enough to item for grabbing
+            //PluginLoggerHook.LogDebug?.Invoke($"TooFarFromObject {context.TargetItem} hor {sqrHorizontalDistance} <? {grabDist * grabDist}");
             if (sqrHorizontalDistance < grabDist * grabDist
                 && sqrVerticalDistance < grabDist * grabDist)
             {

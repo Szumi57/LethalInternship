@@ -1,6 +1,6 @@
 ﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
-    public class CanCheckForItems : IBTCondition
+    public class AreHandsFree : IBTCondition
     {
         public bool Condition(BTContext context)
         {

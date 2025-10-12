@@ -27,6 +27,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         IPointOfInterest? GetPointOfInterest();
         void SetCommandToFollowPlayer();
+        void SetCommandToScavenging();
         void SetCommandTo(IPointOfInterest pointOfInterest);
 
         void AdaptController(PlayerControllerB playerControllerB);

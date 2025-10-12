@@ -43,13 +43,13 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
                 // Check if sampled position not too far
                 float sqrHorizontalDistance = Vector3.Scale(hitEnd.position - target, new Vector3(1, 0, 1)).sqrMagnitude;
                 // Close enough to item for grabbing
-                if (sqrHorizontalDistance < 0.2f * 0.2f)
+                if (sqrHorizontalDistance < 1f * 1f)
                 {
                     target = hitEnd.position;
                 }
                 else
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"InstructionCalculatePathItems SamplePostoo far {sqrHorizontalDistance}, using target as before");
+                    //PluginLoggerHook.LogDebug?.Invoke($"InstructionCalculatePathItems SamplePostoo far {sqrHorizontalDistance}, using target as before");
                 }
             }
 
