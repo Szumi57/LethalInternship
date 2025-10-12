@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Interns;
+﻿using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public List<IDJKPoint> DJKPointsPath { get; set; }
         public int IndexCurrentPoint { get; set; }
 
-        private IDJKPoint destinationPoint;
+        private IDJKPoint destinationPoint = null!;
 
         public PathController()
         {
@@ -60,11 +59,12 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             else
             {
                 Vector3 currentPointPos = DJKPointsPath[IndexCurrentPoint - 1].GetNeighborPos(DJKPointsPath[IndexCurrentPoint].Id);
-                Vector3 trueCurrentPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(actorPos);
-                if ((trueCurrentPointPos - currentPointPos).sqrMagnitude > 0.5f * 0.5f)
-                {
-                    return trueCurrentPointPos;
-                }
+                //Vector3 trueCurrentPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(actorPos);
+                //if ((trueCurrentPointPos - currentPointPos).sqrMagnitude > 0.5f * 0.5f)
+                //{
+                //    PluginLoggerHook.LogDebug?.Invoke($"true shit ?");
+                //    return trueCurrentPointPos;
+                //}
 
                 return currentPointPos;
             }
@@ -89,6 +89,8 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             {
                 IndexCurrentPoint = 1;
             }
+
+            SetNewDestination(dJKPoints[^1]);
         }
 
         public void SetNewDestination(IDJKPoint dest)
@@ -140,12 +142,41 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public bool IsCurrentPointDestination()
         {
-            return IndexCurrentPoint == DJKPointsPath.Count - 1 && GetCurrentPoint() == destinationPoint;
+            return IndexCurrentPoint == DJKPointsPath.Count - 1;// && GetCurrentPoint() == destinationPoint;
         }
 
         public bool IsPathNotValid()
         {
             return DJKPointsPath == null || DJKPointsPath.Count < 2;
+        }
+
+        public float GetFullPathDistance()
+        {
+            float dist = 0;
+            if (DJKPointsPath == null
+                || DJKPointsPath.Count == 0)
+            {
+                return float.MaxValue;
+            }
+
+            for (int i = 0; i < DJKPointsPath.Count; i++)
+            {
+                IDJKPoint point = DJKPointsPath[i];
+
+                // Calculate distance neighbor
+                if (i < DJKPointsPath.Count - 1)
+                {
+                    foreach (var n in point.Neighbors)
+                    {
+                        if (n.idNeighbor == DJKPointsPath[i + 1].Id)
+                        {
+                            dist += n.weight;
+                            break;
+                        }
+                    }
+                }
+            }
+            return dist;
         }
 
         public string GetFullPathString()
@@ -175,13 +206,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     }
                 }
 
-                return string.Concat($"Path = ", pathString);
+                return string.Concat($"Path: ", pathString);
             }
         }
 
         public override string ToString()
         {
-            string pathString = $"Path = ";
+            string pathString = $"Path: ";
             if (DJKPointsPath == null)
             {
                 return string.Concat(pathString, " null");
@@ -192,24 +223,10 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
             else
             {
-                int dist = 0;
                 pathString = string.Empty;
                 for (int i = 0; i < DJKPointsPath.Count; i++)
                 {
                     IDJKPoint point = DJKPointsPath[i];
-
-                    // Calculate distance neighbor
-                    if (i < DJKPointsPath.Count - 1)
-                    {
-                        foreach (var n in point.Neighbors)
-                        {
-                            if (n.idNeighbor == DJKPointsPath[i + 1].Id)
-                            {
-                                dist += (int)Mathf.Sqrt(n.weight);
-                                break;
-                            }
-                        }
-                    }
 
                     if (Array.IndexOf(DJKPointsPath.ToArray(), point) == IndexCurrentPoint)
                     {
@@ -221,7 +238,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                     }
                 }
 
-                return string.Concat($"Path ({dist}m) = ", pathString);
+                return string.Concat($"Path ({(int)Mathf.Sqrt(GetFullPathDistance())}m) = ", pathString);
             }
         }
     }

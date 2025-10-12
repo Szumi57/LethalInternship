@@ -1,14 +1,21 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
     public class Dijkstra
     {
         const float INF = float.MaxValue / 4;
+
+        public static List<IDJKPoint> CalculatePath(List<IDJKPoint> points)
+        {
+            return CalculatePath(points, points[^2], points[^1]);
+        }
 
         public static List<IDJKPoint> CalculatePath(List<IDJKPoint> points, IDJKPoint src, IDJKPoint dest)
         {
@@ -122,6 +129,21 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         public static float ApplyPartialPathPenalty(float dist, Vector3 lastCorner, Vector3 target)
         {
             return dist + (lastCorner - target).sqrMagnitude * 10000f;
+        }
+
+        public static Vector3 GetSampledPos(Vector3 pos)
+        {
+            if (NavMesh.SamplePosition(pos, out NavMeshHit hitEnd, 2f, NavMesh.AllAreas))
+            {
+                float diff = (pos - hitEnd.position).sqrMagnitude;
+                if (diff > 0.1f * 0.1f)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"Using pos sampled position, diff dist {Mathf.Sqrt(diff)}");
+                }
+                pos = hitEnd.position;
+            }
+
+            return pos;
         }
     }
 }

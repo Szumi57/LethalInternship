@@ -3,7 +3,6 @@ using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
@@ -33,15 +32,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             //PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
             // todo remove
-            //DJKVehiclePoint? vPoint = context.PathController.GetCurrentPoint() as DJKVehiclePoint;
-            //if (vPoint != null)
-            //{
-            //    var a = vPoint.GetAllPoints();
-            //    foreach(var p in a )
-            //    {
-            //        DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), p, p + new Vector3(0, 5f, 0), Color.magenta);
-            //    }
-            //}
+            DJKItemPoint? vPoint = context.PathController.GetCurrentPoint() as DJKItemPoint;
+            if (vPoint != null)
+            {
+                DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), currentPoint, currentPoint + new Vector3(0, 5f, 0), Color.magenta);
+            }
 
             // Go to position
             MoveToPosition(ai, currentPoint);

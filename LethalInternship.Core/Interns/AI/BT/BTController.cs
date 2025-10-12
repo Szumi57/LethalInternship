@@ -74,6 +74,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             actions = new Dictionary<string, IBTAction>()
             {
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
+                { "CheckForItemsToGrab", new CheckForItemsToGrab() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
                 { "DropItem", new DropItem() },
@@ -86,7 +87,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
                 { "SetNextDestInterestPoint", new SetNextDestInterestPoint() },
-                { "SetNextDestTargetItem", new SetNextDestTargetItem() },
                 { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() }
             };
@@ -94,6 +94,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             // Condition nodes
             conditions = new Dictionary<string, IBTCondition>()
             {
+                { "CanCheckForItems", new CanCheckForItems() },
                 { "EnemySeen", new EnemySeen() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
@@ -102,7 +103,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsCommandWait", new IsCommandThis(EnumCommandTypes.Wait) },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
-                { "IsObjectToGrab", new IsObjectToGrab() },
+                { "IsItemFound", new IsItemFound() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
                 { "TargetValid", new TargetValid() },
                 { "TooFarFromObject", new TooFarFromObject() },
@@ -160,7 +161,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .End()
 
                     .Sequence("Fetch object")
-                        .Condition("<IsObjectToGrab>", t => conditions["IsObjectToGrab"].Condition(BTContext))
+                        .Condition("<CanCheckForItems>", t => conditions["CanCheckForItems"].Condition(BTContext))
+                        .Do("CheckForItemsToGrab", t => actions["CheckForItemsToGrab"].Action(BTContext))
+                        .Condition("<IsItemFound>", t => conditions["IsItemFound"].Condition(BTContext))
                         .Selector("Should go to position")
                             .Splice(CreateSubTreeGoToObject())
                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
@@ -220,7 +223,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Go to position")
                         .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
-                        .Do("SetNextDestTargetItem", t => actions["SetNextDestTargetItem"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()

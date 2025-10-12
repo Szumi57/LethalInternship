@@ -44,8 +44,8 @@ namespace LethalInternship.SharedAbstractions.Constants
         // Interns
         public static readonly float INTERN_FOV = 90f;
         public static readonly int INTERN_ENTITIES_RANGE = 40;
-        public static readonly float INTERN_OBJECT_AWARNESS = 3f;
-        public static readonly float INTERN_OBJECT_RANGE = 15f;
+        public static readonly float INTERN_OBJECT_AWARNESS = 5f;
+        public static readonly float INTERN_OBJECT_RANGE = 25f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
         public static readonly float CLIMB_SPEED = 8f;
         public static readonly int INIT_RAGDOLL_ID = -2;

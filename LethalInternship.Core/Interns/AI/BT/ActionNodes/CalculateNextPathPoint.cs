@@ -8,7 +8,6 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -20,9 +19,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private TimedCalculatePath calculateDestinationPathTimed = new TimedCalculatePath();
         private TimedCalculatePath calculateNextPointPathTimed = new TimedCalculatePath();
-
-        private IDJKPoint source = null!;
-        private IDJKPoint dest = null!;
 
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -49,7 +45,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
-                CalculateGraphPath(context);
+                CalculatePath(context);
                 return BehaviourTreeStatus.Success;
             }
             else if (path.PathStatus == NavMeshPathStatus.PathComplete
@@ -72,7 +68,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Try to still calculate
                 if (context.PathController.IsPathNotValid())
                 {
-                    CalculateGraphPath(context);
+                    CalculatePath(context);
                 }
 
                 DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
@@ -81,11 +77,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Need to calculate further
-            CalculateGraphPath(context);
+            CalculatePath(context);
             return BehaviourTreeStatus.Success;
         }
 
-        private void CalculateGraphPath(BTContext context)
+        private void CalculatePath(BTContext context)
         {
             InternAI ai = context.InternAI;
 
@@ -100,28 +96,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             graph = new GraphController(GraphEntrances);
 
             // Add source and dest
-            Vector3 internPos = ai.transform.position;
-            if (NavMesh.SamplePosition(internPos, out NavMeshHit hitEnd, 2f, NavMesh.AllAreas))
-            {
-                float diff = (internPos - hitEnd.position).sqrMagnitude;
-                if (diff > 0.1f * 0.1f)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"Using internpos sampled position, diff dist {Mathf.Sqrt(diff)}");
-                }
-                internPos = hitEnd.position;
-            }
-
-            source = new DJKStaticPoint(internPos, "Intern pos");
-            dest = context.PathController.GetDestination();
-            graph.AddPoint(source);
-            graph.AddPoint(dest);
+            graph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), "Intern pos"));
+            graph.AddPoint(context.PathController.GetDestination());
 
             // Calculate Neighbors
-            CalculateNeighbors((int)ai.Npc.playerClientId);
-        }
-
-        private void CalculateNeighbors(int idBatch)
-        {
+            int idBatch = (int)ai.Npc.playerClientId;
             List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(graph.DJKPoints);
             List<IInstruction> instructionsToProcess = new List<IInstruction>();
             foreach (var instrParams in instructions)
@@ -135,13 +114,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"------- {graph}");
+            PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ------- {graph}");
 
             // Get full path
-            currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints, source, dest));
+            currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints));
 
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"======= {currentContext.PathController.GetFullPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ======= {currentContext.PathController.GetFullPathString()}");
         }
     }
 }

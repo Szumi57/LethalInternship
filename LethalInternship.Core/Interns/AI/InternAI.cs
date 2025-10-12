@@ -6,6 +6,8 @@ using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
+using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -1241,6 +1243,8 @@ namespace LethalInternship.Core.Interns.AI
         /// <returns></returns>
         public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject)
         {
+            InternManager.Instance.TrimDictJustDroppedItems();
+
             if (grabbableObject == null
                 || !grabbableObject.gameObject.activeSelf)
             {
@@ -1266,6 +1270,7 @@ namespace LethalInternship.Core.Interns.AI
             // Item just dropped, should wait a bit before grab it again
             if (InternManager.Instance.IsGrabbableObjectJustDropped(grabbableObject))
             {
+                // Trim dictionnary if too large
                 return false;
             }
 
@@ -1281,21 +1286,39 @@ namespace LethalInternship.Core.Interns.AI
                 }
             }
 
-            // Trim dictionnary if too large
-            InternManager.Instance.TrimDictJustDroppedItems();
+            // Object on ship
+            if (grabbableObject.isInElevator
+                || grabbableObject.isInShipRoom)
+            {
+                return false;
+            }
 
-            // Is the item reachable with the agent pathfind ? (only owner knows and calculate) real position of ai intern)
-            //if (IsOwner
-            //    && PathIsIntersectedByLineOfSight(grabbableObject.transform.position, false, false))
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"object {grabbableObject.name} pathfind is not reachable");
-            //    return false;
-            //}
-            //NavMesh.CalculatePath(this.transform.position, grabbableObject.transform.position, NavMesh.AllAreas, this.path1);
-            //if (this.path1.status == NavMeshPathStatus.PathPartial)
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"2 object {grabbableObject.name} pathfind is not reachable");
-            //}
+            // Object in cruiser vehicle
+            if (grabbableObject.transform.parent != null
+                && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
+            {
+                return false;
+            }
+
+            // Object in a container mod of some sort ?
+            if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
+            {
+                if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            // Is a pickmin (LethalMin mod) holding the object ?
+            if (PluginRuntimeProvider.Context.IsModLethalMinLoaded)
+            {
+                if (LethalMinHook.IsGrabbableObjectHeldByPikminMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            
 
             return true;
         }
