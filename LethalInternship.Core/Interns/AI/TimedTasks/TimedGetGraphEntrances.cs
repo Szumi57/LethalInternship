@@ -30,7 +30,6 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             {
                 if (graph != null)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"GetGraphEntrances CleanNeighbors...");
                     graph.CleanNeighbors();
                 }
                 return graph;

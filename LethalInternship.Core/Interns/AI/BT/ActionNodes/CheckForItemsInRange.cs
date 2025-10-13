@@ -169,14 +169,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
             if (GraphEntrances == null || GraphEntrances.DJKPoints.Count == 0)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
+                PluginLoggerHook.LogDebug?.Invoke($"- CheckForItemsInRange GetGraphEntrances not available yet/empty");
                 return;
             }
 
             GraphController tempGraph = new GraphController(GraphEntrances);
 
             // Add source and dest
-            tempGraph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), "Intern pos"));
+            tempGraph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), $"{ai.Npc.playerUsername} pos"));
             tempGraph.AddPoint(new DJKItemPoint(grabbableObject.transform, ai.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale, grabbableObject.name));
 
             // Calculate Neighbors
@@ -215,7 +215,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             for (int i = 0; i < tempPaths.Length; i++)
             {
                 PathController tempPath = tempPaths[i];
-                if (tempPath == null || tempPath.IsPathNotValid())
+                if (tempPath == null || !tempPath.IsPathValid())
                 {
                     continue;
                 }

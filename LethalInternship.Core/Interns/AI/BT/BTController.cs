@@ -176,9 +176,13 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Command go to position")
                         .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
-                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                        //.Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to position")
                             .Splice(CreateSubTreeGoToPosition())
+                            .Sequence("Drop item if in ship")
+                                .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                                .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                            .End()
                             .Do("Chill", t => actions["Chill"].Action(BTContext))
                         .End()
                     .End()
@@ -224,12 +228,13 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                             .Sequence("Return to ship")
                                 .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
-                                .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
-                                .Splice(CreateSubTreeGoToPosition())
+                                .Selector("Go to position or drop object")
+                                    .Splice(CreateSubTreeGoToPosition())
+                                    .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                .End()
                             .End()
                         .End()
                     .End()
-
 
                     .Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
                     .Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
@@ -253,17 +258,13 @@ namespace LethalInternship.Core.Interns.AI.BT
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                .Selector("Go to position")
+                .Selector("Exit vehicle or go to position")
                     .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Go to position if too far")
-                        .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
+                        .Condition("<tooFarFromPos>", t => conditions["TooFarFromPos"].Condition(BTContext))
+                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
-                    .End()
-
-                    .Sequence("Drop item if in ship")
-                        .Condition("hasItemAndInShip", t => conditions["HasItemAndInShip"].Condition(BTContext))
-                        .Do("dropItem", t => actions["DropItem"].Action(BTContext))
                     .End()
                 .End()
                 .Build();
@@ -277,7 +278,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Go to position")
-                        .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
+                        .Condition("<tooFarFromObject>", t => conditions["TooFarFromObject"].Condition(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
@@ -322,9 +323,13 @@ namespace LethalInternship.Core.Interns.AI.BT
                         // no use for update last known pos, even with config, it just not work for now
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
                         //.Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
-                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                        //.Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
+                            .Sequence("Drop item if in ship")
+                                .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                                .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                            .End()
                             .Do("chill", t => actions["Chill"].Action(BTContext))
                         .End()
                     .End()

@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
@@ -16,6 +17,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 {
                     ai.SetCommandToFollowPlayer();
                 }
+                // nbItemsToCheck > 0, still calculating paths to items
                 return BehaviourTreeStatus.Success;
             }
 

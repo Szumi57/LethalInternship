@@ -66,7 +66,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 context.PathController.SetCurrentPoint(new DJKStaticPoint(path.Path.corners[^1], "PartialPoint"));
 
                 // Try to still calculate
-                if (context.PathController.IsPathNotValid())
+                if (!context.PathController.IsPathValid())
                 {
                     CalculatePath(context);
                 }
@@ -89,14 +89,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
             if (GraphEntrances == null || GraphEntrances.DJKPoints.Count == 0)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
+                PluginLoggerHook.LogDebug?.Invoke($"- CalculateNextPathPoint GetGraphEntrances not available yet/empty");
                 return;
             }
 
             graph = new GraphController(GraphEntrances);
 
             // Add source and dest
-            graph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), "Intern pos"));
+            graph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), $"{ai.Npc.playerUsername} pos"));
             graph.AddPoint(context.PathController.GetDestination());
 
             // Calculate Neighbors

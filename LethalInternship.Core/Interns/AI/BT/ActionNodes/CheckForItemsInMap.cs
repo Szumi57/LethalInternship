@@ -73,8 +73,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 {
                     // Path to one item found
                     context.TargetItem = itemsToCheck[indexItemToGrab];
-                    PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}");
                     context.PathController = tempPaths[indexItemToGrab];
+                    PluginLoggerHook.LogDebug?.Invoke($"++ {ai.Npc.playerUsername} CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}, {context.PathController}");
 
                     return ReturnSuccessAndClear(context);
                 }
@@ -87,7 +87,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             randomIndex = indices[itemIndex];
-            PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInMap CalculatePathToItem random index = {randomIndex}, itemIndex = {itemIndex}");
+            PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CheckForItemsInMap begin CalculatePathToItem random index = {randomIndex}, itemIndex = {itemIndex}");
             CalculatePathToItem(context, itemsToCheck[randomIndex]);
 
             return BehaviourTreeStatus.Success;
@@ -150,14 +150,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
             if (GraphEntrances == null || GraphEntrances.DJKPoints.Count == 0)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- GetGraphEntrances not available yet/empty");
+                PluginLoggerHook.LogDebug?.Invoke($"- CheckForItemsInMap GetGraphEntrances not available yet/empty");
                 return;
             }
 
             GraphController tempGraph = new GraphController(GraphEntrances);
 
             // Add source and dest
-            tempGraph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), "Intern pos"));
+            tempGraph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), $"{ai.Npc.playerUsername} pos"));
             tempGraph.AddPoint(new DJKItemPoint(grabbableObject.transform, ai.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale, grabbableObject.name));
 
             // Calculate Neighbors
@@ -184,7 +184,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             tempPaths[randomIndex] = pathCalculated;
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex}, random i {randomIndex} ======= {tempPaths[randomIndex].GetFullPathString()}");
+            //PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex}, random i {randomIndex} valid {pathCalculated.IsPathValid()} ======= {pathCalculated.GetFullPathString()}");
 
             itemIndex++;
         }
@@ -196,7 +196,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             for (int i = 0; i < tempPaths.Length; i++)
             {
                 PathController tempPath = tempPaths[i];
-                if (tempPath == null || tempPath.IsPathNotValid())
+                if (tempPath == null || !tempPath.IsPathValid())
                 {
                     continue;
                 }

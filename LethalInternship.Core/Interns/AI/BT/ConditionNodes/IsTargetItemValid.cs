@@ -8,7 +8,6 @@
             {
                 return false;
             }
-
             if (!context.InternAI.IsGrabbableObjectGrabbable(context.TargetItem))
             {
                 return false;

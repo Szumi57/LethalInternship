@@ -145,9 +145,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return IndexCurrentPoint == DJKPointsPath.Count - 1;// && GetCurrentPoint() == destinationPoint;
         }
 
-        public bool IsPathNotValid()
+        public bool IsPathValid()
         {
-            return DJKPointsPath == null || DJKPointsPath.Count < 2;
+            return DJKPointsPath != null && DJKPointsPath.Count >= 2;
         }
 
         public float GetFullPathDistance()

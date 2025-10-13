@@ -514,9 +514,9 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandToFollowPlayer()
         {
+            PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToFollowPlayer, before {CurrentCommand}");
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             this.PointOfInterest = null;
-            PluginLoggerHook.LogDebug?.Invoke($"SetCommandToFollowPlayer");
 
             // AI
             BTController.ResetContextNewCommandFollowPlayer();
