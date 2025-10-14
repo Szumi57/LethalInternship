@@ -44,7 +44,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 
         public override IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
         {
-            return new InstructionCalculatePathItems(
+            return new InstructionCalculatePathNoPartialsSamplePos(
                                 idBatch,
                                 instructionToProcess.groupId,
                                 start: instructionToProcess.start,

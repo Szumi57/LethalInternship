@@ -35,7 +35,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public override string ToString()
         {
-            string pathString = $"Graph({(DJKPoints == null ? 0 : DJKPoints.Count)})=";
+            string pathString = $"Graph({(DJKPoints == null ? 0 : DJKPoints.Count)})\r\n                                                               ";
             if (DJKPoints == null)
             {
                 return string.Concat(pathString, " null");

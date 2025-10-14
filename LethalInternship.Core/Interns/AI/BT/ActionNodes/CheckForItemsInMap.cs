@@ -29,10 +29,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            if (context.TargetItem != null)
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInMap TargetItem {context.TargetItem} IsGrabbableObjectGrabbable {ai.IsGrabbableObjectGrabbable(context.TargetItem)}");
-            }
             if (context.TargetItem != null
                 && ai.IsGrabbableObjectGrabbable(context.TargetItem))
             {
@@ -74,7 +70,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     // Path to one item found
                     context.TargetItem = itemsToCheck[indexItemToGrab];
                     context.PathController = tempPaths[indexItemToGrab];
-                    PluginLoggerHook.LogDebug?.Invoke($"++ {ai.Npc.playerUsername} CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}, {context.PathController}");
+                    PluginLoggerHook.LogDebug?.Invoke($"++ {ai.Npc.playerUsername} CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
 
                     return ReturnSuccessAndClear(context);
                 }
@@ -83,6 +79,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // We checked everything
             if (itemIndex >= count)
             {
+                PluginLoggerHook.LogDebug?.Invoke($"?? NOTHING");
                 return ReturnSuccessAndClear(context);
             }
 

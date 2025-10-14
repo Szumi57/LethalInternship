@@ -1,12 +1,11 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.Batches.Instructions
 {
-    internal class InstructionCalculatePathItems : IInstruction
+    public class InstructionCalculatePathNoPartials : IInstruction
     {
         public int IdBatch { get; private set; }
         public int GroupId { get; private set; }
@@ -17,14 +16,11 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
         public IDJKPoint startDJKPoint;
         public IDJKPoint targetDJKPoint;
 
-        public float samplePosDist;
-
         private NavMeshPath navPath = new NavMeshPath();
 
-        public InstructionCalculatePathItems(int idBatch, int groupId,
+        public InstructionCalculatePathNoPartials(int idBatch, int groupId,
                                              Vector3 start, Vector3 target,
-                                             IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint,
-                                             float samplePosDist)
+                                             IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint)
         {
             IdBatch = idBatch;
             GroupId = groupId;
@@ -32,27 +28,10 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             this.target = target;
             this.startDJKPoint = startDJKPoint;
             this.targetDJKPoint = targetDJKPoint;
-            this.samplePosDist = samplePosDist;
         }
 
         public void Execute()
         {
-            NavMeshHit hitEnd;
-            if (NavMesh.SamplePosition(target, out hitEnd, samplePosDist, NavMesh.AllAreas))
-            {
-                // Check if sampled position not too far
-                float sqrHorizontalDistance = Vector3.Scale(hitEnd.position - target, new Vector3(1, 0, 1)).sqrMagnitude;
-                // Close enough to item for grabbing
-                if (sqrHorizontalDistance < 1f * 1f)
-                {
-                    target = hitEnd.position;
-                }
-                else
-                {
-                    //PluginLoggerHook.LogDebug?.Invoke($"InstructionCalculatePathItems SamplePostoo far {sqrHorizontalDistance}, using target as before");
-                }
-            }
-
             NavMesh.CalculatePath(start, target, NavMesh.AllAreas, navPath);
             //PluginLoggerHook.LogDebug?.Invoke($"{(navPath.status == NavMeshPathStatus.PathComplete ? "+" : "")}Execute InstructionCalculatePathItems SamplePos({samplePosDist}), target {target}, {startDJKPoint.Id}-{targetDJKPoint.Id} batch {IdBatch} groupid {GroupId}, status {navPath.status}");
             if (navPath.status == NavMeshPathStatus.PathInvalid

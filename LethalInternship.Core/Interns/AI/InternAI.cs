@@ -587,16 +587,20 @@ namespace LethalInternship.Core.Interns.AI
 
         private bool ShouldFreeMovement()
         {
-            if (IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position)
-                && dictComponentByCollider.TryGetValue(IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name, out Component component))
+            if (IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position))
             {
-                BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
-                if (bridgeTrigger != null
-                    && bridgeTrigger.fallenBridgeColliders.Length > 0
-                    && bridgeTrigger.fallenBridgeColliders[0].enabled)
+                RaycastHit raycastHit = IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
+                if (raycastHit.collider != null
+                    && dictComponentByCollider.TryGetValue(raycastHit.collider.name, out Component component))
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} on fallen bridge ! {IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name}");
-                    return true;
+                    BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
+                    if (bridgeTrigger != null
+                        && bridgeTrigger.fallenBridgeColliders.Length > 0
+                        && bridgeTrigger.fallenBridgeColliders[0].enabled)
+                    {
+                        PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} on fallen bridge ! {IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name}");
+                        return true;
+                    }
                 }
             }
 
