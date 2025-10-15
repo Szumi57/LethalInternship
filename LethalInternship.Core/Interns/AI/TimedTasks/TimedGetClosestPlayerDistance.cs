@@ -37,7 +37,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
         }
 
-        private float CalculateGetClosestPlayerDistance(Vector3 internPos)
+        private void CalculateGetClosestPlayerDistance(Vector3 internPos)
         {
             float minDistance = float.MaxValue;
             for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
@@ -56,7 +56,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
                 }
             }
 
-            return minDistance;
+            distance = minDistance;
         }
     }
 }
