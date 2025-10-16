@@ -114,13 +114,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ------- {graph}");
+            //PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ------- {graph}");
 
             // Get full path
             currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints));
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ======= {currentContext.PathController.GetFullPathString()}");
+            //PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ======= {currentContext.PathController.GetFullPathString()}");
         }
     }
 }

@@ -3301,6 +3301,7 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             PointOfInterest = null;
+            InternManager.Instance.CancelBatch((int)Npc.playerClientId);
         }
 
         #endregion
@@ -4078,6 +4079,18 @@ namespace LethalInternship.Core.Interns.AI
 
         public float GetClosestPlayerDistance()
         {
+            if (this.NpcController == null
+                || this.Npc == null)
+            {
+                return float.MaxValue;
+            }
+
+            if (this.IsEnemyDead
+                || this.Npc.isPlayerDead)
+            {
+                return float.MaxValue;
+            }
+
             if (GetClosestPlayerDistanceTimed == null)
             {
                 GetClosestPlayerDistanceTimed = new TimedGetClosestPlayerDistance();

@@ -1800,21 +1800,13 @@ namespace LethalInternship.Core.Managers
         private int maxBatchesPerFrame = 1;
         private int maxInstructionsPerFrame = 1;
         private int currentBatch = -2;
+        private float fairnessBoost = 5000f; // the weight of a second of waiting
 
         private Dictionary<int, BatchRequest> activeBatches = new Dictionary<int, BatchRequest>();
 
         public void RequestBatch(int idBatch, List<IInstruction> instructions, Action? onBatchComplete = null)
         {
             var newBatch = new BatchRequest(idBatch, instructions, onBatchComplete);
-
-            //if (!activeBatches.TryGetValue(idBatch, out var batch))
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch NEW {idBatch} instrs:{instructions.Count}");
-            //}
-            //else
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch REPLACE {idBatch} instrs:{instructions.Count}");
-            //}
             activeBatches[idBatch] = newBatch;
         }
 
@@ -1835,6 +1827,7 @@ namespace LethalInternship.Core.Managers
                 if (processedBatches >= maxBatchesPerFrame) break;
                 if (processedInstructions >= maxInstructionsPerFrame) break;
 
+                // Has remaining instructions ?
                 if (!batch.HasRemaining)
                 {
                     activeBatches.Remove(batch.id);

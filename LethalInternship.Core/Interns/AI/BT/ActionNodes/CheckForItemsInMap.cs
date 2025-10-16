@@ -70,7 +70,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     // Path to one item found
                     context.TargetItem = itemsToCheck[indexItemToGrab];
                     context.PathController = tempPaths[indexItemToGrab];
-                    PluginLoggerHook.LogDebug?.Invoke($"++ {ai.Npc.playerUsername} CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
+                    PluginLoggerHook.LogDebug?.Invoke($"++M {ai.Npc.playerUsername} CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
 
                     return ReturnSuccessAndClear(context);
                 }
@@ -79,12 +79,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // We checked everything
             if (itemIndex >= count)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"?? NOTHING");
+                PluginLoggerHook.LogDebug?.Invoke($"??M NOTHING");
                 return ReturnSuccessAndClear(context);
             }
 
             randomIndex = indices[itemIndex];
-            PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CheckForItemsInMap begin CalculatePathToItem random index = {randomIndex}, itemIndex = {itemIndex}");
+            //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CheckForItemsInMap begin CalculatePathToItem random index = {randomIndex}, itemIndex = {itemIndex}");
             CalculatePathToItem(context, itemsToCheck[randomIndex]);
 
             return BehaviourTreeStatus.Success;
@@ -173,7 +173,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex}, random i {randomIndex} ------- {tempGraphs[randomIndex]}");
+            //PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex}, random i {randomIndex} ------- {tempGraphs[randomIndex]}");
 
             // Get full path
             PathController pathCalculated = new PathController();

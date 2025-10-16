@@ -24,18 +24,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            if (context.TargetItem != null
-                && ai.IsGrabbableObjectGrabbable(context.TargetItem))
-            {
-                return BehaviourTreeStatus.Success;
-            }
-
             if (itemsToCheck.Count == 0)
             {
                 itemsToCheck = LookingForItemsToGrabInRange(ai);
                 if (itemsToCheck.Count == 0)
                 {
-                    context.TargetItem = null;
                     return BehaviourTreeStatus.Success;
                 }
 
@@ -50,22 +43,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (indexItemToGrab < 0)
                 {
                     itemsToCheck.Clear();
-                    PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInRange no path to no items found");
-                    return BehaviourTreeStatus.Success;
-                }
-
-                // Item still grabbable ?
-                GrabbableObject grabbableObjectToGrab = itemsToCheck[indexItemToGrab];
-                if (!ai.IsGrabbableObjectGrabbable(grabbableObjectToGrab))
-                {
-                    itemsToCheck.Clear();
-                    PluginLoggerHook.LogDebug?.Invoke($"-- CheckForItemsInRange item no grabbable actually");
+                    //PluginLoggerHook.LogDebug?.Invoke($"??R NOTHING");
                     return BehaviourTreeStatus.Success;
                 }
 
                 // Path to one item found
                 context.TargetItem = itemsToCheck[indexItemToGrab];
                 context.PathController = tempPaths[indexItemToGrab];
+                PluginLoggerHook.LogDebug?.Invoke($"++R {ai.Npc.playerUsername} CheckForItemsInRange target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
                 return BehaviourTreeStatus.Success;
             }
 
@@ -203,7 +188,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             tempPaths[itemIndex] = pathCalculated;
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ======= {tempPaths[itemIndex].GetFullPathString()}");
+            //PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ======= {tempPaths[itemIndex].GetFullPathString()}");
 
             itemIndex++;
         }
