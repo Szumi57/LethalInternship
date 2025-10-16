@@ -209,7 +209,7 @@ namespace LethalInternship.Core.Managers
 
         private void GiveOrderGoToShip()
         {
-            Transform? shipTransform = GameObject.Find("HangarShip").GetComponent<Transform>();
+            Transform? shipTransform = InternManager.Instance.ShipTransform;
             if (shipTransform == null)
             {
                 PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");

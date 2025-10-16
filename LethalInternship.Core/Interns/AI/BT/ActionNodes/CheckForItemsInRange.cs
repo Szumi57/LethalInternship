@@ -9,6 +9,7 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -26,7 +27,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             if (itemsToCheck.Count == 0)
             {
-                itemsToCheck = LookingForItemsToGrabInRange(ai);
+                itemsToCheck = LookingForItemsToGrabInRange(ai)
+                                .OrderBy(i => (i.transform.position - ai.transform.position).sqrMagnitude)
+                                .ToList();
                 if (itemsToCheck.Count == 0)
                 {
                     return BehaviourTreeStatus.Success;
@@ -36,21 +39,27 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 tempPaths = new PathController[itemsToCheck.Count];
             }
 
+            if (itemsToCheck.Count > 0)
+            {
+                int indexItemToGrab = GetIndexMinPath();
+                if (indexItemToGrab >= 0)
+                {
+                    // Path to one item found
+                    context.TargetItem = itemsToCheck[indexItemToGrab];
+                    context.PathController = tempPaths[indexItemToGrab];
+                    PluginLoggerHook.LogDebug?.Invoke($"++R {ai.Npc.playerUsername} CheckForItemsInRange target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
+
+                    itemIndex = 0;
+                    itemsToCheck.Clear();
+                    return BehaviourTreeStatus.Success;
+                }
+            }
+
+            // We checked everything in range
             if (itemIndex >= itemsToCheck.Count)
             {
                 itemIndex = 0;
-                int indexItemToGrab = GetIndexMinPath();
-                if (indexItemToGrab < 0)
-                {
-                    itemsToCheck.Clear();
-                    //PluginLoggerHook.LogDebug?.Invoke($"??R NOTHING");
-                    return BehaviourTreeStatus.Success;
-                }
-
-                // Path to one item found
-                context.TargetItem = itemsToCheck[indexItemToGrab];
-                context.PathController = tempPaths[indexItemToGrab];
-                PluginLoggerHook.LogDebug?.Invoke($"++R {ai.Npc.playerUsername} CheckForItemsInRange target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
+                itemsToCheck.Clear();
                 return BehaviourTreeStatus.Success;
             }
 

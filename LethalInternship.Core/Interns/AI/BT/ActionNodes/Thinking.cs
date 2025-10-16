@@ -12,7 +12,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            PluginLoggerHook.LogDebug?.Invoke($"THINKING");
+            PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} THINKING");
 
             ai.StopMoving();
             ai.NpcController.OrderToLookForward();

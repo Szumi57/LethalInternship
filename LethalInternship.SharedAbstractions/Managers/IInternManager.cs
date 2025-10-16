@@ -18,8 +18,9 @@ namespace LethalInternship.SharedAbstractions.Managers
         List<int> HeldInternsLocalPlayer { get; set; }
         bool IsServer { get; }
         Dictionary<EnemyAI, INoiseListener> DictEnemyAINoiseListeners { get; }
-        VehicleController? VehicleController { get; }
         List<IBodyReplacementBase> ListBodyReplacementOnDeadBodies { get; set; }
+        Transform? ShipTransform { get; }
+        VehicleController? VehicleController { get; }
 
         IInternAI? GetInternAI(int playerClientId);
         void ManagePoolOfInterns();

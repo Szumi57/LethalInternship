@@ -81,12 +81,24 @@ namespace LethalInternship.Core.Managers
         }
         public List<int> HeldInternsLocalPlayer { get => heldInternsLocalPlayer; set => heldInternsLocalPlayer = value; }
         public new bool IsServer => base.IsServer;
-        public VehicleController? VehicleController { get => vehicleController; }
         public List<IBodyReplacementBase> ListBodyReplacementOnDeadBodies { get => listBodyReplacementOnDeadBodies; set => listBodyReplacementOnDeadBodies = value; }
+        public VehicleController? VehicleController { get => vehicleController; }
+        public Transform? ShipTransform
+        {
+            get
+            {
+                if (shipTransform == null)
+                {
+                    shipTransform = GameObject.Find("HangarShip").GetComponent<Transform>();
+                }
+                return shipTransform;
+            }
+        }
 
         private int allEntitiesCount;
         public bool LandingStatusAllowed;
         private List<int> heldInternsLocalPlayer = new List<int>();
+        private Transform? shipTransform = null!;
 
         public Vector3 ItemDropShipPos { get => itemDropShipPos; set => itemDropShipPos = value; }
         private Vector3 itemDropShipPos;
@@ -1800,7 +1812,6 @@ namespace LethalInternship.Core.Managers
         private int maxBatchesPerFrame = 1;
         private int maxInstructionsPerFrame = 1;
         private int currentBatch = -2;
-        private float fairnessBoost = 5000f; // the weight of a second of waiting
 
         private Dictionary<int, BatchRequest> activeBatches = new Dictionary<int, BatchRequest>();
 
