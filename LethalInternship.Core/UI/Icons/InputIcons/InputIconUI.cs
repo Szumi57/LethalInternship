@@ -36,7 +36,7 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
         {
             if (isValidNavMeshPoint)
             {
-                iconUIController.SetColor(Color.green);
+                iconUIController.SetColor(new Color(255 / 255f, 111 / 255f, 1 / 255f));
             }
             else
             {

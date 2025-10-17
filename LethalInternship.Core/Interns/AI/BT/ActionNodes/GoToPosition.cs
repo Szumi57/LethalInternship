@@ -29,7 +29,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
-            //PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
+            //SharedAbstractions.Hooks.PluginLoggerHooks.PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
             // todo remove
             DJKItemPoint? vPoint = context.PathController.GetCurrentPoint() as DJKItemPoint;

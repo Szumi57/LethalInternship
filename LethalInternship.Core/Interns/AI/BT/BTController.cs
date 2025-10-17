@@ -325,7 +325,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Splice(CreateSubTreeGoToVehicle())
                     .End()
 
-                    .Splice(CreateSubTreeExitVehicle())
+                    //.Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Follow player")
                         // no use for update last known pos, even with config, it just not work for now

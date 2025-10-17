@@ -30,8 +30,8 @@ namespace LethalInternship.Core.Managers
 
         private Coroutine? scanPositionCoroutine;
         private Collider? lastColliderHit = null;
-        private Vector3? lastNavMeshHitPoint = null;
-        private bool isPointedValid;
+        private Vector3? lastPointedHitPoint = null;
+        //private bool isPointedValid;
 
         private void Awake()
         {
@@ -101,7 +101,7 @@ namespace LethalInternship.Core.Managers
             {
                 case EnumInputAction.GoToPosition:
                     StartScanPositionCoroutine();
-                    UIManager.Instance.ShowInputIcon(isPointedValid);
+                    UIManager.Instance.ShowInputIcon(lastPointedHitPoint != null);
                     break;
 
                 case EnumInputAction.FollowMe:
@@ -315,10 +315,9 @@ namespace LethalInternship.Core.Managers
                         pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
                     }
                 }
-                else if (isPointedValid
-                         && lastNavMeshHitPoint.HasValue)
+                else if (lastPointedHitPoint.HasValue)
                 {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastNavMeshHitPoint.Value);
+                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastPointedHitPoint.Value);
                 }
             }
             if (pointOfInterest == null)
@@ -445,7 +444,7 @@ namespace LethalInternship.Core.Managers
             // Command all close interns
             if (UIManager.Instance.ShowCommandsWheel())
             {
-                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
+                PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
                 currentCommandedIntern = null;
             }
         }
@@ -478,7 +477,7 @@ namespace LethalInternship.Core.Managers
                 RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
                 if (raycastHits.Length == 0)
                 {
-                    isPointedValid = false;
+                    lastPointedHitPoint = null;
                     yield return null;
                     continue;
                 }
@@ -505,46 +504,30 @@ namespace LethalInternship.Core.Managers
                     if (IsColliderFromVehicle(hit.collider))
                     {
                         lastColliderHit = hit.collider;
-                        isPointedValid = true;
+                        lastPointedHitPoint = null;
                         UIManager.Instance.SetVehicleInputIcon();
                         break;
                     }
                     else if (IsColliderFromShip(hit.collider))
                     {
                         lastColliderHit = hit.collider;
-                        isPointedValid = true;
+                        lastPointedHitPoint = null;
                         UIManager.Instance.SetShipInputIcon();
                         break;
                     }
                     lastColliderHit = null;
+                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
 
                     // Pedestrian
                     UIManager.Instance.SetPedestrianInputIcon();
-
-                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
-
-                    NavMesh.CalculatePath(localPlayer.transform.position, hit.point, NavMesh.AllAreas, path);
-                    if (path.status != NavMeshPathStatus.PathInvalid)
-                    {
-                        lastNavMeshHitPoint = hit.point;
-                    }
-
-                    if (lastHitPoint != null
-                        && lastNavMeshHitPoint != null)
-                    {
-                        isPointedValid = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
-                    }
-                    else
-                    {
-                        isPointedValid = false;
-                    }
+                    lastPointedHitPoint = hit.point;
 
                     break;
                 }
                 yield return null;
             }
 
-            isPointedValid = false;
+            lastPointedHitPoint = null;
             yield break;
         }
 

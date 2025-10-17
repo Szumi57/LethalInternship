@@ -25,6 +25,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
 
+            //PluginLoggerHook.LogDebug?.Invoke($"{context.PathController.GetCurrentPoint()} sqrHorizontalDistance {sqrHorizontalDistance}");
             return true;
         }
     }

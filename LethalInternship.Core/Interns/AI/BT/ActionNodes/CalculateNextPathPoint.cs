@@ -42,6 +42,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             // Check if current PathPoint reachable
             path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPointPos(ai.transform.position));
+            PluginLoggerHook.LogDebug?.Invoke($"path.PathStatus {path.PathStatus} ai.agent.path.status {ai.agent.path.status}");
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
@@ -49,12 +50,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Success;
             }
             else if (path.PathStatus == NavMeshPathStatus.PathComplete
-                || (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete))
+                 || (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete))
             {
-                if (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete)
-                {
-                    //PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status {path.PathStatus} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
-                }
+                // Path calculated invalid but agent path still valid
+
+                //if (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathComplete)
+                //{
+                //    PluginLoggerHook.LogDebug?.Invoke($"** current PathPoint reachable path.status {path.PathStatus} | agent {ai.agent.path.status} isPathStale {ai.agent.isPathStale}");
+                //}
 
                 DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
 
@@ -63,6 +66,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
+                // Path calculated partial
                 context.PathController.SetCurrentPoint(new DJKStaticPoint(path.Path.corners[^1], "PartialPoint"));
 
                 // Try to still calculate
@@ -72,6 +76,21 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
 
                 DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
+
+                return BehaviourTreeStatus.Success;
+            }
+            else if (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathPartial)
+            {
+                // Path calculated invalid but agent path partial
+                context.PathController.SetCurrentPoint(new DJKStaticPoint(ai.agent.path.corners[^1], "PartialPoint"));
+
+                // Try to still calculate
+                if (!context.PathController.IsPathValid())
+                {
+                    CalculatePath(context);
+                }
+
+                DrawUtil.DrawPath(ai.LineRendererUtil, ai.agent.path);
 
                 return BehaviourTreeStatus.Success;
             }
