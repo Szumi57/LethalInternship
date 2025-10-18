@@ -323,12 +323,12 @@ namespace LethalInternship.Core.Managers
             }
             if (pointOfInterest == null)
             {
-                return;
-            }
+                if (CurrentInputAction == EnumInputAction.None)
+                {
+                    ManageIntern();
+                    return;
+                }
 
-            if (CurrentInputAction == EnumInputAction.None)
-            {
-                ManageIntern();
                 return;
             }
 
