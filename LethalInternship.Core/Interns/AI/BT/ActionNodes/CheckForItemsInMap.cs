@@ -79,7 +79,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // We checked everything
             if (itemIndex >= count)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"??M NOTHING");
+                PluginLoggerHook.LogDebug?.Invoke($"??M {ai.Npc.playerUsername} NOTHING more grabbable on map");
                 return ReturnSuccessAndClear(context);
             }
 

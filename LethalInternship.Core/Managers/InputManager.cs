@@ -31,7 +31,7 @@ namespace LethalInternship.Core.Managers
         private Coroutine? scanPositionCoroutine;
         private Collider? lastColliderHit = null;
         private Vector3? lastPointedHitPoint = null;
-        //private bool isPointedValid;
+        private bool isPointedValid;
 
         private void Awake()
         {
@@ -101,7 +101,7 @@ namespace LethalInternship.Core.Managers
             {
                 case EnumInputAction.GoToPosition:
                     StartScanPositionCoroutine();
-                    UIManager.Instance.ShowInputIcon(lastPointedHitPoint != null);
+                    UIManager.Instance.ShowInputIcon(isPointedValid);
                     break;
 
                 case EnumInputAction.FollowMe:
@@ -315,7 +315,8 @@ namespace LethalInternship.Core.Managers
                         pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
                     }
                 }
-                else if (lastPointedHitPoint.HasValue)
+                else if (isPointedValid
+                         && lastPointedHitPoint.HasValue)
                 {
                     pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastPointedHitPoint.Value);
                 }
@@ -472,12 +473,15 @@ namespace LethalInternship.Core.Managers
 
             while (CurrentInputAction == EnumInputAction.GoToPosition)
             {
+                isPointedValid = false;
+                lastColliderHit = null;
+
                 // Scan 3D world
                 Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
                 RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
                 if (raycastHits.Length == 0)
                 {
-                    lastPointedHitPoint = null;
+                    UIManager.Instance.SetPedestrianInputIcon();
                     yield return null;
                     continue;
                 }
@@ -504,30 +508,30 @@ namespace LethalInternship.Core.Managers
                     if (IsColliderFromVehicle(hit.collider))
                     {
                         lastColliderHit = hit.collider;
-                        lastPointedHitPoint = null;
+                        isPointedValid = true;
                         UIManager.Instance.SetVehicleInputIcon();
                         break;
                     }
                     else if (IsColliderFromShip(hit.collider))
                     {
                         lastColliderHit = hit.collider;
-                        lastPointedHitPoint = null;
+                        isPointedValid = true;
                         UIManager.Instance.SetShipInputIcon();
                         break;
                     }
-                    lastColliderHit = null;
                     //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
 
                     // Pedestrian
                     UIManager.Instance.SetPedestrianInputIcon();
                     lastPointedHitPoint = hit.point;
+                    isPointedValid = lastHitPoint != null;
 
                     break;
                 }
                 yield return null;
             }
 
-            lastPointedHitPoint = null;
+            isPointedValid = false;
             yield break;
         }
 
