@@ -42,7 +42,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             // Check if current PathPoint reachable
             path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPointPos(ai.transform.position));
-            PluginLoggerHook.LogDebug?.Invoke($"path.PathStatus {path.PathStatus} ai.agent.path.status {ai.agent.path.status}");
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further

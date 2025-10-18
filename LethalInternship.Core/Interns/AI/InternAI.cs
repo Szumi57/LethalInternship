@@ -4099,7 +4099,7 @@ namespace LethalInternship.Core.Interns.AI
             return GetClosestPlayerDistanceTimed.GetClosestPlayerDistance(this.Npc.transform.position);
         }
 
-        #region GiantKiwi stuff
+        #region GiantKiwi compat patches
 
         [ServerRpc(RequireOwnership = false)]
         public void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR)
@@ -4159,6 +4159,39 @@ namespace LethalInternship.Core.Interns.AI
 
             giantKiwiAI.Screech(enraged: true);
             giantKiwiAI.SwitchToBehaviourStateOnLocalClient(stateIndex: 2);
+        }
+
+        #endregion
+
+        #region Radmech compat patches
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SyncSetTargetToThreatServerRpc(NetworkObjectReference radMechNOR, Vector3 lastSeenPos)
+        {
+            SyncSetTargetToThreatClientRpc(radMechNOR, lastSeenPos);
+        }
+
+        [ClientRpc]
+        private void SyncSetTargetToThreatClientRpc(NetworkObjectReference radMechNOR, Vector3 lastSeenPos)
+        {
+            radMechNOR.TryGet(out NetworkObject radMechNO);
+            RadMechAI? radMechAI = radMechNO.gameObject.GetComponent<RadMechAI>();
+            if (radMechAI == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"SyncSetTargetToThreatClientRpc intern {Npc.playerClientId} radMechNOR -> RadMechAI null");
+                return;
+            }
+
+            if (!this.Npc.TryGetComponent<IVisibleThreat>(out IVisibleThreat visibleThreat))
+            {
+                PluginLoggerHook.LogError?.Invoke("Error: no IVisibleThreat on intern (SyncSetTargetToThreatClientRpc)");
+                return;
+            }
+
+            radMechAI.focusedThreatTransform = visibleThreat.GetThreatTransform();
+            float dist = Vector3.Distance(radMechAI.eye.position, radMechAI.focusedThreatTransform.position);
+            radMechAI.SetTargetedThreat(visibleThreat, lastSeenPos, dist);
+            radMechAI.SwitchToBehaviourStateOnLocalClient(stateIndex: 1);
         }
 
         #endregion

@@ -84,5 +84,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         // GiantKiwi
         void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
         void SyncAttackingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
+
+        // RadMech
+        void SyncSetTargetToThreatServerRpc(NetworkObjectReference radMechNOR, Vector3 lastSeenPos);
     }
 }
