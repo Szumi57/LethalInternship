@@ -37,9 +37,11 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
         }
 
-        private float CalculateGetClosestPlayerDistance(Vector3 internPos)
+        private void CalculateGetClosestPlayerDistance(Vector3 internPos)
         {
             float minDistance = float.MaxValue;
+
+            // Distance with real players
             for (int i = 0; i < InternManager.Instance.IndexBeginOfInterns; i++)
             {
                 PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
@@ -56,7 +58,20 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
                 }
             }
 
-            return minDistance;
+            // Distance with ship
+            if (InternManager.Instance.ShipTransform == null)
+            {
+                distance = minDistance;
+                return;
+            }
+
+            float distWithShip = (InternManager.Instance.ShipTransform.position - internPos).sqrMagnitude * 2;
+            if (distWithShip < minDistance)
+            {
+                minDistance = distWithShip;
+            }
+
+            distance = minDistance;
         }
     }
 }

@@ -35,6 +35,7 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo GetDamageFromSlimeIfInternMethod = SymbolExtensions.GetMethodInfo(() => GetDamageFromSlimeIfIntern(new PlayerControllerB()));
         public static readonly MethodInfo SyncWatchingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncWatchingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
         public static readonly MethodInfo SyncAttackingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncAttackingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
+        public static readonly MethodInfo SyncSetTargetToThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncSetTargetToThreatIfIntern(new RadMechAI(), new PlayerControllerB(), new Vector3()));
 
         public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");   
 
@@ -222,6 +223,25 @@ namespace LethalInternship.Patches.Utils
             }
 
             internAI.SyncAttackingThreatGiantKiwiServerRpc(giantKiwiAI.GetComponent<NetworkObject>());
+
+            return true;
+        }
+        private static bool SyncSetTargetToThreatIfIntern(RadMechAI radMechAI, IVisibleThreat threat, Vector3 lastSeenPos)
+        {
+            PlayerControllerB internController = threat.GetThreatTransform().gameObject.GetComponent<PlayerControllerB>();
+            if (internController == null)
+            {
+                return false;
+            }
+
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)internController.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return false;
+            }
+
+            internAI.SyncSetTargetToThreatServerRpc(radMechAI.GetComponent<NetworkObject>(), lastSeenPos);
 
             return true;
         }

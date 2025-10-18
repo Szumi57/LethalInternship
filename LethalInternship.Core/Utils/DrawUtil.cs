@@ -61,7 +61,7 @@ namespace LethalInternship.Core.Utils
             }
             else
             {
-                PluginLoggerHook.LogDebug?.Invoke($"DrawPath PathInvalid");
+                //PluginLoggerHook.LogDebug?.Invoke($"DrawPath PathInvalid");
             }
         }
     }

@@ -6,6 +6,7 @@
         FollowPlayer,
         GoToVehicle,
         GoToPosition,
-        Wait
+        Wait,
+        ScavengingMode
     }
 }

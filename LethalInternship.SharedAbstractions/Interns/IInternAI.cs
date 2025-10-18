@@ -27,6 +27,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         IPointOfInterest? GetPointOfInterest();
         void SetCommandToFollowPlayer();
+        void SetCommandToScavenging();
         void SetCommandTo(IPointOfInterest pointOfInterest);
 
         void AdaptController(PlayerControllerB playerControllerB);
@@ -83,5 +84,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         // GiantKiwi
         void SyncWatchingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
         void SyncAttackingThreatGiantKiwiServerRpc(NetworkObjectReference giantKiwiNOR);
+
+        // RadMech
+        void SyncSetTargetToThreatServerRpc(NetworkObjectReference radMechNOR, Vector3 lastSeenPos);
     }
 }

@@ -8,28 +8,33 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
-    public class DJKMovingPoint : DJKPointBase
+    internal class DJKItemPoint : DJKPointBase
     {
         public string Name { get; set; }
         public Transform Transform { get; set; }
 
-        public DJKMovingPoint(Transform transform)
+        public float grabDistance;
+        public int checkPoints = 8;
+
+        public DJKItemPoint(Transform transform, float grabDistance)
             : base()
         {
             this.Transform = transform;
-            Name = string.Empty;
+            this.Name = string.Empty;
+            this.grabDistance = grabDistance;
         }
 
-        public DJKMovingPoint(Transform transform, string name)
+        public DJKItemPoint(Transform transform, float grabDistance, string name)
             : base()
         {
             this.Transform = transform;
             this.Name = name;
+            this.grabDistance = grabDistance;
         }
 
         public override object Clone()
         {
-            var copy = new DJKMovingPoint(Transform, Name);
+            var copy = new DJKItemPoint(Transform, grabDistance, Name);
             copy.Id = Id;
             copy.Neighbors = Neighbors
                 .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
@@ -46,24 +51,45 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
                                 target: instructionToProcess.target,
                                 startDJKPoint: instructionToProcess.startDJKPoint,
                                 targetDJKPoint: instructionToProcess.targetDJKPoint,
-                                samplePosDist: 2f);
+                                samplePosDist: 4f);
+        }
+
+        private Vector3[] GetWorldPoints()
+        {
+            List<Vector3> points = new List<Vector3>();
+            for (int i = 0; i < checkPoints; i++)
+            {
+                float angle = (360f / checkPoints) * i;
+                Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
+                points.Add(Transform.position + dir * grabDistance);
+            }
+
+            return points.ToArray();
         }
 
         public override Vector3[] GetAllPoints()
         {
-            return new Vector3[] { Transform.position };
+            return GetWorldPoints();
         }
 
         public override Vector3 GetClosestPointTo(Vector3 point)
         {
-            return Transform.position;
+            var worldPoints = GetWorldPoints()
+                                .Where(p => p.y - point.y <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                                .OrderBy(p => (p - point).sqrMagnitude);
+            if (!worldPoints.Any())
+            {
+                return Transform.position;
+            }
+
+            return worldPoints.First();
         }
 
         public override Vector3[] GetNearbyPoints(Vector3 point)
         {
-            List<Vector3> points = new List<Vector3> { Transform.position };
-            return points
+            return GetWorldPoints()
                         .Where(p => p.y - point.y <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                        .OrderBy(p => (p - point).sqrMagnitude)
                         .ToArray();
         }
 
@@ -71,7 +97,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         {
             string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.idNeighbor}({(int)Mathf.Sqrt(x.weight)})"));
 
-            return $"DJKMovingPoint \"{Name}\" id:{Id}, transform {Transform.name} pos: {Transform.position}, Neighbors {{{neighborsString}}}";
+            return $"DJKItemPoint \"{Name}\" id:{Id}, transform {Transform.name} pos: {Transform.position}, Neighbors {{{neighborsString}}}";
         }
     }
 }

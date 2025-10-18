@@ -44,7 +44,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         // Interns
         public static readonly float INTERN_FOV = 90f;
         public static readonly int INTERN_ENTITIES_RANGE = 40;
-        public static readonly float INTERN_OBJECT_AWARNESS = 3f;
+        public static readonly float INTERN_OBJECT_AWARNESS = 5f;
         public static readonly float INTERN_OBJECT_RANGE = 15f;
         public static readonly float WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS = 10f;
         public static readonly float CLIMB_SPEED = 8f;
@@ -111,7 +111,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float MAX_TIME_SPRINT_SEARCH_WANDER = 3f;
 
         // Go to position
-        public static readonly float DISTANCE_START_RUNNING = 8f;
+        public static readonly float DISTANCE_START_RUNNING = 2f;
         public static readonly float DISTANCE_STOP_RUNNING = 7f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_HOR = 4f;
         public static readonly float DISTANCE_CLOSE_ENOUGH_VER = 2f;

@@ -81,12 +81,24 @@ namespace LethalInternship.Core.Managers
         }
         public List<int> HeldInternsLocalPlayer { get => heldInternsLocalPlayer; set => heldInternsLocalPlayer = value; }
         public new bool IsServer => base.IsServer;
-        public VehicleController? VehicleController { get => vehicleController; }
         public List<IBodyReplacementBase> ListBodyReplacementOnDeadBodies { get => listBodyReplacementOnDeadBodies; set => listBodyReplacementOnDeadBodies = value; }
+        public VehicleController? VehicleController { get => vehicleController; }
+        public Transform? ShipTransform
+        {
+            get
+            {
+                if (shipTransform == null)
+                {
+                    shipTransform = GameObject.Find("HangarShip").GetComponent<Transform>();
+                }
+                return shipTransform;
+            }
+        }
 
         private int allEntitiesCount;
         public bool LandingStatusAllowed;
         private List<int> heldInternsLocalPlayer = new List<int>();
+        private Transform? shipTransform = null!;
 
         public Vector3 ItemDropShipPos { get => itemDropShipPos; set => itemDropShipPos = value; }
         private Vector3 itemDropShipPos;
@@ -1806,15 +1818,6 @@ namespace LethalInternship.Core.Managers
         public void RequestBatch(int idBatch, List<IInstruction> instructions, Action? onBatchComplete = null)
         {
             var newBatch = new BatchRequest(idBatch, instructions, onBatchComplete);
-
-            //if (!activeBatches.TryGetValue(idBatch, out var batch))
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch NEW {idBatch} instrs:{instructions.Count}");
-            //}
-            //else
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"RequestBatch REPLACE {idBatch} instrs:{instructions.Count}");
-            //}
             activeBatches[idBatch] = newBatch;
         }
 
@@ -1835,6 +1838,7 @@ namespace LethalInternship.Core.Managers
                 if (processedBatches >= maxBatchesPerFrame) break;
                 if (processedInstructions >= maxInstructionsPerFrame) break;
 
+                // Has remaining instructions ?
                 if (!batch.HasRemaining)
                 {
                     activeBatches.Remove(batch.id);
@@ -1949,10 +1953,12 @@ namespace LethalInternship.Core.Managers
             if (DictJustDroppedItems != null && DictJustDroppedItems.Count > 20)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"TrimDictJustDroppedItems Count{DictJustDroppedItems.Count}");
-                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS);
+                var itemsToClean = DictJustDroppedItems.Where(x => Time.realtimeSinceStartup - x.Value > Const.WAIT_TIME_FOR_GRAB_DROPPED_OBJECTS)
+                                                       .Select(x => x.Key)
+                                                       .ToList();
                 foreach (var item in itemsToClean)
                 {
-                    DictJustDroppedItems.Remove(item.Key);
+                    DictJustDroppedItems.Remove(item);
                 }
             }
         }

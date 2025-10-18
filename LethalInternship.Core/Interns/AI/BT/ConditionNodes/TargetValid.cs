@@ -1,4 +1,6 @@
-﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
+﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+
+namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class TargetValid : IBTCondition
     {
@@ -18,6 +20,7 @@
             }
 
             // Target valid
+            context.PathController.SetNewDestination(new DJKMovingPoint(ai.targetPlayer.transform, $"targetPlayer {ai.targetPlayer.playerUsername}"));
             return true;
         }
     }

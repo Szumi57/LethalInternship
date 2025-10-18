@@ -30,7 +30,7 @@ namespace LethalInternship.Core.Managers
 
         private Coroutine? scanPositionCoroutine;
         private Collider? lastColliderHit = null;
-        private Vector3? lastNavMeshHitPoint = null;
+        private Vector3? lastPointedHitPoint = null;
         private bool isPointedValid;
 
         private void Awake()
@@ -119,6 +119,11 @@ namespace LethalInternship.Core.Managers
                     SetCurrentInputAction(EnumInputAction.None);
                     break;
 
+                case EnumInputAction.Scavenging:
+                    GiveOrderGoScavenging();
+                    SetCurrentInputAction(EnumInputAction.None);
+                    break;
+
                 case EnumInputAction.None:
                 default:
                     StopScanPositionCoroutine();
@@ -204,10 +209,10 @@ namespace LethalInternship.Core.Managers
 
         private void GiveOrderGoToShip()
         {
-            Transform? shipTransform = GameObject.Find("HangarShip").GetComponent<Transform>();
+            Transform? shipTransform = InternManager.Instance.ShipTransform;
             if (shipTransform == null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("shipTransform not found !");
+                PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");
                 return;
             }
 
@@ -256,6 +261,25 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private void GiveOrderGoScavenging()
+        {
+            // Give order
+            if (currentCommandedIntern == null)
+            {
+                // All owned interns (later close interns)
+                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                foreach (IInternAI intern in internsOwned)
+                {
+                    intern.SetCommandToScavenging();
+                }
+            }
+            else
+            {
+                // Current intern
+                currentCommandedIntern.SetCommandToScavenging();
+            }
+        }
+
         public void SetCurrentInputAction(EnumInputAction action, IInternAI? internAIToCommand = null)
         {
             currentInputAction = action;
@@ -292,19 +316,19 @@ namespace LethalInternship.Core.Managers
                     }
                 }
                 else if (isPointedValid
-                         && lastNavMeshHitPoint.HasValue)
+                         && lastPointedHitPoint.HasValue)
                 {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastNavMeshHitPoint.Value);
+                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastPointedHitPoint.Value);
                 }
             }
             if (pointOfInterest == null)
             {
-                return;
-            }
+                if (CurrentInputAction == EnumInputAction.None)
+                {
+                    ManageIntern();
+                    return;
+                }
 
-            if (CurrentInputAction == EnumInputAction.None)
-            {
-                ManageIntern();
                 return;
             }
 
@@ -421,7 +445,7 @@ namespace LethalInternship.Core.Managers
             // Command all close interns
             if (UIManager.Instance.ShowCommandsWheel())
             {
-                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
+                PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
                 currentCommandedIntern = null;
             }
         }
@@ -449,12 +473,15 @@ namespace LethalInternship.Core.Managers
 
             while (CurrentInputAction == EnumInputAction.GoToPosition)
             {
+                isPointedValid = false;
+                lastColliderHit = null;
+
                 // Scan 3D world
                 Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
                 RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
                 if (raycastHits.Length == 0)
                 {
-                    isPointedValid = false;
+                    UIManager.Instance.SetPedestrianInputIcon();
                     yield return null;
                     continue;
                 }
@@ -492,28 +519,12 @@ namespace LethalInternship.Core.Managers
                         UIManager.Instance.SetShipInputIcon();
                         break;
                     }
-                    lastColliderHit = null;
+                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
 
                     // Pedestrian
                     UIManager.Instance.SetPedestrianInputIcon();
-
-                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
-
-                    NavMesh.CalculatePath(localPlayer.transform.position, hit.point, NavMesh.AllAreas, path);
-                    if (path.status != NavMeshPathStatus.PathInvalid)
-                    {
-                        lastNavMeshHitPoint = hit.point;
-                    }
-
-                    if (lastHitPoint != null
-                        && lastNavMeshHitPoint != null)
-                    {
-                        isPointedValid = (lastHitPoint.Value - lastNavMeshHitPoint.Value).sqrMagnitude < 2f * 2f;
-                    }
-                    else
-                    {
-                        isPointedValid = false;
-                    }
+                    lastPointedHitPoint = hit.point;
+                    isPointedValid = lastHitPoint != null;
 
                     break;
                 }

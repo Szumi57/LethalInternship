@@ -17,14 +17,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
 
-            float sqrHorizontalDistance = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-            float sqrVerticalDistance = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+            float sqrHorizontalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            float sqrVerticalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
             if (sqrHorizontalDistance < Const.DISTANCE_CLOSE_ENOUGH_HOR * Const.DISTANCE_CLOSE_ENOUGH_HOR
                 && sqrVerticalDistance < Const.DISTANCE_CLOSE_ENOUGH_VER * Const.DISTANCE_CLOSE_ENOUGH_VER)
             {
                 return false;
             }
 
+            //PluginLoggerHook.LogDebug?.Invoke($"{context.PathController.GetCurrentPoint()} sqrHorizontalDistance {sqrHorizontalDistance}");
             return true;
         }
     }

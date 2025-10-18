@@ -10,6 +10,6 @@
         SetMeetingPoint,
         SetGatheringPoint,
         Attack,
-        Autonomous
+        Scavenging
     }
 }

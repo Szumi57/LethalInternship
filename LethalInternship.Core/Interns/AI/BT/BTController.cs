@@ -5,9 +5,11 @@ using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 
 namespace LethalInternship.Core.Interns.AI.BT
@@ -74,6 +76,9 @@ namespace LethalInternship.Core.Interns.AI.BT
             actions = new Dictionary<string, IBTAction>()
             {
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
+                { "CancelGoToItem", new CancelGoToItem() },
+                { "CheckForItemsInMap", new CheckForItemsInMap() },
+                { "CheckForItemsInRange", new CheckForItemsInRange() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
                 { "DropItem", new DropItem() },
@@ -85,25 +90,29 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
-                { "SetNextDestInterestPoint", new SetNextDestInterestPoint() },
-                { "SetNextDestTargetItem", new SetNextDestTargetItem() },
-                { "SetNextDestTargetLastKnownPosition", new SetNextDestTargetLastKnownPosition() },
-                { "UpdateLastKnownPos", new UpdateLastKnownPos() }
+                { "SetNextDestToShip", new SetNextDestToShip() },
+                { "Thinking", new Thinking() },
+                { "UpdateLastKnownPos", new UpdateLastKnownPos() },
+                { "VoiceFoundLoot", new VoiceFoundLoot() },
+                { "VoiceScavengingNoLoot", new VoiceScavengingNoLoot() },
+                { "VoiceScavengingWithLoot", new VoiceScavengingWithLoot() },
             };
 
             // Condition nodes
             conditions = new Dictionary<string, IBTCondition>()
             {
+                { "AreHandsFree", new AreHandsFree() },
                 { "EnemySeen", new EnemySeen() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
                 { "IsCommandWait", new IsCommandThis(EnumCommandTypes.Wait) },
+                { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
-                { "IsObjectToGrab", new IsObjectToGrab() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
+                { "IsTargetItemValid", new IsTargetItemValid() },
                 { "TargetValid", new TargetValid() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
@@ -134,6 +143,31 @@ namespace LethalInternship.Core.Interns.AI.BT
             };
         }
 
+        public void ResetContextNewCommandFollowPlayer()
+        {
+            BTContext.PathController.SetNewDestination(new DJKMovingPoint(BTContext.InternAI.targetPlayer.transform, $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}"));
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandToInterestPoint(IPointOfInterest pointOfInterest)
+        {
+            IInterestPoint? interestPoint = pointOfInterest.GetInterestPoint();
+            if (interestPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetNextDestInterestPoint interestPoint is null");
+                return;
+            }
+
+            BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandToScavenging()
+        {
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+
         private IBehaviourTreeNode CreateTree()
         {
             var builder = new BehaviourTreeBuilder();
@@ -146,10 +180,13 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Command go to position")
                         .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
-                        .Do("SetNextDestInterestPoint", t => actions["SetNextDestInterestPoint"].Action(BTContext))
-                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                        //.Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to position")
                             .Splice(CreateSubTreeGoToPosition())
+                            .Sequence("Drop item if in ship")
+                                .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                                .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                            .End()
                             .Do("Chill", t => actions["Chill"].Action(BTContext))
                         .End()
                     .End()
@@ -160,8 +197,11 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .End()
 
                     .Sequence("Fetch object")
-                        .Condition("<IsObjectToGrab>", t => conditions["IsObjectToGrab"].Condition(BTContext))
-                        .Selector("Should go to position")
+                        .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
+                        .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
+                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                        .Do("VoiceFoundLoot", t => actions["VoiceFoundLoot"].Action(BTContext))
+                        .Selector("Should go to item")
                             .Splice(CreateSubTreeGoToObject())
                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
                         .End()
@@ -171,6 +211,37 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<isCommand FollowPlayer>", t => conditions["IsCommandFollowPlayer"].Condition(BTContext))
                         .Condition("<TargetValid>", t => conditions["TargetValid"].Condition(BTContext))
                         .Splice(CreateSubTreeFollowPlayer())
+                    .End()
+
+                    .Sequence("Command scavenging")
+                        .Condition("<isCommand ScavengingMode>", t => conditions["IsCommandScavengingMode"].Condition(BTContext))
+                        .Selector("Return to ship or scavenge ?")
+                            .Sequence("Look for items if hands free")
+                                .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
+                                .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
+                                .Do("Thinking", t => actions["Thinking"].Action(BTContext))
+                                .Selector("Cancel scavenging ?")
+                                    .Sequence("Go grab if item found")
+                                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                        .Do("VoiceScavengingNoLoot", t => actions["VoiceScavengingNoLoot"].Action(BTContext))
+                                        .Selector("Go to object or grab")
+                                            .Splice(CreateSubTreeGoToObject())
+                                            .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
+                                        .End()
+                                    .End()
+                                    .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Return to ship")
+                                .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
+                                .Do("VoiceScavengingWithLoot", t => actions["VoiceScavengingWithLoot"].Action(BTContext))
+                                .Selector("Go to position or drop object")
+                                    .Splice(CreateSubTreeGoToPosition())
+                                    .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                .End()
+                            .End()
+                        .End()
                     .End()
 
                     .Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
@@ -195,17 +266,13 @@ namespace LethalInternship.Core.Interns.AI.BT
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                .Selector("Go to position")
+                .Selector("Exit vehicle or go to position")
                     .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Go to position if too far")
-                        .Condition("tooFarFromPos", t => conditions["TooFarFromPos"].Condition(BTContext))
+                        .Condition("<tooFarFromPos>", t => conditions["TooFarFromPos"].Condition(BTContext))
+                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
-                    .End()
-
-                    .Sequence("Drop item if in ship")
-                        .Condition("hasItemAndInShip", t => conditions["HasItemAndInShip"].Condition(BTContext))
-                        .Do("dropItem", t => actions["DropItem"].Action(BTContext))
                     .End()
                 .End()
                 .Build();
@@ -219,8 +286,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Go to position")
-                        .Condition("tooFarFromObject", t => conditions["TooFarFromObject"].Condition(BTContext))
-                        .Do("SetNextDestTargetItem", t => actions["SetNextDestTargetItem"].Action(BTContext))
+                        .Condition("<tooFarFromObject>", t => conditions["TooFarFromObject"].Condition(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
@@ -240,7 +306,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Go to vehicle")
                         .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
-                        .Do("SetNextDestInterestPoint", t => actions["SetNextDestInterestPoint"].Action(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
@@ -260,16 +325,19 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Splice(CreateSubTreeGoToVehicle())
                     .End()
 
-                    .Splice(CreateSubTreeExitVehicle())
+                    //.Splice(CreateSubTreeExitVehicle())
 
                     .Sequence("Follow player")
                         // no use for update last known pos, even with config, it just not work for now
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
                         //.Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
-                        .Do("SetNextDestTargetLastKnownPosition", t => actions["SetNextDestTargetLastKnownPosition"].Action(BTContext))
-                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                        //.Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
+                            .Sequence("Drop item if in ship")
+                                .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                                .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                            .End()
                             .Do("chill", t => actions["Chill"].Action(BTContext))
                         .End()
                     .End()

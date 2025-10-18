@@ -54,7 +54,7 @@ namespace LethalInternship.Patches.MapPatches
             // Intern
             if (!PluginRuntimeProvider.Context.Config.RadarEnabled)
             {
-                __result = GetRadarTargetIndexPlusOne_ReversePatch(__instance, __result);
+                __result = 0;
                 return;
             }
 
