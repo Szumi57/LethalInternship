@@ -1,8 +1,33 @@
 # Changelog
 
-## 0.21.1 [Alpha] - 2025-??-??
+## 0.22.0 [Alpha] - 2025-10-19
+
+Hi, for today : big new order added and some fixes.
+
+### Added
+New command/order : Go scavenging.</br>
+The interns go on their own to find loot to bring home,</br>
+but be careful, they become quite exposed to the danger that lies on the moons.</br>
+Try to monitor them with a mod like OpenBodyCam, it's quite funny seeing them roaming around !
+
+#### Some details
+They bring back the loot to the ship without possibilities to change that for now, next update maybe.</br>
+They also can hear you send new command from any distance, which is a bit broken, it is planned to change.</br>
 
 ### Fixed
+- Lots of refactoring and bug fixing for the pathfinding
+- Fix pathfinding update when new command
+- Can point to anywhere now to send to position
+- Fix old bird/rad mech throwing error when targeting interns
+- Fix radar on the ship still partially working when config for it was on disabled
+- Fix taking management of intern by pressing E (by default) not working for the other player
+
+### Some thoughts
+This new commands makes the interns quite broken, on one hand, but on the other hand they can die </br>
+from a lot of sources. I'm thinking of maybe changing the economy system for the interns</br>
+(like more/less expensive to buy, or way more expensive to buy/revive but you get 1 free every quota).</br>
+</br>
+If someone have some ideas, you can share it on discord !
 
 ## 0.21.0 [Alpha] - 2025-10-10
 Hi, I decided to bump the number to 0.21 with the new v73 update.</br>
