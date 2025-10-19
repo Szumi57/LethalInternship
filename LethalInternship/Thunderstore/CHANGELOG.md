@@ -1,11 +1,18 @@
 # Changelog
 
+## 0.22.2 [Alpha] - 2025-10-19
+### Fixed
+- Fix for maps with no entrances (wesley moons)
+- Fix command go to position still set after respawn
+- Fix regression when giving an order too early after spawn animation
+- Fix some sync state of intern stuffs not working well
+
 ## 0.22.1 [Alpha] - 2025-10-19
 ### Fixed
 - Fix pressing E anywhere getting the forcing the last order to apply
 - Fix giving orders to early while spawning
 - Fix giving orders to unloaded or dead interns
-- Fix ai running while in spaw animation
+- Fix ai running while in spawn animation
 
 ## 0.22.0 [Alpha] - 2025-10-19
 Hi, for today : big new order added and some fixes.
