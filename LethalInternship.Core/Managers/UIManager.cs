@@ -107,7 +107,7 @@ namespace LethalInternship.Core.Managers
             PointOfInterestInCenter = null;
 
             // Check for interns owned
-            IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+            IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
             InternsOwned = internsOwned.Length > 0;
             if (!InternsOwned)
             {
@@ -324,7 +324,7 @@ namespace LethalInternship.Core.Managers
             {
                 return false;
             }
-            if (InternManager.Instance.GetInternsAIOwnedByLocal().Length == 0)
+            if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length == 0)
             {
                 return false;
             }
@@ -384,7 +384,7 @@ namespace LethalInternship.Core.Managers
                 // Right panel
                 if (internAIToManage == null)
                 {
-                    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+                    IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
                     CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_INTERNS);
 
                     StringBuilder sb = new StringBuilder();

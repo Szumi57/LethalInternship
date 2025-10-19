@@ -439,6 +439,18 @@ namespace LethalInternship.Core.Interns.AI
                 return false;
             }
 
+            if (isEnemyDead
+                || NpcController.Npc.isPlayerDead
+                || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
+            {
+                return false;
+            }
+
+            if (IsSpawningAnimationRunning())
+            {
+                return false;
+            }
+
             if (InternManager.Instance.GetCurrentBatch() == (int)Npc.playerClientId)
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"Current batch for intern ! id {Npc.playerClientId}");
@@ -459,13 +471,6 @@ namespace LethalInternship.Core.Interns.AI
         public override void DoAIInterval()
         {
             SetAgent(enabled: true);
-
-            if (isEnemyDead
-                || NpcController.Npc.isPlayerDead
-                || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
-            {
-                return;
-            }
 
             BTController.TickTree(AIIntervalTime);
 
@@ -488,6 +493,11 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandTo(IPointOfInterest pointOfInterest)
         {
+            if (!CanGiveOrder())
+            {
+                return;
+            }
+
             this.PointOfInterest = pointOfInterest;
 
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
@@ -514,6 +524,17 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandToFollowPlayer()
         {
+            if (!CanGiveOrder())
+            {
+                return;
+            }
+
+            if (this.targetPlayer == null)
+            {
+                PluginLoggerHook.LogWarning?.Invoke($"{Npc.playerUsername} no target player assigned, wait for someone to manage this intern before giving commands.");
+                return;
+            }
+
             PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToFollowPlayer, before {CurrentCommand}");
             CurrentCommand = EnumCommandTypes.FollowPlayer;
             this.PointOfInterest = null;
@@ -527,6 +548,11 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandToScavenging()
         {
+            if (!CanGiveOrder())
+            {
+                return;
+            }
+
             CurrentCommand = EnumCommandTypes.ScavengingMode;
             this.PointOfInterest = null;
             PluginLoggerHook.LogDebug?.Invoke($"SetCommandToScavengingMode");
@@ -553,6 +579,23 @@ namespace LethalInternship.Core.Interns.AI
                 IsInternInside = this.NpcController.Npc.isInsideFactory,
                 AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
             });
+        }
+
+        private bool CanGiveOrder()
+        {
+            if (!this.IsSpawned
+                || this.IsEnemyDead
+                || this.NpcController == null
+                || this.NpcController.Npc == null
+                || this.NpcController.Npc.isPlayerDead
+                || !this.NpcController.Npc.isPlayerControlled
+                || this.InternIdentity.Status != EnumStatusIdentity.Spawned
+                || this.IsSpawningAnimationRunning())
+            {
+                return false;
+            }
+
+            return true;
         }
 
         #endregion
@@ -770,6 +813,12 @@ namespace LethalInternship.Core.Interns.AI
         /// <returns></returns>
         public bool IsClientOwnerOfIntern()
         {
+            if (GameNetworkManager.Instance == null
+                || GameNetworkManager.Instance.localPlayerController == null)
+            {
+                return false;
+            }
+
             return OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
         }
 
