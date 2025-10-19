@@ -1854,7 +1854,9 @@ namespace LethalInternship.Core.Managers
                 // Has remaining instructions ?
                 if (!batch.HasRemaining)
                 {
+                    batch.onBatchComplete?.Invoke();
                     activeBatches.Remove(batch.id);
+                    CancelBatch(batch.id);
                     continue;
                 }
 
