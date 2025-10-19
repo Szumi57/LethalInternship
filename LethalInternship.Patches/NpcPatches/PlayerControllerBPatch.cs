@@ -60,6 +60,12 @@ namespace LethalInternship.Patches.NpcPatches
                 return true;
             }
 
+            if (internAI.NpcController == null)
+            {
+                // Cancel update for intern
+                return false;
+            }
+
             // Use Intern update and pass all needed paramaters back and forth
             internAI.NpcController.IsCameraDisabled = ___isCameraDisabled;
             internAI.NpcController.IsJumping = ___isJumping;
@@ -111,6 +117,12 @@ namespace LethalInternship.Patches.NpcPatches
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
+                if (internAI.NpcController == null)
+                {
+                    // Cancel late update for intern
+                    return false;
+                }
+
                 internAI.NpcController.IsWalking = ___isWalking;
                 internAI.NpcController.UpdatePositionForNewlyJoinedClient = ___updatePositionForNewlyJoinedClient;
                 internAI.NpcController.UpdatePlayerLookInterval = ___updatePlayerLookInterval;
@@ -124,6 +136,7 @@ namespace LethalInternship.Patches.NpcPatches
 
                 return false;
             }
+
             return true;
         }
 

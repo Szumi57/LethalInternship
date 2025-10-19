@@ -201,6 +201,7 @@ namespace LethalInternship.Core.Interns.AI
 
             // Behavior tree
             BTController = new BTController(this);
+            this.PointOfInterest = null;
 
             // Body collider
             InternBodyCollider = NpcController.Npc.GetComponentInChildren<Collider>();
@@ -3738,10 +3739,10 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.inSpecialInteractAnimation = false;
             UpdateInternSpecialAnimationValue(specialAnimation: false, timed: 0f, climbingLadder: false);
 
+            spawnAnimationCoroutine = null;
+
             // Change ai state
             SyncAssignTargetAndSetMovingTo(closestPlayer);
-
-            spawnAnimationCoroutine = null;
             yield break;
         }
 

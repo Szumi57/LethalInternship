@@ -161,9 +161,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             // Get entrances graph
             GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
-            if (GraphEntrances == null || GraphEntrances.DJKPoints.Count == 0)
+            if (GraphEntrances == null)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- CheckForItemsInRange GetGraphEntrances not available yet/empty");
+                PluginLoggerHook.LogDebug?.Invoke($"- CheckForItemsInRange GetGraphEntrances not available yet");
                 return;
             }
 
