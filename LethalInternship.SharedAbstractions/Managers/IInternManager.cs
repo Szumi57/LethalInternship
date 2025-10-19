@@ -39,6 +39,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         int GetDamageFromSlimeIfIntern(PlayerControllerB player);
         IInternAI? GetInternAIIfLocalIsOwner(int index);
         IInternAI[] GetInternsAIOwnedByLocal();
+        IInternAI[] GetAliveAndSpawnInternsAIOwnedByLocal();
         IInternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject);
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
 

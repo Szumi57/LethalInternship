@@ -321,11 +321,16 @@ namespace LethalInternship.Core.Managers
                     pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastPointedHitPoint.Value);
                 }
             }
+            isPointedValid = false;
+            lastColliderHit = null;
+            lastPointedHitPoint = null;
+
+            // If still nothing, maybe try manage intern
             if (pointOfInterest == null)
             {
                 if (CurrentInputAction == EnumInputAction.None)
                 {
-                    ManageIntern();
+                    TryManageIntern();
                     return;
                 }
 
@@ -350,7 +355,7 @@ namespace LethalInternship.Core.Managers
             SetCurrentInputAction(EnumInputAction.None);
         }
 
-        private void ManageIntern()
+        private void TryManageIntern()
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 

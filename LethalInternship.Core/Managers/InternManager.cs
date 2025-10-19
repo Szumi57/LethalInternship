@@ -1254,6 +1254,19 @@ namespace LethalInternship.Core.Managers
                                .ToArray();
         }
 
+        public IInternAI[] GetAliveAndSpawnInternsAIOwnedByLocal()
+        {
+            return AllInternAIs.Where(x => x != null
+                                        && x.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
+                                        && !x.IsEnemyDead
+                                        && x.NpcController != null
+                                        && x.NpcController.Npc != null
+                                        && !x.NpcController.Npc.isPlayerDead
+                                        && x.NpcController.Npc.isPlayerControlled
+                                        && x.InternIdentity.Status == EnumStatusIdentity.Spawned)
+                               .ToArray();
+        }
+
         public void SetInternsInElevatorLateUpdate(float deltaTime)
         {
             timerSetInternInElevator += deltaTime;
