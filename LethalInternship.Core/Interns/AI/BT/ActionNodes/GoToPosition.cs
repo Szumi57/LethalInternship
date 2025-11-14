@@ -11,6 +11,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class GoToPosition : IBTAction
     {
+        public bool CanRun = true; // const for now
+
         private const float MIN_DISTANCE_HOR = 1f;
 
         public BehaviourTreeStatus Action(BTContext context)
@@ -51,7 +53,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private void MoveToPosition(InternAI ai, Vector3 currentPoint)
         {
-            if (ai.CanRun)
+            if (CanRun)
             {
                 float sqrHorizontalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
                 float sqrVerticalDistanceWithTarget = Vector3.Scale(currentPoint - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
