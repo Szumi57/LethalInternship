@@ -132,7 +132,7 @@ namespace LethalInternship.Core.Managers
             {
                 internVoice.PlayAudioClip(audioClip);
             }
-            PluginLoggerHook.LogDebug?.Invoke($"New audioClip loaded {smallPathAudioClip}");
+            PluginLoggerHook.LogDebug?.Invoke($"New audioClip loaded/played {smallPathAudioClip}");
         }
 
         private IEnumerator LoadAudioAndPlay(string uri, IInternVoice internVoice)

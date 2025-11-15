@@ -28,7 +28,7 @@ namespace LethalInternship.Core.Interns.AI
             return this.PointOfInterest;
         }
 
-        public void SetCommandTo(IPointOfInterest pointOfInterest)
+        public void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true)
         {
             if (!CanGiveOrder())
             {
@@ -56,10 +56,13 @@ namespace LethalInternship.Core.Interns.AI
             BTController.ResetContextNewCommandToInterestPoint(pointOfInterest);
 
             // Voice
-            TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
+            if (playVoice)
+            {
+                TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
+            }
         }
 
-        public void SetCommandToFollowPlayer()
+        public void SetCommandToFollowPlayer(bool playVoice = true)
         {
             if (!CanGiveOrder())
             {
@@ -80,7 +83,10 @@ namespace LethalInternship.Core.Interns.AI
             BTController.ResetContextNewCommandFollowPlayer();
 
             // Voice
-            TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
+            if (playVoice)
+            {
+                TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
+            }
         }
 
         public void SetCommandToScavenging()
@@ -96,26 +102,6 @@ namespace LethalInternship.Core.Interns.AI
 
             // AI
             BTController.ResetContextNewCommandToScavenging();
-
-            // Voice
-            //TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
-        }
-
-        private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
-        {
-            // Default states, wait for cooldown and if no one is talking close
-            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
-            {
-                VoiceState = enumVoicesState,
-                CanTalkIfOtherInternTalk = false,
-                WaitForCooldown = false,
-                CutCurrentVoiceStateToTalk = true,
-                CanRepeatVoiceState = false,
-
-                ShouldSync = true,
-                IsInternInside = this.NpcController.Npc.isInsideFactory,
-                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
-            });
         }
 
         private bool CanGiveOrder()

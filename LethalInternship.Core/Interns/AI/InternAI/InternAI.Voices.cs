@@ -1,5 +1,8 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using Unity.Netcode;
 using UnityEngine;
@@ -79,6 +82,40 @@ namespace LethalInternship.Core.Interns.AI
             {
                 AudioManager.Instance.PlayAudio(smallPathAudioClip, InternIdentity.Voice);
             }
+        }
+
+        private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = enumVoicesState,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = this.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
+        }
+
+        public void TryPlayCantDoCommandVoiceAudio()
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.CantDoCommand,
+                CanTalkIfOtherInternTalk = true,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = this.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
 
         #endregion

@@ -301,7 +301,7 @@ namespace LethalInternship.Core.Interns
             var audioClipPaths = AudioManager.Instance.DictAudioClipsByPath
                                     .Where(x => x.Key.Replace(" ", "").Replace("_", "").ToLower().Contains(path));
 
-            PluginLoggerHook.LogDebug?.Invoke($"Loaded {audioClipPaths.Count()} path containing {path}");
+            //PluginLoggerHook.LogDebug?.Invoke($"Loaded {audioClipPaths.Count()} path containing {path}");
             return audioClipPaths.Select(y => y.Key).ToArray();
         }
 

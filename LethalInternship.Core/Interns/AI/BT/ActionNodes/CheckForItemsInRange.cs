@@ -4,6 +4,7 @@ using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
@@ -32,7 +33,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                                 .ToList();
                 if (itemsToCheck.Count == 0)
                 {
-                    return BehaviourTreeStatus.Success;
+                    return BehaviourTreeStatus.Failure;
                 }
 
                 tempGraphs = new GraphController[itemsToCheck.Count];
@@ -44,10 +45,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 int indexItemToGrab = GetIndexMinPath();
                 if (indexItemToGrab >= 0)
                 {
-                    // Path to one item found
+                    // ++ Path to one item found
                     context.TargetItem = itemsToCheck[indexItemToGrab];
                     context.PathController = tempPaths[indexItemToGrab];
                     PluginLoggerHook.LogDebug?.Invoke($"++R {ai.Npc.playerUsername} CheckForItemsInRange target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
+                    TryPlayFoundLootVoiceAudio(ai);
 
                     itemIndex = 0;
                     itemsToCheck.Clear();
@@ -60,7 +62,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 itemIndex = 0;
                 itemsToCheck.Clear();
-                return BehaviourTreeStatus.Success;
+                return BehaviourTreeStatus.Failure;
             }
 
             CalculatePathToItem(context, itemsToCheck[itemIndex]);
@@ -222,6 +224,23 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
             return indexBestPath;
+        }
+
+        private void TryPlayFoundLootVoiceAudio(InternAI ai)
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.FoundLoot,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = ai.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
     }
 }

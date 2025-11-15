@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
@@ -9,7 +10,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            //TryPlayCurrentStateVoiceAudio(context.InternAI);
+            TryPlayCurrentStateVoiceAudio(context.InternAI);
 
             return BehaviourTreeStatus.Success;
         }
@@ -19,11 +20,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Default states, wait for cooldown and if no one is talking close
             ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
-                VoiceState = EnumVoicesState.FoundLoot,
+                VoiceState = EnumVoicesState.NoLoot,
                 CanTalkIfOtherInternTalk = false,
                 WaitForCooldown = true,
                 CutCurrentVoiceStateToTalk = false,
-                CanRepeatVoiceState = false,
+                CanRepeatVoiceState = true,
 
                 ShouldSync = true,
                 IsInternInside = ai.NpcController.Npc.isInsideFactory,
