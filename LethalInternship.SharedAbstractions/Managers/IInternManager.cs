@@ -23,6 +23,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         VehicleController? VehicleController { get; }
 
         IInternAI? GetInternAI(int playerClientId);
+        IInternAI? GetInternAIByInternId(int internId);
         void ManagePoolOfInterns();
         void SyncEndOfRoundInterns();
 

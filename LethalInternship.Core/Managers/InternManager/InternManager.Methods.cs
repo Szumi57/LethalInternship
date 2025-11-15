@@ -205,6 +205,11 @@ namespace LethalInternship.Core.Managers
             return AllInternAIs[playerClientId - IndexBeginOfInterns];
         }
 
+        public IInternAI? GetInternAIByInternId(int internId)
+        {
+            return AllInternAIs[internId];
+        }
+
         /// <summary>
         /// Get <c>InternAI</c> from <c>PlayerControllerB.playerClientId</c>, 
         /// only if the local client calling the method is the owner of <c>InternAI</c>

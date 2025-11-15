@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
@@ -22,6 +21,19 @@ namespace LethalInternship.Core.Interns
         public AudioSource CurrentAudioSource { get => currentAudioSource; set => currentAudioSource = value; }
 
         private int internID;
+        private IInternAI? _internAI;
+        private IInternAI? internAI
+        {
+            get
+            {
+                if (_internAI == null)
+                {
+                    _internAI = InternManager.Instance.GetInternAIByInternId(internID);
+                }
+                return _internAI;
+            }
+        }
+
         private AudioSource currentAudioSource = null!;
 
         private float cooldownPlayAudio = 0f;
@@ -103,6 +115,14 @@ namespace LethalInternship.Core.Interns
         public void TryPlayVoiceAudio(PlayVoiceParameters parameters)
         {
             if (PluginRuntimeProvider.Context.Config.Talkativeness == (int)EnumTalkativeness.NoTalking)
+            {
+                return;
+            }
+            if (internAI == null)
+            {
+                return;
+            }
+            if (internAI.GetClosestPlayerDistance() > VoicesConst.DISTANCE_TO_PLAYER_MIN_TO_TALK * VoicesConst.DISTANCE_TO_PLAYER_MIN_TO_TALK)
             {
                 return;
             }

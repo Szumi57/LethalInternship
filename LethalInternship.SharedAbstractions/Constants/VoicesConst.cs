@@ -11,6 +11,7 @@ namespace LethalInternship.SharedAbstractions.Constants
 
         public static readonly float DEFAULT_FOOTSTEP_VOLUME_MULTIPLIER = 1f;
 
+        public static readonly float DISTANCE_TO_PLAYER_MIN_TO_TALK = 30f;
         public static readonly float DISTANCE_HEAR_OTHER_INTERNS = 10f;
         public static readonly float FADE_IN_TIME = 0.1f;
         public static readonly float FADE_OUT_TIME = 0.2f;
