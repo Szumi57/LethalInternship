@@ -28,6 +28,7 @@ namespace LethalInternship.Configs
         public int InternPrice => internPrice.Value;
         public int InternMaxHealth => internMaxHealth.Value;
         public float InternSizeScale => internSizeScale.Value;
+        public float InternSpeed => internSpeed.Value;
         public string TitleInHelpMenu => titleInHelpMenu.Value;
         public string SubTitleInHelpMenu => subTitleInHelpMenu.Value;
         public bool CanSpectateInterns => canSpectateInterns.Value;
@@ -60,6 +61,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] private SyncedEntry<int> internPrice;
         [SyncedEntryField] private SyncedEntry<int> internMaxHealth;
         [SyncedEntryField] private SyncedEntry<float> internSizeScale;
+        [SyncedEntryField] private SyncedEntry<float> internSpeed;
         
         [SyncedEntryField] private SyncedEntry<string> titleInHelpMenu;
         [SyncedEntryField] private SyncedEntry<string> subTitleInHelpMenu;
@@ -131,6 +133,12 @@ namespace LethalInternship.Configs
                                        defaultValue: ConfigConst.DEFAULT_SIZE_SCALE_INTERN,
                                        new ConfigDescription("Shrink (less than 1) or equals to default (=1) size of interns",
                                                              new AcceptableValueRange<float>(ConfigConst.MIN_SIZE_SCALE_INTERN, ConfigConst.MAX_SIZE_SCALE_INTERN)));
+
+            internSpeed = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
+                                               "Speed of intern, relative to speed of player",
+                                               defaultValue: ConfigConst.DEFAULT_SPEED_INTERN,
+                                               new ConfigDescription("Slower (< 1) or faster (> 1) than players",
+                                                                     new AcceptableValueRange<float>(ConfigConst.MIN_SPEED_INTERN, ConfigConst.MAX_SPEED_INTERN)));
 
             canSpectateInterns = cfg.BindSyncedEntry(ConfigConst.ConfigSectionMain,
                                                      "Spectate interns",

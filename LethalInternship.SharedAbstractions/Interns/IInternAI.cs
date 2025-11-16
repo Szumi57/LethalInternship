@@ -26,9 +26,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool IsEnemyDead { get; }
 
         IPointOfInterest? GetPointOfInterest();
-        void SetCommandToFollowPlayer();
+        void SetCommandToFollowPlayer(bool playVoice = true);
         void SetCommandToScavenging();
-        void SetCommandTo(IPointOfInterest pointOfInterest);
+        void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);
 
         void AdaptController(PlayerControllerB playerControllerB);
         void UpdateController();

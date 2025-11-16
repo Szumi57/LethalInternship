@@ -8,6 +8,7 @@ namespace LethalInternship.SharedAbstractions.Configs
         public int InternPrice { get; }
         public int InternMaxHealth { get; }
         public float InternSizeScale { get; }
+        public float InternSpeed { get; }
 
         public string TitleInHelpMenu { get; }
         public string SubTitleInHelpMenu { get; }

@@ -2,6 +2,7 @@
 using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
@@ -43,7 +44,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (itemsToCheck.Count == 0)
                 {
                     context.TargetItem = null;
-                    return BehaviourTreeStatus.Success;
+                    ai.TryPlayCantDoCommandVoiceAudio();
+                    // todo : stay in place ?
+                    ai.SetCommandToFollowPlayer(playVoice: false);
+                    return BehaviourTreeStatus.Failure;
                 }
 
                 tempGraphs = new GraphController[itemsToCheck.Count];
@@ -67,12 +71,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 int indexItemToGrab = GetIndexMinPath();
                 if (indexItemToGrab >= 0)
                 {
-                    // Path to one item found
+                    // ++ Path to one item found
                     context.TargetItem = itemsToCheck[indexItemToGrab];
                     context.PathController = tempPaths[indexItemToGrab];
                     PluginLoggerHook.LogDebug?.Invoke($"++M {ai.Npc.playerUsername} CheckForItemsInMap target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
 
-                    return ReturnSuccessAndClear(context);
+                    TryPlayNowScavengingVoiceAudio(ai);
+                    return CleanAndReturn(context, BehaviourTreeStatus.Success);
                 }
             }
 
@@ -80,7 +85,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (itemIndex >= count)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"??M {ai.Npc.playerUsername} NOTHING more grabbable on map");
-                return ReturnSuccessAndClear(context);
+                ai.TryPlayCantDoCommandVoiceAudio();
+                // todo : stay in place ?
+                ai.SetCommandToFollowPlayer(playVoice: false);
+                return CleanAndReturn(context, BehaviourTreeStatus.Failure);
             }
 
             randomIndex = indices[itemIndex];
@@ -90,12 +98,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             return BehaviourTreeStatus.Success;
         }
 
-        private BehaviourTreeStatus ReturnSuccessAndClear(BTContext context)
+        private BehaviourTreeStatus CleanAndReturn(BTContext context, BehaviourTreeStatus behaviourTreeStatus)
         {
             itemIndex = 0;
             itemsToCheck.Clear();
             context.nbItemsToCheck = 0;
-            return BehaviourTreeStatus.Success;
+            return behaviourTreeStatus;
         }
 
         /// <summary>
@@ -206,6 +214,23 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
             return indexBestPath;
+        }
+
+        private void TryPlayNowScavengingVoiceAudio(InternAI ai)
+        {
+            // Default states, wait for cooldown and if no one is talking close
+            ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+            {
+                VoiceState = EnumVoicesState.NowScavenging,
+                CanTalkIfOtherInternTalk = false,
+                WaitForCooldown = false,
+                CutCurrentVoiceStateToTalk = true,
+                CanRepeatVoiceState = false,
+
+                ShouldSync = true,
+                IsInternInside = ai.NpcController.Npc.isInsideFactory,
+                AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+            });
         }
     }
 }

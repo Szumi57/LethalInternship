@@ -91,9 +91,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
                 { "SetNextDestToShip", new SetNextDestToShip() },
-                { "Thinking", new Thinking() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() },
-                { "VoiceFoundLoot", new VoiceFoundLoot() },
                 { "VoiceScavengingNoLoot", new VoiceScavengingNoLoot() },
                 { "VoiceScavengingWithLoot", new VoiceScavengingWithLoot() },
             };
@@ -145,6 +143,7 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public void ResetContextNewCommandFollowPlayer()
         {
+            BTContext.PathController.ResetPathAndIndex();
             BTContext.PathController.SetNewDestination(new DJKMovingPoint(BTContext.InternAI.targetPlayer.transform, $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}"));
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
@@ -180,7 +179,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                     .Sequence("Command go to position")
                         .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
-                        //.Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to position")
                             .Splice(CreateSubTreeGoToPosition())
                             .Sequence("Drop item if in ship")
@@ -200,7 +198,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
                         .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
                         .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
-                        .Do("VoiceFoundLoot", t => actions["VoiceFoundLoot"].Action(BTContext))
                         .Selector("Should go to item")
                             .Splice(CreateSubTreeGoToObject())
                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
@@ -219,7 +216,6 @@ namespace LethalInternship.Core.Interns.AI.BT
                             .Sequence("Look for items if hands free")
                                 .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
                                 .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
-                                .Do("Thinking", t => actions["Thinking"].Action(BTContext))
                                 .Selector("Cancel scavenging ?")
                                     .Sequence("Go grab if item found")
                                         .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))

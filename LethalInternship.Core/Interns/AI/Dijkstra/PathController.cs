@@ -59,12 +59,12 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             else
             {
                 Vector3 currentPointPos = DJKPointsPath[IndexCurrentPoint - 1].GetNeighborPos(DJKPointsPath[IndexCurrentPoint].Id);
-                //Vector3 trueCurrentPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(actorPos);
-                //if ((trueCurrentPointPos - currentPointPos).sqrMagnitude > 0.5f * 0.5f)
-                //{
-                //    PluginLoggerHook.LogDebug?.Invoke($"true shit ?");
-                //    return trueCurrentPointPos;
-                //}
+                Vector3 trueCurrentPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(actorPos);
+                if ((trueCurrentPointPos - currentPointPos).sqrMagnitude > 0.5f * 0.5f)
+                {
+                    ResetPathAndIndex();
+                    return trueCurrentPointPos;
+                }
 
                 return currentPointPos;
             }
