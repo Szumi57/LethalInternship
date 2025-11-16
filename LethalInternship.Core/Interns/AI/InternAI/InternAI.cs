@@ -369,7 +369,7 @@ namespace LethalInternship.Core.Interns.AI
             if (NpcController.HasToMove)
             {
                 Vector2 vector2 = new Vector2(NpcController.MoveVector.x, NpcController.MoveVector.z);
-                agent.speed = 1f * vector2.magnitude;
+                agent.speed = PluginRuntimeProvider.Context.Config.InternSpeed * vector2.magnitude;
 
                 if (!NpcController.Npc.isClimbingLadder
                     && !NpcController.Npc.inSpecialInteractAnimation
