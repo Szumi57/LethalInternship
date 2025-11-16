@@ -1,18 +1,26 @@
 # Changelog
 
+## 0.22.3 [Alpha] - 2025-11-16
+### Added
+- New voices ! Start scavenging, wandering with loot, without loot, can't do command, thinking (before scavenging).
+- Config for intern speed, default value 0.85, a bit slower than players.
+### Fixed
+- Fix pathfind of moving target if target outside and intern inside, making the target position static even though it's moving.
+- Fix behaviour bug when looking for object in range overriding scanvenging when not supposed to.
+
 ## 0.22.2 [Alpha] - 2025-10-19
 ### Fixed
-- Fix for maps with no entrances (wesley moons)
-- Fix command go to position still set after respawn
-- Fix regression when giving an order too early after spawn animation
-- Fix some sync state of intern stuffs not working well
+- Fix for maps with no entrances (wesley moons).
+- Fix command go to position still set after respawn.
+- Fix regression when giving an order too early after spawn animation.
+- Fix some sync state of intern stuffs not working well.
 
 ## 0.22.1 [Alpha] - 2025-10-19
 ### Fixed
-- Fix pressing E anywhere getting the forcing the last order to apply
-- Fix giving orders to early while spawning
-- Fix giving orders to unloaded or dead interns
-- Fix ai running while in spawn animation
+- Fix pressing E anywhere getting the forcing the last order to apply.
+- Fix giving orders to early while spawning.
+- Fix giving orders to unloaded or dead interns.
+- Fix ai running while in spawn animation.
 
 ## 0.22.0 [Alpha] - 2025-10-19
 Hi, for today : big new order added and some fixes.
@@ -28,12 +36,12 @@ They bring back the loot to the ship without possibilities to change that for no
 They also can hear you send new command from any distance, which is a bit broken, it is planned to change.</br>
 
 ### Fixed
-- Lots of refactoring and bug fixing for the pathfinding
-- Fix pathfinding update when new command
-- Can point to anywhere now to send to position
-- Fix old bird/rad mech throwing error when targeting interns
-- Fix radar on the ship still partially working when config for it was on disabled
-- Fix taking management of intern by pressing E (by default) not working for the other player
+- Lots of refactoring and bug fixing for the pathfinding.
+- Fix pathfinding update when new command.
+- Can point to anywhere now to send to position.
+- Fix old bird/rad mech throwing error when targeting interns.
+- Fix radar on the ship still partially working when config for it was on disabled.
+- Fix taking management of intern by pressing E (by default) not working for the other player.
 
 ### Some thoughts
 This new commands makes the interns quite broken, on one hand, but on the other hand they can die </br>
@@ -49,8 +57,8 @@ Little update : v73 update compat, lots of refactoring for the movement and deci
 ### Fixed
 - Fix compat with v73 LethalCompany update, specifically Unity update, specifically netcode-patcher update to 4.4.2
 - Fix problem when hoarding bug were calming down but intern think it's still a menace.
-- Fix GiantKiwi/Sapsucker compat, the interns ignore the eggs now (new config in "Grab the kiwi/sapsucker egg" in section "Behaviour", default to false)
-- Fix ModelReplacementAPI needed to be in the plugins loaded or else, TypeLoadException from Unity
+- Fix GiantKiwi/Sapsucker compat, the interns ignore the eggs now (new config in "Grab the kiwi/sapsucker egg" in section "Behaviour", default to false).
+- Fix ModelReplacementAPI needed to be in the plugins loaded or else, TypeLoadException from Unity.
 - Compat with LethalEmotesAPI (causing terminal freeze and game unplayable) fixed by ToastedOven, you can use LethalEmotesAPI versions >= 1.17.1
 
 ## 0.20.4 [Alpha] - 2025-09-22
@@ -58,9 +66,9 @@ Sorry, I needed to revamp the way the interns choose their path on the map, they
 Not much change for the players, but it took (again) quite some time.
 
 ### Fixed
-- Fix interns not crouching with players
-- Fix some voices that didn't play : following player, found loot, ordered to go somewhere, ordered to follow
-- Recent known bug : Multiplayer, another player cannot manage intern from another player, but still can grab/release intern to gain control of it
+- Fix interns not crouching with players.
+- Fix some voices that didn't play : following player, found loot, ordered to go somewhere, ordered to follow.
+- Recent known bug : Multiplayer, another player cannot manage intern from another player, but still can grab/release intern to gain control of it.
 
 ## 0.20.3 [Alpha] - 2025-08-19
 Little update this time with UI rework.</br>
@@ -95,7 +103,7 @@ I set it to false for now (interns can not lose the player) just to see if peopl
 - LethalMin v1.0.16 compat
 
 ## 0.20.1 [Alpha] - 2025-07-18
-Nothing, a thunderstore upload problem and the new version fixed nothing
+Nothing, a thunderstore upload problem and the new version fixed nothing.
 
 ## 0.20.0 [Alpha] - 2025-07-18
 Sorry for the wait, I think I needed to take a break...</br>
