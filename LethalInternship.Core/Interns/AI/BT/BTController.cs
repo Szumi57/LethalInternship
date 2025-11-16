@@ -143,6 +143,7 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public void ResetContextNewCommandFollowPlayer()
         {
+            BTContext.PathController.ResetPathAndIndex();
             BTContext.PathController.SetNewDestination(new DJKMovingPoint(BTContext.InternAI.targetPlayer.transform, $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}"));
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
