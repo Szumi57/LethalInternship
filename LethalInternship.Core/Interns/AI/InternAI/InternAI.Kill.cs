@@ -155,6 +155,19 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            // Clinging flower snake (tulip snakes)
+            FlowerSnakeEnemy[] flowerSnakesArray = Object.FindObjectsByType<FlowerSnakeEnemy>(FindObjectsSortMode.None);
+            foreach (var flowerSnake in flowerSnakesArray)
+            {
+                if (flowerSnake == null
+                    || flowerSnake.clingingToPlayer != this.Npc)
+                {
+                    continue;
+                }
+
+                flowerSnake.StopClingingOnLocalClient();
+            }
+
             // If ragdoll body of intern is held
             // Release the intern before killing him
             if (RagdollInternBody.IsRagdollBodyHeld())

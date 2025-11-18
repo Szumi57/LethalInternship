@@ -399,6 +399,21 @@ namespace LethalInternship.Core.Interns.AI
                 StateControllerMovement = EnumStateControllerMovement.Free;
                 //PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} falling ! NpcController.Npc.transform.position {NpcController.Npc.transform.position} MoveVector {NpcController.MoveVector}");
                 NpcController.Npc.transform.position = NpcController.Npc.transform.position + NpcController.MoveVector * Time.deltaTime;
+
+                // Stop the free falling through the map
+                if (NpcController.Npc.transform.position.y < -500f)
+                {
+                    var closestNode = allAINodes.OrderBy(node => (node.transform.position - NpcController.Npc.transform.position).sqrMagnitude)
+                                      .FirstOrDefault();
+                    if (closestNode != null)
+                    {
+                        TeleportAgentAIAndBody(closestNode.transform.position);
+                    }
+                    else
+                    {
+                        TeleportAgentAIAndBody(this.GetClosestIrlPlayer().transform.position);
+                    }
+                }
             }
             else if (StateControllerMovement == EnumStateControllerMovement.FollowAgent)
             {
@@ -530,7 +545,8 @@ namespace LethalInternship.Core.Interns.AI
 
             if (NpcController.Npc.externalForces.y > 7.1f)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} externalForces.y {NpcController.Npc.externalForces.y}");
+                IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position, forceCalculation: true);
+                PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} externalForces.y {NpcController.Npc.externalForces.y} is touching ground {IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position)}");
                 return true;
             }
 
@@ -583,9 +599,15 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             if (collidedEnemy == null
-                || collidedEnemy.GetType() == typeof(InternAI)
-                || collidedEnemy.GetType() == typeof(FlowerSnakeEnemy))
+                || collidedEnemy.GetType() == typeof(InternAI))
             {
+                return;
+            }
+
+            if (collidedEnemy.GetType() == typeof(FlowerSnakeEnemy))
+            {
+                // FlowerSnakeEnemy collide with the intern collider
+                collidedEnemy.OnCollideWithPlayer(InternBodyCollider);
                 return;
             }
 
