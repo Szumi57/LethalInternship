@@ -319,7 +319,7 @@ namespace LethalInternship.Core.Interns
             string path = string.Join(' ', VoiceFolder + "\\" + enumVoicesState.ToString()).Replace("_", "").ToLower();
 
             var audioClipPaths = AudioManager.Instance.DictAudioClipsByPath
-                                    .Where(x => x.Key.Replace(" ", "").Replace("_", "").ToLower().Contains(path));
+                                    .Where(x => AudioManager.Instance.FormatAudioDirectoriesNames(x.Key).Contains(path));
 
             //PluginLoggerHook.LogDebug?.Invoke($"Loaded {audioClipPaths.Count()} path containing {path}");
             return audioClipPaths.Select(y => y.Key).ToArray();

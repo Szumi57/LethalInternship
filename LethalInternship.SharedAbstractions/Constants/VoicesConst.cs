@@ -5,6 +5,7 @@ namespace LethalInternship.SharedAbstractions.Constants
     public class VoicesConst
     {
         public static readonly string VOICES_PATH = "Audio\\Voices\\";
+        public static readonly string DEFAULT_VOICES_FOLDER = "Mathew_kelly";
 
         public static readonly float DEFAULT_VOICES_VOLUME_MULTIPLIER = 1f;
         public static EnumTalkativeness DEFAULT_CONFIG_ENUM_TALKATIVENESS = EnumTalkativeness.Normal;

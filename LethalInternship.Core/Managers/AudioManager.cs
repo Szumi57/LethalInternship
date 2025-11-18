@@ -1,4 +1,5 @@
 ﻿using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
@@ -42,40 +43,68 @@ namespace LethalInternship.Core.Managers
         private void LoadAllVoiceLanguageAudioAssets()
         {
             // Try to load user custom voices
-            string folderPath = PluginRuntimeProvider.Context.VoicesPath;
-            if (Directory.Exists(folderPath))
+            string directoryPath = Path.Combine(PluginRuntimeProvider.Context.DirectoryName, VoicesConst.VOICES_PATH);
+            string defaultDirectoryVoicesPath = Path.Combine(directoryPath, VoicesConst.DEFAULT_VOICES_FOLDER);
+            if (Directory.Exists(directoryPath)
+                && Directory.Exists(defaultDirectoryVoicesPath))
             {
-                // Load all paths
-                foreach (string filePath in Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories))
+                // Directory exists
+                var enumVoiceStatesStrings = ((EnumVoicesState[])Enum.GetValues(typeof(EnumVoicesState))).ToList()
+                                                                     .ConvertAll(e => e.ToString())
+                                                                     .Where(x => x != EnumVoicesState.None.ToString())
+                                                                     .Select(x => FormatAudioDirectoriesNames(x)).ToList();
+                var defaultDirectoryVoicesFolder = Directory.GetDirectories(defaultDirectoryVoicesPath)
+                                                            .Select(Path.GetFileName)
+                                                            .Select(x => FormatAudioDirectoriesNames(x));
+                var differences = enumVoiceStatesStrings.Except(defaultDirectoryVoicesFolder);
+                if (differences.Any())
                 {
-                    AddPath("file://" + filePath);
-                }
-
-                return;
-            }
-
-            // Try to load decompress default voices
-            folderPath = Path.Combine(PluginRuntimeProvider.Context.DirectoryName, VoicesConst.VOICES_PATH);
-            if (!Directory.Exists(folderPath))
-            {
-                Directory.CreateDirectory(folderPath);
-
-                // Load zip and extract it
-                Assembly assembly = Assembly.GetExecutingAssembly();
-                using (Stream resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".Assets.Audio.Voices.DefaultVoices.zip"))
-                {
-                    using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
+                    PluginLoggerHook.LogWarning?.Invoke($"Loading audio manager : Default voices directory not complete, folders missing :");
+                    foreach (string directory in differences)
                     {
-                        // Works if using 7zip to re-zip archive from dropbox (extract and rezip), why ?
-                        archive.ExtractToDirectory(folderPath);
+                        PluginLoggerHook.LogWarning?.Invoke($"{directory}");
                     }
+
+                    PluginLoggerHook.LogWarning?.Invoke($"Restoring default voices...");
+                    Directory.Delete(defaultDirectoryVoicesPath, true);
+                    UnzipToDirectory(directoryPath);
                 }
+                else
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"Loading audio manager : Default voice directory complete.");
+                }
+            }
+            else
+            {
+                // Directory does not exists
+                PluginLoggerHook.LogWarning?.Invoke($"Loading audio manager : Default voices directory missing !");
+                PluginLoggerHook.LogWarning?.Invoke($"Restoring default voices...");
+                UnzipToDirectory(directoryPath);
             }
 
             // Load all paths
-            foreach (string filePath in Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories))
+            foreach (string filePath in Directory.GetFiles(directoryPath, "*.ogg", SearchOption.AllDirectories))
             {
                 AddPath("file://" + filePath);
+            }
+        }
+
+        private void UnzipToDirectory(string toDirectoryPath)
+        {
+            if (!Directory.Exists(toDirectoryPath))
+            {
+                Directory.CreateDirectory(toDirectoryPath);
+            }
+
+            // Load zip and extract it
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            using (Stream resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".Assets.Audio.Voices.DefaultVoices.zip"))
+            {
+                using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
+                {
+                    // Works if using 7zip to re-zip archive from dropbox (extract and rezip), why ?
+                    archive.ExtractToDirectory(toDirectoryPath);
+                }
             }
         }
 
@@ -95,6 +124,11 @@ namespace LethalInternship.Core.Managers
 
                 DictAudioClipsByPath.Add(path, null);
             }
+        }
+
+        public string FormatAudioDirectoriesNames(string directoryName)
+        {
+            return directoryName.Replace(" ", "").Replace("_", "").ToLower();
         }
 
         public void SyncPlayAudio(string path, int internID)
