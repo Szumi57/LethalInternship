@@ -691,6 +691,13 @@ namespace LethalInternship.Core.Interns.AI
                 return true;
             }
 
+            // Apparatus
+            if (!PluginRuntimeProvider.Context.Config.GrabApparatus
+                && gameObjectToEvaluate.name.Contains("LungApparatus"))
+            {
+                return true;
+            }
+
             return false;
         }
 

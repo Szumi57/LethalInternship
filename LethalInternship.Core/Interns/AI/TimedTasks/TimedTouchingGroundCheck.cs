@@ -11,9 +11,10 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
         private long timer = 200 * TimeSpan.TicksPerMillisecond;
         private long lastTimeCalculate;
 
-        public bool IsTouchingGround(Vector3 internPosition)
+        public bool IsTouchingGround(Vector3 internPosition, bool forceCalculation = false)
         {
-            if (!NeedToRecalculate())
+            if (!NeedToRecalculate()
+                && !forceCalculation)
             {
                 return isTouchingGround;
             }

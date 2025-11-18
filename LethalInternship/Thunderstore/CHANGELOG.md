@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.4 [Alpha] - 2025-11-18
+### Added
+- New config : grab or not the apparatus (default to false). Thanks to DHU on discord for reminding me.
+### Fixed
+- Speculative fix for audio loading when launching the mod.
+- Fix flower snake (tulip snake) not clinging on interns.
+
 ## 0.22.3 [Alpha] - 2025-11-16
 ### Added
 - New voices ! Start scavenging, wandering with loot, without loot, can't do command, thinking (before scavenging).
