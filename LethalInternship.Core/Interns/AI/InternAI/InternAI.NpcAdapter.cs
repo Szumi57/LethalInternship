@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.Interns.AI.Items;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using Unity.Netcode;
 using UnityEngine;
@@ -76,12 +77,18 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.isInElevator = inElevator;
             NpcController.Npc.isInHangarShipRoom = isInShip;
 
-            if (!AreHandsFree()
-                && HeldItem != null
-                && HeldItem.isInShipRoom != isInShip)
+            foreach (var item in HeldItems.Items)
             {
-                HeldItem.isInElevator = inElevator;
-                NpcController.Npc.SetItemInElevator(droppedInShipRoom: isInShip, droppedInElevator: inElevator, HeldItem);
+                if (item.GrabbableObject == null)
+                {
+                    continue;
+                }
+
+                if (item.GrabbableObject.isInShipRoom != isInShip)
+                {
+                    item.GrabbableObject.isInElevator = inElevator;
+                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: isInShip, droppedInElevator: inElevator, item.GrabbableObject);
+                }
             }
 
             NpcController.Npc.oldPlayerPosition = NpcController.Npc.serverPlayerPosition;

@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Core.Interns.AI.Items;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
@@ -13,10 +14,44 @@ namespace LethalInternship.Core.Interns.AI
 {
     public partial class InternAI
     {
-        public GrabbableObject? HeldItem { get => heldItem; set => heldItem = value; }
-        private GrabbableObject? heldItem = null!;
+        public HeldItems HeldItems { get; set; } = new HeldItems();
 
         private Coroutine grabObjectCoroutine = null!;
+        private Coroutine? dropAllObjectsCoroutine = null!;
+        private bool dropAllObjectsCoroutineRunning = false;
+
+        /// <summary>
+        /// Is the intern holding an item ?
+        /// </summary>
+        /// <returns>I mean come on</returns>
+        public bool AreHandsFree()
+        {
+            return !HeldItems.IsHoldingAnItem();
+        }
+
+        public bool CanHoldNewItem()
+        {
+            return HeldItems.IsNewItemAllowed();
+        }
+
+        public bool IsHoldingItem(GrabbableObject grabbableObject)
+        {
+            return HeldItems.IsHoldingItem(grabbableObject);
+        }
+
+        public void UpdateItemOffsetsWhileHeld()
+        {
+            foreach (var item in HeldItems.Items)
+            {
+                if (item.GrabbableObject == null)
+                {
+                    continue;
+                }
+
+                item.GrabbableObject.transform.localPosition = item.GrabbableObject.itemProperties.positionOffset;
+                item.GrabbableObject.transform.localEulerAngles = item.GrabbableObject.itemProperties.rotationOffset;
+            }
+        }
 
         #region Grab item RPC
 
@@ -29,14 +64,14 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
@@ -61,18 +96,18 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId} {NpcController.Npc.playerUsername}: Failed to get network object from network object reference (Grab item RPC)");
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId}: Failed to get network object from network object reference (Grab item RPC)");
                 return;
             }
 
             GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
             if (grabbableObject == null)
             {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GrabItem for InternAI {InternId}: Failed to get GrabbableObject component from network object (Grab item RPC)");
                 return;
             }
 
-            if (HeldItem == grabbableObject)
+            if (HeldItems.IsHoldingItem(grabbableObject))
             {
                 PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} cannot grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
                 return;
@@ -88,7 +123,7 @@ namespace LethalInternship.Core.Interns.AI
         private void GrabItem(GrabbableObject grabbableObject)
         {
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} try to grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
-            HeldItem = grabbableObject;
+            HeldItems.HoldItem(grabbableObject);
 
             grabbableObject.GrabItemFromEnemy(this);
             grabbableObject.parentObject = NpcController.Npc.serverItemHolder;
@@ -131,9 +166,10 @@ namespace LethalInternship.Core.Interns.AI
         /// <returns></returns>
         private IEnumerator GrabAnimationCoroutine()
         {
-            if (HeldItem != null)
+            GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpItem();
+            if (lastPickedUpItem != null)
             {
-                float grabAnimationTime = HeldItem.itemProperties.grabAnimationTime > 0f ? HeldItem.itemProperties.grabAnimationTime : 0.4f;
+                float grabAnimationTime = lastPickedUpItem.itemProperties.grabAnimationTime > 0f ? lastPickedUpItem.itemProperties.grabAnimationTime : 0.4f;
                 yield return new WaitForSeconds(grabAnimationTime - 0.2f);
                 NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABVALIDATED, true);
                 NpcController.Npc.isGrabbingObjectAnimation = false;
@@ -171,22 +207,21 @@ namespace LethalInternship.Core.Interns.AI
         /// <summary>
         /// Make the intern drop his item like an enemy, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
-        public void DropItem()
+        public void DropItem(GrabbableObject itemToDrop)
         {
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} Try to drop item on client #{NetworkManager.LocalClientId}");
-            if (HeldItem == null)
+            if (!HeldItems.IsHoldingItem(itemToDrop))
             {
                 PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} Try to drop not held item on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
-            GrabbableObject grabbableObject = HeldItem;
             bool placeObject = false;
             Vector3 placePosition = default;
             NetworkObject parentObjectTo = null!;
             bool matchRotationOfParent = true;
             Vector3 vector;
-            NetworkObject physicsRegionOfDroppedObject = grabbableObject.GetPhysicsRegionOfDroppedObject(NpcController.Npc, out vector);
+            NetworkObject physicsRegionOfDroppedObject = itemToDrop.GetPhysicsRegionOfDroppedObject(NpcController.Npc, out vector);
             if (physicsRegionOfDroppedObject != null)
             {
                 placePosition = vector;
@@ -210,7 +245,7 @@ namespace LethalInternship.Core.Interns.AI
                     int floorYRot2 = (int)transform.localEulerAngles.y;
 
                     // on client
-                    SetObjectAsNoLongerHeld(grabbableObject,
+                    SetObjectAsNoLongerHeld(itemToDrop,
                                             NpcController.Npc.isInElevator,
                                             NpcController.Npc.isInHangarShipRoom,
                                             placePosition,
@@ -221,19 +256,19 @@ namespace LethalInternship.Core.Interns.AI
                         DroppedInElevator = NpcController.Npc.isInElevator,
                         DroppedInShipRoom = NpcController.Npc.isInHangarShipRoom,
                         FloorYRot = floorYRot2,
-                        GrabbedObject = grabbableObject.NetworkObject,
+                        GrabbedObject = itemToDrop.NetworkObject,
                         TargetFloorPosition = placePosition
                     });
                 }
                 else
                 {
                     // on client
-                    PlaceGrabbableObject(grabbableObject, parentObjectTo.transform, placePosition, matchRotationOfParent);
+                    PlaceGrabbableObject(itemToDrop, parentObjectTo.transform, placePosition, matchRotationOfParent);
 
                     // for other clients
                     PlaceGrabbableObjectServerRpc(new PlaceItemNetworkSerializable()
                     {
-                        GrabbedObject = grabbableObject.NetworkObject,
+                        GrabbedObject = itemToDrop.NetworkObject,
                         MatchRotationOfParent = matchRotationOfParent,
                         ParentObject = parentObjectTo,
                         PlacePositionOffset = placePosition
@@ -247,13 +282,13 @@ namespace LethalInternship.Core.Interns.AI
                 if (!NpcController.Npc.isInElevator)
                 {
                     Vector3 vector2;
-                    if (grabbableObject.itemProperties.allowDroppingAheadOfPlayer)
+                    if (itemToDrop.itemProperties.allowDroppingAheadOfPlayer)
                     {
-                        vector2 = DropItemAheadOfPlayer(grabbableObject, NpcController.Npc);
+                        vector2 = DropItemAheadOfPlayer(itemToDrop, NpcController.Npc);
                     }
                     else
                     {
-                        vector2 = grabbableObject.GetItemFloorPosition(default);
+                        vector2 = itemToDrop.GetItemFloorPosition(default);
                     }
                     if (!NpcController.Npc.playersManager.shipBounds.bounds.Contains(vector2))
                     {
@@ -267,7 +302,7 @@ namespace LethalInternship.Core.Interns.AI
                 }
                 else
                 {
-                    Vector3 vector2 = grabbableObject.GetItemFloorPosition(default);
+                    Vector3 vector2 = itemToDrop.GetItemFloorPosition(default);
                     if (!NpcController.Npc.playersManager.shipBounds.bounds.Contains(vector2))
                     {
                         droppedInElevator = false;
@@ -281,7 +316,7 @@ namespace LethalInternship.Core.Interns.AI
                 int floorYRot = (int)transform.localEulerAngles.y;
 
                 // on client
-                SetObjectAsNoLongerHeld(grabbableObject,
+                SetObjectAsNoLongerHeld(itemToDrop,
                                         droppedInElevator,
                                         NpcController.Npc.isInHangarShipRoom,
                                         targetFloorPosition,
@@ -293,12 +328,77 @@ namespace LethalInternship.Core.Interns.AI
                     DroppedInElevator = droppedInElevator,
                     DroppedInShipRoom = NpcController.Npc.isInHangarShipRoom,
                     FloorYRot = floorYRot,
-                    GrabbedObject = grabbableObject.NetworkObject,
+                    GrabbedObject = itemToDrop.NetworkObject,
                     TargetFloorPosition = targetFloorPosition
                 });
             }
+        }
 
+        public void DropFirstPickedUpItem()
+        {
+            GrabbableObject? firstPickedUpItem = HeldItems.GetFirstPickedUpItem();
+            if (firstPickedUpItem == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropFirstPickedUpItem: Failed, no item found !");
+                return;
+            }
 
+            DropItem(firstPickedUpItem);
+        }
+
+        public void DropLastPickedUpItem()
+        {
+            GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpItem();
+            if (lastPickedUpItem == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropLastPickedUpItem: Failed, no item found !");
+                return;
+            }
+
+            DropItem(lastPickedUpItem);
+        }
+
+        public void DropAllItems(bool waitBetweenItems = true)
+        {
+            if (waitBetweenItems)
+            {
+                if (!dropAllObjectsCoroutineRunning)
+                {
+                    if (dropAllObjectsCoroutine != null)
+                    {
+                        StopCoroutine(dropAllObjectsCoroutine);
+                    }
+                    PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} DropAllItems: Starting coroutine");
+                    dropAllObjectsCoroutine = StartCoroutine(DropAllItemsCoroutine());
+                }
+            }
+            else
+            {
+                while (!this.AreHandsFree())
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} DropAllItems waitBetweenItems false, dropping item");
+                    DropLastPickedUpItem();
+                }
+            }
+        }
+
+        private IEnumerator DropAllItemsCoroutine()
+        {
+            dropAllObjectsCoroutineRunning = true;
+            while (!this.AreHandsFree())
+            {
+                GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpItem();
+                if (lastPickedUpItem == null)
+                {
+                    PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropAllItemsCoroutine: Failed, no item found !");
+                    yield break;
+                }
+
+                PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} dropping {lastPickedUpItem}");
+                DropItem(lastPickedUpItem);
+                yield return new WaitForSeconds(0.4f);
+            }
+            dropAllObjectsCoroutineRunning = false;
         }
 
         private Vector3 DropItemAheadOfPlayer(GrabbableObject grabbableObject, PlayerControllerB player)
@@ -338,25 +438,30 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void SetObjectAsNoLongerHeldClientRpc(DropItemNetworkSerializable dropItemNetworkSerializable)
         {
-            if (HeldItem == null)
+            if (!dropItemNetworkSerializable.GrabbedObject.TryGet(out NetworkObject networkObject, null))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} held item already dropped, on client #{NetworkManager.LocalClientId}");
+                PluginLoggerHook.LogError?.Invoke($"SetObjectAsNoLongerHeldClientRpc {NpcController.Npc.playerUsername} no networkObject found in dropItemNetworkSerializable ! on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
-            NetworkObject networkObject;
-            if (dropItemNetworkSerializable.GrabbedObject.TryGet(out networkObject, null))
+            GrabbableObject? itemToDrop = networkObject.GetComponent<GrabbableObject>();
+            if (itemToDrop == null)
             {
-                SetObjectAsNoLongerHeld(networkObject.GetComponent<GrabbableObject>(),
-                                        dropItemNetworkSerializable.DroppedInElevator,
-                                        dropItemNetworkSerializable.DroppedInShipRoom,
-                                        dropItemNetworkSerializable.TargetFloorPosition,
-                                        dropItemNetworkSerializable.FloorYRot);
+                PluginLoggerHook.LogError?.Invoke($"SetObjectAsNoLongerHeldClientRpc {NpcController.Npc.playerUsername} no GrabbableObject found in networkObject ! on client #{NetworkManager.LocalClientId}");
+                return;
             }
-            else
+
+            if (!HeldItems.IsHoldingItem(itemToDrop))
             {
-                PluginLoggerHook.LogError?.Invoke($"Intern {NpcController.Npc.playerUsername} on client #{NetworkManager.LocalClientId} drop item : The server did not have a reference to the held object");
+                PluginLoggerHook.LogWarning?.Invoke($"{NpcController.Npc.playerUsername} held item already dropped, on client #{NetworkManager.LocalClientId}");
+                return;
             }
+
+            SetObjectAsNoLongerHeld(itemToDrop,
+                                    dropItemNetworkSerializable.DroppedInElevator,
+                                    dropItemNetworkSerializable.DroppedInShipRoom,
+                                    dropItemNetworkSerializable.TargetFloorPosition,
+                                    dropItemNetworkSerializable.FloorYRot);
         }
 
         private void SetObjectAsNoLongerHeld(GrabbableObject grabbableObject,
@@ -442,7 +547,7 @@ namespace LethalInternship.Core.Interns.AI
 
         private void PlaceGrabbableObject(GrabbableObject placeObject, Transform parentObject, Vector3 positionOffset, bool matchRotationOfParent)
         {
-            if (HeldItem == null)
+            if (!HeldItems.IsHoldingItem(placeObject))
             {
                 PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} held item already placed, on client #{NetworkManager.LocalClientId}");
                 return;
@@ -487,7 +592,8 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
             InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
-            HeldItem = null;
+
+            HeldItems.DropItem(grabbableObject);
             NpcController.Npc.isHoldingObject = false;
             NpcController.Npc.currentlyHeldObjectServer = null;
             NpcController.Npc.twoHanded = false;

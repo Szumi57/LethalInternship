@@ -224,10 +224,9 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.lastSyncedPhysicsParent = null;
             NpcController.CurrentInternPhysicsRegions.Clear();
             ReParentIntern(NpcController.Npc.playersManager.playersContainer);
-            if (HeldItem != null)
-            {
-                DropItem();
-            }
+            
+            DropAllItems(waitBetweenItems: false);
+
             NpcController.Npc.DisableJetpackControlsLocally();
             NpcController.IsControllerInCruiser = false;
             isEnemyDead = true;

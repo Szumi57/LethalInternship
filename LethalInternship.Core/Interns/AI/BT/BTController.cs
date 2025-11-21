@@ -99,7 +99,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             // Condition nodes
             conditions = new Dictionary<string, IBTCondition>()
             {
-                { "AreHandsFree", new AreHandsFree() },
+                { "CanHoldNewItem", new CanHoldNewItem() },
                 { "EnemySeen", new EnemySeen() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
@@ -195,7 +195,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .End()
 
                     .Sequence("Fetch object")
-                        .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
+                        .Condition("<CanHoldNewItem>", t => conditions["CanHoldNewItem"].Condition(BTContext))
                         .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
                         .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
                         .Selector("Should go to item")
@@ -214,7 +214,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<isCommand ScavengingMode>", t => conditions["IsCommandScavengingMode"].Condition(BTContext))
                         .Selector("Return to ship or scavenge ?")
                             .Sequence("Look for items if hands free")
-                                .Condition("<AreHandsFree>", t => conditions["AreHandsFree"].Condition(BTContext))
+                                .Condition("<CanHoldNewItem>", t => conditions["CanHoldNewItem"].Condition(BTContext))
                                 .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
                                 .Selector("Cancel scavenging ?")
                                     .Sequence("Go grab if item found")

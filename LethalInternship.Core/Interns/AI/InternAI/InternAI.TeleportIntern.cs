@@ -113,10 +113,7 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             // For CullFactory mod
-            if (HeldItem != null)
-            {
-                HeldItem.EnableItemMeshes(true);
-            }
+            HeldItems.ShowHideAllItemsMeshes(show: true);
         }
 
         public void SyncTeleportInternVehicle(Vector3 pos, bool enteringVehicle, NetworkBehaviourReference networkBehaviourReferenceVehicle)

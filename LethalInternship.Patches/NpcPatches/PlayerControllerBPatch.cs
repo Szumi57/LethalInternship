@@ -331,7 +331,7 @@ namespace LethalInternship.Patches.NpcPatches
 
                 PluginLoggerHook.LogDebug?.Invoke($"intern {internAI.NpcController.Npc.playerUsername} drop item {grabbableObject.name} before grab by player");
                 grabbableObject.isHeld = false;
-                internAI.DropItem();
+                internAI.DropItem(grabbableObject);
             }
 
             return true;

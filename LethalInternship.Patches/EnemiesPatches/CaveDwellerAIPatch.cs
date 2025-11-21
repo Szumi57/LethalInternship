@@ -48,7 +48,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
 
             PluginLoggerHook.LogDebug?.Invoke("ScareBaby_PostFix");
-            internAI.DropItem();
+            internAI.DropLastPickedUpItem();
         }
 
         [HarmonyPatch("ScareBabyClientRpc")]
@@ -72,7 +72,7 @@ namespace LethalInternship.Patches.EnemiesPatches
             }
 
             PluginLoggerHook.LogDebug?.Invoke("ScareBabyClientRpc_PostFix");
-            internAI.DropItem();
+            internAI.DropLastPickedUpItem();
         }
 
         [HarmonyPatch("CancelKillAnimationClientRpc")]
@@ -140,7 +140,7 @@ namespace LethalInternship.Patches.EnemiesPatches
                 return;
             }
 
-            internAI.DropItem();
+            internAI.DropLastPickedUpItem();
         }
     }
 }

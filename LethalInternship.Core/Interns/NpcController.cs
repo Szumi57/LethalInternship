@@ -1671,11 +1671,9 @@ namespace LethalInternship.Core.Interns
                             }
                         }
 
-                        GrabbableObject? currentlyHeldObject = InternAIController.HeldItem;
-                        if (currentlyHeldObject != null && Npc.isHoldingObject && GrabbedObjectValidated)
+                        if (grabbedObjectValidated)
                         {
-                            currentlyHeldObject.transform.localPosition = currentlyHeldObject.itemProperties.positionOffset;
-                            currentlyHeldObject.transform.localEulerAngles = currentlyHeldObject.itemProperties.rotationOffset;
+                            InternAIController.UpdateItemOffsetsWhileHeld();
                         }
                     }
 

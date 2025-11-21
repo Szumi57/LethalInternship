@@ -618,16 +618,15 @@ namespace LethalInternship.Core.Managers
                 FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 fieldInfo.SetValue(localPlayer, 0f);
 
-                if (!intern.AreHandsFree())
+                if (!intern.CanHoldNewItem())
                 {
-                    // Intern drop item
-                    intern.DropItem();
+                    intern.DropFirstPickedUpItem();
                 }
-                else if (localPlayer.currentlyHeldObjectServer != null)
+
+                if (localPlayer.currentlyHeldObjectServer != null)
                 {
                     // Intern take item from player hands
-                    GrabbableObject grabbableObject = localPlayer.currentlyHeldObjectServer;
-                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, grabbableObject.NetworkObject);
+                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
                 }
 
                 return;

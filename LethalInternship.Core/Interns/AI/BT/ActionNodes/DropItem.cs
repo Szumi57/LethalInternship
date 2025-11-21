@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -7,7 +8,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            InternAI ai = context.InternAI;
+            IInternAI ai = context.InternAI;
 
             if (ai.AreHandsFree())
             {
@@ -15,7 +16,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            ai.DropItem();
+            ai.DropAllItems();
 
             return BehaviourTreeStatus.Success;
         }

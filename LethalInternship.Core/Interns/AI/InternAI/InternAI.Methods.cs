@@ -552,15 +552,6 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         /// <summary>
-        /// Is the intern holding an item ?
-        /// </summary>
-        /// <returns>I mean come on</returns>
-        public bool AreHandsFree()
-        {
-            return HeldItem == null;
-        }
-
-        /// <summary>
         /// Check all conditions for deciding if an item is grabbable or not.
         /// </summary>
         /// <param name="grabbableObject">Item to check</param>
@@ -738,7 +729,7 @@ namespace LethalInternship.Core.Interns.AI
 
                 if (!AreHandsFree())
                 {
-                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, HeldItem);
+                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, HeldItems.GetLastPickedUpItem());
                 }
             }
 
@@ -746,7 +737,7 @@ namespace LethalInternship.Core.Interns.AI
                 && !NpcController.Npc.isInHangarShipRoom
                 && !AreHandsFree())
             {
-                NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItem);
+                NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItems.GetLastPickedUpItem());
             }
         }
 

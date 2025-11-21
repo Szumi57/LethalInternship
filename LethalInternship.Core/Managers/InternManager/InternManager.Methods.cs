@@ -244,12 +244,12 @@ namespace LethalInternship.Core.Managers
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
                     || !internAI.NpcController.Npc.isPlayerControlled
-                    || internAI.HeldItem == null)
+                    || internAI.AreHandsFree())
                 {
                     continue;
                 }
 
-                if (internAI.HeldItem == grabbableObject)
+                if (internAI.IsHoldingItem(grabbableObject))
                 {
                     return internAI;
                 }

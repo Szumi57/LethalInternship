@@ -14,7 +14,6 @@ namespace LethalInternship.SharedAbstractions.Interns
         IRagdollInternBody RagdollInternBody { get; set; }
         bool AnimationCoroutineRagdollingRunning { get; }
         List<IBodyReplacementBase> ListModelReplacement { get; }
-        GrabbableObject? HeldItem { get; set; }
 
         GameObject GameObject { get; }
         ulong OwnerClientId { get; }
@@ -35,7 +34,10 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         void SyncJump();
         void SyncLandFromJump(bool fallHard);
-        void DropItem();
+        void DropItem(GrabbableObject itemToDrop);
+        void DropFirstPickedUpItem();
+        void DropLastPickedUpItem();
+        void DropAllItems(bool waitBetweenItems = true);
         void StopSinkingState();
         void SyncDamageIntern(int damageNumber,
                               CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
@@ -54,6 +56,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false);
         bool IsSpawningAnimationRunning();
         bool AreHandsFree();
+        bool CanHoldNewItem();
+        bool IsHoldingItem(GrabbableObject grabbableObject);
+        void UpdateItemOffsetsWhileHeld();
         bool IsClientOwnerOfIntern();
         void SyncStopPerformingEmote();
         void SyncChangeSinkingState(bool startSinking, float sinkingSpeed = 0f, int audioClipIndex = 0);

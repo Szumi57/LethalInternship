@@ -34,7 +34,7 @@ namespace LethalInternship.Core.Managers
                         continue;
                     }
 
-                    internAI.DropItem();
+                    internAI.DropAllItems(waitBetweenItems: false);
                 }
 
                 SyncEndOfRoundInternsFromServerToClientRpc();
