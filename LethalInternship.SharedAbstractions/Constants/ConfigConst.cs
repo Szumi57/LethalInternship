@@ -34,6 +34,10 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float MIN_SPEED_INTERN = 0.05f;
         public static readonly float MAX_SPEED_INTERN = 5f;
 
+        public static readonly int DEFAULT_MAX_NB_CARRY = 1;
+        public static readonly int MIN_NB_CARRY = 1;
+        public static readonly int MAX_NB_CARRY = 10;
+
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_TITLE = "INTERNSHIP PROGRAM";
         public static readonly string DEFAULT_STRING_INTERNSHIP_PROGRAM_SUBTITLE = "Need some help ? Try our new workforce, ready to assist you and gain experience";
 

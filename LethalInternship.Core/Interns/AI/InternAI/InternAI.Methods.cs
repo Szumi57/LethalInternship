@@ -573,6 +573,11 @@ namespace LethalInternship.Core.Interns.AI
                 return false;
             }
 
+            if (!CanHoldItem(grabbableObject))
+            {
+                return false;
+            }
+
             RagdollGrabbableObject? ragdollGrabbableObject = grabbableObject as RagdollGrabbableObject;
             if (ragdollGrabbableObject != null)
             {

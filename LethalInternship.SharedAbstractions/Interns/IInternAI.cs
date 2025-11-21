@@ -37,6 +37,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void DropItem(GrabbableObject itemToDrop);
         void DropFirstPickedUpItem();
         void DropLastPickedUpItem();
+        void DropTwoHandItem();
         void DropAllItems(bool waitBetweenItems = true);
         void StopSinkingState();
         void SyncDamageIntern(int damageNumber,
@@ -56,9 +57,11 @@ namespace LethalInternship.SharedAbstractions.Interns
         void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false);
         bool IsSpawningAnimationRunning();
         bool AreHandsFree();
-        bool CanHoldNewItem();
+        bool AreFreeSlotsAvailable();
+        bool CanHoldItem(GrabbableObject grabbableObject);
         bool IsHoldingItem(GrabbableObject grabbableObject);
         void UpdateItemOffsetsWhileHeld();
+        bool IsHoldingTwoHandedItem();
         bool IsClientOwnerOfIntern();
         void SyncStopPerformingEmote();
         void SyncChangeSinkingState(bool startSinking, float sinkingSpeed = 0f, int audioClipIndex = 0);

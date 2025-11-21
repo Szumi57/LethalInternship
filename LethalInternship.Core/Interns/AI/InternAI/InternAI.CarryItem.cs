@@ -29,9 +29,19 @@ namespace LethalInternship.Core.Interns.AI
             return !HeldItems.IsHoldingAnItem();
         }
 
-        public bool CanHoldNewItem()
+        public bool AreFreeSlotsAvailable()
         {
-            return HeldItems.IsNewItemAllowed();
+            return HeldItems.GetFreeSlots() > 0;
+        }
+
+        public bool CanHoldItem(GrabbableObject grabbableObject)
+        {
+            if (grabbableObject.itemProperties.twoHanded)
+            {
+                return !HeldItems.IsHoldingTwoHandedItem() && AreFreeSlotsAvailable();
+            }
+
+            return AreFreeSlotsAvailable();
         }
 
         public bool IsHoldingItem(GrabbableObject grabbableObject)
@@ -51,6 +61,16 @@ namespace LethalInternship.Core.Interns.AI
                 item.GrabbableObject.transform.localPosition = item.GrabbableObject.itemProperties.positionOffset;
                 item.GrabbableObject.transform.localEulerAngles = item.GrabbableObject.itemProperties.rotationOffset;
             }
+        }
+
+        public bool IsHoldingTwoHandedItem()
+        {
+            return HeldItems.IsHoldingTwoHandedItem();
+        }
+
+        private bool ShouldUseTwoHandedHoldAnim()
+        {
+            return HeldItems.IsHoldingTwoHandedItem() && HeldItems.Items.Count > 1;
         }
 
         #region Grab item RPC
@@ -135,8 +155,8 @@ namespace LethalInternship.Core.Interns.AI
 
             NpcController.Npc.isHoldingObject = true;
             NpcController.Npc.currentlyHeldObjectServer = grabbableObject;
-            NpcController.Npc.twoHanded = grabbableObject.itemProperties.twoHanded;
-            NpcController.Npc.twoHandedAnimation = grabbableObject.itemProperties.twoHandedAnimation;
+            NpcController.Npc.twoHanded = ShouldUseTwoHandedHoldAnim();
+            NpcController.Npc.twoHandedAnimation = HeldItems.IsHoldingTwoHandedItemWithAnimation();
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
             NpcController.GrabbedObjectValidated = true;
             if (grabbableObject.itemProperties.grabSFX != null)
@@ -356,6 +376,18 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             DropItem(lastPickedUpItem);
+        }
+
+        public void DropTwoHandItem()
+        {
+            GrabbableObject? twoHandItem = HeldItems.GetTwoHandItem();
+            if (twoHandItem == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropTwoHandItem: Failed, no item found !");
+                return;
+            }
+
+            DropItem(twoHandItem);
         }
 
         public void DropAllItems(bool waitBetweenItems = true)
@@ -594,10 +626,10 @@ namespace LethalInternship.Core.Interns.AI
             InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
 
             HeldItems.DropItem(grabbableObject);
-            NpcController.Npc.isHoldingObject = false;
+            NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
             NpcController.Npc.currentlyHeldObjectServer = null;
-            NpcController.Npc.twoHanded = false;
-            NpcController.Npc.twoHandedAnimation = false;
+            NpcController.Npc.twoHanded = ShouldUseTwoHandedHoldAnim();
+            NpcController.Npc.twoHandedAnimation = HeldItems.IsHoldingTwoHandedItemWithAnimation();
             NpcController.GrabbedObjectValidated = false;
 
             float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;

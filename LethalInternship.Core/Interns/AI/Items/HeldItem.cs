@@ -17,8 +17,30 @@ namespace LethalInternship.Core.Interns.AI.Items
         {
             GrabbableObject = grabbableObject;
 
-            PluginLoggerHook.LogDebug?.Invoke($"new HeldItem {grabbableObject} {grabbableObject?.name}");
-            EnumItemType = EnumItemTypes.Default;
+            if (grabbableObject != null)
+            {
+                if (grabbableObject.name.Contains("ShovelItem")
+                    || grabbableObject.name.Contains("StopSign")
+                    || grabbableObject.name.Contains("YieldSign")
+                    || grabbableObject.name.Contains("KnifeItem"))
+                {
+                    EnumItemType = EnumItemTypes.WeaponMelee;
+                }
+                else if (grabbableObject.name.Contains("ShotgunItem")
+                    || grabbableObject.name.Contains("PatcherGunItem"))
+                {
+                    EnumItemType = EnumItemTypes.WeaponRanged;
+                }
+                else
+                {
+                    EnumItemType = EnumItemTypes.Default;
+                }
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"HeldItem {GrabbableObject}, type {EnumItemType}, IsTwoHanded {IsTwoHanded}";
         }
     }
 }

@@ -37,6 +37,7 @@ namespace LethalInternship.Configs
         public bool CanLosePlayer => canLosePlayer.Value;
         public bool FollowCrouchWithPlayer => followCrouchWithPlayer.Value;
         public bool ChangeSuitAutoBehaviour => changeSuitAutoBehaviour.Value;
+        public int NbMaxCanCarry => nbMaxCanCarry.Value;
         public bool GrabItemsNearEntrances => grabItemsNearEntrances.Value;
         public bool GrabBeesNest => grabBeesNest.Value;
         public bool GrabDeadBodies => grabDeadBodies.Value;
@@ -78,6 +79,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] private SyncedEntry<bool> followCrouchWithPlayer;
         [SyncedEntryField] private SyncedEntry<bool> changeSuitAutoBehaviour;
         //[SyncedEntryField] private SyncedEntry<bool> TeleportWhenUsingLadders;
+        [SyncedEntryField] private SyncedEntry<int> nbMaxCanCarry;
         [SyncedEntryField] private SyncedEntry<bool> grabItemsNearEntrances;
         [SyncedEntryField] private SyncedEntry<bool> grabBeesNest;
         [SyncedEntryField] private SyncedEntry<bool> grabDeadBodies;
@@ -188,6 +190,12 @@ namespace LethalInternship.Configs
             //                                   "Teleport when using ladders",
             //                                   defaultVal: false,
             //                                   "Should the intern just teleport and bypass any animations when using ladders ?");
+
+            nbMaxCanCarry = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Item carry limit",
+                                               defaultValue: ConfigConst.DEFAULT_MAX_NB_CARRY,
+                                               new ConfigDescription("Number max of items interns can carry, but can still only carry 1 big (two hand) item.",
+                                                                     new AcceptableValueRange<int>(ConfigConst.MIN_NB_CARRY, ConfigConst.MAX_NB_CARRY)));
 
             grabItemsNearEntrances = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Grab items near entrances",
