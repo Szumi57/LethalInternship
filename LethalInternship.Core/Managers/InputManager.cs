@@ -625,22 +625,28 @@ namespace LethalInternship.Core.Managers
                 }
                 else
                 {
-                    if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded)
-                    {
-                        // Trying to give two handed item
-                        if (intern.IsHoldingTwoHandedItem())
-                        {
-                            intern.DropTwoHandItem();
-                        }
-                    }
-                    else
-                    {
-                        // Trying to give one handed item
+                    //if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded)
+                    //{
+                    //    // Trying to give two handed item
+                    //    if (intern.IsHoldingTwoHandedItem())
+                    //    {
+                    //        intern.DropTwoHandItem();
+                    //    }
+                    //}
+                    //else
+                    //{
                         if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
                         {
-                            intern.DropFirstPickedUpItem();
+                            if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
+                            {
+                                intern.DropTwoHandItem();
+                            }
+                            else
+                            {
+                                intern.DropFirstPickedUpItem();
+                            }
                         }
-                    }
+                    //}
 
                     // Intern take item from player hands
                     intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);

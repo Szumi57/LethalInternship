@@ -243,8 +243,7 @@ namespace LethalInternship.Core.Managers
                     || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
-                    || !internAI.NpcController.Npc.isPlayerControlled
-                    || internAI.AreHandsFree())
+                    || !internAI.NpcController.Npc.isPlayerControlled)
                 {
                     continue;
                 }

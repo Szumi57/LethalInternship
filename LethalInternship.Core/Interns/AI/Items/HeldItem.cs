@@ -1,8 +1,4 @@
 ﻿using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LethalInternship.Core.Interns.AI.Items
 {
@@ -12,6 +8,7 @@ namespace LethalInternship.Core.Interns.AI.Items
 
         public EnumItemTypes EnumItemType { get; set; }
         public bool IsTwoHanded => GrabbableObject != null && GrabbableObject.itemProperties.twoHanded;
+        public bool IsWeapon => EnumItemType == EnumItemTypes.WeaponMelee || EnumItemType == EnumItemTypes.WeaponRanged;
 
         public HeldItem(GrabbableObject? grabbableObject)
         {

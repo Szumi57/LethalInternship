@@ -62,6 +62,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool IsHoldingItem(GrabbableObject grabbableObject);
         void UpdateItemOffsetsWhileHeld();
         bool IsHoldingTwoHandedItem();
+        void UpdateItemRotation(GrabbableObject grabbableObject);
         bool IsClientOwnerOfIntern();
         void SyncStopPerformingEmote();
         void SyncChangeSinkingState(bool startSinking, float sinkingSpeed = 0f, int audioClipIndex = 0);

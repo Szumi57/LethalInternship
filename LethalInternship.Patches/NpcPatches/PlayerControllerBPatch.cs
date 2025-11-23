@@ -325,7 +325,7 @@ namespace LethalInternship.Patches.NpcPatches
                 if (internAI == null)
                 {
                     // Quit and continue original method
-                    PluginLoggerHook.LogDebug?.Invoke($"no intern found who hold item {grabbableObject.name}");
+                    PluginLoggerHook.LogDebug?.Invoke($"BeginGrabObject_PreFix: no intern found who hold item {grabbableObject.name}");
                     return true;
                 }
 

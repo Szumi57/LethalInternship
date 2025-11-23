@@ -2255,7 +2255,22 @@ namespace LethalInternship.Core.Interns
                 dictAnimationBoolPerItem = new Dictionary<string, bool>();
             }
 
+            foreach (var key in dictAnimationBoolPerItem.Keys.ToList())
+            {
+                dictAnimationBoolPerItem[key] = false;
+                Npc.playerBodyAnimator.SetBool(key, false);
+            }
             dictAnimationBoolPerItem[animationString] = value;
+            Npc.playerBodyAnimator.SetBool(animationString, value);
+
+            if (dictAnimationBoolPerItem != null)
+            {
+                foreach (var animationBool in dictAnimationBoolPerItem)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"{animationBool.Key}, {Npc.playerBodyAnimator.GetBool(animationBool.Key)}");
+                }
+            }
+
         }
 
         public void ShowFullNameBillboard()
