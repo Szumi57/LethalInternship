@@ -5,6 +5,7 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using Unity.Netcode;
@@ -17,6 +18,7 @@ namespace LethalInternship.Core.Interns.AI
         public HeldItems HeldItems { get; set; } = new HeldItems();
 
         private Transform WeaponHolderTransform = null!;
+        private bool HasWeaponAsPrimary = false;
 
         private Coroutine grabObjectCoroutine = null!;
         private Coroutine? dropAllObjectsCoroutine = null!;
@@ -79,15 +81,22 @@ namespace LethalInternship.Core.Interns.AI
             return HeldItems.IsHoldingTwoHandedItem();
         }
 
-        private bool ShouldUseTwoHandedHoldAnim()
+        private bool ShouldUseTwoHandedHoldAnim(bool ignoreHeldWeapon = true)
         {
-            return HeldItems.IsHoldingTwoHandedAnimationItem() || HeldItems.Items.Count > 1;
+            return HeldItems.IsHoldingTwoHandedAnimationItem(ignoreHeldWeapon) || HeldItems.ItemCount > 1;
         }
 
         //Quaternion lastLocalRotation = Quaternion.identity;
         //Vector3 lastLocalPosition = Vector3.zero;
         public void UpdateItemRotation(GrabbableObject grabbableObject)
         {
+            if (PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition.IsPressed()) { EquipWeaponAsPrimary(); }
+            if (PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.IsPressed()) { UnequipWeaponAsPrimary(); }
+
+            if (HasWeaponAsPrimary)
+            {
+                return;
+            }
             if (grabbableObject != HeldItems.GetHeldWeapon())
             {
                 return;
@@ -140,6 +149,74 @@ namespace LethalInternship.Core.Interns.AI
                 grabbableObject.transform.localRotation = new Quaternion(0.98072f, 0.02271f, -0.11774f, -0.15432f);
                 grabbableObject.transform.localPosition = new Vector3(0.00f, 0.30f, -0.01f);
             }
+        }
+
+        public void EquipWeaponAsPrimary()
+        {
+            if (HasWeaponAsPrimary)
+            {
+                return;
+            }
+
+            GrabbableObject? weapon = HeldItems.GetHeldWeapon();
+            if (weapon == null)
+            {
+                return;
+            }
+
+            weapon.parentObject = NpcController.Npc.serverItemHolder;
+            NpcController.Npc.isHoldingObject = true;
+            NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
+            NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim(ignoreHeldWeapon: false);
+            HeldItems.ShowHideAllItemsMeshes(show: false, includeHeldWeapon: false);
+            
+            PluginLoggerHook.LogDebug?.Invoke($"EquipWeaponAsPrimary");
+            PluginLoggerHook.LogDebug?.Invoke($"twoHandedAnimation {NpcController.Npc.twoHandedAnimation} twoHanded {NpcController.Npc.twoHanded}, isHoldingObject {NpcController.Npc.isHoldingObject}");
+
+            // Animations
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, true);
+            SetSpecialGrabAnimationBool(true, weapon.itemProperties.grabAnim);
+
+            Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimationTwoHanded");
+            Npc.playerBodyAnimator.SetTrigger("SwitchHoldAnimationTwoHanded");
+            Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimation");
+            Npc.playerBodyAnimator.SetTrigger("SwitchHoldAnimation");
+
+            HasWeaponAsPrimary = true;
+        }
+
+        public void UnequipWeaponAsPrimary()
+        {
+            if (!HasWeaponAsPrimary)
+            {
+                return;
+            }
+
+            GrabbableObject? weapon = HeldItems.GetHeldWeapon();
+            if (weapon == null)
+            {
+                return;
+            }
+
+            weapon.parentObject = WeaponHolderTransform;
+            NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
+            NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
+            NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
+            HeldItems.ShowHideAllItemsMeshes(show: true);
+
+            // Animations
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, NpcController.Npc.isHoldingObject);
+            if (NpcController.Npc.twoHandedAnimation)
+            {
+                SetSpecialGrabAnimationBool(true, "HoldLung");
+            }
+
+            Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimationTwoHanded");
+            Npc.playerBodyAnimator.SetTrigger("SwitchHoldAnimationTwoHanded");
+            Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimation");
+            Npc.playerBodyAnimator.SetTrigger("SwitchHoldAnimation");
+
+            HasWeaponAsPrimary = false;
         }
 
         #region Grab item RPC
@@ -238,11 +315,19 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, false);
             NpcController.Npc.playerBodyAnimator.ResetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
-            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, !HeldItems.IsHoldingItemAsWeapon(grabbableObject));
+            if (HasWeaponAsPrimary)
+            {
+                HeldItems.ShowHideAllItemsMeshes(show: false, includeHeldWeapon: false);
+            }
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, NpcController.Npc.isHoldingObject);
             if (NpcController.Npc.twoHandedAnimation)
             {
                 SetSpecialGrabAnimationBool(true, "HoldLung");
             }
+            Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimationTwoHanded");
+            Npc.playerBodyAnimator.SetTrigger("SwitchHoldAnimationTwoHanded");
+            Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimation");
+            Npc.playerBodyAnimator.SetTrigger("SwitchHoldAnimation");
 
             if (grabObjectCoroutine != null)
             {
@@ -269,34 +354,12 @@ namespace LethalInternship.Core.Interns.AI
             }
             yield break;
         }
-
+        
         /// <summary>
         /// Set the animation of body to something special if the item has a special grab animation.
         /// </summary>
         /// <param name="setBool">Activate or deactivate special animation</param>
         /// <param name="item">Item that has the special grab animation</param>
-        private void SetSpecialGrabAnimationBool(bool setBool, GrabbableObject? item)
-        {
-            PluginLoggerHook.LogDebug?.Invoke($"SetSpecialGrabAnimationBool {item} grabAnim {item?.itemProperties.grabAnim}");
-            //NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, setBool);
-            if (item != null
-                && !string.IsNullOrEmpty(item.itemProperties.grabAnim))
-            {
-                try
-                {
-                    NpcController.SetAnimationBoolForItem(item.itemProperties.grabAnim, setBool);
-
-                    //string a = "HoldLung";
-                    //NpcController.Npc.playerBodyAnimator.SetBool(a, setBool);
-                    //NpcController.SetAnimationBoolForItem(a, setBool);
-                }
-                catch (Exception)
-                {
-                    PluginLoggerHook.LogError?.Invoke("An item tried to set an animator bool which does not exist: " + item.itemProperties.grabAnim);
-                }
-            }
-        }
-
         private void SetSpecialGrabAnimationBool(bool setBool, string grabAnim)
         {
             try

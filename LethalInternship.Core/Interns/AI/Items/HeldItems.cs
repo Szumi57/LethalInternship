@@ -11,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.Items
         public HeldItem? HeldWeapon;
 
         public bool KeepWeaponForEmergency = true;// Todo : change !
-        public int NoWeaponItemCount
+        public int ItemCount
         {
             get
             {
@@ -33,7 +33,7 @@ namespace LethalInternship.Core.Interns.AI.Items
 
         public bool IsHoldingAnItem()
         {
-            return NoWeaponItemCount > 0;
+            return ItemCount > 0;
         }
 
         public bool IsHoldingItem(GrabbableObject grabbableObject)
@@ -54,16 +54,20 @@ namespace LethalInternship.Core.Interns.AI.Items
                         .Any();
         }
 
-        public bool IsHoldingTwoHandedAnimationItem()
+        public bool IsHoldingTwoHandedAnimationItem(bool ignoreHeldWeapon)
         {
-            return Items.Where(x => x.GrabbableObject != null)
-                        .Where(x => x != HeldWeapon)
-                        .Where(x => x.GrabbableObject!.itemProperties.twoHandedAnimation
-                                    || x.GrabbableObject.name.Contains("ShovelItem")
-                                    || x.GrabbableObject.name.Contains("StopSign")
-                                    || x.GrabbableObject.name.Contains("YieldSign")
-                                    || x.GrabbableObject.name.Contains("PatcherGunItem"))
-                        .Any();
+            var res = Items.Where(x => x.GrabbableObject != null);
+            if (ignoreHeldWeapon)
+            {
+                res = res.Where(x => x != HeldWeapon);
+            }
+
+            return res.Where(x => x.GrabbableObject!.itemProperties.twoHandedAnimation
+                                 || x.GrabbableObject.name.Contains("ShovelItem")
+                                 || x.GrabbableObject.name.Contains("StopSign")
+                                 || x.GrabbableObject.name.Contains("YieldSign")
+                                 || x.GrabbableObject.name.Contains("PatcherGunItem"))
+                     .Any();
         }
 
         public bool IsHoldingWeapon()
@@ -73,7 +77,7 @@ namespace LethalInternship.Core.Interns.AI.Items
 
         public int GetFreeSlots()
         {
-            return PluginRuntimeProvider.Context.Config.NbMaxCanCarry - NoWeaponItemCount;
+            return PluginRuntimeProvider.Context.Config.NbMaxCanCarry - ItemCount;
         }
 
         public GrabbableObject? GetFirstPickedUpItem()
@@ -145,11 +149,16 @@ namespace LethalInternship.Core.Interns.AI.Items
             }
         }
 
-        public void ShowHideAllItemsMeshes(bool show)
+        public void ShowHideAllItemsMeshes(bool show, bool includeHeldWeapon = true)
         {
             foreach (var item in Items)
             {
                 if (item.GrabbableObject == null)
+                {
+                    continue;
+                }
+
+                if (item == HeldWeapon && !includeHeldWeapon)
                 {
                     continue;
                 }

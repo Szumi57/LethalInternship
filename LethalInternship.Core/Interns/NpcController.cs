@@ -124,7 +124,7 @@ namespace LethalInternship.Core.Interns
         private bool isFallingNoJump;
         private int previousFootstepClip;
 
-        private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
+        private Dictionary<string, bool> dictAnimationBoolPerItem = new Dictionary<string, bool>();
 
         private float upperBodyAnimationsWeight;
         private float exhaustionEffectLerp;
@@ -424,12 +424,9 @@ namespace LethalInternship.Core.Interns
                 }
             }
 
-            if (dictAnimationBoolPerItem != null)
+            foreach (var animationBool in dictAnimationBoolPerItem)
             {
-                foreach (var animationBool in dictAnimationBoolPerItem)
-                {
-                    Npc.playerBodyAnimator.SetBool(animationBool.Key, animationBool.Value);
-                }
+                Npc.playerBodyAnimator.SetBool(animationBool.Key, animationBool.Value);
             }
         }
 
@@ -2250,11 +2247,6 @@ namespace LethalInternship.Core.Interns
         /// <param name="value">active or not</param>
         public void SetAnimationBoolForItem(string animationString, bool value)
         {
-            if (dictAnimationBoolPerItem == null)
-            {
-                dictAnimationBoolPerItem = new Dictionary<string, bool>();
-            }
-
             foreach (var key in dictAnimationBoolPerItem.Keys.ToList())
             {
                 dictAnimationBoolPerItem[key] = false;
@@ -2262,15 +2254,6 @@ namespace LethalInternship.Core.Interns
             }
             dictAnimationBoolPerItem[animationString] = value;
             Npc.playerBodyAnimator.SetBool(animationString, value);
-
-            if (dictAnimationBoolPerItem != null)
-            {
-                foreach (var animationBool in dictAnimationBoolPerItem)
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"{animationBool.Key}, {Npc.playerBodyAnimator.GetBool(animationBool.Key)}");
-                }
-            }
-
         }
 
         public void ShowFullNameBillboard()
