@@ -1,16 +1,16 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.Core.Interns.AI.Items;
-using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class AttackEnemy : IBTAction
     {
+        private long? timer = null;
+        private long lastTimeCalculate;
+
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
@@ -41,18 +41,40 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Turn towards
-            //Transform enemyTarget = context.CurrentEnemy.eye == null ? context.CurrentEnemy.transform : context.CurrentEnemy.eye.transform;
-            Vector3 enemyTarget = context.CurrentEnemy.transform.position + new Vector3(0f, 0.5f, 0f);
-            //ai.NpcController.UpdateNowTurnBodyTowardsDirection(enemyTarget);
             ai.NpcController.OrderToLookAtMovingTarget(context.CurrentEnemy.transform);
-            DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), ai.eye.position, enemyTarget, Color.red);
 
-            // Attack
-            PluginLoggerHook.LogDebug?.Invoke($"AttackEnemy weaponObject.GetType() {weaponObject.GetType()}");
+            // Shovel attack
             Shovel? shovel = weaponObject as Shovel;
             if (shovel != null)
             {
-                weaponObject.UseItemOnClient(!shovel.reelingUp);
+                weaponObject.UseItemOnClient(buttonDown: !shovel.reelingUp);
+                return BehaviourTreeStatus.Success;
+            }
+            // Knife attack
+            KnifeItem? knife = weaponObject as KnifeItem;
+            if (knife != null)
+            {
+                weaponObject.UseItemOnClient(buttonDown: true);
+                return BehaviourTreeStatus.Success;
+            }
+
+            // Shotgun wait ?
+            ShotgunItem? shotgunItem = weaponObject as ShotgunItem;
+            if (shotgunItem != null)
+            {
+                timer ??= (int)Random.Range(1000f, 2000f) * TimeSpan.TicksPerMillisecond;
+                if (DateTime.Now.Ticks - lastTimeCalculate > timer)
+                {
+                    lastTimeCalculate = DateTime.Now.Ticks;
+                }
+                else
+                {
+                    timer = null;
+                    lastTimeCalculate = 0;
+
+                    shotgunItem.ShootGun(shotgunItem.shotgunRayPoint.position, shotgunItem.shotgunRayPoint.forward);
+                    return BehaviourTreeStatus.Success;
+                }
             }
 
             return BehaviourTreeStatus.Success;

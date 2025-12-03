@@ -379,6 +379,7 @@ namespace LethalInternship
             // Objects
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.DeadBodyInfoPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.GrabbableObjectPatch"));
+            _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.KnifeItemPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.RagdollGrabbableObjectPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.ShotgunItemPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.ShovelPatch"));

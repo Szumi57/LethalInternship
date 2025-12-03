@@ -9,12 +9,12 @@ using System.Reflection.Emit;
 
 namespace LethalInternship.Patches.ObjectsPatches
 {
-    [HarmonyPatch(typeof(Shovel))]
-    public class ShovelPatch
+    [HarmonyPatch(typeof(KnifeItem))]
+    public class KnifeItemPatch
     {
-        [HarmonyPatch("HitShovel")]
+        [HarmonyPatch("HitKnife")]
         [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> HitShovel_Transpiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> HitKnife_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
@@ -22,8 +22,8 @@ namespace LethalInternship.Patches.ObjectsPatches
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 28; i++)
             {
-                if (codes[i].ToString().StartsWith("ldarg.0") // 22
-                    && codes[i + 28].ToString().StartsWith("call static UnityEngine.RaycastHit[] UnityEngine.Physics::SphereCastAll")) // 50
+                if (codes[i].ToString().StartsWith("ldarg.0") // 28
+                    && codes[i + 28].ToString().StartsWith("call static UnityEngine.RaycastHit[] UnityEngine.Physics::SphereCastAll")) // 56
                 {
                     startIndex = i;
                     break;
@@ -33,25 +33,25 @@ namespace LethalInternship.Patches.ObjectsPatches
             {
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
-                    new CodeInstruction(codes[startIndex]), // ldarg.0 NULL (this: Shovel)
+                    new CodeInstruction(codes[startIndex]), // ldarg.0 NULL (this: knife)
                     new CodeInstruction(OpCodes.Call, PatchesUtil.ShouldIgnoreIfInternMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[346].labels[0])
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[338].labels[0])
                 };
                 codes.InsertRange(startIndex, codesToAdd);
                 startIndex = -1;
             }
             else
             {
-                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.ObjectsPatches.ShovelPatch.HitShovel_Transpiler could not ignore shovel hit if holder is intern");
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.ObjectsPatches.KnifeItemPatch.HitKnife_Transpiler could not ignore shovel hit if holder is intern");
             }
 
             return codes.AsEnumerable();
         }
 
-        [HarmonyPatch("HitShovel")]
+        [HarmonyPatch("HitKnife")]
         [HarmonyPostfix]
-        public static void HitShovel_PostFix(Shovel __instance,
-                                             bool cancel)
+        public static void HitKnife_PostFix(KnifeItem __instance,
+                                            bool cancel)
         {
             if (cancel)
             {
@@ -64,7 +64,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                 return;
             }
 
-            internHolder.HitTargetWithShovel(__instance);
+            internHolder.HitTargetWithKnife(__instance);
         }
     }
 }
