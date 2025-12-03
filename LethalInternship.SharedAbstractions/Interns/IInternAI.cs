@@ -82,6 +82,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void GrabInternServerRpc(ulong idPlayerGrabberController);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
         void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
+        void HitTargetWithShovel(Shovel shovel);
 
         // Npc adapter
         Vector3 GetBillBoardPosition(GameObject bodyModel);

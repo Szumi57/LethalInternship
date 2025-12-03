@@ -118,6 +118,11 @@ namespace LethalInternship.Core.Interns.AI.Items
             return HeldWeapon?.GrabbableObject;
         }
 
+        public HeldItem? GetHeldWeaponAsHeldItem()
+        {
+            return HeldWeapon;
+        }
+
         public void HoldItem(GrabbableObject grabbableObject)
         {
             HeldItem newItem = new HeldItem(grabbableObject);

@@ -381,6 +381,7 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.GrabbableObjectPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.RagdollGrabbableObjectPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.ShotgunItemPatch"));
+            _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.ShovelPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ObjectsPatches.StunGrenadeItemPatch"));
 
             // Terminal

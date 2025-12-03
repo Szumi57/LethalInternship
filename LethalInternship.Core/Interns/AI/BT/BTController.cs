@@ -75,6 +75,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             // Action nodes
             actions = new Dictionary<string, IBTAction>()
             {
+                { "AttackEnemy", new AttackEnemy() },
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
                 { "CancelGoToItem", new CancelGoToItem() },
                 { "CheckForItemsInMap", new CheckForItemsInMap() },
@@ -83,14 +84,17 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "Chill", new Chill() },
                 { "DropItem", new DropItem() },
                 { "EnterVehicle", new EnterVehicle() },
+                { "EquipWeapon", new EquipUnequipWeapon(equip: true) },
                 { "ExitVehicle", new ExitVehicle() },
                 { "FleeFromEnemy", new FleeFromEnemy() },
+                { "GoToEnemy", new GoToEnemy() },
                 { "GoToPosition", new GoToPosition() },
                 { "GrabItemBehavior", new GrabItemBehavior() },
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
                 { "SetNextDestToShip", new SetNextDestToShip() },
+                { "UnequipWeapon", new EquipUnequipWeapon(equip: false) },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() },
                 { "VoiceScavengingNoLoot", new VoiceScavengingNoLoot() },
                 { "VoiceScavengingWithLoot", new VoiceScavengingWithLoot() },
@@ -102,6 +106,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "AreFreeSlotsAvailable", new AreFreeSlotsAvailable() },
                 { "EnemySeen", new EnemySeen() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
+                { "IsAutoDefense", new IsAutoDefense() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
@@ -112,6 +117,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
                 { "IsTargetItemValid", new IsTargetItemValid() },
                 { "TargetValid", new TargetValid() },
+                { "TooFarFromEnemy", new TooFarFromEnemy() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
                 { "TooFarFromVehicle", new TooFarFromVehicle() }
@@ -167,83 +173,69 @@ namespace LethalInternship.Core.Interns.AI.BT
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 
+        public EnemyAI? GetTarget()
+        {
+            return BTContext.CurrentEnemy;
+        }
+
         private IBehaviourTreeNode CreateTree()
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                .Selector("Start")
-                    .Sequence("Panik")
+                .Selector("Panik or commands")
+
+                    .Sequence("Enemy close ?")
                         .Condition("<EnemySeen>", t => conditions["EnemySeen"].Condition(BTContext))
-                        .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
+                        .Splice(CreateSubTreePanik())
                     .End()
-
-                    .Sequence("Command go to position")
-                        .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
-                        .Selector("Go to position")
-                            .Splice(CreateSubTreeGoToPosition())
-                            .Sequence("Drop item if in ship")
-                                .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
-                                .Do("DropItem", t => actions["DropItem"].Action(BTContext))
-                            .End()
-                            .Do("Chill", t => actions["Chill"].Action(BTContext))
-                        .End()
-                    .End()
-
-                    .Sequence("Command go to vehicle")
-                        .Condition("<isCommand GoToVehicle>", t => conditions["IsCommandGoToVehicle"].Condition(BTContext))
-                        .Splice(CreateSubTreeGoToVehicle())
-                    .End()
-
-                    .Sequence("Fetch object")
-                        .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
-                        .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
-                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
-                        .Selector("Should go to item")
-                            .Splice(CreateSubTreeGoToObject())
-                            .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
-                        .End()
-                    .End()
-
-                    .Sequence("Command follow player")
-                        .Condition("<isCommand FollowPlayer>", t => conditions["IsCommandFollowPlayer"].Condition(BTContext))
-                        .Condition("<TargetValid>", t => conditions["TargetValid"].Condition(BTContext))
-                        .Splice(CreateSubTreeFollowPlayer())
-                    .End()
-
-                    .Sequence("Command scavenging")
-                        .Condition("<isCommand ScavengingMode>", t => conditions["IsCommandScavengingMode"].Condition(BTContext))
-                        .Selector("Return to ship or scavenge ?")
-                            .Sequence("Look for items if hands free")
-                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
-                                .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
-                                .Selector("Cancel scavenging ?")
-                                    .Sequence("Go grab if item found")
-                                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
-                                        .Do("VoiceScavengingNoLoot", t => actions["VoiceScavengingNoLoot"].Action(BTContext))
-                                        .Selector("Go to object or grab")
-                                            .Splice(CreateSubTreeGoToObject())
-                                            .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
-                                        .End()
-                                    .End()
-                                    .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
-                                .End()
-                            .End()
-
-                            .Sequence("Return to ship")
-                                .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
-                                .Do("VoiceScavengingWithLoot", t => actions["VoiceScavengingWithLoot"].Action(BTContext))
-                                .Selector("Go to position or drop object")
+                    
+                    .Sequence("Follow orders")
+                        .Do("UnequipWeapon", t => actions["UnequipWeapon"].Action(BTContext))
+                        .Selector("Check commands")
+                            .Sequence("Command go to position")
+                                .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
+                                .Selector("Go to position")
                                     .Splice(CreateSubTreeGoToPosition())
-                                    .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                    .Sequence("Drop item if in ship")
+                                        .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
+                                        .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                    .End()
+                                    .Do("Chill", t => actions["Chill"].Action(BTContext))
                                 .End()
                             .End()
-                        .End()
-                    .End()
 
-                    .Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
-                    .Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
+                            .Sequence("Command go to vehicle")
+                                .Condition("<isCommand GoToVehicle>", t => conditions["IsCommandGoToVehicle"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoToVehicle())
+                            .End()
 
-                .End()
+                            .Sequence("Fetch object")
+                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
+                                .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
+                                .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                .Selector("Should go to item")
+                                    .Splice(CreateSubTreeGoToObject())
+                                    .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Command follow player")
+                                .Condition("<isCommand FollowPlayer>", t => conditions["IsCommandFollowPlayer"].Condition(BTContext))
+                                .Condition("<TargetValid>", t => conditions["TargetValid"].Condition(BTContext))
+                                .Splice(CreateSubTreeFollowPlayer())
+                            .End()
+
+                            .Sequence("Command scavenging")
+                                .Condition("<isCommand ScavengingMode>", t => conditions["IsCommandScavengingMode"].Condition(BTContext))
+                                .Splice(CreateSubScavenging())
+                            .End()
+
+                            //.Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
+                            //.Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
+
+                        .End() // Selector("Check commands")
+                    .End() // .Sequence("Follow orders")
+                .End() // Selector("Panik or commands")
                 .Build();
         }
 
@@ -321,13 +313,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Splice(CreateSubTreeGoToVehicle())
                     .End()
 
-                    //.Splice(CreateSubTreeExitVehicle())
-
                     .Sequence("Follow player")
                         // no use for update last known pos, even with config, it just not work for now
                         .Do("updateLastKnownPos", t => actions["UpdateLastKnownPos"].Action(BTContext))
-                        //.Condition("<isLastKnownPositionValid>", t => conditions["IsLastKnownPositionValid"].Condition(BTContext))
-                        //.Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Selector("Go to pos or chill")
                             .Splice(CreateSubTreeGoToPosition())
                             .Sequence("Drop item if in ship")
@@ -341,6 +329,60 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Do("LookingAround", t => actions["LookingAround"].Action(BTContext))
                 .End()
                 .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubTreePanik()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Selector("Auto defense or flee")
+                            .Sequence("Attack if auto defense ok")
+                                .Condition("<IsAutoDefense>", t => conditions["IsAutoDefense"].Condition(BTContext))
+                                .Selector("Go to enemy of attack")
+                                    .Sequence("Attack if auto defense ok")
+                                        .Do("EquipWeapon", t => actions["EquipWeapon"].Action(BTContext))
+                                        .Condition("<TooFarFromEnemy>", t => conditions["TooFarFromEnemy"].Condition(BTContext))
+                                        .Do("GoToEnemy", t => actions["GoToEnemy"].Action(BTContext))
+                                    .End()
+                                    .Do("AttackEnemy", t => actions["AttackEnemy"].Action(BTContext))
+                                .End()
+                            .End()
+                            .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
+                        .End()
+                        .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubScavenging()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Selector("Return to ship or scavenge ?")
+                            .Sequence("Look for items if hands free")
+                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
+                                .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
+                                .Selector("Cancel scavenging ?")
+                                    .Sequence("Go grab if item found")
+                                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                        .Do("VoiceScavengingNoLoot", t => actions["VoiceScavengingNoLoot"].Action(BTContext))
+                                        .Selector("Go to object or grab")
+                                            .Splice(CreateSubTreeGoToObject())
+                                            .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
+                                        .End()
+                                    .End()
+                                    .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Return to ship")
+                                .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
+                                .Do("VoiceScavengingWithLoot", t => actions["VoiceScavengingWithLoot"].Action(BTContext))
+                                .Selector("Go to position or drop object")
+                                    .Splice(CreateSubTreeGoToPosition())
+                                    .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                .End()
+                            .End()
+                        .End()
+                        .Build();
         }
     }
 }

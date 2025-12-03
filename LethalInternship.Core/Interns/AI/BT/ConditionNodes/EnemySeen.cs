@@ -10,6 +10,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
         {
             InternAI ai = context.InternAI;
 
+            if (context.CurrentEnemy != null
+                && context.CurrentEnemy.isEnemyDead)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"EnemySeen isEnemyDead, looking for another one");
+                context.CurrentEnemy = null;
+            }
             if (context.CurrentEnemy != null)
             {
                 return true;
@@ -22,11 +28,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             // Check for enemies
             EnemyAI? enemyAI = CheckLOSForEnemy(ai, Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (enemyAI == null)
+            if (enemyAI == null
+                || enemyAI.isEnemyDead)
             {
                 return false;
             }
 
+            PluginLoggerHook.LogDebug?.Invoke($"EnemySeen {enemyAI}");
             context.CurrentEnemy = enemyAI;
             return true;
         }

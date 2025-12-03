@@ -144,6 +144,7 @@ namespace LethalInternship.Core.Interns
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
+        private Transform movingTargetToLookAt;
         private Vector3 lastDirectionToLookAt;
         private Quaternion cameraRotationToUpdateLookAt;
 
@@ -2066,6 +2067,11 @@ namespace LethalInternship.Core.Interns
             enumObjectsLookingAt = EnumObjectsLookingAt.Position;
             this.positionToLookAt = positionToLookAt;
         }
+        public void OrderToLookAtMovingTarget(Transform movingTargetToLookAt)
+        {
+            enumObjectsLookingAt = EnumObjectsLookingAt.MovingTarget;
+            this.movingTargetToLookAt = movingTargetToLookAt;
+        }
 
         /// <summary>
         /// Update the head of the intern to look at what he is set to
@@ -2140,6 +2146,35 @@ namespace LethalInternship.Core.Interns
                             enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
                         else
                             SetTurnBodyTowardsDirectionWithPosition(positionToLookAt);
+                    }
+                    break;
+
+                case EnumObjectsLookingAt.MovingTarget:
+
+                    direction = movingTargetToLookAt.position - Npc.gameplayCamera.transform.position;
+                    if (!DirectionNotZero(direction.x) && !DirectionNotZero(direction.y) && !DirectionNotZero(direction.z))
+                    {
+                        break;
+                    }
+
+                    if (direction != lastDirectionToLookAt)
+                    {
+                        lastDirectionToLookAt = direction;
+                        cameraRotationToUpdateLookAt = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                    }
+
+                    if (Npc.gameplayCamera.transform.rotation == cameraRotationToUpdateLookAt)
+                    {
+                        break;
+                    }
+
+                    Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotationToUpdateLookAt, Const.CAMERA_TURNSPEED);
+                    if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
+                    {
+                        if (HasToMove)
+                            enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
+                        else
+                            SetTurnBodyTowardsDirectionWithPosition(positionPlayerEyeToLookAt);
                     }
                     break;
             }

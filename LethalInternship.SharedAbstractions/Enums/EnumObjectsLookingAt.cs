@@ -7,6 +7,7 @@
     {
         Forward,
         Player,
-        Position
+        Position,
+        MovingTarget
     }
 }

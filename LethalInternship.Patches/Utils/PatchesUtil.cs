@@ -36,8 +36,9 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo SyncWatchingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncWatchingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
         public static readonly MethodInfo SyncAttackingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncAttackingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
         public static readonly MethodInfo SyncSetTargetToThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncSetTargetToThreatIfIntern(new RadMechAI(), new PlayerControllerB(), new Vector3()));
+        public static readonly MethodInfo ShouldShovelIgnoreInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldShovelIgnoreIntern(new Shovel()));
 
-        public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");   
+        public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");
 
         public static readonly MethodInfo SyncJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncJump(new ulong()));
         public static readonly MethodInfo SyncLandFromJumpMethod = SymbolExtensions.GetMethodInfo(() => SyncLandFromJump(new ulong(), new bool()));
@@ -259,6 +260,12 @@ namespace LethalInternship.Patches.Utils
         private static void SyncLandFromJump(ulong playerClientId, bool fallHard)
         {
             InternManagerProvider.Instance.GetInternAI((int)playerClientId)?.SyncLandFromJump(fallHard);
+        }
+
+        private static bool ShouldShovelIgnoreIntern(Shovel shovel)
+        {
+            // Is an intern attacking ?
+            return InternManagerProvider.Instance.GetInternAI((int)shovel.playerHeldBy.playerClientId) != null;
         }
     }
 }

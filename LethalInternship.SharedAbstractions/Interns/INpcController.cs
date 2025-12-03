@@ -50,6 +50,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void OrderToLookForward();
         void OrderToLookAtPosition(Vector3 positionToLookAt);
         void OrderToLookAtPlayer(Vector3 positionPlayerEyeToLookAt);
+        void OrderToLookAtMovingTarget(Transform movingTargetToLookAt);
 
         bool CheckConditionsForSinkingInQuicksandIntern();
         void PlayFootstep(bool isServer);

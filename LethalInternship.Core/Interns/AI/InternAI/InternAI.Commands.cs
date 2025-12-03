@@ -3,8 +3,7 @@ using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.Parameters;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI
 {
@@ -122,5 +121,26 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         #endregion
+
+        public void HitTargetWithShovel(Shovel shovel)
+        {
+            EnemyAI? enemyAI = BTController.GetTarget();
+            if (enemyAI == null)
+            {
+                PluginLoggerHook.LogWarning?.Invoke($"HitTargetWithShovel, no target found");
+                return;
+            }
+
+            enemyAI.HitEnemyOnLocalClient(force: shovel.shovelHitForce,
+                                    hitDirection: this.Npc.gameplayCamera.transform.forward,
+                                    playerWhoHit: this.Npc,
+                                    playHitSFX: true,
+                                    hitID: 1);
+
+            RoundManager.PlayRandomClip(shovel.shovelAudio, shovel.hitSFX, true, 1f, 0, 1000);
+            Object.FindObjectOfType<RoundManager>().PlayAudibleNoise(base.transform.position, 17f, 0.8f, 0, false, 0);
+            this.Npc.playerBodyAnimator.SetTrigger("shovelHit");
+            shovel.HitShovelServerRpc(-1);
+        }
     }
 }

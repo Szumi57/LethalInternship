@@ -298,7 +298,7 @@ namespace LethalInternship.Core.Managers
         /// a <c>PlayerControllerB</c> that has <c>InternAI</c>
         /// </summary>
         /// <returns><c>true</c> if <c>PlayerControllerB</c> has <c>InternAI</c>, else <c>false</c></returns>
-        public bool IsPlayerIntern(PlayerControllerB player)
+        public bool IsPlayerIntern(PlayerControllerB? player)
         {
             if (player == null) return false;
             IInternAI? internAI = GetInternAI((int)player.playerClientId);

@@ -1,8 +1,11 @@
-﻿using LethalInternship.Core.Interns.AI.TimedTasks;
+﻿using GameNetcodeStuff;
+using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalInternship.Core.Managers
@@ -63,6 +66,53 @@ namespace LethalInternship.Core.Managers
             }
 
             return getGrabbableObjectsListTimed.GetGrabbableObjectsList();
+        }
+
+        public bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform)
+        {
+            IInternAI? internHolder = GetInternAI((int)shovel.playerHeldBy.playerClientId);
+            if (internHolder == null)
+            {
+                return false;
+            }
+            // An intern is holding the shovel
+
+            // PlayerControllerB through EnemyAICollisionDetect?
+            PlayerControllerB? internControllerHit = transform.gameObject.layer == 3 ? transform.gameObject.GetComponent<PlayerControllerB>() : null;
+            if (internControllerHit != null
+                && internHolder.Npc.playerClientId == internControllerHit.playerClientId)
+            {
+                // Ignore self
+                return true;
+            }
+
+            // InternAI through EnemyAICollisionDetect ?
+            EnemyAICollisionDetect? enemyAICollisionDetect = transform.gameObject.GetComponent<EnemyAICollisionDetect>();
+            IInternAI? internHit = null;
+            if (enemyAICollisionDetect != null)
+            {
+                internHit = enemyAICollisionDetect.mainScript as IInternAI;
+            }
+            if (internHit != null
+                && internHolder == internHit)
+            {
+                // Ignore self
+                return true;
+            }
+
+            if (true) // ignore all other interns
+            {
+                if (IsPlayerIntern(internControllerHit))
+                {
+                    return true;
+                }
+                else if (internHit != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion
