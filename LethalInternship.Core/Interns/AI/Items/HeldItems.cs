@@ -10,7 +10,7 @@ namespace LethalInternship.Core.Interns.AI.Items
         public List<HeldItem> Items;
         public HeldItem? HeldWeapon;
 
-        public bool KeepWeaponForEmergency = true;// Todo : change !
+        public bool KeepWeaponForEmergency = true;// Todo : parametize change !
         public int ItemCount
         {
             get
@@ -41,9 +41,11 @@ namespace LethalInternship.Core.Interns.AI.Items
             return Items.Any(x => x.GrabbableObject == grabbableObject);
         }
 
-        public bool IsHoldingItemAsWeapon(GrabbableObject grabbableObject)
+        public bool IsHoldingItemAsWeapon(GrabbableObject? grabbableObject)
         {
-            return HeldWeapon != null && HeldWeapon.GrabbableObject == grabbableObject;
+            return HeldWeapon != null
+                   && grabbableObject != null
+                   && HeldWeapon.GrabbableObject == grabbableObject;
         }
 
         public bool IsHoldingTwoHandedItem()
@@ -80,14 +82,55 @@ namespace LethalInternship.Core.Interns.AI.Items
             return PluginRuntimeProvider.Context.Config.NbMaxCanCarry - ItemCount;
         }
 
-        public GrabbableObject? GetFirstPickedUpItem()
+        public GrabbableObject? GetFirstPickedUpGrabbableObject()
         {
-            return Items.FirstOrDefault()?.GrabbableObject;
+            for (int i = 0; i < ItemCount; i++)
+            {
+                var item = Items[i];
+                if (KeepWeaponForEmergency
+                    && IsHoldingItemAsWeapon(item.GrabbableObject))
+                {
+                    continue;
+                }
+
+                return item.GrabbableObject;
+            }
+
+            return null;
         }
 
-        public GrabbableObject? GetLastPickedUpItem()
+        public GrabbableObject? GetLastPickedUpGrabbableObject()
         {
-            return Items.LastOrDefault()?.GrabbableObject;
+            for (int i = Items.Count - 1; i >= 0; i--)
+            {
+                var item = Items[i];
+                if (KeepWeaponForEmergency
+                    && IsHoldingItemAsWeapon(item.GrabbableObject))
+                {
+                    continue;
+                }
+
+                return item.GrabbableObject;
+            }
+
+            return null;
+        }
+
+        public HeldItem? GetLastPickedUpHeldItem()
+        {
+            for (int i = Items.Count - 1; i >= 0; i--)
+            {
+                var item = Items[i];
+                if (KeepWeaponForEmergency
+                    && IsHoldingItemAsWeapon(item.GrabbableObject))
+                {
+                    continue;
+                }
+
+                return item;
+            }
+
+            return null;
         }
 
         public GrabbableObject? GetTwoHandItem()
@@ -132,7 +175,8 @@ namespace LethalInternship.Core.Interns.AI.Items
                 PluginLoggerHook.LogDebug?.Invoke($"item: {item}");
             }
 
-            if (HeldWeapon == null
+            if (newItem.IsWeapon
+                && HeldWeapon == null
                 && KeepWeaponForEmergency)
             {
                 HeldWeapon = newItem;

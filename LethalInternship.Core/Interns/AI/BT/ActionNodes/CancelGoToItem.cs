@@ -15,7 +15,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 if (context.nbItemsToCheck == 0)
                 {
-                    ai.SetCommandToFollowPlayer(playVoice: false);
+                    if (ai.AreHandsFree())
+                    {
+                        ai.SetCommandToFollowPlayer(playVoice: false);
+                    }
+                    // else return scavenged items to ship
                 }
                 else
                 {

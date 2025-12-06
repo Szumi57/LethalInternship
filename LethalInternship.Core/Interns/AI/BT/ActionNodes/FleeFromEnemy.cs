@@ -17,6 +17,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
             CoroutineController panikCoroutine = context.PanikCoroutine;
+            PluginLoggerHook.LogDebug?.Invoke("FleeFromEnemy Action ??????????????????");
 
             if (context.CurrentEnemy == null)
             {

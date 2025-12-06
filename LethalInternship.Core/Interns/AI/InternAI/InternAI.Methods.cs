@@ -734,7 +734,7 @@ namespace LethalInternship.Core.Interns.AI
 
                 if (!AreHandsFree())
                 {
-                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, HeldItems.GetLastPickedUpItem());
+                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, HeldItems.GetLastPickedUpGrabbableObject());
                 }
             }
 
@@ -742,7 +742,7 @@ namespace LethalInternship.Core.Interns.AI
                 && !NpcController.Npc.isInHangarShipRoom
                 && !AreHandsFree())
             {
-                NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItems.GetLastPickedUpItem());
+                NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItems.GetLastPickedUpGrabbableObject());
             }
         }
 

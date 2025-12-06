@@ -46,7 +46,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     context.TargetItem = null;
                     ai.TryPlayCantDoCommandVoiceAudio();
                     // todo : stay in place ?
-                    ai.SetCommandToFollowPlayer(playVoice: false);
+                    if (!ai.AreHandsFree())
+                    {
+                        ai.SetCommandToFollowPlayer(playVoice: false);
+                    }
                     return BehaviourTreeStatus.Failure;
                 }
 

@@ -8,7 +8,7 @@ namespace LethalInternship.Core.Interns.AI.Items
 
         public EnumItemTypes EnumItemType { get; set; }
         public bool IsTwoHanded => GrabbableObject != null && GrabbableObject.itemProperties.twoHanded;
-        public bool IsWeapon => EnumItemType == EnumItemTypes.WeaponMelee || EnumItemType == EnumItemTypes.WeaponRanged;
+        public bool IsWeapon => IsMeleeWeapon || IsRangedWeapon;
         public bool IsMeleeWeapon => EnumItemType == EnumItemTypes.WeaponMelee;
         public bool IsRangedWeapon => EnumItemType == EnumItemTypes.WeaponRanged;
 

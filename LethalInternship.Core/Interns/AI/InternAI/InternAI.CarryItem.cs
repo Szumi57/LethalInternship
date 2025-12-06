@@ -169,7 +169,7 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim(ignoreHeldWeapon: false);
             HeldItems.ShowHideAllItemsMeshes(show: false, includeHeldWeapon: false);
-            
+
             PluginLoggerHook.LogDebug?.Invoke($"EquipWeaponAsPrimary");
             PluginLoggerHook.LogDebug?.Invoke($"twoHandedAnimation {NpcController.Npc.twoHandedAnimation} twoHanded {NpcController.Npc.twoHanded}, isHoldingObject {NpcController.Npc.isHoldingObject}");
 
@@ -297,9 +297,10 @@ namespace LethalInternship.Core.Interns.AI
             grabbableObject.isHeld = true;
             grabbableObject.hasHitGround = false;
             grabbableObject.isInFactory = NpcController.Npc.isInsideFactory;
+            grabbableObject.EquipItem();
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
-            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetLastPickedUpItem();
+            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetLastPickedUpGrabbableObject();
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
@@ -344,7 +345,7 @@ namespace LethalInternship.Core.Interns.AI
         /// <returns></returns>
         private IEnumerator GrabAnimationCoroutine()
         {
-            GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpItem();
+            GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpGrabbableObject();
             if (lastPickedUpItem != null)
             {
                 float grabAnimationTime = lastPickedUpItem.itemProperties.grabAnimationTime > 0f ? lastPickedUpItem.itemProperties.grabAnimationTime : 0.4f;
@@ -354,7 +355,7 @@ namespace LethalInternship.Core.Interns.AI
             }
             yield break;
         }
-        
+
         /// <summary>
         /// Set the animation of body to something special if the item has a special grab animation.
         /// </summary>
@@ -508,7 +509,7 @@ namespace LethalInternship.Core.Interns.AI
 
         public void DropFirstPickedUpItem()
         {
-            GrabbableObject? firstPickedUpItem = HeldItems.GetFirstPickedUpItem();
+            GrabbableObject? firstPickedUpItem = HeldItems.GetFirstPickedUpGrabbableObject();
             if (firstPickedUpItem == null)
             {
                 PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropFirstPickedUpItem: Failed, no item found !");
@@ -520,14 +521,25 @@ namespace LethalInternship.Core.Interns.AI
 
         public void DropLastPickedUpItem()
         {
-            GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpItem();
+            HeldItem? lastPickedUpItem = HeldItems.GetLastPickedUpHeldItem();
             if (lastPickedUpItem == null)
+            {
+                return;
+            }
+
+            if (lastPickedUpItem.GrabbableObject == null)
             {
                 PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropLastPickedUpItem: Failed, no item found !");
                 return;
             }
 
-            DropItem(lastPickedUpItem);
+            if (HeldItems.ItemCount == 0
+                && lastPickedUpItem.IsWeapon)
+            {
+                return;
+            }
+
+            DropItem(lastPickedUpItem.GrabbableObject);
         }
 
         public void DropTwoHandItem()
@@ -552,7 +564,6 @@ namespace LethalInternship.Core.Interns.AI
                     {
                         StopCoroutine(dropAllObjectsCoroutine);
                     }
-                    PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} DropAllItems: Starting coroutine");
                     dropAllObjectsCoroutine = StartCoroutine(DropAllItemsCoroutine());
                 }
             }
@@ -560,7 +571,6 @@ namespace LethalInternship.Core.Interns.AI
             {
                 while (!this.AreHandsFree())
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} DropAllItems waitBetweenItems false, dropping item");
                     DropLastPickedUpItem();
                 }
             }
@@ -571,15 +581,25 @@ namespace LethalInternship.Core.Interns.AI
             dropAllObjectsCoroutineRunning = true;
             while (!this.AreHandsFree())
             {
-                GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpItem();
+                HeldItem? lastPickedUpItem = HeldItems.GetLastPickedUpHeldItem();
                 if (lastPickedUpItem == null)
+                {
+                    yield break;
+                }
+
+                if (lastPickedUpItem.GrabbableObject == null)
                 {
                     PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropAllItemsCoroutine: Failed, no item found !");
                     yield break;
                 }
 
-                PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} dropping {lastPickedUpItem}");
-                DropItem(lastPickedUpItem);
+                if (HeldItems.ItemCount == 0
+                    && lastPickedUpItem.IsWeapon)
+                {
+                    yield break;
+                }
+
+                DropItem(lastPickedUpItem.GrabbableObject);
                 yield return new WaitForSeconds(0.4f);
             }
             dropAllObjectsCoroutineRunning = false;
@@ -776,7 +796,7 @@ namespace LethalInternship.Core.Interns.AI
             InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
-            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetLastPickedUpItem();
+            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetLastPickedUpGrabbableObject();
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.GrabbedObjectValidated = false;
