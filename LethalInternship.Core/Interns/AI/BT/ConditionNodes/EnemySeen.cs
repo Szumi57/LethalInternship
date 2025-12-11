@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Constants;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
 
@@ -6,6 +7,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class EnemySeen : IBTCondition
     {
+
         public bool Condition(BTContext context)
         {
             InternAI ai = context.InternAI;
@@ -28,8 +30,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             // Check for enemies
             EnemyAI? enemyAI = CheckLOSForEnemy(ai, Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-            if (enemyAI == null
-                || enemyAI.isEnemyDead)
+            if (enemyAI == null)
             {
                 return false;
             }
@@ -56,14 +57,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             }
 
             StartOfRound instanceSOR = StartOfRound.Instance;
-            RoundManager instanceRM = RoundManager.Instance;
             Transform thisInternCamera = ai.Npc.gameplayCamera.transform;
-            int index = -1;
-            foreach (EnemyAI spawnedEnemy in instanceRM.SpawnedEnemies)
+            foreach (EnemyAI spawnedEnemy in InternManager.Instance.GetEnemiesList())
             {
-                index++;
+                if (spawnedEnemy.GetType() == typeof(InternAI))
+                {
+                    continue;
+                }
 
                 if (spawnedEnemy.isEnemyDead)
+                {
+                    continue;
+                }
+
+                if (ai.isOutside != spawnedEnemy.isOutside)
                 {
                     continue;
                 }
@@ -73,12 +80,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 Vector3 directionEnemyFromCamera = positionEnemy - thisInternCamera.position;
                 float sqrDistanceToEnemy = directionEnemyFromCamera.sqrMagnitude;
                 if (sqrDistanceToEnemy > range * range)
-                {
-                    continue;
-                }
-
-                // Obstructed
-                if (Physics.Linecast(thisInternCamera.position, positionEnemy, instanceSOR.collidersAndRoomMaskAndDefault))
                 {
                     continue;
                 }
@@ -98,17 +99,23 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
                 // Proximity awareness, danger
                 if (proximityAwareness > -1
-                    && sqrDistanceToEnemy < proximityAwareness * (float)proximityAwareness)
+                    && sqrDistanceToEnemy < (float)(proximityAwareness * proximityAwareness))
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DANGER CLOSE \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
-                    return instanceRM.SpawnedEnemies[index];
+                    return spawnedEnemy;
+                }
+
+                if (Physics.Linecast(thisInternCamera.position, positionEnemy, instanceSOR.collidersAndRoomMaskAndDefault))
+                {
+                    // Obstructed
+                    continue;
                 }
 
                 // Line of Sight, danger
                 if (Vector3.Angle(thisInternCamera.forward, directionEnemyFromCamera) < width)
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DANGER LOS \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
-                    return instanceRM.SpawnedEnemies[index];
+                    return spawnedEnemy;
                 }
             }
 

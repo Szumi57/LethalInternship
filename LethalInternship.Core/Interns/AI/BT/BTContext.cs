@@ -18,7 +18,8 @@ namespace LethalInternship.Core.Interns.AI.BT
         // Items
         public GrabbableObject? TargetItem;
         public int nbItemsToCheck;
-        
+        public bool cancelScavenging;
+
         // No use for now, target always known
         public Vector3? TargetLastKnownPosition;
 

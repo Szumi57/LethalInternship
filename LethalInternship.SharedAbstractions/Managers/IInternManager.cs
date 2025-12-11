@@ -68,5 +68,7 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         // Shovel
         bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform);
+
+        List<EnemyAI> GetEnemiesList();
     }
 }

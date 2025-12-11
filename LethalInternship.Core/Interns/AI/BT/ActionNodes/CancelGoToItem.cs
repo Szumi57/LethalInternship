@@ -19,7 +19,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     {
                         ai.SetCommandToFollowPlayer(playVoice: false);
                     }
-                    // else return scavenged items to ship
+                    else
+                    {
+                        // else return scavenged items to ship
+                        return BehaviourTreeStatus.Failure;
+                    }
                 }
                 else
                 {

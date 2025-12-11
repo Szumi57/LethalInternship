@@ -123,10 +123,10 @@ namespace LethalInternship.Core.Interns.AI
         public void Init(EnumSpawnAnimation enumSpawnAnimation)
         {
             // Entrances
-            EntrancesTeleportArray = FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+            EntrancesTeleportArray = FindObjectsByType<EntranceTeleport>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
             // Doors
-            doorLocksArray = FindObjectsOfType<DoorLock>(includeInactive: false);
+            doorLocksArray = FindObjectsByType<DoorLock>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
             // Important colliders
             InitImportantColliders();
@@ -201,7 +201,7 @@ namespace LethalInternship.Core.Interns.AI
                 dictComponentByCollider.Clear();
             }
 
-            BridgeTrigger[] bridgeTriggers = FindObjectsOfType<BridgeTrigger>(includeInactive: false);
+            BridgeTrigger[] bridgeTriggers = FindObjectsByType<BridgeTrigger>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             for (int i = 0; i < bridgeTriggers.Length; i++)
             {
                 Component[] bridgePhysicsPartsContainerComponents = bridgeTriggers[i].bridgePhysicsPartsContainer.gameObject.GetComponentsInChildren<Transform>();

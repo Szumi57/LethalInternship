@@ -45,7 +45,7 @@ namespace LethalInternship.Core.Interns.AI.BT
         public void TickTree(float deltaTime)
         {
             searchForPlayers.Reset();
-            foreach(var controller in CoroutineControllers)
+            foreach (var controller in CoroutineControllers)
             {
                 controller.Reset();
             }
@@ -62,7 +62,7 @@ namespace LethalInternship.Core.Interns.AI.BT
         private void InitCoroutineControllers(InternAI internAI)
         {
             CoroutineControllers = new List<CoroutineController>();
-            for(int i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 CoroutineControllers.Add(new CoroutineController(internAI));
             }
@@ -170,6 +170,7 @@ namespace LethalInternship.Core.Interns.AI.BT
         public void ResetContextNewCommandToScavenging()
         {
             BTContext.TargetItem = null;
+            BTContext.cancelScavenging = false;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 
@@ -188,7 +189,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .Condition("<EnemySeen>", t => conditions["EnemySeen"].Condition(BTContext))
                         .Splice(CreateSubTreePanik())
                     .End()
-                    
+
                     .Sequence("Follow orders")
                         .Do("UnequipWeapon", t => actions["UnequipWeapon"].Action(BTContext))
                         .Selector("Check commands")
@@ -230,8 +231,8 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .Splice(CreateSubScavenging())
                             .End()
 
-                            //.Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
-                            //.Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
+                        //.Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
+                        //.Do("LookingForPlayer", t => actions["LookingForPlayer"].Action(BTContext))
 
                         .End() // Selector("Check commands")
                     .End() // .Sequence("Follow orders")
