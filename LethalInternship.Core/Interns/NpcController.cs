@@ -2174,7 +2174,7 @@ namespace LethalInternship.Core.Interns
                         if (HasToMove)
                             enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
                         else
-                            SetTurnBodyTowardsDirectionWithPosition(positionPlayerEyeToLookAt);
+                            SetTurnBodyTowardsDirectionWithPosition(movingTargetToLookAt.position);
                     }
                     break;
             }

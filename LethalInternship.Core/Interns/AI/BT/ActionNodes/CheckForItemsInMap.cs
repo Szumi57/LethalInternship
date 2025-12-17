@@ -44,8 +44,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (itemsToCheck.Count == 0)
                 {
                     context.TargetItem = null;
+                    if (!context.cancelScavenging) { ai.TryPlayCantDoCommandVoiceAudio(); }
                     context.cancelScavenging = true;
-                    ai.TryPlayCantDoCommandVoiceAudio();
                     return CleanAndReturn(context, BehaviourTreeStatus.Success);
                     // todo : stay in place ?
                 }

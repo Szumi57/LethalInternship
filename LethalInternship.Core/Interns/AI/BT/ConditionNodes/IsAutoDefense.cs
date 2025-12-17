@@ -25,6 +25,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
 
+            if (!CanKillEnemy(context.CurrentEnemy))
+            {
+                return false;
+            }
+
             // Voice
             if (weapon.IsMeleeWeapon)
             {
@@ -36,6 +41,48 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             }
 
             return true; // todo: parametizasizasizasization
+        }
+
+        private bool CanKillEnemy(EnemyAI enemy)
+        {
+            switch (enemy.enemyType.enemyName) // using enemyName
+            {
+                // Killable
+                case "Baboon hawk":
+                case "Bunker Spider":
+                case "Bush Wolf":
+                case "Butler":
+                case "Centipede":
+                case "Crawler":
+                case "Flowerman":
+                case "ForestGiant":
+                case "GiantKiwi":
+                case "Hoarding bug":
+                case "Maneater":
+                case "Masked":
+                case "Manticoil":
+                case "MouthDog":
+                case "Nutcracker":
+                case "Tulip Snake":
+                    return true;
+
+                default:
+                    // Not killable
+
+                    // "Butler Bees":
+                    // "Blob":
+                    // "ImmortalSnail":
+                    // "Red Locust Bees":
+                    // "Earth Leviathan":
+                    // "Clay Surgeon":
+                    // "Puffer":
+                    // "Spring":
+                    // "Jester":
+                    // "RadMech":
+                    // "Docile Locust Bees":
+                    // "Girl":
+                    return false;
+            }
         }
 
         private void TryPlayAttackingStateVoiceAudio(InternAI ai, EnumVoicesState enumVoicesState)

@@ -5,7 +5,6 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using Unity.Netcode;
@@ -90,8 +89,8 @@ namespace LethalInternship.Core.Interns.AI
         //Vector3 lastLocalPosition = Vector3.zero;
         public void UpdateItemRotation(GrabbableObject grabbableObject)
         {
-            if (PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition.IsPressed()) { EquipWeaponAsPrimary(); }
-            if (PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.IsPressed()) { UnequipWeaponAsPrimary(); }
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition.IsPressed()) { EquipWeaponAsPrimary(); }
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.IsPressed()) { UnequipWeaponAsPrimary(); }
 
             if (HasWeaponAsPrimary)
             {
@@ -169,9 +168,6 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim(ignoreHeldWeapon: false);
             HeldItems.ShowHideAllItemsMeshes(show: false, includeHeldWeapon: false);
-
-            PluginLoggerHook.LogDebug?.Invoke($"EquipWeaponAsPrimary");
-            PluginLoggerHook.LogDebug?.Invoke($"twoHandedAnimation {NpcController.Npc.twoHandedAnimation} twoHanded {NpcController.Npc.twoHanded}, isHoldingObject {NpcController.Npc.isHoldingObject}");
 
             // Animations
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, true);
@@ -812,7 +808,7 @@ namespace LethalInternship.Core.Interns.AI
             // Battery
             SyncBatteryIntern(grabbableObject, (int)(grabbableObject.insertedBattery.charge * 100f));
 
-            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, !npcController.Npc.isHoldingObject);
+            //NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, !npcController.Npc.isHoldingObject);
             //NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} dropped {grabbableObject}, on client #{NetworkManager.LocalClientId}");

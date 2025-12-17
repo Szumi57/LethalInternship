@@ -1,12 +1,11 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class VoiceScavengingNoLoot : IBTAction
+    public class VoiceScavenging : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -20,7 +19,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Default states, wait for cooldown and if no one is talking close
             ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
-                VoiceState = EnumVoicesState.NoLoot,
+                VoiceState = ai.AreHandsFree() ? EnumVoicesState.NoLoot : EnumVoicesState.HasLoot,
                 CanTalkIfOtherInternTalk = false,
                 WaitForCooldown = true,
                 CutCurrentVoiceStateToTalk = false,

@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -56,7 +55,6 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             enemiesInMap = UnityEngine.Object.FindObjectsByType<EnemyAI>(UnityEngine.FindObjectsSortMode.None).ToList();
 
             timer.Stop();
-            PluginLoggerHook.LogDebug?.Invoke($"t {timer.Elapsed.TotalMilliseconds}ms | {timer.Elapsed.ToString("mm':'ss':'fffffff")}");
         }
     }
 }

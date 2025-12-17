@@ -96,8 +96,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "SetNextDestToShip", new SetNextDestToShip() },
                 { "UnequipWeapon", new EquipUnequipWeapon(equip: false) },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() },
-                { "VoiceScavengingNoLoot", new VoiceScavengingNoLoot() },
-                { "VoiceScavengingWithLoot", new VoiceScavengingWithLoot() },
+                { "VoiceScavenging", new VoiceScavenging() },
             };
 
             // Condition nodes
@@ -364,7 +363,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .Selector("Cancel scavenging ?")
                                     .Sequence("Go grab if item found")
                                         .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
-                                        .Do("VoiceScavengingNoLoot", t => actions["VoiceScavengingNoLoot"].Action(BTContext))
+                                        .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
                                         .Selector("Go to object or grab")
                                             .Splice(CreateSubTreeGoToObject())
                                             .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
@@ -376,7 +375,7 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                             .Sequence("Return to ship")
                                 .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
-                                .Do("VoiceScavengingWithLoot", t => actions["VoiceScavengingWithLoot"].Action(BTContext))
+                                .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
                                 .Selector("Go to position or drop object")
                                     .Splice(CreateSubTreeGoToPosition())
                                     .Do("DropItem", t => actions["DropItem"].Action(BTContext))
