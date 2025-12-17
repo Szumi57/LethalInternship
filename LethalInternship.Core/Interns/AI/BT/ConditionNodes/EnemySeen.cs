@@ -7,6 +7,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class EnemySeen : IBTCondition
     {
+        private const int SAME_ENEMY_COUNTER_MAX = 10;
+        private int sameEnemyCounter;
 
         public bool Condition(BTContext context)
         {
@@ -15,12 +17,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             if (context.CurrentEnemy != null
                 && context.CurrentEnemy.isEnemyDead)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"EnemySeen isEnemyDead, looking for another one");
                 context.CurrentEnemy = null;
             }
             if (context.CurrentEnemy != null)
             {
-                return true;
+                sameEnemyCounter++;
+                if (sameEnemyCounter >= SAME_ENEMY_COUNTER_MAX)
+                {
+                    context.CurrentEnemy = null;
+                }
+                else
+                {
+                    // Skip checking for enemies
+                    return true;
+                }
             }
 
             if (ai.NpcController.IsControllerInCruiser)
@@ -29,7 +39,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             }
 
             // Check for enemies
-            EnemyAI? enemyAI = CheckLOSForEnemy(ai, Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            EnemyAI? enemyAI = CheckLOSForEnemy(ai,
+                                                Const.INTERN_FOV,
+                                                Const.INTERN_ENTITIES_RANGE,
+                                                ai.isOutside ? Const.PROXIMITY_AWARENESS_OUTSIDE : Const.PROXIMITY_AWARENESS_INSIDE);
             if (enemyAI == null)
             {
                 return false;
@@ -37,6 +50,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
             PluginLoggerHook.LogDebug?.Invoke($"EnemySeen {enemyAI}");
             context.CurrentEnemy = enemyAI;
+            sameEnemyCounter = 0;
             return true;
         }
 
@@ -101,7 +115,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 if (proximityAwareness > -1
                     && sqrDistanceToEnemy < (float)(proximityAwareness * proximityAwareness))
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DANGER CLOSE \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
+                    //PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DANGER CLOSE \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
                     return spawnedEnemy;
                 }
 
@@ -114,7 +128,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 // Line of Sight, danger
                 if (Vector3.Angle(thisInternCamera.forward, directionEnemyFromCamera) < width)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DANGER LOS \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
+                    //PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DANGER LOS \"{spawnedEnemy.enemyType.enemyName}\" {spawnedEnemy.enemyType.name}");
                     return spawnedEnemy;
                 }
             }

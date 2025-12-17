@@ -62,6 +62,9 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
 
+        public static readonly int PROXIMITY_AWARENESS_INSIDE = 5;
+        public static readonly int PROXIMITY_AWARENESS_OUTSIDE = 10;
+
         // NpcController
         public static readonly int PLAYER_MASK = 8;
         public static readonly string PLAYER_ANIMATION_WEIGHT_HOLDINGITEMSRIGHTHAND = "HoldingItemsRightHand";
