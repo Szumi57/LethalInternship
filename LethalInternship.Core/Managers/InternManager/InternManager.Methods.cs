@@ -511,5 +511,10 @@ namespace LethalInternship.Core.Managers
         {
             return GetEnemiesTimed.GetEnemiesList();
         }
+
+        public bool ShouldIgnoreInternsEndScreen(PlayerControllerB player)
+        {
+            return IsPlayerIntern(player);
+        }
     }
 }

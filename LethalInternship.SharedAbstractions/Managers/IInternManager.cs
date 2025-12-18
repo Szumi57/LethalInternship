@@ -70,5 +70,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform);
 
         List<EnemyAI> GetEnemiesList();
+
+        bool ShouldIgnoreInternsEndScreen(PlayerControllerB player);
     }
 }

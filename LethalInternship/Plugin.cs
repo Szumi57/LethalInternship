@@ -51,6 +51,7 @@ namespace LethalInternship
     [BepInDependency(Const.PEEPERS_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.LETHALMIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(Const.HOTDOGMODEL_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(Const.ADVANCEDFEATURES_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "Szumi57." + PluginInfo.PLUGIN_NAME;
@@ -417,6 +418,7 @@ namespace LethalInternship
             bool isModPeepersLoaded = IsModLoaded(Const.PEEPERS_GUID);
             bool isModHotDogModelLoaded = IsModLoaded(Const.HOTDOGMODEL_GUID);
             bool isModUsualScrapLoaded = IsModLoaded(Const.USUALSCRAP_GUID);
+            bool isModAdvancedFeaturesLoaded = IsModLoaded(Const.ADVANCEDFEATURES_GUID);
 
             // -------------------
             // Read the preloaders
@@ -603,6 +605,10 @@ namespace LethalInternship
             if (IsModMonoProfilerLoaderLoaded)
             {
                 patchesAssembly.GetType("LethalInternship.Patches.ModPatches.MonoProfiler.MonoProfilerUtils")?.GetMethod("Init")?.Invoke(null, null);
+            }
+            if (isModAdvancedFeaturesLoaded)
+            {
+                _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.ModPatches.AdvancedFeatures.EndscreenPatch"));
             }
         }
 

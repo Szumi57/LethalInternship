@@ -33,6 +33,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public const string HOTDOGMODEL_GUID = "hotdogModel";
         public const string MIPA_GUID = "Mipa";
         public const string USUALSCRAP_GUID = "Emil.UsualScrap";
+        public const string ADVANCEDFEATURES_GUID = "com.example.Advancedfeatures";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
         public const string MONOPROFILERLOADER_DLLFILENAME = "MonoProfilerLoader.dll";
