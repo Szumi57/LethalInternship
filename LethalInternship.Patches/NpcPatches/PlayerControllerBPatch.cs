@@ -325,13 +325,13 @@ namespace LethalInternship.Patches.NpcPatches
                 if (internAI == null)
                 {
                     // Quit and continue original method
-                    PluginLoggerHook.LogDebug?.Invoke($"no intern found who hold item {grabbableObject.name}");
+                    PluginLoggerHook.LogDebug?.Invoke($"BeginGrabObject_PreFix: no intern found who hold item {grabbableObject.name}");
                     return true;
                 }
 
                 PluginLoggerHook.LogDebug?.Invoke($"intern {internAI.NpcController.Npc.playerUsername} drop item {grabbableObject.name} before grab by player");
                 grabbableObject.isHeld = false;
-                internAI.DropItem();
+                internAI.DropItem(grabbableObject);
             }
 
             return true;

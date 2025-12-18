@@ -4,52 +4,58 @@ namespace LethalInternship.SharedAbstractions.Configs
 {
     public interface IConfig
     {
-        public int MaxInternsAvailable { get; }
-        public int InternPrice { get; }
-        public int InternMaxHealth { get; }
-        public float InternSizeScale { get; }
-        public float InternSpeed { get; }
+        // Internship program
+        int MaxInternsAvailable { get; }
+        int InternPrice { get; }
+        int InternMaxHealth { get; }
+        float InternSizeScale { get; }
+        float InternSpeed { get; }
 
-        public string TitleInHelpMenu { get; }
-        public string SubTitleInHelpMenu { get; }
+        string TitleInHelpMenu { get; }
+        string SubTitleInHelpMenu { get; }
 
-        public bool CanSpectateInterns { get; }
-        public bool RadarEnabled { get; }
+        bool CanSpectateInterns { get; }
+        bool RadarEnabled { get; }
 
-        public bool SpawnIdentitiesRandomly { get; }
+        // Identity  
+        bool SpawnIdentitiesRandomly { get; }
 
-        public bool CanLosePlayer { get; }
-        public bool FollowCrouchWithPlayer { get; }
-        public bool ChangeSuitAutoBehaviour { get; }
-        public bool GrabItemsNearEntrances { get; }
-        public bool GrabBeesNest { get; }
-        public bool GrabDeadBodies { get; }
-        public bool GrabManeaterBaby { get; }
-        public bool GrabWheelbarrow { get; }
-        public bool GrabShoppingCart { get; }
-        public bool GrabKiwiBabyItem { get; }
-        public bool GrabApparatus { get; }
-        public bool TeleportedInternDropItems { get; }
+        // Behaviour
 
-        // Voic
-        public string VolumeVoicesMultiplierInterns { get; }
-        public int Talkativeness { get; }
-        public bool AllowSwearing { get; }
-        public string VolumeFootstepMultiplierInterns { get; }
+        //bool CanLosePlayer { get; }
+        bool CanUseWeapons { get; }
+        bool FollowCrouchWithPlayer { get; }
+        bool ChangeSuitAutoBehaviour { get; }
+        int NbMaxCanCarry { get; }
+        bool GrabItemsNearEntrances { get; }
+        bool GrabBeesNest { get; }
+        bool GrabDeadBodies { get; }
+        bool GrabManeaterBaby { get; }
+        bool GrabWheelbarrow { get; }
+        bool GrabShoppingCart { get; }
+        bool GrabKiwiBabyItem { get; }
+        bool GrabApparatus { get; }
+        bool TeleportedInternDropItems { get; }
+
+        // Voice
+        string VolumeVoicesMultiplierInterns { get; }
+        int Talkativeness { get; }
+        bool AllowSwearing { get; }
+        string VolumeFootstepMultiplierInterns { get; }
 
         // Perf
-        public int MaxDefaultModelAnimatedInterns { get; }
-        public int MaxModelReplacementModelAnimatedInterns { get; }
-        public int MaxFootStepAudioInterns { get; }
+        int MaxDefaultModelAnimatedInterns { get; }
+        int MaxModelReplacementModelAnimatedInterns { get; }
+        int MaxFootStepAudioInterns { get; }
 
         // Debug
-        public bool EnableDebugLog { get; }
+        bool EnableDebugLog { get; }
 
         // Config identities
-        public ConfigIdentities ConfigIdentities { get; }
+        ConfigIdentities ConfigIdentities { get; }
 
-        public string GetTitleInternshipProgram();
-        public float GetVolumeVoicesMultiplierInterns();
-        public float GetVolumeFootstepMultiplierInterns();
+        string GetTitleInternshipProgram();
+        float GetVolumeVoicesMultiplierInterns();
+        float GetVolumeFootstepMultiplierInterns();
     }
 }

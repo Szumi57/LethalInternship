@@ -3,8 +3,6 @@ using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.Parameters;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
 namespace LethalInternship.Core.Interns.AI
 {
@@ -122,5 +120,46 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         #endregion
+
+        public void HitTargetWithShovel(Shovel shovel)
+        {
+            EnemyAI? enemyAI = BTController.GetTarget();
+            if (enemyAI == null)
+            {
+                PluginLoggerHook.LogWarning?.Invoke($"HitTargetWithShovel, no target found");
+                return;
+            }
+
+            enemyAI.HitEnemyOnLocalClient(force: shovel.shovelHitForce,
+                                          hitDirection: this.Npc.gameplayCamera.transform.forward,
+                                          playerWhoHit: this.Npc,
+                                          playHitSFX: true,
+                                          hitID: 1);
+
+            RoundManager.PlayRandomClip(shovel.shovelAudio, shovel.hitSFX, true, 1f, 0, 1000);
+            RoundManager.Instance.PlayAudibleNoise(base.transform.position, 17f, 0.8f, 0, false, 0);
+            this.Npc.playerBodyAnimator.SetTrigger("shovelHit");
+            shovel.HitShovelServerRpc(-1);
+        }
+
+        public void HitTargetWithKnife(KnifeItem knife)
+        {
+            EnemyAI? enemyAI = BTController.GetTarget();
+            if (enemyAI == null)
+            {
+                PluginLoggerHook.LogWarning?.Invoke($"HitTargetWithKnife, no target found");
+                return;
+            }
+
+            enemyAI.HitEnemyOnLocalClient(force: knife.knifeHitForce,
+                                          hitDirection: this.Npc.gameplayCamera.transform.forward,
+                                          playerWhoHit: this.Npc,
+                                          playHitSFX: true,
+                                          hitID: 1);
+
+            RoundManager.PlayRandomClip(knife.knifeAudio, knife.hitSFX, true, 1f, 0, 1000);
+            RoundManager.Instance.PlayAudibleNoise(base.transform.position, 17f, 0.8f, 0, false, 0);
+            knife.HitShovelServerRpc(-1);
+        }
     }
 }

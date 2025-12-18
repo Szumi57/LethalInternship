@@ -17,14 +17,14 @@ namespace LethalInternship.Patches.ObjectsPatches
     {
         [HarmonyPatch("SetControlTipsForItem")]
         [HarmonyPrefix]
-        static bool SetControlTipsForItem_PreFix(GrabbableObject __instance)
+        public static bool SetControlTipsForItem_PreFix(GrabbableObject __instance)
         {
             return InternManagerProvider.Instance.IsAnInternAiOwnerOfObject(__instance);
         }
 
         [HarmonyPatch("DiscardItem")]
         [HarmonyPrefix]
-        static bool DiscardItem_PreFix(GrabbableObject __instance)
+        public static bool DiscardItem_PreFix(GrabbableObject __instance)
         {
             PlayerControllerB? internController = __instance.playerHeldBy;
             if (internController == null
@@ -45,7 +45,7 @@ namespace LethalInternship.Patches.ObjectsPatches
         /// <returns></returns>
         [HarmonyPatch("SetScrapValue")]
         [HarmonyPrefix]
-        static bool SetScrapValue_PreFix(GrabbableObject __instance, int setValueTo)
+        public static bool SetScrapValue_PreFix(GrabbableObject __instance, int setValueTo)
         {
             RagdollGrabbableObject? ragdollGrabbableObject = __instance as RagdollGrabbableObject;
             if (ragdollGrabbableObject == null)
@@ -124,6 +124,24 @@ namespace LethalInternship.Patches.ObjectsPatches
             }
 
             return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("LateUpdate")]
+        [HarmonyPostfix]
+        public static void LateUpdate_PostFix(GrabbableObject __instance)
+        {
+            if (__instance.playerHeldBy == null)
+            {
+                return;
+            }
+
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerHeldBy.playerClientId);
+            if (internAI == null)
+            {
+                return;
+            }
+
+            internAI.UpdateItemRotation(__instance);
         }
     }
 }

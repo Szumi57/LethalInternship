@@ -153,13 +153,13 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else if (__result == null && internControllerFound != null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("intern found, no player found");
+                //PluginLoggerHook.LogDebug?.Invoke("intern found, no player found");
                 __result = internControllerFound;
                 return;
             }
             else if (__result != null && internControllerFound == null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("intern not found, player found");
+                //PluginLoggerHook.LogDebug?.Invoke("intern not found, player found");
                 return;
             }
             else
@@ -170,10 +170,10 @@ namespace LethalInternship.Patches.NpcPatches
                 Vector3 aiEnemyPosition = __instance.eye == null ? __instance.transform.position : __instance.eye.position;
                 if ((internPosition - aiEnemyPosition).sqrMagnitude < (playerPosition - aiEnemyPosition).sqrMagnitude)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke("intern closer");
+                    //PluginLoggerHook.LogDebug?.Invoke("intern closer");
                     __result = internControllerFound;
                 }
-                else { PluginLoggerHook.LogDebug?.Invoke("player closer"); }
+                else { /*PluginLoggerHook.LogDebug?.Invoke("player closer");*/ }
             }
         }
 

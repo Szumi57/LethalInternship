@@ -124,7 +124,7 @@ namespace LethalInternship.Core.Interns
         private bool isFallingNoJump;
         private int previousFootstepClip;
 
-        private Dictionary<string, bool> dictAnimationBoolPerItem = null!;
+        private Dictionary<string, bool> dictAnimationBoolPerItem = new Dictionary<string, bool>();
 
         private float upperBodyAnimationsWeight;
         private float exhaustionEffectLerp;
@@ -144,6 +144,7 @@ namespace LethalInternship.Core.Interns
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
+        private Transform movingTargetToLookAt;
         private Vector3 lastDirectionToLookAt;
         private Quaternion cameraRotationToUpdateLookAt;
 
@@ -424,12 +425,9 @@ namespace LethalInternship.Core.Interns
                 }
             }
 
-            if (dictAnimationBoolPerItem != null)
+            foreach (var animationBool in dictAnimationBoolPerItem)
             {
-                foreach (var animationBool in dictAnimationBoolPerItem)
-                {
-                    Npc.playerBodyAnimator.SetBool(animationBool.Key, animationBool.Value);
-                }
+                Npc.playerBodyAnimator.SetBool(animationBool.Key, animationBool.Value);
             }
         }
 
@@ -1671,11 +1669,9 @@ namespace LethalInternship.Core.Interns
                             }
                         }
 
-                        GrabbableObject? currentlyHeldObject = InternAIController.HeldItem;
-                        if (currentlyHeldObject != null && Npc.isHoldingObject && GrabbedObjectValidated)
+                        if (grabbedObjectValidated)
                         {
-                            currentlyHeldObject.transform.localPosition = currentlyHeldObject.itemProperties.positionOffset;
-                            currentlyHeldObject.transform.localEulerAngles = currentlyHeldObject.itemProperties.rotationOffset;
+                            InternAIController.UpdateItemOffsetsWhileHeld();
                         }
                     }
 
@@ -2071,6 +2067,11 @@ namespace LethalInternship.Core.Interns
             enumObjectsLookingAt = EnumObjectsLookingAt.Position;
             this.positionToLookAt = positionToLookAt;
         }
+        public void OrderToLookAtMovingTarget(Transform movingTargetToLookAt)
+        {
+            enumObjectsLookingAt = EnumObjectsLookingAt.MovingTarget;
+            this.movingTargetToLookAt = movingTargetToLookAt;
+        }
 
         /// <summary>
         /// Update the head of the intern to look at what he is set to
@@ -2145,6 +2146,35 @@ namespace LethalInternship.Core.Interns
                             enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
                         else
                             SetTurnBodyTowardsDirectionWithPosition(positionToLookAt);
+                    }
+                    break;
+
+                case EnumObjectsLookingAt.MovingTarget:
+
+                    direction = movingTargetToLookAt.position - Npc.gameplayCamera.transform.position;
+                    if (!DirectionNotZero(direction.x) && !DirectionNotZero(direction.y) && !DirectionNotZero(direction.z))
+                    {
+                        break;
+                    }
+
+                    if (direction != lastDirectionToLookAt)
+                    {
+                        lastDirectionToLookAt = direction;
+                        cameraRotationToUpdateLookAt = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
+                    }
+
+                    if (Npc.gameplayCamera.transform.rotation == cameraRotationToUpdateLookAt)
+                    {
+                        break;
+                    }
+
+                    Npc.gameplayCamera.transform.rotation = Quaternion.RotateTowards(Npc.gameplayCamera.transform.rotation, cameraRotationToUpdateLookAt, Const.CAMERA_TURNSPEED);
+                    if (Vector3.Angle(Npc.gameplayCamera.transform.forward, Npc.thisPlayerBody.transform.forward) > Const.INTERN_FOV - 5f)
+                    {
+                        if (HasToMove)
+                            enumObjectsLookingAt = EnumObjectsLookingAt.Forward;
+                        else
+                            SetTurnBodyTowardsDirectionWithPosition(movingTargetToLookAt.position);
                     }
                     break;
             }
@@ -2252,12 +2282,13 @@ namespace LethalInternship.Core.Interns
         /// <param name="value">active or not</param>
         public void SetAnimationBoolForItem(string animationString, bool value)
         {
-            if (dictAnimationBoolPerItem == null)
+            foreach (var key in dictAnimationBoolPerItem.Keys.ToList())
             {
-                dictAnimationBoolPerItem = new Dictionary<string, bool>();
+                dictAnimationBoolPerItem[key] = false;
+                Npc.playerBodyAnimator.SetBool(key, false);
             }
-
             dictAnimationBoolPerItem[animationString] = value;
+            Npc.playerBodyAnimator.SetBool(animationString, value);
         }
 
         public void ShowFullNameBillboard()

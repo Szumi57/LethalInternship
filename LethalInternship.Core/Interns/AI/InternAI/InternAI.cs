@@ -4,18 +4,11 @@ using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Adapters;
-using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
-using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
-using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.NetworkSerializers;
-using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
@@ -60,9 +53,6 @@ namespace LethalInternship.Core.Interns.AI
         private IRagdollInternBody ragdollInternBody = null!;
         public int InternId = -1;
 
-        /// <summary>
-        /// Currently held item by intern
-        /// </summary>
         public Collider InternBodyCollider = null!;
         private List<IBodyReplacementBase> listModelReplacement = null!;
         private Dictionary<string, Component> dictComponentByCollider = null!;
@@ -133,10 +123,10 @@ namespace LethalInternship.Core.Interns.AI
         public void Init(EnumSpawnAnimation enumSpawnAnimation)
         {
             // Entrances
-            EntrancesTeleportArray = FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+            EntrancesTeleportArray = FindObjectsByType<EntranceTeleport>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
             // Doors
-            doorLocksArray = FindObjectsOfType<DoorLock>(includeInactive: false);
+            doorLocksArray = FindObjectsByType<DoorLock>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
             // Important colliders
             InitImportantColliders();
@@ -176,6 +166,16 @@ namespace LethalInternship.Core.Interns.AI
             InitInternVoiceComponent();
             UpdateInternVoiceEffects();
 
+            // Weapon item holder
+            if (WeaponHolderTransform == null)
+            {
+                GameObject weaponHolderGameObject = new GameObject("InternWeaponHolder");
+                Transform parentWeaponHolder = NpcController.Npc.gameObject.transform.Find("ScavengerModel/metarig/spine/spine.001/spine.002/spine.003");
+                weaponHolderGameObject.transform.SetParent(parentWeaponHolder);
+                weaponHolderGameObject.transform.localPosition = new Vector3(0f, 0f, -0.3f);
+                WeaponHolderTransform = weaponHolderGameObject.transform;
+            }
+
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(20, transform);
 
@@ -201,7 +201,7 @@ namespace LethalInternship.Core.Interns.AI
                 dictComponentByCollider.Clear();
             }
 
-            BridgeTrigger[] bridgeTriggers = FindObjectsOfType<BridgeTrigger>(includeInactive: false);
+            BridgeTrigger[] bridgeTriggers = FindObjectsByType<BridgeTrigger>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             for (int i = 0; i < bridgeTriggers.Length; i++)
             {
                 Component[] bridgePhysicsPartsContainerComponents = bridgeTriggers[i].bridgePhysicsPartsContainer.gameObject.GetComponentsInChildren<Transform>();

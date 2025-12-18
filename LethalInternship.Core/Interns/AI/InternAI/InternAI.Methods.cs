@@ -282,7 +282,26 @@ namespace LethalInternship.Core.Interns.AI
                     return 2f;
 
                 case "Centipede":
-                    return 1f;
+                    if (enemy.currentBehaviourStateIndex == 0)
+                    {
+                        // On floor
+                        return 3f;
+                    }
+                    else if (enemy.currentBehaviourStateIndex == 1)
+                    {
+                        // On ceiling
+                        return null;
+                    }
+                    else if (enemy.currentBehaviourStateIndex == 2
+                            || enemy.currentBehaviourStateIndex == 3)
+                    {
+                        // Falling or attacking on player
+                        return 3f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
 
                 case "Bunker Spider":
                     if (enemy.currentBehaviourStateIndex == 2)
@@ -552,15 +571,6 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         /// <summary>
-        /// Is the intern holding an item ?
-        /// </summary>
-        /// <returns>I mean come on</returns>
-        public bool AreHandsFree()
-        {
-            return HeldItem == null;
-        }
-
-        /// <summary>
         /// Check all conditions for deciding if an item is grabbable or not.
         /// </summary>
         /// <param name="grabbableObject">Item to check</param>
@@ -578,6 +588,11 @@ namespace LethalInternship.Core.Interns.AI
             if (grabbableObject.isHeld
                 || !grabbableObject.grabbable
                 || grabbableObject.deactivated)
+            {
+                return false;
+            }
+
+            if (!CanHoldItem(grabbableObject))
             {
                 return false;
             }
@@ -738,7 +753,7 @@ namespace LethalInternship.Core.Interns.AI
 
                 if (!AreHandsFree())
                 {
-                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, HeldItem);
+                    NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: false, HeldItems.GetLastPickedUpGrabbableObject());
                 }
             }
 
@@ -746,7 +761,7 @@ namespace LethalInternship.Core.Interns.AI
                 && !NpcController.Npc.isInHangarShipRoom
                 && !AreHandsFree())
             {
-                NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItem);
+                NpcController.Npc.SetItemInElevator(droppedInShipRoom: false, droppedInElevator: true, HeldItems.GetLastPickedUpGrabbableObject());
             }
         }
 

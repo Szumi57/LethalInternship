@@ -15,7 +15,7 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// <summary>
         /// List of child nodes.
         /// </summary>
-        private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>(); //todo: this could be optimized as a baked array.
+        private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>();
 
         public List<IPrintableNode> PrintableChildren
         {

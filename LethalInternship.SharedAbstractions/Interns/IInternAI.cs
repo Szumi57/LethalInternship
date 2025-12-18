@@ -14,7 +14,6 @@ namespace LethalInternship.SharedAbstractions.Interns
         IRagdollInternBody RagdollInternBody { get; set; }
         bool AnimationCoroutineRagdollingRunning { get; }
         List<IBodyReplacementBase> ListModelReplacement { get; }
-        GrabbableObject? HeldItem { get; set; }
 
         GameObject GameObject { get; }
         ulong OwnerClientId { get; }
@@ -35,7 +34,11 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         void SyncJump();
         void SyncLandFromJump(bool fallHard);
-        void DropItem();
+        void DropItem(GrabbableObject itemToDrop);
+        void DropFirstPickedUpItem();
+        void DropLastPickedUpItem();
+        void DropTwoHandItem();
+        void DropAllItems(bool waitBetweenItems = true);
         void StopSinkingState();
         void SyncDamageIntern(int damageNumber,
                               CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
@@ -54,6 +57,12 @@ namespace LethalInternship.SharedAbstractions.Interns
         void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false);
         bool IsSpawningAnimationRunning();
         bool AreHandsFree();
+        bool AreFreeSlotsAvailable();
+        bool CanHoldItem(GrabbableObject grabbableObject);
+        bool IsHoldingItem(GrabbableObject grabbableObject);
+        void UpdateItemOffsetsWhileHeld();
+        bool IsHoldingTwoHandedItem();
+        void UpdateItemRotation(GrabbableObject grabbableObject);
         bool IsClientOwnerOfIntern();
         void SyncStopPerformingEmote();
         void SyncChangeSinkingState(bool startSinking, float sinkingSpeed = 0f, int audioClipIndex = 0);
@@ -73,6 +82,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         void GrabInternServerRpc(ulong idPlayerGrabberController);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
         void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
+        void HitTargetWithShovel(Shovel shovel);
+        void HitTargetWithKnife(KnifeItem knife);
 
         // Npc adapter
         Vector3 GetBillBoardPosition(GameObject bodyModel);

@@ -618,16 +618,38 @@ namespace LethalInternship.Core.Managers
                 FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 fieldInfo.SetValue(localPlayer, 0f);
 
-                if (!intern.AreHandsFree())
+                if (localPlayer.currentlyHeldObjectServer == null)
                 {
-                    // Intern drop item
-                    intern.DropItem();
+                    // Just drop intern item
+                    intern.DropLastPickedUpItem();
                 }
-                else if (localPlayer.currentlyHeldObjectServer != null)
+                else
                 {
+                    //if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded)
+                    //{
+                    //    // Trying to give two handed item
+                    //    if (intern.IsHoldingTwoHandedItem())
+                    //    {
+                    //        intern.DropTwoHandItem();
+                    //    }
+                    //}
+                    //else
+                    //{
+                        if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
+                        {
+                            if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
+                            {
+                                intern.DropTwoHandItem();
+                            }
+                            else
+                            {
+                                intern.DropFirstPickedUpItem();
+                            }
+                        }
+                    //}
+
                     // Intern take item from player hands
-                    GrabbableObject grabbableObject = localPlayer.currentlyHeldObjectServer;
-                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, grabbableObject.NetworkObject);
+                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
                 }
 
                 return;

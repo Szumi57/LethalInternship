@@ -44,7 +44,7 @@ namespace LethalInternship.Core.Utils
         {
             if (tree is IPrintableNode)
             {
-                PrintNode((IPrintableNode)tree);
+                //PrintNode((IPrintableNode)tree);
                 return JsonConvert.SerializeObject(Export1Tree((IPrintableNode)tree));
             }
 

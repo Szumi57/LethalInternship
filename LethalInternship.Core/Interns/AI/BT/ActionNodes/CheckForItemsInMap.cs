@@ -44,10 +44,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (itemsToCheck.Count == 0)
                 {
                     context.TargetItem = null;
-                    ai.TryPlayCantDoCommandVoiceAudio();
-                    // todo : stay in place ?
-                    ai.SetCommandToFollowPlayer(playVoice: false);
-                    return BehaviourTreeStatus.Failure;
+                    if (!context.cancelScavenging) { ai.TryPlayCantDoCommandVoiceAudio(); }
+                    context.cancelScavenging = true;
+                    return CleanAndReturn(context, BehaviourTreeStatus.Success);
                 }
 
                 tempGraphs = new GraphController[itemsToCheck.Count];
@@ -85,9 +84,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (itemIndex >= count)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"??M {ai.Npc.playerUsername} NOTHING more grabbable on map");
-                ai.TryPlayCantDoCommandVoiceAudio();
-                // todo : stay in place ?
-                ai.SetCommandToFollowPlayer(playVoice: false);
+                context.cancelScavenging = true;
+            }
+
+            if (context.cancelScavenging)
+            {
+                if (ai.AreHandsFree())
+                {
+                    ai.TryPlayCantDoCommandVoiceAudio();
+                    ai.SetCommandToFollowPlayer(playVoice: false);
+                    return CleanAndReturn(context, BehaviourTreeStatus.Success);
+                }
+
+                // return scavenged items to ship
+                context.TargetItem = null;
                 return CleanAndReturn(context, BehaviourTreeStatus.Failure);
             }
 

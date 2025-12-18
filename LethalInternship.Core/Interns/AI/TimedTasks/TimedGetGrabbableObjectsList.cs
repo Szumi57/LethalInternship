@@ -41,7 +41,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
         {
             grabbableObjectsInMap.Clear();
 
-            GrabbableObject[] array = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
+            GrabbableObject[] array = UnityEngine.Object.FindObjectsByType<GrabbableObject>(FindObjectsSortMode.None);
             for (int i = 0; i < array.Length; i++)
             {
                 grabbableObjectsInMap.Add(array[i].gameObject);

@@ -65,5 +65,12 @@ namespace LethalInternship.SharedAbstractions.Managers
                                        float noiseLoudness = 0.5f,
                                        int noiseID = 0);
         void HideShowInternControllerModel(GameObject internObject, bool show);
+
+        // Shovel
+        bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform);
+
+        List<EnemyAI> GetEnemiesList();
+
+        bool ShouldIgnoreInternsEndScreen(PlayerControllerB player);
     }
 }

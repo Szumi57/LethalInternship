@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI;
+using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
@@ -47,11 +48,13 @@ namespace LethalInternship.Core.Managers
 
         private float timerIsAnInternScheduledToLand;
         private bool isAnInternScheduledToLand;
-        
+
         private float timerSetInternInElevator;
 
         private float timerRegisterAINoiseListener;
         private List<EnemyAI> ListEnemyAINonNoiseListeners = new List<EnemyAI>();
+
+        private TimedGetEnemies GetEnemiesTimed = new TimedGetEnemies();
 
         public void ResizePlayerVoiceMixers(int irlPlayersAndInternsCount)
         {
@@ -109,7 +112,7 @@ namespace LethalInternship.Core.Managers
             HoarderBugAI.grabbableObjectsInMap.Clear();
             yield return null;
 
-            GrabbableObject[] array = Object.FindObjectsOfType<GrabbableObject>();
+            GrabbableObject[] array = Object.FindObjectsByType<GrabbableObject>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             PluginLoggerHook.LogDebug?.Invoke($"Intern register grabbable object, found : {array.Length}");
             for (int i = 0; i < array.Length; i++)
             {
@@ -243,13 +246,12 @@ namespace LethalInternship.Core.Managers
                     || internAI.IsEnemyDead
                     || internAI.NpcController == null
                     || internAI.NpcController.Npc.isPlayerDead
-                    || !internAI.NpcController.Npc.isPlayerControlled
-                    || internAI.HeldItem == null)
+                    || !internAI.NpcController.Npc.isPlayerControlled)
                 {
                     continue;
                 }
 
-                if (internAI.HeldItem == grabbableObject)
+                if (internAI.IsHoldingItem(grabbableObject))
                 {
                     return internAI;
                 }
@@ -299,7 +301,7 @@ namespace LethalInternship.Core.Managers
         /// a <c>PlayerControllerB</c> that has <c>InternAI</c>
         /// </summary>
         /// <returns><c>true</c> if <c>PlayerControllerB</c> has <c>InternAI</c>, else <c>false</c></returns>
-        public bool IsPlayerIntern(PlayerControllerB player)
+        public bool IsPlayerIntern(PlayerControllerB? player)
         {
             if (player == null) return false;
             IInternAI? internAI = GetInternAI((int)player.playerClientId);
@@ -505,5 +507,14 @@ namespace LethalInternship.Core.Managers
             return healthPercent < 1 ? 1 : healthPercent;
         }
 
+        public List<EnemyAI> GetEnemiesList()
+        {
+            return GetEnemiesTimed.GetEnemiesList();
+        }
+
+        public bool ShouldIgnoreInternsEndScreen(PlayerControllerB player)
+        {
+            return IsPlayerIntern(player);
+        }
     }
 }

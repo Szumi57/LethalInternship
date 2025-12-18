@@ -33,6 +33,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public const string HOTDOGMODEL_GUID = "hotdogModel";
         public const string MIPA_GUID = "Mipa";
         public const string USUALSCRAP_GUID = "Emil.UsualScrap";
+        public const string ADVANCEDFEATURES_GUID = "com.example.Advancedfeatures";
 
         public const string ADDITIONALNETWORKING_DLLFILENAME = "AdditionalNetworking_Preloader.dll";
         public const string MONOPROFILERLOADER_DLLFILENAME = "MonoProfilerLoader.dll";
@@ -61,6 +62,9 @@ namespace LethalInternship.SharedAbstractions.Constants
 
         public static readonly float DISTANCE_NPCBODY_FROM_DOOR = 2.5f;
         public static readonly float TIMER_CHECK_DOOR = 0.9f;
+
+        public static readonly int PROXIMITY_AWARENESS_INSIDE = 5;
+        public static readonly int PROXIMITY_AWARENESS_OUTSIDE = 10;
 
         // NpcController
         public static readonly int PLAYER_MASK = 8;

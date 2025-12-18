@@ -6,6 +6,7 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
@@ -36,7 +37,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             }
 
             // Construct graph entrances
-            EntranceTeleport[] entrancesTeleportArray = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: false);
+            EntranceTeleport[] entrancesTeleportArray = UnityEngine.Object.FindObjectsByType<EntranceTeleport>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             graph = CalculateGraphEntrances(entrancesTeleportArray);
 
             // Calculate Neighbors

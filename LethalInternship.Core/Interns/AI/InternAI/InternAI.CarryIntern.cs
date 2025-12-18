@@ -44,10 +44,7 @@ namespace LethalInternship.Core.Interns.AI
                 // Hide of held ragdoll > 1 is done on BodyReplacementBasePatch after creation of replacementDeadBody
             }
 
-            if (HeldItem != null)
-            {
-                HeldItem.EnableItemMeshes(enable: false);
-            }
+            HeldItems.ShowHideAllItemsMeshes(show: false);
 
             // Hide intern
             NpcController.Npc.localVisor.position = NpcController.Npc.playersManager.notSpawnedPosition.position;
@@ -214,10 +211,7 @@ namespace LethalInternship.Core.Interns.AI
                 InternManager.Instance.HideShowRagdollModel(NpcController.Npc, show: true);
             }
 
-            if (HeldItem != null)
-            {
-                HeldItem.EnableItemMeshes(enable: true);
-            }
+            HeldItems.ShowHideAllItemsMeshes(show: true);
 
             RagdollInternBody.Hide();
 
