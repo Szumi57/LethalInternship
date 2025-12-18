@@ -41,7 +41,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             if ((lastInternPos - ai.Npc.transform.position).sqrMagnitude < 0.5f * 0.5f)
             {
                 stuckCounter++;
-                PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} stuckCounter {stuckCounter}");
+                //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} stuckCounter {stuckCounter}");
             }
             else
             {

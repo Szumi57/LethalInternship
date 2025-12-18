@@ -10,7 +10,7 @@ namespace LethalInternship.Core.Interns.AI.Items
         public List<HeldItem> Items;
         public HeldItem? HeldWeapon;
 
-        public bool KeepWeaponForEmergency = true;// Todo : parametize change !
+        public bool KeepWeaponForEmergency => PluginRuntimeProvider.Context.Config.CanUseWeapons;
         public int ItemCount
         {
             get

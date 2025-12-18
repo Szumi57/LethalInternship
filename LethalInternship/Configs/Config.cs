@@ -34,7 +34,8 @@ namespace LethalInternship.Configs
         public bool CanSpectateInterns => canSpectateInterns.Value;
         public bool RadarEnabled => radarEnabled.Value;
         public bool SpawnIdentitiesRandomly => spawnIdentitiesRandomly.Value;
-        public bool CanLosePlayer => canLosePlayer.Value;
+        public bool CanUseWeapons => canUseWeapons.Value;
+        //public bool CanLosePlayer => canLosePlayer.Value;
         public bool FollowCrouchWithPlayer => followCrouchWithPlayer.Value;
         public bool ChangeSuitAutoBehaviour => changeSuitAutoBehaviour.Value;
         public int NbMaxCanCarry => nbMaxCanCarry.Value;
@@ -64,7 +65,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] private SyncedEntry<int> internMaxHealth;
         [SyncedEntryField] private SyncedEntry<float> internSizeScale;
         [SyncedEntryField] private SyncedEntry<float> internSpeed;
-        
+
         [SyncedEntryField] private SyncedEntry<string> titleInHelpMenu;
         [SyncedEntryField] private SyncedEntry<string> subTitleInHelpMenu;
 
@@ -75,7 +76,8 @@ namespace LethalInternship.Configs
         [SyncedEntryField] private SyncedEntry<bool> spawnIdentitiesRandomly;
 
         // Behaviour       
-        [SyncedEntryField] private SyncedEntry<bool> canLosePlayer;
+        //[SyncedEntryField] private SyncedEntry<bool> canLosePlayer;
+        [SyncedEntryField] private SyncedEntry<bool> canUseWeapons;
         [SyncedEntryField] private SyncedEntry<bool> followCrouchWithPlayer;
         [SyncedEntryField] private SyncedEntry<bool> changeSuitAutoBehaviour;
         //[SyncedEntryField] private SyncedEntry<bool> TeleportWhenUsingLadders;
@@ -171,10 +173,15 @@ namespace LethalInternship.Configs
                                               "Spawn the interns with random identities ?");
 
             // Behaviour
-            canLosePlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Can lose the player",
-                                               defaultVal: false,
-                                               "Can the intern lose the player if he goes too far ?");
+            //canLosePlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+            //                                   "Can lose the player",
+            //                                   defaultVal: false,
+            //                                   "Can the intern lose the player if he goes too far ?");
+
+            canUseWeapons = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Can use weapons",
+                                               defaultVal: true,
+                                               "Can the intern use weapons ? (shovel, signs, knife, shotgun, ...)");
 
             followCrouchWithPlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Crouch with player",

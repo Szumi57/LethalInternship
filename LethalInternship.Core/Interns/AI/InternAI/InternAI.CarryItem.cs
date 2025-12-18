@@ -171,6 +171,7 @@ namespace LethalInternship.Core.Interns.AI
 
             // Animations
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, true);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, false);
             SetSpecialGrabAnimationBool(true, weapon.itemProperties.grabAnim);
 
             Npc.playerBodyAnimator.ResetTrigger("SwitchHoldAnimationTwoHanded");
@@ -202,6 +203,7 @@ namespace LethalInternship.Core.Interns.AI
 
             // Animations
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, NpcController.Npc.isHoldingObject);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, !NpcController.Npc.isHoldingObject);
             if (NpcController.Npc.twoHandedAnimation)
             {
                 SetSpecialGrabAnimationBool(true, "HoldLung");
@@ -799,7 +801,9 @@ namespace LethalInternship.Core.Interns.AI
 
             // Animations
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRAB, NpcController.Npc.isHoldingObject);
-            SetSpecialGrabAnimationBool(false, "HoldLung");
+            SetSpecialGrabAnimationBool(NpcController.Npc.twoHandedAnimation, "HoldLung");
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, !npcController.Npc.isHoldingObject);
+            NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
             // New weight
             float weightToLose = grabbableObject.itemProperties.weight - 1f < 0f ? 0f : grabbableObject.itemProperties.weight - 1f;
@@ -807,9 +811,6 @@ namespace LethalInternship.Core.Interns.AI
 
             // Battery
             SyncBatteryIntern(grabbableObject, (int)(grabbableObject.insertedBattery.charge * 100f));
-
-            //NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, !npcController.Npc.isHoldingObject);
-            //NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_THROW);
 
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} dropped {grabbableObject}, on client #{NetworkManager.LocalClientId}");
         }

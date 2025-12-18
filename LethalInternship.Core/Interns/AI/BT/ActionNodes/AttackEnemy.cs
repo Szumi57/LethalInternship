@@ -58,7 +58,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Success;
             }
 
-            // Shotgun wait ?
+            // Shotgun
             ShotgunItem? shotgunItem = weaponObject as ShotgunItem;
             if (shotgunItem != null)
             {

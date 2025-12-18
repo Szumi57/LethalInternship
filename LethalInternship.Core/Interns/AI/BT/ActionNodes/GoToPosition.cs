@@ -33,11 +33,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
             //SharedAbstractions.Hooks.PluginLoggerHooks.PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
-            // todo remove
-            DJKItemPoint? vPoint = context.PathController.GetCurrentPoint() as DJKItemPoint;
-            if (vPoint != null)
+            // Debug
+            if (DebugConst.DRAW_LINES)
             {
-                DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), currentPoint, currentPoint + new Vector3(0, 5f, 0), Color.magenta);
+                DJKItemPoint? vPoint = context.PathController.GetCurrentPoint() as DJKItemPoint;
+                if (vPoint != null)
+                {
+                    DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), currentPoint, currentPoint + new Vector3(0, 5f, 0), Color.magenta);
+                }
             }
 
             // Go to position

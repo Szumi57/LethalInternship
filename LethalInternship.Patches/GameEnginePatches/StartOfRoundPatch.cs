@@ -85,7 +85,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-            
+
             // ----------------------------------------------------------------------
             for (var i = 0; i < codes.Count - 22; i++)
             {
@@ -163,7 +163,6 @@ namespace LethalInternship.Patches.GameEnginePatches
         /// Patch for bypassing the annoying debug logs.
         /// </summary>
         /// <remarks>
-        /// Todo: check for real problems in the sound sector for interns
         /// </remarks>
         /// <param name="instructions"></param>
         /// <param name="generator"></param>

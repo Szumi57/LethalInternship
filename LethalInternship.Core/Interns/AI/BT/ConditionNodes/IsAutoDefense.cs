@@ -18,6 +18,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
 
+            if (!PluginRuntimeProvider.Context.Config.CanUseWeapons)
+            {
+                return false;
+            }
+
             HeldItem? weapon = ai.HeldItems.GetHeldWeaponAsHeldItem();
             if (weapon == null
                 || !weapon.IsWeapon)
@@ -40,7 +45,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 TryPlayAttackingStateVoiceAudio(ai, EnumVoicesState.AttackingWithGun);
             }
 
-            return true; // todo: parametizasizasizasization
+            return true;
         }
 
         private bool CanKillEnemy(EnemyAI enemy)

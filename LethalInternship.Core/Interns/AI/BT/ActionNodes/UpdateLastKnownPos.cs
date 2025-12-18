@@ -1,8 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Constants;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -13,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            if (!PluginRuntimeProvider.Context.Config.CanLosePlayer)
+            if (true/*!PluginRuntimeProvider.Context.Config.CanLosePlayer*/)
             {
                 context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
                 return BehaviourTreeStatus.Success;

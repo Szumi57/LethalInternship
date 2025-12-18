@@ -4,6 +4,7 @@ namespace LethalInternship.SharedAbstractions.Configs
 {
     public interface IConfig
     {
+        // Internship program
         int MaxInternsAvailable { get; }
         int InternPrice { get; }
         int InternMaxHealth { get; }
@@ -16,9 +17,13 @@ namespace LethalInternship.SharedAbstractions.Configs
         bool CanSpectateInterns { get; }
         bool RadarEnabled { get; }
 
+        // Identity  
         bool SpawnIdentitiesRandomly { get; }
 
-        bool CanLosePlayer { get; }
+        // Behaviour
+
+        //bool CanLosePlayer { get; }
+        bool CanUseWeapons { get; }
         bool FollowCrouchWithPlayer { get; }
         bool ChangeSuitAutoBehaviour { get; }
         int NbMaxCanCarry { get; }
@@ -32,7 +37,7 @@ namespace LethalInternship.SharedAbstractions.Configs
         bool GrabApparatus { get; }
         bool TeleportedInternDropItems { get; }
 
-        // Voic
+        // Voice
         string VolumeVoicesMultiplierInterns { get; }
         int Talkativeness { get; }
         bool AllowSwearing { get; }

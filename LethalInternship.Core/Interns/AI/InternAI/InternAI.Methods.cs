@@ -282,7 +282,26 @@ namespace LethalInternship.Core.Interns.AI
                     return 2f;
 
                 case "Centipede":
-                    return 1f;
+                    if (enemy.currentBehaviourStateIndex == 0)
+                    {
+                        // On floor
+                        return 3f;
+                    }
+                    else if (enemy.currentBehaviourStateIndex == 1)
+                    {
+                        // On ceiling
+                        return null;
+                    }
+                    else if (enemy.currentBehaviourStateIndex == 2
+                            || enemy.currentBehaviourStateIndex == 3)
+                    {
+                        // Falling or attacking on player
+                        return 3f;
+                    }
+                    else
+                    {
+                        return null;
+                    }
 
                 case "Bunker Spider":
                     if (enemy.currentBehaviourStateIndex == 2)

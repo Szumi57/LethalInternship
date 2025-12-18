@@ -47,7 +47,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     if (!context.cancelScavenging) { ai.TryPlayCantDoCommandVoiceAudio(); }
                     context.cancelScavenging = true;
                     return CleanAndReturn(context, BehaviourTreeStatus.Success);
-                    // todo : stay in place ?
                 }
 
                 tempGraphs = new GraphController[itemsToCheck.Count];
@@ -86,7 +85,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 PluginLoggerHook.LogDebug?.Invoke($"??M {ai.Npc.playerUsername} NOTHING more grabbable on map");
                 context.cancelScavenging = true;
-                // todo : stay in place ?
             }
 
             if (context.cancelScavenging)
