@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.23.0 [Alpha] - 2025-12-18
+### Added
+- Interns can take multiple items now :
+	- Added config for number of items an intern can hold, default 1, max 10.
+	- They can only take one "two handed" item like players (Engine, large axle, bottles, etc...).
+- Interns can now hold weapons not as scrap but as "weapon", they do not drop it in the ship :
+	- Added config for using/holding weapons for interns, default to true, if false, weapons are used like regular items to scavenge.
+	- The weapon is held on the back of the intern.
+	- Weapons held as weapon do not count in the max number of items to hold, ex: they can hold 3(config) items + 1 weapon.
+	- Supported weapons : shovel, stop/yield signs, knife, shotgun (infinite ammo).
+	- Only one weapon as a weapon at a time, other weapons picked up will behave as scrap.
+	- For now the weapon does not disappear with them when going to orbit and they respawn with it on the next moon.
+- Interns can now defend themselves and use weapons if they hold one :
+	- Only if the "config using weapons" is set to true and they currently hold a weapon.
+	- Works only on killable enemies.
+
+### Not fixed
+- Still need to look at Advanced features conflict when returning to orbit.
+- Still need to look at a mod conflict that makes the player shorter each day (lol).
+
 ## 0.22.4 [Alpha] - 2025-11-18
 ### Added
 - New config : grab or not the apparatus (default to false). Thanks to DHU on discord for reminding me.
