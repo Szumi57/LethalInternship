@@ -10,12 +10,11 @@ namespace LethalInternship.Core.Interns.AI.Items
         public List<HeldItem> Items;
         public HeldItem? HeldWeapon;
 
-        public bool KeepWeaponForEmergency => PluginRuntimeProvider.Context.Config.CanUseWeapons;
-        public int ItemCount
+        public int NbHeldItems
         {
             get
             {
-                if (IsHoldingWeapon())
+                if (IsHoldingWeaponAsWeapon())
                 {
                     return Items.Count - 1;
                 }
@@ -33,7 +32,7 @@ namespace LethalInternship.Core.Interns.AI.Items
 
         public bool IsHoldingAnItem()
         {
-            return ItemCount > 0;
+            return NbHeldItems > 0;
         }
 
         public bool IsHoldingItem(GrabbableObject grabbableObject)
@@ -72,22 +71,17 @@ namespace LethalInternship.Core.Interns.AI.Items
                      .Any();
         }
 
-        public bool IsHoldingWeapon()
+        public bool IsHoldingWeaponAsWeapon()
         {
             return HeldWeapon != null;
         }
 
-        public int GetFreeSlots()
+        public GrabbableObject? GetCurrentlyHeldItem(bool ignoreWeapon)
         {
-            return PluginRuntimeProvider.Context.Config.NbMaxCanCarry - ItemCount;
-        }
-
-        public GrabbableObject? GetFirstPickedUpGrabbableObject()
-        {
-            for (int i = 0; i < ItemCount; i++)
+            for (int i = Items.Count - 1; i >= 0; i--)
             {
                 var item = Items[i];
-                if (KeepWeaponForEmergency
+                if (ignoreWeapon
                     && IsHoldingItemAsWeapon(item.GrabbableObject))
                 {
                     continue;
@@ -95,41 +89,6 @@ namespace LethalInternship.Core.Interns.AI.Items
 
                 return item.GrabbableObject;
             }
-
-            return null;
-        }
-
-        public GrabbableObject? GetLastPickedUpGrabbableObject()
-        {
-            for (int i = Items.Count - 1; i >= 0; i--)
-            {
-                var item = Items[i];
-                if (KeepWeaponForEmergency
-                    && IsHoldingItemAsWeapon(item.GrabbableObject))
-                {
-                    continue;
-                }
-
-                return item.GrabbableObject;
-            }
-
-            return null;
-        }
-
-        public HeldItem? GetLastPickedUpHeldItem()
-        {
-            for (int i = Items.Count - 1; i >= 0; i--)
-            {
-                var item = Items[i];
-                if (KeepWeaponForEmergency
-                    && IsHoldingItemAsWeapon(item.GrabbableObject))
-                {
-                    continue;
-                }
-
-                return item;
-            }
-
             return null;
         }
 
@@ -177,7 +136,7 @@ namespace LethalInternship.Core.Interns.AI.Items
 
             if (newItem.IsWeapon
                 && HeldWeapon == null
-                && KeepWeaponForEmergency)
+                && PluginRuntimeProvider.Context.Config.CanUseWeapons)
             {
                 HeldWeapon = newItem;
             }

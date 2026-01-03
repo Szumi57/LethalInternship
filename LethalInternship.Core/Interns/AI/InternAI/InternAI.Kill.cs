@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Hooks.ReviveCompanyHooks;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
@@ -224,8 +225,8 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.lastSyncedPhysicsParent = null;
             NpcController.CurrentInternPhysicsRegions.Clear();
             ReParentIntern(NpcController.Npc.playersManager.playersContainer);
-            
-            DropAllItems(waitBetweenItems: false);
+
+            DropAllItems(EnumOptionsGetItems.All, waitBetweenItems: false);
 
             NpcController.Npc.DisableJetpackControlsLocally();
             NpcController.IsControllerInCruiser = false;
