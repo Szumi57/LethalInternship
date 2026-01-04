@@ -273,12 +273,6 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
-            if (HeldItems.IsHoldingItem(grabbableObject))
-            {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} cannot grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
-                return;
-            }
-
             GrabItem(grabbableObject);
         }
 
@@ -286,8 +280,14 @@ namespace LethalInternship.Core.Interns.AI
         /// Make the intern grab an item like an enemy would, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
         /// <param name="grabbableObject">Item to grab</param>
-        private void GrabItem(GrabbableObject grabbableObject)
+        public void GrabItem(GrabbableObject grabbableObject)
         {
+            if (HeldItems.IsHoldingItem(grabbableObject))
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} cannot grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+                return;
+            }
+
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} try to grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
             HeldItems.HoldItem(grabbableObject);
 
@@ -654,15 +654,11 @@ namespace LethalInternship.Core.Interns.AI
             }
             else
             {
-                while (!this.AreHandsFree())
+                GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
+                while (itemToDrop != null)
                 {
-                    GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
-                    if (itemToDrop == null)
-                    {
-                        break;
-                    }
-
                     DropItem(itemToDrop);
+                    itemToDrop = ChooseLastPickedUpItem(dropOptions);
                 }
             }
         }
@@ -670,16 +666,12 @@ namespace LethalInternship.Core.Interns.AI
         private IEnumerator DropAllItemsCoroutine(EnumOptionsGetItems dropOptions)
         {
             dropAllObjectsCoroutineRunning = true;
-            while (!this.AreHandsFree())
+            GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
+            while (itemToDrop != null)
             {
-                GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
-                if (itemToDrop == null)
-                {
-                    break;
-                }
-
                 DropItem(itemToDrop);
                 yield return new WaitForSeconds(0.4f);
+                itemToDrop = ChooseLastPickedUpItem(dropOptions);
             }
             dropAllObjectsCoroutineRunning = false;
         }

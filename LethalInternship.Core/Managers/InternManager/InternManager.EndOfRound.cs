@@ -28,12 +28,27 @@ namespace LethalInternship.Core.Managers
                     if (internAI == null
                         || internAI.isEnemyDead
                         || internAI.NpcController.Npc.isPlayerDead
-                        || !internAI.NpcController.Npc.isPlayerControlled
-                        || internAI.AreHandsFree())
+                        || !internAI.NpcController.Npc.isPlayerControlled)
                     {
                         continue;
                     }
 
+                    // Save weapon before dropping items
+                    GrabbableObject? heldWeapon = internAI.HeldItems.GetHeldWeapon();
+                    if (heldWeapon != null)
+                    {
+                        int itemId = 0;
+                        for (int i = 0; i < StartOfRound.Instance.allItemsList.itemsList.Count; i++)
+                        {
+                            if (StartOfRound.Instance.allItemsList.itemsList[i].itemName == heldWeapon.itemProperties.itemName)
+                            {
+                                itemId = i;
+                                break;
+                            }
+                        }
+                        internAI.InternIdentity.UpdateItemsInInventory(new int[] { itemId });
+                    }
+                    // Drop all items + weapon
                     internAI.DropAllItems(EnumOptionsGetItems.All, waitBetweenItems: false);
                 }
 

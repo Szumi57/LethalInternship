@@ -84,7 +84,9 @@ namespace LethalInternship.Core.Managers
             }
             catch (Exception ex)
             {
-                PluginLoggerHook.LogError?.Invoke($"Error when loading save file : {ex.Message}");
+                PluginLoggerHook.LogError?.Invoke($"Error when loading save file : {ex.Message} {ex.InnerException}");
+                PluginLoggerHook.LogWarning?.Invoke($"Creating new save file.");
+                Save = new SaveFile();
             }
         }
 
@@ -130,7 +132,8 @@ namespace LethalInternship.Core.Managers
                     IdIdentity = internIdentity.IdIdentity,
                     Hp = internIdentity.Hp,
                     SuitID = internIdentity.SuitID.HasValue ? internIdentity.SuitID.Value : -1,
-                    Status = (int)internIdentity.Status
+                    Status = (int)internIdentity.Status,
+                    Inventory = new Inventory(internIdentity.ItemsInInventory)
                 };
 
                 PluginLoggerHook.LogDebug?.Invoke($"Saving identity {internIdentity.ToString()}");
@@ -166,7 +169,8 @@ namespace LethalInternship.Core.Managers
                 IdentitySaveFile identitySaveFile = Save.IdentitiesSaveFiles[identity.IdIdentity];
                 identity.UpdateIdentity(identitySaveFile.Hp,
                                         identitySaveFile.SuitID < 0 ? (int?)null : identitySaveFile.SuitID,
-                                        (EnumStatusIdentity)identitySaveFile.Status);
+                                        (EnumStatusIdentity)identitySaveFile.Status,
+                                        identitySaveFile.Inventory?.GetItemIDs());
                 PluginLoggerHook.LogDebug?.Invoke($"Loaded and updated identity from save : {identity.ToString()}");
             }
         }
@@ -244,7 +248,8 @@ namespace LethalInternship.Core.Managers
                 IdentitySaveFileNetworkSerializable identitySaveNS = saveNetworkSerializable.Identities[i];
                 identity.UpdateIdentity(identitySaveNS.Hp,
                                         identitySaveNS.SuitID < 0 ? (int?)null : identitySaveNS.SuitID,
-                                        (EnumStatusIdentity)identitySaveNS.Status);
+                                        (EnumStatusIdentity)identitySaveNS.Status,
+                                        identitySaveNS.itemIDs);
 
                 PluginLoggerHook.LogDebug?.Invoke($"Client {NetworkManager.LocalClientId} : sync in current values, identity {identity.ToString()}");
             }

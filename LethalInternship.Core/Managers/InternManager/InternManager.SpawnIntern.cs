@@ -23,7 +23,7 @@ namespace LethalInternship.Core.Managers
     {
         public Vector3 ItemDropShipPos { get => itemDropShipPos; set => itemDropShipPos = value; }
         private Vector3 itemDropShipPos;
-        
+
         public RagdollGrabbableObject[] RagdollInternBodies = null!;
 
         #region Spawn Intern

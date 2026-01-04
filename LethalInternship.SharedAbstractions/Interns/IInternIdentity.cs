@@ -14,8 +14,11 @@ namespace LethalInternship.SharedAbstractions.Interns
         IInternVoice Voice { get; }
         object? BodyReplacementBase { get; set; }
         bool Alive { get; }
+        int[] ItemsInInventory { get; }
 
         int GetRandomSuitID();
-        void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity);
+        void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity, int[]? itemsInInventory);
+
+        void UpdateItemsInInventory(int[] itemsID);
     }
 }

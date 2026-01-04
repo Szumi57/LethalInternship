@@ -15,6 +15,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
+using Object = UnityEngine.Object;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -174,6 +175,19 @@ namespace LethalInternship.Core.Interns.AI
                 weaponHolderGameObject.transform.SetParent(parentWeaponHolder);
                 weaponHolderGameObject.transform.localPosition = new Vector3(0f, 0f, -0.3f);
                 WeaponHolderTransform = weaponHolderGameObject.transform;
+            }
+
+            // Load items (only weapon for now)
+            // After init of WeaponHolderTransform
+            if (internIdentity.ItemsInInventory.Length > 0)
+            {
+                int itemID = internIdentity.ItemsInInventory[0];
+                GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.allItemsList.itemsList[itemID].spawnPrefab, StartOfRound.Instance.propsContainer);
+                GrabbableObject grabbableObject = gameObject.GetComponent<GrabbableObject>();
+                grabbableObject.fallTime = 0f;
+                gameObject.GetComponent<NetworkObject>().Spawn(false);
+
+                this.GrabItem(grabbableObject);
             }
 
             // Line renderer used for debugging stuff
