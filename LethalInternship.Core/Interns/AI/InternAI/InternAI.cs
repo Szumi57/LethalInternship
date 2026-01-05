@@ -182,12 +182,15 @@ namespace LethalInternship.Core.Interns.AI
             if (internIdentity.ItemsInInventory.Length > 0)
             {
                 int itemID = internIdentity.ItemsInInventory[0];
-                GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.allItemsList.itemsList[itemID].spawnPrefab, StartOfRound.Instance.propsContainer);
-                GrabbableObject grabbableObject = gameObject.GetComponent<GrabbableObject>();
-                grabbableObject.fallTime = 0f;
-                gameObject.GetComponent<NetworkObject>().Spawn(false);
+                if (itemID <= StartOfRound.Instance.allItemsList.itemsList.Count)
+                {
+                    GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.allItemsList.itemsList[itemID].spawnPrefab, StartOfRound.Instance.propsContainer);
+                    GrabbableObject grabbableObject = gameObject.GetComponent<GrabbableObject>();
+                    grabbableObject.fallTime = 0f;
+                    gameObject.GetComponent<NetworkObject>().Spawn(false);
 
-                this.GrabItem(grabbableObject);
+                    this.GrabItem(grabbableObject);
+                }
             }
 
             // Line renderer used for debugging stuff

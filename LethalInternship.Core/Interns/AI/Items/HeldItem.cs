@@ -26,7 +26,7 @@ namespace LethalInternship.Core.Interns.AI.Items
                     EnumItemType = EnumItemTypes.WeaponMelee;
                 }
                 else if (grabbableObject.name.Contains("ShotgunItem")
-                    || grabbableObject.name.Contains("PatcherGunItem"))
+                    )//|| grabbableObject.name.Contains("PatcherGunItem"))
                 {
                     EnumItemType = EnumItemTypes.WeaponRanged;
                 }
