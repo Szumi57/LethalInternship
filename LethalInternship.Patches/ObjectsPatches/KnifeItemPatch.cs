@@ -34,15 +34,15 @@ namespace LethalInternship.Patches.ObjectsPatches
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
                     new CodeInstruction(codes[startIndex]), // ldarg.0 NULL (this: knife)
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.ShouldIgnoreIfInternMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[338].labels[0])
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.ShouldIgnoreHitKnifeIfInternMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[^1].labels[0])
                 };
                 codes.InsertRange(startIndex, codesToAdd);
                 startIndex = -1;
             }
             else
             {
-                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.ObjectsPatches.KnifeItemPatch.HitKnife_Transpiler could not ignore shovel hit if holder is intern");
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.ObjectsPatches.KnifeItemPatch.HitKnife_Transpiler could not ignore knife hit if holder is intern");
             }
 
             return codes.AsEnumerable();

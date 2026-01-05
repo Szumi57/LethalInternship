@@ -34,8 +34,8 @@ namespace LethalInternship.Patches.ObjectsPatches
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
                     new CodeInstruction(codes[startIndex]), // ldarg.0 NULL (this: Shovel)
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.ShouldIgnoreIfInternMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[346].labels[0])
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.ShouldIgnoreHitShovelIfInternMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[^1].labels[0])
                 };
                 codes.InsertRange(startIndex, codesToAdd);
                 startIndex = -1;

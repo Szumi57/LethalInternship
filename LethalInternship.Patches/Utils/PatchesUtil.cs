@@ -36,7 +36,8 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo SyncWatchingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncWatchingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
         public static readonly MethodInfo SyncAttackingThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncAttackingThreatIfIntern(new GiantKiwiAI(), new PlayerControllerB()));
         public static readonly MethodInfo SyncSetTargetToThreatIfInternMethod = SymbolExtensions.GetMethodInfo(() => SyncSetTargetToThreatIfIntern(new RadMechAI(), new PlayerControllerB(), new Vector3()));
-        public static readonly MethodInfo ShouldIgnoreIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new Shovel()));
+        public static readonly MethodInfo ShouldIgnoreHitShovelIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new Shovel()));
+        public static readonly MethodInfo ShouldIgnoreHitKnifeIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new KnifeItem()));
         public static readonly MethodInfo ShouldIgnoreInternsEndScreenMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreInternsEndScreen(new PlayerControllerB()));
 
         public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");
@@ -267,6 +268,12 @@ namespace LethalInternship.Patches.Utils
         {
             // Is an intern attacking ?
             return InternManagerProvider.Instance.GetInternAI((int)shovel.playerHeldBy.playerClientId) != null;
+        }
+
+        private static bool ShouldIgnoreIfIntern(KnifeItem knife)
+        {
+            // Is an intern attacking ?
+            return InternManagerProvider.Instance.GetInternAI((int)knife.playerHeldBy.playerClientId) != null;
         }
 
         private static bool ShouldIgnoreInternsEndScreen(PlayerControllerB player)
