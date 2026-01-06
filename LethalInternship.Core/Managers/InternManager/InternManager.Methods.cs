@@ -419,6 +419,7 @@ namespace LethalInternship.Core.Managers
                                         && x.NpcController.Npc != null
                                         && !x.NpcController.Npc.isPlayerDead
                                         && x.NpcController.Npc.isPlayerControlled
+                                        && x.InternIdentity != null
                                         && x.InternIdentity.Status == EnumStatusIdentity.Spawned)
                                .ToArray();
         }

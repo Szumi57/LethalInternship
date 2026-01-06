@@ -23,50 +23,8 @@ namespace LethalInternship.Core.Managers
 
             if (base.IsServer)
             {
-                foreach (InternAI internAI in AllInternAIs)
-                {
-                    if (internAI == null
-                        || internAI.isEnemyDead
-                        || internAI.NpcController.Npc.isPlayerDead
-                        || !internAI.NpcController.Npc.isPlayerControlled)
-                    {
-                        continue;
-                    }
-
-                    // Save weapon before dropping items
-                    GrabbableObject? heldWeapon = internAI.HeldItems.GetHeldWeapon();
-                    if (heldWeapon != null)
-                    {
-                        int itemId = 0;
-                        for (int i = 0; i < StartOfRound.Instance.allItemsList.itemsList.Count; i++)
-                        {
-                            if (StartOfRound.Instance.allItemsList.itemsList[i].itemName == heldWeapon.itemProperties.itemName)
-                            {
-                                itemId = i;
-                                break;
-                            }
-                        }
-                        internAI.InternIdentity.UpdateItemsInInventory(new int[] { itemId });
-                    }
-                    // Drop all items + weapon
-                    internAI.DropAllItems(EnumOptionsGetItems.All, waitBetweenItems: false);
-                }
-
                 SyncEndOfRoundInternsFromServerToClientRpc();
             }
-            else
-            {
-                SyncEndOfRoundInternsFromClientToServerRpc();
-            }
-        }
-
-        /// <summary>
-        /// Server side, call clients to count intern left alive to re-drop on next round
-        /// </summary>
-        [ServerRpc]
-        private void SyncEndOfRoundInternsFromClientToServerRpc()
-        {
-            SyncEndOfRoundInternsFromServerToClientRpc();
         }
 
         /// <summary>
@@ -83,7 +41,43 @@ namespace LethalInternship.Core.Managers
             DictEnemyAINoiseListeners.Clear();
             ListEnemyAINonNoiseListeners.Clear();
 
+            CleanInterns();
             CountAliveAndDisableInterns();
+        }
+
+        private void CleanInterns()
+        {
+            foreach (InternAI internAI in AllInternAIs)
+            {
+                if (internAI == null
+                    || internAI.isEnemyDead
+                    || internAI.NpcController.Npc.isPlayerDead
+                    || !internAI.NpcController.Npc.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                // Teleport intern to avoid items dropped to count in ship
+                internAI.TeleportIntern(new UnityEngine.Vector3(0f, 0f, 0f));
+
+                // Save weapon before dropping items
+                GrabbableObject? heldWeapon = internAI.HeldItems.GetHeldWeapon();
+                if (heldWeapon != null)
+                {
+                    int itemId = 0;
+                    for (int i = 0; i < StartOfRound.Instance.allItemsList.itemsList.Count; i++)
+                    {
+                        if (StartOfRound.Instance.allItemsList.itemsList[i].itemName == heldWeapon.itemProperties.itemName)
+                        {
+                            itemId = i;
+                            break;
+                        }
+                    }
+                    internAI.InternIdentity.UpdateItemsInInventory(new int[] { itemId });
+                }
+                // Drop all items + weapon
+                internAI.DropAllItems(EnumOptionsGetItems.All, waitBetweenItems: false);
+            }
         }
 
         /// <summary>

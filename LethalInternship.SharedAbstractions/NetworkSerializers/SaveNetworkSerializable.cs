@@ -21,7 +21,7 @@ namespace LethalInternship.SharedAbstractions.NetworkSerializers
         public int SuitID;
         public int Hp;
         public int Status;
-        public int[] itemIDs;
+        public int[] ItemIDs;
 
         // INetworkSerializable
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -30,7 +30,7 @@ namespace LethalInternship.SharedAbstractions.NetworkSerializers
             serializer.SerializeValue(ref SuitID);
             serializer.SerializeValue(ref Hp);
             serializer.SerializeValue(ref Status);
-            serializer.SerializeValue(ref itemIDs);
+            serializer.SerializeValue(ref ItemIDs);
         }
     }
 }

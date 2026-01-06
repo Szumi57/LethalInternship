@@ -179,17 +179,19 @@ namespace LethalInternship.Core.Interns.AI
 
             // Load items (only weapon for now)
             // After init of WeaponHolderTransform
-            if (internIdentity.ItemsInInventory.Length > 0)
+            if (base.IsServer)
             {
-                int itemID = internIdentity.ItemsInInventory[0];
-                if (itemID <= StartOfRound.Instance.allItemsList.itemsList.Count)
+                if (internIdentity.ItemsInInventory.Length > 0)
                 {
-                    GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.allItemsList.itemsList[itemID].spawnPrefab, StartOfRound.Instance.propsContainer);
-                    GrabbableObject grabbableObject = gameObject.GetComponent<GrabbableObject>();
-                    grabbableObject.fallTime = 0f;
-                    gameObject.GetComponent<NetworkObject>().Spawn(false);
+                    int itemID = internIdentity.ItemsInInventory[0];
+                    if (itemID <= StartOfRound.Instance.allItemsList.itemsList.Count)
+                    {
+                        GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.allItemsList.itemsList[itemID].spawnPrefab, StartOfRound.Instance.propsContainer);
+                        GrabbableObject grabbableObject = gameObject.GetComponent<GrabbableObject>();
+                        gameObject.GetComponent<NetworkObject>().Spawn(false);
 
-                    this.GrabItem(grabbableObject);
+                        SpawnWeaponToHoldWhenSpawningClientRpc(grabbableObject.NetworkObject);
+                    }
                 }
             }
 
@@ -294,6 +296,16 @@ namespace LethalInternship.Core.Interns.AI
                 InternManager.Instance.ResizePlayerVoiceMixers(InternManager.Instance.AllEntitiesCount);
             }
             InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
+        }
+
+        [ClientRpc]
+        private void SpawnWeaponToHoldWhenSpawningClientRpc(NetworkObjectReference norGrabbableObject)
+        {
+            norGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
+            GrabbableObject grabbableObject = networkObjectRagdollGrabbableObject.gameObject.GetComponent<GrabbableObject>();
+            grabbableObject.fallTime = 0f;
+
+            this.GrabItem(grabbableObject);
         }
 
         private void FixedUpdate()

@@ -202,7 +202,8 @@ namespace LethalInternship.Core.Managers
                     IdIdentity = internIdentity.IdIdentity,
                     Hp = internIdentity.Hp,
                     SuitID = internIdentity.SuitID.HasValue ? internIdentity.SuitID.Value : -1,
-                    Status = (int)internIdentity.Status
+                    Status = (int)internIdentity.Status,
+                    ItemIDs = internIdentity.ItemsInInventory
                 };
 
                 identitiesSaveNS[i] = identitySaveNS;
@@ -249,7 +250,7 @@ namespace LethalInternship.Core.Managers
                 identity.UpdateIdentity(identitySaveNS.Hp,
                                         identitySaveNS.SuitID < 0 ? (int?)null : identitySaveNS.SuitID,
                                         (EnumStatusIdentity)identitySaveNS.Status,
-                                        identitySaveNS.itemIDs);
+                                        identitySaveNS.ItemIDs);
 
                 PluginLoggerHook.LogDebug?.Invoke($"Client {NetworkManager.LocalClientId} : sync in current values, identity {identity.ToString()}");
             }

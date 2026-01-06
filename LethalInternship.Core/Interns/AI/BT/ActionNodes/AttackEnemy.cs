@@ -2,6 +2,7 @@
 using LethalInternship.Core.Interns.AI.Items;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -41,7 +42,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Turn towards
-            ai.NpcController.OrderToLookAtMovingTarget(context.CurrentEnemy.transform);
+            Transform transformToLookat = context.CurrentEnemy.eye != null ? context.CurrentEnemy.eye.transform : context.CurrentEnemy.transform;
+            ai.NpcController.OrderToLookAtMovingTarget(transformToLookat);
 
             // Shovel attack
             Shovel? shovel = weaponObject as Shovel;
