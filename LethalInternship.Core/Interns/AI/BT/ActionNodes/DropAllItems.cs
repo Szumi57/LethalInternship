@@ -1,10 +1,12 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class DropItem : IBTAction
+    public class DropAllItems : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -16,7 +18,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            ai.DropAllItems();
+            EnumOptionsGetItems options = PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All;
+            ai.DropAllItems(options);
 
             return BehaviourTreeStatus.Success;
         }

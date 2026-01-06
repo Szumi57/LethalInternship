@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
+using LethalInternship.SharedAbstractions.Enums;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -35,10 +36,10 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SyncJump();
         void SyncLandFromJump(bool fallHard);
         void DropItem(GrabbableObject itemToDrop);
-        void DropFirstPickedUpItem();
-        void DropLastPickedUpItem();
+        GrabbableObject? ChooseFirstPickedUpItem(EnumOptionsGetItems options);
+        GrabbableObject? ChooseLastPickedUpItem(EnumOptionsGetItems options);
         void DropTwoHandItem();
-        void DropAllItems(bool waitBetweenItems = true);
+        void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true);
         void StopSinkingState();
         void SyncDamageIntern(int damageNumber,
                               CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
@@ -80,6 +81,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SyncReleaseIntern(PlayerControllerB playerGrabberController);
         void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget);
         void GrabInternServerRpc(ulong idPlayerGrabberController);
+        void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
+        void GrabItem(GrabbableObject grabbableObject);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
         void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
         void HitTargetWithShovel(Shovel shovel);

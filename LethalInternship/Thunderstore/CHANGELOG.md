@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.23.1 [Alpha] - 2026-01-06
+Happy new year ! Some bugfixes for the first update of 2026 !
+
+### Fixed
+- Fix compat with Advanced features, the notes at the end of round just ignore interns now.
+- Fix saving weapons held by interns at the end of moon not loading with reloading game.
+- Disabled zap gun as weapon cuz there's no implementation for using it for now.
+- Fix LateGameUpgrade conflict with knife and shovel patches, thanks to Miserable Pile Of Secrets and Superschaefer on Discord.
+- Experimental fix for interns with too many weapons to hold and some are broken/disabled/bugged.
+
 ## 0.23.0 [Alpha] - 2025-12-18
 ### Added
 - Interns can take multiple items now :
@@ -15,10 +25,6 @@
 - Interns can now defend themselves and use weapons if they hold one :
 	- Only if the "config using weapons" is set to true and they currently hold a weapon.
 	- Works only on killable enemies.
-
-### Not fixed
-- Still need to look at Advanced features conflict when returning to orbit.
-- Still need to look at a mod conflict that makes the player shorter each day (lol).
 
 ## 0.22.4 [Alpha] - 2025-11-18
 ### Added

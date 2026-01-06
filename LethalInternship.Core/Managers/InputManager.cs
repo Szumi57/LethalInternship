@@ -618,35 +618,33 @@ namespace LethalInternship.Core.Managers
                 FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 fieldInfo.SetValue(localPlayer, 0f);
 
+                // Player has no item to give
                 if (localPlayer.currentlyHeldObjectServer == null)
                 {
-                    // Just drop intern item
-                    intern.DropLastPickedUpItem();
+                    // Intern just drop item
+                    GrabbableObject? itemToDrop = intern.ChooseLastPickedUpItem(EnumOptionsGetItems.ChooseWeaponLast);
+                    if (itemToDrop != null)
+                    {
+                        intern.DropItem(itemToDrop);
+                    }
                 }
-                else
+                else // Player has an item to give
                 {
-                    //if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded)
-                    //{
-                    //    // Trying to give two handed item
-                    //    if (intern.IsHoldingTwoHandedItem())
-                    //    {
-                    //        intern.DropTwoHandItem();
-                    //    }
-                    //}
-                    //else
-                    //{
-                        if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
+                    if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
+                    {
+                        if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
                         {
-                            if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
+                            intern.DropTwoHandItem();
+                        }
+                        else
+                        {
+                            GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All);
+                            if (itemToDrop != null)
                             {
-                                intern.DropTwoHandItem();
-                            }
-                            else
-                            {
-                                intern.DropFirstPickedUpItem();
+                                intern.DropItem(itemToDrop);
                             }
                         }
-                    //}
+                    }
 
                     // Intern take item from player hands
                     intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);

@@ -2,9 +2,11 @@
 using LethalInternship.Core.Interns.AI.Items;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using Unity.Netcode;
@@ -35,15 +37,15 @@ namespace LethalInternship.Core.Interns.AI
 
         public bool AreFreeSlotsAvailable()
         {
-            return HeldItems.GetFreeSlots() > 0;
+            return PluginRuntimeProvider.Context.Config.NbMaxCanCarry - HeldItems.NbHeldItems > 0;
         }
 
         public bool CanHoldItem(GrabbableObject grabbableObject)
         {
             heldItemTemp = new HeldItem(grabbableObject);
             if (heldItemTemp.IsWeapon
-                && HeldItems.KeepWeaponForEmergency
-                && !HeldItems.IsHoldingWeapon())
+                && PluginRuntimeProvider.Context.Config.CanUseWeapons
+                && !HeldItems.IsHoldingWeaponAsWeapon())
             {
                 return true;
             }
@@ -82,7 +84,7 @@ namespace LethalInternship.Core.Interns.AI
 
         private bool ShouldUseTwoHandedHoldAnim(bool ignoreHeldWeapon = true)
         {
-            return HeldItems.IsHoldingTwoHandedAnimationItem(ignoreHeldWeapon) || HeldItems.ItemCount > 1;
+            return HeldItems.IsHoldingTwoHandedAnimationItem(ignoreHeldWeapon) || HeldItems.NbHeldItems > 1;
         }
 
         //Quaternion lastLocalRotation = Quaternion.identity;
@@ -271,12 +273,6 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
-            if (HeldItems.IsHoldingItem(grabbableObject))
-            {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} cannot grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
-                return;
-            }
-
             GrabItem(grabbableObject);
         }
 
@@ -284,8 +280,14 @@ namespace LethalInternship.Core.Interns.AI
         /// Make the intern grab an item like an enemy would, but update the body (<c>PlayerControllerB</c>) too.
         /// </summary>
         /// <param name="grabbableObject">Item to grab</param>
-        private void GrabItem(GrabbableObject grabbableObject)
+        public void GrabItem(GrabbableObject grabbableObject)
         {
+            if (HeldItems.IsHoldingItem(grabbableObject))
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} cannot grab already held item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+                return;
+            }
+
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} try to grab item {grabbableObject} on client #{NetworkManager.LocalClientId}");
             HeldItems.HoldItem(grabbableObject);
 
@@ -298,7 +300,7 @@ namespace LethalInternship.Core.Interns.AI
             grabbableObject.EquipItem();
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
-            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetLastPickedUpGrabbableObject();
+            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: PluginRuntimeProvider.Context.Config.CanUseWeapons);
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
@@ -332,7 +334,7 @@ namespace LethalInternship.Core.Interns.AI
             {
                 StopCoroutine(grabObjectCoroutine);
             }
-            grabObjectCoroutine = StartCoroutine(GrabAnimationCoroutine());
+            grabObjectCoroutine = StartCoroutine(GrabAnimationCoroutine(grabbableObject));
 
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} Grabbed item {grabbableObject} on client #{NetworkManager.LocalClientId}");
         }
@@ -341,16 +343,12 @@ namespace LethalInternship.Core.Interns.AI
         /// Coroutine for the grab animation
         /// </summary>
         /// <returns></returns>
-        private IEnumerator GrabAnimationCoroutine()
+        private IEnumerator GrabAnimationCoroutine(GrabbableObject lastPickedUpItem)
         {
-            GrabbableObject? lastPickedUpItem = HeldItems.GetLastPickedUpGrabbableObject();
-            if (lastPickedUpItem != null)
-            {
-                float grabAnimationTime = lastPickedUpItem.itemProperties.grabAnimationTime > 0f ? lastPickedUpItem.itemProperties.grabAnimationTime : 0.4f;
-                yield return new WaitForSeconds(grabAnimationTime - 0.2f);
-                NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABVALIDATED, true);
-                NpcController.Npc.isGrabbingObjectAnimation = false;
-            }
+            float grabAnimationTime = lastPickedUpItem.itemProperties.grabAnimationTime > 0f ? lastPickedUpItem.itemProperties.grabAnimationTime : 0.4f;
+            yield return new WaitForSeconds(grabAnimationTime - 0.2f);
+            NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABVALIDATED, true);
+            NpcController.Npc.isGrabbingObjectAnimation = false;
             yield break;
         }
 
@@ -505,39 +503,128 @@ namespace LethalInternship.Core.Interns.AI
             }
         }
 
-        public void DropFirstPickedUpItem()
+        public GrabbableObject? ChooseFirstPickedUpItem(EnumOptionsGetItems options)
         {
-            GrabbableObject? firstPickedUpItem = HeldItems.GetFirstPickedUpGrabbableObject();
-            if (firstPickedUpItem == null)
+            switch (options)
             {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropFirstPickedUpItem: Failed, no item found !");
-                return;
-            }
+                case EnumOptionsGetItems.All:
+                    for (int i = 0; i < HeldItems.Items.Count; i++)
+                    {
+                        var item = HeldItems.Items[i];
+                        if (item.GrabbableObject == null)
+                        {
+                            continue;
+                        }
+                        return item.GrabbableObject;
+                    }
+                    return null;
 
-            DropItem(firstPickedUpItem);
+                case EnumOptionsGetItems.IgnoreWeapon:
+                    for (int i = 0; i < HeldItems.Items.Count; i++)
+                    {
+                        var item = HeldItems.Items[i];
+                        if (item.GrabbableObject == null)
+                        {
+                            continue;
+                        }
+
+                        if (HeldItems.IsHoldingItemAsWeapon(item.GrabbableObject))
+                        {
+                            continue;
+                        }
+                        return item.GrabbableObject;
+                    }
+                    return null;
+
+                case EnumOptionsGetItems.ChooseWeaponLast:
+                    for (int i = 0; i < HeldItems.Items.Count; i++)
+                    {
+                        var item = HeldItems.Items[i];
+                        if (item.GrabbableObject == null)
+                        {
+                            continue;
+                        }
+
+                        if (HeldItems.IsHoldingItemAsWeapon(item.GrabbableObject))
+                        {
+                            if (i == HeldItems.Items.Count - 1)
+                            {
+                                return item.GrabbableObject;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+
+                        return item.GrabbableObject;
+                    }
+                    return null;
+                default:
+                    return null;
+            }
         }
 
-        public void DropLastPickedUpItem()
+        public GrabbableObject? ChooseLastPickedUpItem(EnumOptionsGetItems options)
         {
-            HeldItem? lastPickedUpItem = HeldItems.GetLastPickedUpHeldItem();
-            if (lastPickedUpItem == null)
+            switch (options)
             {
-                return;
-            }
+                case EnumOptionsGetItems.All:
+                    for (int i = HeldItems.Items.Count - 1; i >= 0; i--)
+                    {
+                        var item = HeldItems.Items[i];
+                        if (item.GrabbableObject == null)
+                        {
+                            continue;
+                        }
+                        return item.GrabbableObject;
+                    }
+                    return null;
 
-            if (lastPickedUpItem.GrabbableObject == null)
-            {
-                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropLastPickedUpItem: Failed, no item found !");
-                return;
-            }
+                case EnumOptionsGetItems.IgnoreWeapon:
+                    for (int i = HeldItems.Items.Count - 1; i >= 0; i--)
+                    {
+                        var item = HeldItems.Items[i];
+                        if (item.GrabbableObject == null)
+                        {
+                            continue;
+                        }
 
-            if (HeldItems.ItemCount == 0
-                && lastPickedUpItem.IsWeapon)
-            {
-                return;
-            }
+                        if (HeldItems.IsHoldingItemAsWeapon(item.GrabbableObject))
+                        {
+                            continue;
+                        }
+                        return item.GrabbableObject;
+                    }
+                    return null;
 
-            DropItem(lastPickedUpItem.GrabbableObject);
+                case EnumOptionsGetItems.ChooseWeaponLast:
+                    for (int i = HeldItems.Items.Count - 1; i >= 0; i--)
+                    {
+                        var item = HeldItems.Items[i];
+                        if (item.GrabbableObject == null)
+                        {
+                            continue;
+                        }
+
+                        if (HeldItems.IsHoldingItemAsWeapon(item.GrabbableObject))
+                        {
+                            if (i == 0)
+                            {
+                                return item.GrabbableObject;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+
+                        return item.GrabbableObject;
+                    }
+                    return null;
+                default:
+                    return null;
+            }
         }
 
         public void DropTwoHandItem()
@@ -552,7 +639,7 @@ namespace LethalInternship.Core.Interns.AI
             DropItem(twoHandItem);
         }
 
-        public void DropAllItems(bool waitBetweenItems = true)
+        public void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true)
         {
             if (waitBetweenItems)
             {
@@ -562,43 +649,29 @@ namespace LethalInternship.Core.Interns.AI
                     {
                         StopCoroutine(dropAllObjectsCoroutine);
                     }
-                    dropAllObjectsCoroutine = StartCoroutine(DropAllItemsCoroutine());
+                    dropAllObjectsCoroutine = StartCoroutine(DropAllItemsCoroutine(dropOptions));
                 }
             }
             else
             {
-                while (!this.AreHandsFree())
+                GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
+                while (itemToDrop != null)
                 {
-                    DropLastPickedUpItem();
+                    DropItem(itemToDrop);
+                    itemToDrop = ChooseLastPickedUpItem(dropOptions);
                 }
             }
         }
 
-        private IEnumerator DropAllItemsCoroutine()
+        private IEnumerator DropAllItemsCoroutine(EnumOptionsGetItems dropOptions)
         {
             dropAllObjectsCoroutineRunning = true;
-            while (!this.AreHandsFree())
+            GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
+            while (itemToDrop != null)
             {
-                HeldItem? lastPickedUpItem = HeldItems.GetLastPickedUpHeldItem();
-                if (lastPickedUpItem == null)
-                {
-                    yield break;
-                }
-
-                if (lastPickedUpItem.GrabbableObject == null)
-                {
-                    PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} DropAllItemsCoroutine: Failed, no item found !");
-                    yield break;
-                }
-
-                if (HeldItems.ItemCount == 0
-                    && lastPickedUpItem.IsWeapon)
-                {
-                    yield break;
-                }
-
-                DropItem(lastPickedUpItem.GrabbableObject);
+                DropItem(itemToDrop);
                 yield return new WaitForSeconds(0.4f);
+                itemToDrop = ChooseLastPickedUpItem(dropOptions);
             }
             dropAllObjectsCoroutineRunning = false;
         }
@@ -655,7 +728,6 @@ namespace LethalInternship.Core.Interns.AI
 
             if (!HeldItems.IsHoldingItem(itemToDrop))
             {
-                PluginLoggerHook.LogWarning?.Invoke($"{NpcController.Npc.playerUsername} held item already dropped, on client #{NetworkManager.LocalClientId}");
                 return;
             }
 
@@ -794,7 +866,7 @@ namespace LethalInternship.Core.Interns.AI
             InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
-            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetLastPickedUpGrabbableObject();
+            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: PluginRuntimeProvider.Context.Config.CanUseWeapons);
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.GrabbedObjectValidated = false;

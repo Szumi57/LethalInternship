@@ -21,15 +21,21 @@ namespace LethalInternship.Core.Interns
         public object? BodyReplacementBase { get => bodyReplacementBase; set => bodyReplacementBase = value; }
         public bool Alive { get { return Hp > 0; } }
 
+        public int[] ItemsInInventory => itemsInInventory;
+
         private int idIdentity;
         private string name;
+
         private int hp;
         private int hpMax;
+
         private int? suitID;
         private DeadBodyInfo? deadBody;
         public EnumStatusIdentity status;
         private IInternVoice voice;
         private object? bodyReplacementBase;
+
+        private int[] itemsInInventory;
 
         public string Suit
         {
@@ -54,18 +60,26 @@ namespace LethalInternship.Core.Interns
             this.hpMax = PluginRuntimeProvider.Context.Config.InternMaxHealth;
             this.Hp = hpMax;
             this.status = EnumStatusIdentity.Available;
+            this.itemsInInventory = new int[0];
         }
 
-        public void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity)
+        public void UpdateIdentity(int Hp,
+                                   int? suitID,
+                                   EnumStatusIdentity enumStatusIdentity,
+                                   int[]? itemsInInventory)
         {
             this.Hp = Hp;
             this.suitID = suitID;
             this.status = enumStatusIdentity;
+            if (itemsInInventory != null)
+            {
+                this.itemsInInventory = itemsInInventory;
+            }
         }
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suit {Suit}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', Voice : {{{Voice.ToString()}}}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suit {Suit}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', Voice : {{{Voice.ToString()}}}, Items : {string.Join(",", itemsInInventory)}";
         }
 
         public int GetRandomSuitID()
@@ -104,6 +118,11 @@ namespace LethalInternship.Core.Interns
             }
 
             return indexesSpawnedUnlockables[randomIndex];
+        }
+
+        public void UpdateItemsInInventory(int[] itemsID)
+        {
+            itemsInInventory = itemsID;
         }
     }
 }

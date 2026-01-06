@@ -82,7 +82,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "CheckForItemsInRange", new CheckForItemsInRange() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
-                { "DropItem", new DropItem() },
+                { "DropAllItems", new DropAllItems() },
                 { "EnterVehicle", new EnterVehicle() },
                 { "EquipWeapon", new EquipUnequipWeapon(equip: true) },
                 { "ExitVehicle", new ExitVehicle() },
@@ -198,7 +198,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                                     .Splice(CreateSubTreeGoToPosition())
                                     .Sequence("Drop item if in ship")
                                         .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
-                                        .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                        .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
                                     .End()
                                     .Do("Chill", t => actions["Chill"].Action(BTContext))
                                 .End()
@@ -320,7 +320,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                             .Splice(CreateSubTreeGoToPosition())
                             .Sequence("Drop item if in ship")
                                 .Condition("<HasItemAndInShip>", t => conditions["HasItemAndInShip"].Condition(BTContext))
-                                .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
                             .End()
                             .Do("chill", t => actions["Chill"].Action(BTContext))
                         .End()
@@ -378,7 +378,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
                                 .Selector("Go to position or drop object")
                                     .Splice(CreateSubTreeGoToPosition())
-                                    .Do("DropItem", t => actions["DropItem"].Action(BTContext))
+                                    .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
                                 .End()
                             .End()
                         .End()

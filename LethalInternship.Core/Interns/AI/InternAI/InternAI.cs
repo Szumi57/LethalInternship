@@ -15,6 +15,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 using Component = UnityEngine.Component;
+using Object = UnityEngine.Object;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -176,6 +177,24 @@ namespace LethalInternship.Core.Interns.AI
                 WeaponHolderTransform = weaponHolderGameObject.transform;
             }
 
+            // Load items (only weapon for now)
+            // After init of WeaponHolderTransform
+            if (base.IsServer)
+            {
+                if (internIdentity.ItemsInInventory.Length > 0)
+                {
+                    int itemID = internIdentity.ItemsInInventory[0];
+                    if (itemID <= StartOfRound.Instance.allItemsList.itemsList.Count)
+                    {
+                        GameObject gameObject = Object.Instantiate<GameObject>(StartOfRound.Instance.allItemsList.itemsList[itemID].spawnPrefab, StartOfRound.Instance.propsContainer);
+                        GrabbableObject grabbableObject = gameObject.GetComponent<GrabbableObject>();
+                        gameObject.GetComponent<NetworkObject>().Spawn(false);
+
+                        SpawnWeaponToHoldWhenSpawningClientRpc(grabbableObject.NetworkObject);
+                    }
+                }
+            }
+
             // Line renderer used for debugging stuff
             LineRendererUtil = new LineRendererUtil(20, transform);
 
@@ -277,6 +296,16 @@ namespace LethalInternship.Core.Interns.AI
                 InternManager.Instance.ResizePlayerVoiceMixers(InternManager.Instance.AllEntitiesCount);
             }
             InternVoice.outputAudioMixerGroup = SoundManager.Instance.playerVoiceMixers[(int)NpcController.Npc.playerClientId];
+        }
+
+        [ClientRpc]
+        private void SpawnWeaponToHoldWhenSpawningClientRpc(NetworkObjectReference norGrabbableObject)
+        {
+            norGrabbableObject.TryGet(out NetworkObject networkObjectRagdollGrabbableObject);
+            GrabbableObject grabbableObject = networkObjectRagdollGrabbableObject.gameObject.GetComponent<GrabbableObject>();
+            grabbableObject.fallTime = 0f;
+
+            this.GrabItem(grabbableObject);
         }
 
         private void FixedUpdate()

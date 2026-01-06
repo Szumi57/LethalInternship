@@ -121,6 +121,9 @@ namespace LethalInternship.Core.Interns.AI
                 HideShowLevelStickerBetaBadge(show: false);
             }
 
+            // Hide items
+            HeldItems.ShowHideAllItemsMeshes(show: false, includeHeldWeapon: true);
+
             yield return null;
 
             // Voice
@@ -153,6 +156,9 @@ namespace LethalInternship.Core.Interns.AI
                 InternManager.Instance.DisableInternControllerModel(NpcController.Npc.gameObject, NpcController.Npc, enable: true, disableLocalArms: true);
                 HideShowLevelStickerBetaBadge(show: true);
             }
+
+            // Show items
+            HeldItems.ShowHideAllItemsMeshes(show: true, includeHeldWeapon: true);
 
             // Hide ragdoll
             RagdollInternBody.Hide();

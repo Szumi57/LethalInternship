@@ -304,8 +304,7 @@ namespace LethalInternship.Core.Managers
         public bool IsPlayerIntern(PlayerControllerB? player)
         {
             if (player == null) return false;
-            IInternAI? internAI = GetInternAI((int)player.playerClientId);
-            return internAI != null;
+            return IsIdPlayerIntern((int)player.playerClientId);
         }
 
         /// <summary>
@@ -420,6 +419,7 @@ namespace LethalInternship.Core.Managers
                                         && x.NpcController.Npc != null
                                         && !x.NpcController.Npc.isPlayerDead
                                         && x.NpcController.Npc.isPlayerControlled
+                                        && x.InternIdentity != null
                                         && x.InternIdentity.Status == EnumStatusIdentity.Spawned)
                                .ToArray();
         }
