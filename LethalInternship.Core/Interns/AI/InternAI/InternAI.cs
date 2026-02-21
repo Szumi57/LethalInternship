@@ -207,6 +207,21 @@ namespace LethalInternship.Core.Interns.AI
 
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
+
+            //OutlineSystem.Enable(this.Npc.gameObject);
+
+            SimpleOutline.Add(this.Npc.gameObject,
+                              StartOfRound.Instance.localPlayerController.gameplayCamera,
+                              new Color(255 / 255f, 111 / 255f, 1 / 255f),
+                              rimPower: 5f,
+                              intensity: 0.7f);
+
+            //SimpleRimOutlineBold.Enable(this.Npc.gameObject,
+            //                            new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                            rimPower: 5f,
+            //                            intensity: 5f,
+            //                            fill: 0.2f,
+            //                            pulse: 0f);
         }
 
         private void InitImportantColliders()
@@ -308,6 +323,7 @@ namespace LethalInternship.Core.Interns.AI
             this.GrabItem(grabbableObject);
         }
 
+
         private void FixedUpdate()
         {
             if (NpcController == null)
@@ -317,6 +333,8 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             UpdateSurfaceRayCast();
+
+            DebugChangeOutlineLive();
         }
 
         private void UpdateSurfaceRayCast()
@@ -686,6 +704,59 @@ namespace LethalInternship.Core.Interns.AI
             {
                 agent.enabled = enabled;
             }
+        }
+
+        //private float rimPower = 8f;
+        //private float intensity = 3f;
+        private void DebugChangeOutlineLive()
+        {
+            // Use this to see change in outline live and choose rimPower and intensity
+
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    rimPower += 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+
+            //}
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    rimPower -= 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+            //}
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    intensity += 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+            //}
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    intensity -= 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+            //}
         }
     }
 }

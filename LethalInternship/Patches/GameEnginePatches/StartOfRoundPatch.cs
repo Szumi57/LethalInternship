@@ -39,6 +39,17 @@ namespace LethalInternship.PluginPatches.GameEnginePatches
             objectManager = new GameObject("UIManager");
             objectManager.AddComponent<UIManager>();
 
+            //var go = new GameObject("OutlineSystem");
+            //Object.DontDestroyOnLoad(go);
+            //var sys = go.AddComponent<OutlineSystem>();
+            //sys.maskMaterial = Plugin.ModAssets.LoadAsset<Material>("OutlineMaskMat");
+            ////sys.fullscreenMaterial = Plugin.ModAssets.LoadAsset<Material>("OutlineFullscreenMat");
+            //sys.fullscreenMaterial = Plugin.ModAssets.LoadAsset<Material>("FullscreenDebugColorMat");
+
+            //OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("SimpleOutlineSilhouetteMat"));
+            OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"),
+                                  Plugin.ModAssets.LoadAsset<Material>("FakeOutlineBoldMat"));
+
             // NetworkBehaviours
             objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);
             if (__instance.NetworkManager.IsHost || __instance.NetworkManager.IsServer)
