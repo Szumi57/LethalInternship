@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Managers;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using Unity.Netcode;
@@ -39,16 +40,7 @@ namespace LethalInternship.PluginPatches.GameEnginePatches
             objectManager = new GameObject("UIManager");
             objectManager.AddComponent<UIManager>();
 
-            //var go = new GameObject("OutlineSystem");
-            //Object.DontDestroyOnLoad(go);
-            //var sys = go.AddComponent<OutlineSystem>();
-            //sys.maskMaterial = Plugin.ModAssets.LoadAsset<Material>("OutlineMaskMat");
-            ////sys.fullscreenMaterial = Plugin.ModAssets.LoadAsset<Material>("OutlineFullscreenMat");
-            //sys.fullscreenMaterial = Plugin.ModAssets.LoadAsset<Material>("FullscreenDebugColorMat");
-
-            //OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("SimpleOutlineSilhouetteMat"));
-            OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"),
-                                  Plugin.ModAssets.LoadAsset<Material>("FakeOutlineBoldMat"));
+            OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"));
 
             // NetworkBehaviours
             objectManager = Object.Instantiate(PluginManager.Instance.TerminalManagerPrefab);

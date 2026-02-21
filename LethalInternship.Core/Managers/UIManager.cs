@@ -4,12 +4,14 @@ using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
 using LethalInternship.Core.UI.Icons.WorldIcons;
+using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Core.UI.Renderers;
 using LethalInternship.Core.UI.Renderers.InterestPointsRenderer;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
@@ -53,6 +55,8 @@ namespace LethalInternship.Core.Managers
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
         private Coroutine CoroutineUpdateRightPanel = null!;
         private IInternAI? internAIToManage;
+        private ulong? currentPointedInternId = null;
+        private bool allowMultipleInternOutline = false;
 
         private void Awake()
         {
@@ -75,6 +79,8 @@ namespace LethalInternship.Core.Managers
 
             // ----------------
             ShowWorldIconUIs();
+
+            UpdateOutlineOnInterns();
         }
 
         private void LateUpdate()
@@ -477,6 +483,67 @@ namespace LethalInternship.Core.Managers
             }
 
             HUDManager.Instance.ChangeControlTipMultiple(currentControlTipLines);
+        }
+
+        public void UpdateCursorTooltipsPointingIntern(IInternAI intern)
+        {
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            StringBuilder sb = new StringBuilder();
+            // Line item
+            if (!intern.AreHandsFree())
+            {
+                sb.Append(string.Format(Const.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
+                    .AppendLine();
+            }
+            else if (localPlayer.currentlyHeldObjectServer != null)
+            {
+                sb.Append(string.Format(Const.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
+                    .AppendLine();
+            }
+
+            // Line Follow
+            if (intern.OwnerClientId != localPlayer.actualClientId)
+            {
+                sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern)))
+                    .AppendLine();
+            }
+
+            // Grab intern
+            sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern)))
+                .AppendLine();
+
+            // Change suit intern
+            if (localPlayer.currentSuitID != 0
+                || intern.Npc.currentSuitID != localPlayer.currentSuitID)
+            {
+                sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)))
+                  .AppendLine();
+            }
+
+            // Manage intern
+            sb.Append(string.Format(Const.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
+                .AppendLine();
+
+            localPlayer.cursorTip.text = sb.ToString();
+        }
+
+        #endregion
+
+        #region Outlines
+
+        public void UpdateCurrentPointedIntern(ulong pointedInternCliendId)
+        {
+            currentPointedInternId = pointedInternCliendId;
+        }
+
+        private void UpdateOutlineOnInterns()
+        {
+            InternOutlineController.UpdateOutlines(InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(),
+                                                   currentPointedInternId,
+                                                   allowMultipleInternOutline);
+
+            currentPointedInternId = null;
         }
 
         #endregion

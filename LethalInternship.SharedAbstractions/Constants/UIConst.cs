@@ -1,4 +1,6 @@
-﻿namespace LethalInternship.SharedAbstractions.Constants
+﻿using UnityEngine;
+
+namespace LethalInternship.SharedAbstractions.Constants
 {
     public class UIConst
     {
@@ -19,5 +21,12 @@
             "",
             "Go scavenging" // 8 Scavenging
         };
+
+        // Outlines
+        public static Color OUTLINE_COLOR_DEFAULT = new Color(255 / 255f, 111 / 255f, 1 / 255f); // 255 111 1
+        public static float OUTLINE_RIM_DEFAULT = 5f;
+        public static float OUTLINE_RIM_SOLID = 0.1f;
+        public static float DISTANCE_SOLID_OUTLINE = 10f;
+        public static float OUTLINE_INTENSITY_DEFAULT = 0.7f;
     }
 }

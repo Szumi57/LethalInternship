@@ -207,21 +207,6 @@ namespace LethalInternship.Core.Interns.AI
 
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
-
-            //OutlineSystem.Enable(this.Npc.gameObject);
-
-            SimpleOutline.Add(this.Npc.gameObject,
-                              StartOfRound.Instance.localPlayerController.gameplayCamera,
-                              new Color(255 / 255f, 111 / 255f, 1 / 255f),
-                              rimPower: 5f,
-                              intensity: 0.7f);
-
-            //SimpleRimOutlineBold.Enable(this.Npc.gameObject,
-            //                            new Color(255 / 255f, 111 / 255f, 1 / 255f),
-            //                            rimPower: 5f,
-            //                            intensity: 5f,
-            //                            fill: 0.2f,
-            //                            pulse: 0f);
         }
 
         private void InitImportantColliders()

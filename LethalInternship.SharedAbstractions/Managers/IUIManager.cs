@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Interns;
 using UnityEngine;
 
 namespace LethalInternship.SharedAbstractions.Managers
@@ -9,6 +10,10 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         public void AttachUIToLocalPlayer(PlayerControllerB player);
 
-        public void InitUI(Transform HUDContainerParent);
+        void InitUI(Transform HUDContainerParent);
+
+        void UpdateCurrentPointedIntern(ulong pointedInternCliendId);
+
+        void UpdateCursorTooltipsPointingIntern(IInternAI intern);
     }
 }

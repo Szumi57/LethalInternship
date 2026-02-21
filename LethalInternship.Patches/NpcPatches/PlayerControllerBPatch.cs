@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
 using UnityEngine;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
@@ -877,7 +876,7 @@ namespace LethalInternship.Patches.NpcPatches
 
             // Set tooltip when pointing at intern
             RaycastHit[] raycastHits = new RaycastHit[3];
-            int raycastResults = Physics.RaycastNonAlloc(___interactRay, raycastHits, __instance.grabDistance, ___playerMask);
+            int raycastResults = Physics.RaycastNonAlloc(___interactRay, raycastHits, 300f, ___playerMask);
             for (int i = 0; i < raycastResults; i++)
             {
                 RaycastHit hit = raycastHits[i];
@@ -893,6 +892,7 @@ namespace LethalInternship.Patches.NpcPatches
                     continue;
                 }
 
+                // --> Pointed intern <--
                 IInternAI? intern = InternManagerProvider.Instance.GetInternAI((int)internController.playerClientId);
                 if (intern == null)
                 {
@@ -908,43 +908,11 @@ namespace LethalInternship.Patches.NpcPatches
                     continue;
                 }
 
-                StringBuilder sb = new StringBuilder();
-                // Line item
-                if (!intern.AreHandsFree())
-                {
-                    sb.Append(string.Format(Const.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
-                        .AppendLine();
-                }
-                else if (__instance.currentlyHeldObjectServer != null)
-                {
-                    sb.Append(string.Format(Const.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
-                        .AppendLine();
-                }
+                // Tooltips under cursor
+                UIManagerProvider.Instance.UpdateCursorTooltipsPointingIntern(intern);
 
-                // Line Follow
-                if (intern.OwnerClientId != __instance.actualClientId)
-                {
-                    sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern)))
-                        .AppendLine();
-                }
-
-                // Grab intern
-                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern)))
-                    .AppendLine();
-
-                // Change suit intern
-                if (__instance.currentSuitID != 0
-                    || internController.currentSuitID != __instance.currentSuitID)
-                {
-                    sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)))
-                      .AppendLine();
-                }
-
-                // Manage intern
-                sb.Append(string.Format(Const.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
-                    .AppendLine();
-
-                __instance.cursorTip.text = sb.ToString();
+                // Outline
+                UIManagerProvider.Instance.UpdateCurrentPointedIntern(intern.Npc.playerClientId);
 
                 break;
             }
