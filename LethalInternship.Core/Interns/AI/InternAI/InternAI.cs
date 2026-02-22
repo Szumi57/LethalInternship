@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.BT;
-using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Adapters;
@@ -200,10 +199,6 @@ namespace LethalInternship.Core.Interns.AI
 
             TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
-
-            // Start timed calculation
-            IsTouchingGroundTimedCheck = new TimedTouchingGroundCheck();
-            AngleFOVWithLocalPlayerTimedCheck = new TimedAngleFOVWithLocalPlayerCheck();
 
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);

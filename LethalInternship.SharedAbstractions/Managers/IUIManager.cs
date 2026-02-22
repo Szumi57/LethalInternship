@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.SharedAbstractions.Interns;
 using UnityEngine;
 
 namespace LethalInternship.SharedAbstractions.Managers
@@ -12,8 +11,6 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         void InitUI(Transform HUDContainerParent);
 
-        void UpdateCurrentPointedIntern(ulong pointedInternCliendId);
-
-        void UpdateCursorTooltipsPointingIntern(IInternAI intern);
+        void UpdateCursorTooltipsOfPointedIntern();
     }
 }

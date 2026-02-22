@@ -874,48 +874,8 @@ namespace LethalInternship.Patches.NpcPatches
                 }
             }
 
-            // Set tooltip when pointing at intern
-            RaycastHit[] raycastHits = new RaycastHit[3];
-            int raycastResults = Physics.RaycastNonAlloc(___interactRay, raycastHits, 300f, ___playerMask);
-            for (int i = 0; i < raycastResults; i++)
-            {
-                RaycastHit hit = raycastHits[i];
-                if (hit.collider == null
-                    || hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB internController = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (internController == null)
-                {
-                    continue;
-                }
-
-                // --> Pointed intern <--
-                IInternAI? intern = InternManagerProvider.Instance.GetInternAI((int)internController.playerClientId);
-                if (intern == null)
-                {
-                    continue;
-                }
-
-                // Name billboard
-                intern.NpcController.ShowFullNameBillboard();
-
-                // No action if in spawning animation
-                if (intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                // Tooltips under cursor
-                UIManagerProvider.Instance.UpdateCursorTooltipsPointingIntern(intern);
-
-                // Outline
-                UIManagerProvider.Instance.UpdateCurrentPointedIntern(intern.Npc.playerClientId);
-
-                break;
-            }
+            // Cursor tooltips
+            UIManagerProvider.Instance.UpdateCursorTooltipsOfPointedIntern();
         }
 
         /// <summary>

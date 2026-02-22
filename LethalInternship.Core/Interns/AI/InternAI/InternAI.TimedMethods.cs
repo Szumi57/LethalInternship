@@ -5,9 +5,9 @@ namespace LethalInternship.Core.Interns.AI
 {
     public partial class InternAI
     {
-        public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = null!;
-        public TimedAngleFOVWithLocalPlayerCheck AngleFOVWithLocalPlayerTimedCheck = null!;
-        private TimedGetClosestPlayerDistance GetClosestPlayerDistanceTimed = null!;
+        public TimedTouchingGroundCheck IsTouchingGroundTimedCheck = new TimedTouchingGroundCheck();
+        public TimedAngleFOVWithLocalPlayerCheck AngleFOVWithLocalPlayerTimedCheck = new TimedAngleFOVWithLocalPlayerCheck();
+        private TimedGetClosestPlayerDistance GetClosestPlayerDistanceTimed = new TimedGetClosestPlayerDistance();
 
         public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
         {
@@ -26,11 +26,6 @@ namespace LethalInternship.Core.Interns.AI
                 || this.Npc.isPlayerDead)
             {
                 return float.MaxValue;
-            }
-
-            if (GetClosestPlayerDistanceTimed == null)
-            {
-                GetClosestPlayerDistanceTimed = new TimedGetClosestPlayerDistance();
             }
 
             return GetClosestPlayerDistanceTimed.GetClosestPlayerDistance(this.Npc.transform.position);

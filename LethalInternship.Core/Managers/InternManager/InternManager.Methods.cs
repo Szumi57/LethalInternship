@@ -403,6 +403,19 @@ namespace LethalInternship.Core.Managers
             return true;
         }
 
+        public IInternAI[] GetAliveAndSpawnInternsAI()
+        {
+            return AllInternAIs.Where(x => x != null
+                                        && !x.IsEnemyDead
+                                        && x.NpcController != null
+                                        && x.NpcController.Npc != null
+                                        && !x.NpcController.Npc.isPlayerDead
+                                        && x.NpcController.Npc.isPlayerControlled
+                                        && x.InternIdentity != null
+                                        && x.InternIdentity.Status == EnumStatusIdentity.Spawned)
+                               .ToArray();
+        }
+
         public IInternAI[] GetInternsAIOwnedByLocal()
         {
             return AllInternAIs.Where(x => x != null
