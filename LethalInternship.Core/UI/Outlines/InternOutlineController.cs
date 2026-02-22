@@ -15,6 +15,7 @@ namespace LethalInternship.Core.UI.Outlines
             public Color color;
         }
 
+        const float RIM_EPSILON = 0.02f;
         private static readonly Dictionary<ulong, OutlineState> states =
         new Dictionary<ulong, OutlineState>();
 
@@ -27,12 +28,10 @@ namespace LethalInternship.Core.UI.Outlines
                 bool shouldOutline = intern.Npc.playerClientId == pointedInternClientId || allowMultiple;
 
                 float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer(intern.Npc.transform.position);
-                float rimPower = UIConst.OUTLINE_RIM_DEFAULT;
-                if (distance > UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE)
-                {
-                    rimPower = UIConst.OUTLINE_RIM_SOLID;
-                }
-
+                float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, distance);
+                float rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,
+                                            UIConst.OUTLINE_RIM_SOLID,
+                                            t);
                 ApplyState(intern,
                            shouldOutline,
                            intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
@@ -72,7 +71,10 @@ namespace LethalInternship.Core.UI.Outlines
 
             if (shouldEnable)
             {
-                if (state.color != color || state.rimPower != rimPower)
+                bool rimChanged = Mathf.Abs(state.rimPower - rimPower) > RIM_EPSILON;
+                bool intensityChanged = state.intensity != intensity;
+                bool colorChanged = state.color != color;
+                if (rimChanged || intensityChanged || colorChanged)
                 {
                     SimpleOutline.UpdateParams(intern.Npc.gameObject,
                                                intensity,
@@ -80,7 +82,11 @@ namespace LethalInternship.Core.UI.Outlines
                                                color);
 
                     state.intensity = intensity;
-                    state.rimPower = rimPower;
+                    state.rimPower = Mathf.Lerp(
+                                                state.rimPower,
+                                                rimPower,
+                                                Time.deltaTime * 10f
+                                                );
                     state.color = color;
                 }
             }

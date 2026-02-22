@@ -149,16 +149,5 @@ namespace LethalInternship.SharedAbstractions.Constants
 
         // Panik
         public static readonly float DISTANCE_FLEEING_NO_LOS = 5f;
-
-        // Tips
-        public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
-        public static readonly string TOOLTIP_TAKE_ITEM = "Take my item : [{0}]";
-        public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
-        public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
-        public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
-        public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
-        public static readonly string TOOLTIP_COMMANDS = "Commands : [{0}]";
-        public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
-        public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
     }
 }

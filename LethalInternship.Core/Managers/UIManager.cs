@@ -440,11 +440,7 @@ namespace LethalInternship.Core.Managers
 
             if (InternManager.Instance.IsLocalPlayerHoldingInterns())
             {
-                WriteControlTipLine(hudManager.controlTipLines[index], Const.TOOLTIP_RELEASE_INTERNS, InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns));
-            }
-            if (InternManager.Instance.IsLocalPlayerNextToChillInterns())
-            {
-                WriteControlTipLine(hudManager.controlTipLines[index], Const.TOOLTIP_MAKE_INTERN_LOOK, InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition));
+                WriteControlTipLine(hudManager.controlTipLines[index], UIConst.TOOLTIP_RELEASE_INTERNS, InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns));
             }
         }
 
@@ -502,43 +498,43 @@ namespace LethalInternship.Core.Managers
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
             StringBuilder sb = new StringBuilder();
-            // Line item
-            if (!intern.AreHandsFree())
-            {
-                sb.Append(string.Format(Const.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
-                    .AppendLine();
-            }
-            else if (localPlayer.currentlyHeldObjectServer != null)
-            {
-                sb.Append(string.Format(Const.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
-                    .AppendLine();
-            }
-
-            // Line Follow
-            if (intern.OwnerClientId != localPlayer.actualClientId)
-            {
-                sb.Append(string.Format(Const.TOOLTIP_FOLLOW_ME, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern)))
-                    .AppendLine();
-            }
-
-            // Grab intern
             float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer(intern.Npc.transform.position);
             if (distance < localPlayer.grabDistance * localPlayer.grabDistance)
             {
-                sb.Append(string.Format(Const.TOOLTIP_GRAB_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern)))
+                // Line grab/drop item
+                if (!intern.AreHandsFree())
+                {
+                    sb.Append(string.Format(UIConst.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
+                        .AppendLine();
+                }
+                else if (localPlayer.currentlyHeldObjectServer != null)
+                {
+                    sb.Append(string.Format(UIConst.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
+                        .AppendLine();
+                }
+
+                // Line Follow manage
+                if (intern.OwnerClientId != localPlayer.actualClientId)
+                {
+                    sb.Append(string.Format(UIConst.TOOLTIP_FOLLOW_ME, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern)))
+                        .AppendLine();
+                }
+
+                // Grab intern
+                sb.Append(string.Format(UIConst.TOOLTIP_GRAB_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern)))
                     .AppendLine();
+
+                // Change suit intern
+                if (localPlayer.currentSuitID != 0
+                    || intern.Npc.currentSuitID != localPlayer.currentSuitID)
+                {
+                    sb.Append(string.Format(UIConst.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)))
+                      .AppendLine();
+                }
             }
 
-            // Change suit intern
-            if (localPlayer.currentSuitID != 0
-                || intern.Npc.currentSuitID != localPlayer.currentSuitID)
-            {
-                sb.Append(string.Format(Const.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)))
-                  .AppendLine();
-            }
-
-            // Manage intern
-            sb.Append(string.Format(Const.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
+            // Open commands for intern
+            sb.Append(string.Format(UIConst.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
                 .AppendLine();
 
             localPlayer.cursorTip.text = sb.ToString();
@@ -569,6 +565,11 @@ namespace LethalInternship.Core.Managers
         private bool IsPointedInternStillValid(IInternAI internAI)
         {
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
+
+            if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
+            {
+                return false;
+            }
 
             float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
             float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position + new Vector3(0f, 1f, 0f));
@@ -604,6 +605,11 @@ namespace LethalInternship.Core.Managers
             IInternAI[] internAIs = InternManager.Instance.GetAliveAndSpawnInternsAI();
             foreach (IInternAI internAI in internAIs)
             {
+                if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
+                {
+                    continue;
+                }
+
                 float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
                 float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position + new Vector3(0f, 1f, 0f));
                 float allowedAngle = GetAllowedAngle(distance);

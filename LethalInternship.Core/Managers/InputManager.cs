@@ -766,6 +766,5 @@ namespace LethalInternship.Core.Managers
                 return;
             }
         }
-
     }
 }
