@@ -689,7 +689,6 @@ namespace LethalInternship.Core.Managers
                 // Grab intern
                 intern.GrabInternServerRpc(localPlayer.playerClientId);
 
-                UIManager.Instance.UpdateControlTip();
                 return;
             }
         }
@@ -719,8 +718,6 @@ namespace LethalInternship.Core.Managers
                     internsAIsHoldByPlayer[i].SyncReleaseIntern(localPlayer);
                 }
             }
-
-            HUDManager.Instance.ClearControlTips();
         }
 
         private void ChangeSuitIntern_performed(InputAction.CallbackContext obj)

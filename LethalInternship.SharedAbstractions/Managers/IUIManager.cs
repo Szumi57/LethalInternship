@@ -5,9 +5,7 @@ namespace LethalInternship.SharedAbstractions.Managers
 {
     public interface IUIManager
     {
-        void AddInternsControlTip(HUDManager hudManager);
-
-        public void AttachUIToLocalPlayer(PlayerControllerB player);
+        void AttachUIToLocalPlayer(PlayerControllerB player);
 
         void InitUI(Transform HUDContainerParent);
 

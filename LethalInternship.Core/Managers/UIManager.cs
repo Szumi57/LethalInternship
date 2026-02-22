@@ -63,6 +63,7 @@ namespace LethalInternship.Core.Managers
         private float bestScore = float.MaxValue;
         private float angleWeight = 1.0f;
         private float distanceWeight = 0.1f;
+        private float timerUpdateTooltips;
 
         private void Awake()
         {
@@ -83,10 +84,20 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // ----------------
+            // Icons
             ShowWorldIconUIs();
 
+            UpdateCurrentPointedIntern();
+            UpdateBillBoard();
             UpdateOutlines();
+
+            // Tooltips
+            timerUpdateTooltips += Time.deltaTime;
+            if (timerUpdateTooltips > 0.25f)
+            {
+                timerUpdateTooltips = 0f;
+                UpdateControlTip(HUDManager.Instance);
+            }
         }
 
         private void LateUpdate()
@@ -420,7 +431,10 @@ namespace LethalInternship.Core.Managers
 
         #region Tips display
 
-        public void AddInternsControlTip(HUDManager hudManager)
+        const string SEPARATOR = "--------------";
+        const string TT_START = "<tt id=";
+
+        private void UpdateControlTip(HUDManager hudManager)
         {
             int index = -1;
             for (int i = 0; i < hudManager.controlTipLines.Length - 1; i++)
@@ -432,59 +446,107 @@ namespace LethalInternship.Core.Managers
                     break;
                 }
             }
-
             if (index == -1)
             {
                 index = hudManager.controlTipLines.Length - 1;
             }
 
+            List<(string id, string text)> tooltipsToAdd = new List<(string id, string text)>();
+            // Release grabbed interns
             if (InternManager.Instance.IsLocalPlayerHoldingInterns())
             {
-                WriteControlTipLine(hudManager.controlTipLines[index], UIConst.TOOLTIP_RELEASE_INTERNS, InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns));
+                tooltipsToAdd.Add(("release", string.Format(UIConst.TOOLTIP_RELEASE_INTERNS,
+                                                            InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns))));
             }
+
+            // Intern commands 
+            if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length > 0)
+            {
+                tooltipsToAdd.Add(("commands", string.Format(UIConst.TOOLTIP_COMMANDS,
+                                                             InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern))));
+            }
+
+            SetTooltips(hudManager.controlTipLines[index],
+                        isSeparatorToAdd: index > 0,
+                        tooltipsToAdd);
         }
 
-        private void WriteControlTipLine(TextMeshProUGUI line, string textToAdd, string keyAction)
+        string MakeTooltip(string id, string text)
         {
-            if (!IsStringPresent(line.text, textToAdd))
-            {
-                if (!string.IsNullOrWhiteSpace(line.text))
-                {
-                    line.text += "\n";
-                }
-                line.text += string.Format(textToAdd, keyAction);
-            }
+            return $"\n<size=0>{TT_START}{id}></size>{text}";
         }
 
-        private bool IsStringPresent(string stringCurrent, string stringToAdd)
+        void SetTooltips(TextMeshProUGUI tmp,
+                         bool isSeparatorToAdd,
+                         List<(string id, string text)> tooltips)
         {
-            string[] splits = stringCurrent.Split(new string[] { "[", "]\n" }, System.StringSplitOptions.None);
-            foreach (string split in splits)
-            {
-                if (string.IsNullOrWhiteSpace(split))
-                {
-                    continue;
-                }
+            string baseText = StripAllTooltips(tmp.text);
 
-                if (stringToAdd.Contains(split.Trim()))
-                {
-                    return true;
-                }
+            if (tooltips.Count == 0)
+            {
+                tmp.text = baseText;
+                return;
             }
 
-            return false;
+            var sb = new StringBuilder(baseText);
+            if (isSeparatorToAdd || !string.IsNullOrWhiteSpace(baseText))
+            {
+                sb.Append('\n').Append(SEPARATOR);
+            }
+
+            foreach (var tt in tooltips)
+            {
+                sb.Append(MakeTooltip(tt.id, tt.text));
+            }
+
+            tmp.text = sb.ToString();
         }
 
-        public void UpdateControlTip()
+        string StripAllTooltips(string src)
         {
-            string[] currentControlTipLines = { };
-            if (HUDManager.Instance.controlTipLines != null
-                && HUDManager.Instance.controlTipLines.Length > 0)
+            // remove all rows with <tt id=...>
+            while (true)
             {
-                currentControlTipLines = HUDManager.Instance.controlTipLines.Select(i => i.text).ToArray();
+                int s = src.IndexOf(TT_START);
+                if (s < 0)
+                    break;
+
+                // remonter au début de la ligne
+                int lineStart = s;
+                while (lineStart > 0 && src[lineStart - 1] != '\n')
+                    lineStart--;
+
+                int lineEnd = src.IndexOf('\n', s);
+                if (lineEnd < 0)
+                    lineEnd = src.Length;
+
+                src = src.Remove(lineStart, lineEnd - lineStart);
             }
 
-            HUDManager.Instance.ChangeControlTipMultiple(currentControlTipLines);
+            // remove separator if present
+            src = RemoveSeparator(src);
+            return src.TrimEnd('\n');
+        }
+
+        string RemoveSeparator(string src)
+        {
+            int s = src.IndexOf(SEPARATOR);
+            if (s < 0)
+                return src;
+
+            // back to start of row
+            int lineStart = s;
+            while (lineStart > 0 && src[lineStart - 1] != '\n')
+                lineStart--;
+
+            // go to end of row
+            int lineEnd = src.IndexOf('\n', s);
+            if (lineEnd < 0)
+                lineEnd = src.Length;
+            else
+                lineEnd += 1; // include '\n'
+
+            return src.Remove(lineStart, lineEnd - lineStart);
         }
 
         public void UpdateCursorTooltipsOfPointedIntern()
@@ -544,7 +606,7 @@ namespace LethalInternship.Core.Managers
 
         #region Outlines
 
-        private void UpdateOutlines()
+        private void UpdateCurrentPointedIntern()
         {
             bestPointedIntern = null;
             bestScore = float.MaxValue;
@@ -555,7 +617,19 @@ namespace LethalInternship.Core.Managers
             {
                 FindPointedIntern();
             }
+        }
 
+        private void UpdateBillBoard()
+        {
+            // Name billboard
+            if (currentPointedIntern != null)
+            {
+                currentPointedIntern.NpcController.ShowFullNameBillboard();
+            }
+        }
+
+        private void UpdateOutlines()
+        {
             // Update intern outlines
             InternOutlineController.UpdateOutlines(InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(),
                                                    currentPointedIntern?.Npc.playerClientId,
@@ -567,6 +641,11 @@ namespace LethalInternship.Core.Managers
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
 
             if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
+            {
+                return false;
+            }
+            // No action if in spawning animation
+            if (internAI.IsSpawningAnimationRunning())
             {
                 return false;
             }
@@ -606,6 +685,11 @@ namespace LethalInternship.Core.Managers
             foreach (IInternAI internAI in internAIs)
             {
                 if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
+                {
+                    continue;
+                }
+                // No action if in spawning animation
+                if (internAI.IsSpawningAnimationRunning())
                 {
                     continue;
                 }
