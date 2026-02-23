@@ -4,12 +4,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship", "LethalInternship\LethalInternship.csproj", "{16D11CFF-034B-4CB5-A919-872F684C3788}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3575DA3F-76AF-4E06-ADA3-6A9CE6D49058} = {3575DA3F-76AF-4E06-ADA3-6A9CE6D49058}
+		{8813FA0E-CA6D-4884-A1B2-8BA6CBC15EA2} = {8813FA0E-CA6D-4884-A1B2-8BA6CBC15EA2}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship.Core", "LethalInternship.Core\LethalInternship.Core.csproj", "{8813FA0E-CA6D-4884-A1B2-8BA6CBC15EA2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3575DA3F-76AF-4E06-ADA3-6A9CE6D49058} = {3575DA3F-76AF-4E06-ADA3-6A9CE6D49058}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship.SharedAbstractions", "LethalInternship.SharedAbstractions\LethalInternship.SharedAbstractions.csproj", "{3575DA3F-76AF-4E06-ADA3-6A9CE6D49058}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LethalInternship.Patches", "LethalInternship.Patches\LethalInternship.Patches.csproj", "{F2F80837-6EA0-4482-A72E-9536B7AD33F3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3575DA3F-76AF-4E06-ADA3-6A9CE6D49058} = {3575DA3F-76AF-4E06-ADA3-6A9CE6D49058}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C59DCE14-46AD-43BA-960F-D92188EBC289}"
 	ProjectSection(SolutionItems) = preProject

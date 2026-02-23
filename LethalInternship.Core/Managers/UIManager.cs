@@ -59,10 +59,8 @@ namespace LethalInternship.Core.Managers
         // Outlines
         private IInternAI? currentPointedIntern = null;
         private bool allowMultipleInternOutline = false;
-        private IInternAI? bestPointedIntern = null;
-        private float bestScore = float.MaxValue;
         private float angleWeight = 1.0f;
-        private float distanceWeight = 0.1f;
+        private float distanceWeight = 0.5f;
         private float timerUpdateTooltips;
 
         private void Awake()
@@ -471,12 +469,12 @@ namespace LethalInternship.Core.Managers
                         tooltipsToAdd);
         }
 
-        string MakeTooltip(string id, string text)
+        private string MakeTooltip(string id, string text)
         {
             return $"\n<size=0>{TT_START}{id}></size>{text}";
         }
 
-        void SetTooltips(TextMeshProUGUI tmp,
+        private void SetTooltips(TextMeshProUGUI tmp,
                          bool isSeparatorToAdd,
                          List<(string id, string text)> tooltips)
         {
@@ -502,7 +500,7 @@ namespace LethalInternship.Core.Managers
             tmp.text = sb.ToString();
         }
 
-        string StripAllTooltips(string src)
+        private string StripAllTooltips(string src)
         {
             // remove all rows with <tt id=...>
             while (true)
@@ -528,7 +526,7 @@ namespace LethalInternship.Core.Managers
             return src.TrimEnd('\n');
         }
 
-        string RemoveSeparator(string src)
+        private string RemoveSeparator(string src)
         {
             int s = src.IndexOf(SEPARATOR);
             if (s < 0)
@@ -608,14 +606,19 @@ namespace LethalInternship.Core.Managers
 
         private void UpdateCurrentPointedIntern()
         {
-            bestPointedIntern = null;
-            bestScore = float.MaxValue;
+            // Look for almost pointed on intern
+            IInternAI? bestPointedIntern = FindPointedIntern(tightAngle: true);
+            if (bestPointedIntern != null)
+            {
+                currentPointedIntern = bestPointedIntern;
+                return;
+            }
 
             // Keep pointed intern outline from flickering between other interns
             if (currentPointedIntern == null
                 || !IsPointedInternStillValid(currentPointedIntern))
             {
-                FindPointedIntern();
+                currentPointedIntern = FindPointedIntern(tightAngle: false);
             }
         }
 
@@ -652,19 +655,19 @@ namespace LethalInternship.Core.Managers
 
             float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
             float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position + new Vector3(0f, 1f, 0f));
-            float allowedAngle = GetAllowedAngle(distance) + 1f; // anti flickering margin
+            float allowedAngle = GetAllowedAngle(distance, tightAngle: false) + 1.5f; // anti flickering margin
 
             return angle <= allowedAngle
                 && HasPlayerLineOfSightOnIntern(internAI);
         }
 
-        private float GetAllowedAngle(float distance)
+        private float GetAllowedAngle(float distance, bool tightAngle)
         {
-            float minDistance = 2f;   // very close
+            float minDistance = 1f;   // very close
             float maxDistance = 50f;  // far
 
-            float maxAngleClose = 25f; // degrees when very close
-            float maxAngleFar = 7f;  // degrees when far
+            float maxAngleClose = tightAngle ? 7f : 20f; // degrees when very close
+            float maxAngleFar = tightAngle ? 2.5f : 5f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
             return Mathf.Lerp(maxAngleClose, maxAngleFar, t);
@@ -673,13 +676,17 @@ namespace LethalInternship.Core.Managers
         private bool HasPlayerLineOfSightOnIntern(IInternAI internAI)
         {
             return !Physics.Linecast(StartOfRound.Instance.localPlayerController.gameplayCamera.transform.position,
-                                     internAI.Npc.transform.position + new Vector3(0f, 1f, 0f),
+                                     internAI.Npc.transform.position
+                                        + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f),
                                      StartOfRound.Instance.collidersAndRoomMaskAndDefault,
                                      QueryTriggerInteraction.Ignore);
         }
 
-        private void FindPointedIntern()
+        private IInternAI? FindPointedIntern(bool tightAngle)
         {
+            IInternAI? bestPointedIntern = null;
+            float bestScore = float.MaxValue;
+
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
             IInternAI[] internAIs = InternManager.Instance.GetAliveAndSpawnInternsAI();
             foreach (IInternAI internAI in internAIs)
@@ -695,8 +702,9 @@ namespace LethalInternship.Core.Managers
                 }
 
                 float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
-                float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position + new Vector3(0f, 1f, 0f));
-                float allowedAngle = GetAllowedAngle(distance);
+                float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position
+                                                                                               + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f));
+                float allowedAngle = GetAllowedAngle(distance, tightAngle);
 
                 if (angle > allowedAngle)
                 {
@@ -716,7 +724,7 @@ namespace LethalInternship.Core.Managers
                     bestPointedIntern = internAI;
                 }
             }
-            currentPointedIntern = bestPointedIntern;
+            return bestPointedIntern;
         }
 
         #endregion
