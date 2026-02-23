@@ -6,12 +6,12 @@ namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandsMainUIController : MonoBehaviour
     {
-        public CommandsPanelController CommandsPanelController;
-        public TextMeshProUGUI TitleListInterns;
-        public TextMeshProUGUI ListInterns;
-        public TextMeshProUGUI ModNamePanelDescription;
+        public CommandsPanelController CommandsPanelController = null!;
+        public TextMeshProUGUI TitleListInterns = null!;
+        public TextMeshProUGUI ListInterns = null!;
+        public TextMeshProUGUI ModNamePanelDescription = null!;
 
-        private TMP_FontAsset font;
+        private TMP_FontAsset font = null!;
 
         void Start()
         {

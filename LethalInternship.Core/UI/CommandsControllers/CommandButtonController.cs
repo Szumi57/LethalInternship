@@ -10,9 +10,9 @@ namespace LethalInternship.Core.UI.CommandsControllers
         public event EventHandler OnSelected = null!;
 
         public int ID;
-        public Image CommandFrameImage;
-        public Image CommandIcon;
-        public Sprite[] UsedSpritesInAnimation;
+        public Image CommandFrameImage = null!;
+        public Image CommandIcon = null!;
+        public Sprite[] UsedSpritesInAnimation = null!;
 
         public bool IsNotAvailable;
         public bool IsHovered;

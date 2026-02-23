@@ -12,7 +12,7 @@ namespace LethalInternship.Core.BehaviorTree
         /// <summary>
         /// Last node created.
         /// </summary>
-        private IBehaviourTreeNode curNode = null;
+        private IBehaviourTreeNode curNode = null!;
 
         /// <summary>
         /// Stack node nodes that we are build via the fluent API.

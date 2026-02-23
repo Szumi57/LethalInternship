@@ -7,9 +7,9 @@ namespace LethalInternship.Core.UI.Outlines
     {
         private class OutlineInstance
         {
-            public GameObject go;
-            public SkinnedMeshRenderer renderer;
-            public MaterialPropertyBlock mpb;
+            public GameObject go = null!;
+            public SkinnedMeshRenderer renderer = null!;
+            public MaterialPropertyBlock mpb = null!;
             public Color color;
         }
 

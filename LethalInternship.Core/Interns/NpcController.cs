@@ -144,7 +144,7 @@ namespace LethalInternship.Core.Interns
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
-        private Transform movingTargetToLookAt;
+        private Transform movingTargetToLookAt = null!;
         private Vector3 lastDirectionToLookAt;
         private Quaternion cameraRotationToUpdateLookAt;
 

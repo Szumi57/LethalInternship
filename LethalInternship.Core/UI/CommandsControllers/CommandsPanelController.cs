@@ -9,8 +9,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandsPanelController : MonoBehaviour
     {
-        public CommandButtonController[] CommandButtons;
-        public TextMeshProUGUI CommandDescription;
+        public CommandButtonController[] CommandButtons = null!;
+        public TextMeshProUGUI CommandDescription = null!;
 
         // Start is called before the first frame update
         void Start()

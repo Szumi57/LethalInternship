@@ -16,7 +16,7 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// <summary>
         /// The child to be inverted.
         /// </summary>
-        private IBehaviourTreeNode childNode;
+        private IBehaviourTreeNode childNode = null!;
 
         public List<IPrintableNode> PrintableChildren
         {

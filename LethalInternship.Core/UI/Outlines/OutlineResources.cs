@@ -4,8 +4,8 @@ namespace LethalInternship.Core.UI.Outlines
 {
     public static class OutlineResources
     {
-        public static Material SilhouetteMaterial;
-        public static Material RimOutlineMaterial;
+        public static Material SilhouetteMaterial = null!;
+        public static Material RimOutlineMaterial = null!;
 
         public static void Init(Material silhouetteMaterial)
         {

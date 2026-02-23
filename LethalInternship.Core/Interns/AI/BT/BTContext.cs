@@ -6,12 +6,12 @@ namespace LethalInternship.Core.Interns.AI.BT
 {
     public class BTContext
     {
-        public InternAI InternAI { get; set; }
+        public InternAI InternAI { get; set; } = null!;
 
-        public PathController PathController { get; set; }
-        public DJKPointMapper DJKPointMapper { get; set; }
+        public PathController PathController { get; set; } = null!;
+        public DJKPointMapper DJKPointMapper { get; set; } = null!;
 
-        public SearchCoroutineController searchForPlayers { get; set; }
+        public SearchCoroutineController searchForPlayers { get; set; } = null!;
 
         public EnemyAI? CurrentEnemy;
 
@@ -23,9 +23,9 @@ namespace LethalInternship.Core.Interns.AI.BT
         // No use for now, target always known
         public Vector3? TargetLastKnownPosition;
 
-        public CoroutineController PanikCoroutine { get; set; }
-        public CoroutineController LookingAroundCoroutineController { get; set; }
-        public CoroutineController searchingWanderCoroutineController { get; set; }
-        public CoroutineController CalculatePathCoroutineController { get; set; }
+        public CoroutineController PanikCoroutine { get; set; } = null!;
+        public CoroutineController LookingAroundCoroutineController { get; set; } = null!;
+        public CoroutineController searchingWanderCoroutineController { get; set; } = null!;
+        public CoroutineController CalculatePathCoroutineController { get; set; } = null!;
     }
 }
