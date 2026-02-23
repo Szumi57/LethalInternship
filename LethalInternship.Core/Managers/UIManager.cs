@@ -663,11 +663,11 @@ namespace LethalInternship.Core.Managers
 
         private float GetAllowedAngle(float distance, bool tightAngle)
         {
-            float minDistance = 1f;   // very close
-            float maxDistance = 50f;  // far
+            float minDistance = Mathf.Pow(1f, 2);   // very close
+            float maxDistance = Mathf.Pow(15f, 2);  // far
 
-            float maxAngleClose = tightAngle ? 7f : 20f; // degrees when very close
-            float maxAngleFar = tightAngle ? 2.5f : 5f;  // degrees when far
+            float maxAngleClose = tightAngle ? 10f : 20f; // degrees when very close
+            float maxAngleFar = tightAngle ? 1f : 4f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
             return Mathf.Lerp(maxAngleClose, maxAngleFar, t);

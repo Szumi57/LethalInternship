@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+﻿using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,9 +9,6 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
     public class InputIconUIController : MonoBehaviour
     {
         private RectTransform rectTransformIcon = null!;
-
-        private bool isIconInCenter;
-        public bool IsIconInCenter { get => isIconInCenter; }
 
         private GameObject ImageTopPrefab = null!;
         private Image ImageTop = null!;
