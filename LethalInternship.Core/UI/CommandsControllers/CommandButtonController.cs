@@ -1,5 +1,7 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,72 +9,90 @@ namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandButtonController : MonoBehaviour
     {
-        public event EventHandler OnSelected = null!;
+        public System.Action<EnumInputAction> OnSelected = null!;
 
-        public int ID;
-        public Image CommandFrameImage = null!;
-        public Image CommandIcon = null!;
-        public Sprite[] UsedSpritesInAnimation = null!;
+        public EnumInputAction TypeInputAction;
+        public Image BgImage = null!;
+        public Image IconImage = null!;
+        public TextMeshProUGUI TMPDescription = null!;
+
+        private float transparency = 1f;
 
         public bool IsNotAvailable;
-        public bool IsHovered;
 
-        // Start is called before the first frame update
+        void OnEnable()
+        {
+            SetButtonNotHovered();
+            SetTMPDescriptionFont(UIManager.Instance.FontToUse);
+        }
+
         void Start()
         {
-            if (CommandFrameImage == null)
-            {
-                CommandFrameImage = GetComponent<Image>();
-            }
-            CommandFrameImage.sprite = UsedSpritesInAnimation[(int)SpriteForAnimation.WheelButtonFrameSelected];
-            SetAlpha(CommandFrameImage, 0f);
-
-            if (CommandIcon == null)
-            {
-                CommandIcon = GetComponentInChildren<Image>();
-            }
-
-            if (UsedSpritesInAnimation == null
-                || UsedSpritesInAnimation.Length == 0)
-            {
-                PluginLoggerHook.LogDebug?.Invoke("No UsedSpritesInAnimation found !");
-            }
+            SetAlpha(IconImage, 1f);
+            SetButtonNotHovered();
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (UsedSpritesInAnimation == null
-                || UsedSpritesInAnimation.Length == 0)
-            {
-                return;
-            }
-
             // Transparency
-            float transparency = 1f;
             if (IsNotAvailable)
             {
-                transparency = 0.2f;
+                SetAlpha(IconImage, 0.2f);
+                SetAlpha(IconImage, 0.2f);
             }
-
-            if (CommandIcon != null
-                && CommandIcon.color.a != transparency)
+            else
             {
-                SetAlpha(CommandIcon, transparency);
+                SetAlpha(IconImage, transparency);
+                SetAlpha(IconImage, transparency);
             }
         }
 
         private void SetAlpha(Image image, float transparency)
         {
-            Color alpha = image.color;
-            alpha.a = transparency;
-            image.color = alpha;
+            if (image != null
+                && image.color.a != transparency)
+            {
+                Color alpha = image.color;
+                alpha.a = transparency;
+                image.color = alpha;
+            }
+        }
+
+        private void SetTMPDescriptionText(string text)
+        {
+            if (TMPDescription != null)
+            {
+                TMPDescription.text = text;
+            }
+        }
+
+        private void SetTMPDescriptionFont(TMP_FontAsset font)
+        {
+            if (TMPDescription != null)
+            {
+                TMPDescription.font = font;
+            }
+        }
+
+        private void SetButtonHovered()
+        {
+            SetAlpha(BgImage, 1f);
+            if ((int)TypeInputAction < UIConst.COMMANDS_BUTTON_STRING.Length)
+            {
+                SetTMPDescriptionText(UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction]);
+            }
+        }
+
+        private void SetButtonNotHovered()
+        {
+            SetAlpha(BgImage, 0f);
+            SetTMPDescriptionText(string.Empty);
         }
 
         public void Selected()
         {
-            DrawButtonNotHovered();
-            OnSelected?.Invoke(this, null);
+            OnSelected?.Invoke(TypeInputAction);
         }
 
         public void MouseOver()
@@ -82,9 +102,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
                 return;
             }
 
-            IsHovered = true;
-
-            DrawButtonHovered();
+            SetButtonHovered();
         }
 
         public void MouseLeave()
@@ -94,27 +112,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
                 return;
             }
 
-            IsHovered = false;
-
-            DrawButtonNotHovered();
+            SetButtonNotHovered();
         }
-
-        private void DrawButtonHovered()
-        {
-            SetAlpha(CommandFrameImage, 1f);
-            CommandIcon.color = new Color(0f, 0f, 0f);
-        }
-
-        private void DrawButtonNotHovered()
-        {
-            SetAlpha(CommandFrameImage, 0f);
-            CommandIcon.color = new Color(255 / 255f, 255 / 255f, 255 / 255f);
-        }
-    }
-
-    public enum SpriteForAnimation
-    {
-        WheelButtonFrameUnselected,
-        WheelButtonFrameSelected
     }
 }

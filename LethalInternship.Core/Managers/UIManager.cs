@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.UI.CommandsControllers;
+using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
@@ -14,8 +15,6 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -30,10 +29,13 @@ namespace LethalInternship.Core.Managers
     {
         public static UIManager Instance { get; private set; } = null!;
 
-        // Commands wheel
-        public GameObject MainUICommands = null!;
-        public bool IsMainUICommandsOpened { get { return MainUICommands != null && MainUICommands.activeSelf; } }
-        private CommandsMainUIController CommandsUIController = null!;
+        // Commands panel
+        public GameObject CommandsAll = null!;
+        public bool IsCommandsAllOpened { get { return CommandsAll != null && CommandsAll.activeSelf; } }
+
+        public TMP_FontAsset FontToUse => HUDManager.Instance.statsUIElements.playerNamesText[0].font;
+
+        private CommandsAllController CommandsAllUIController = null!;
 
         // Canvas overlay
         public Canvas CanvasOverlay = null!;
@@ -53,8 +55,6 @@ namespace LethalInternship.Core.Managers
         private bool InternsOwned;
         private IPointOfInterest? PointOfInterestInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
-        private Coroutine CoroutineUpdateRightPanel = null!;
-        private IInternAI? internAIToManage;
 
         // Outlines
         private IInternAI? currentPointedIntern = null;
@@ -107,7 +107,7 @@ namespace LethalInternship.Core.Managers
 
             switch (InputManager.Instance.CurrentInputAction)
             {
-                case EnumInputAction.GoToPosition:
+                case EnumInputAction.PointToAction:
                     localPlayerController.cursorTip.text = UIConst.UI_CHOOSE_LOCATION;
                     break;
 
@@ -210,27 +210,24 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool ??= new InputIconUIPool(CanvasOverlay);
 
             // Instantiating prefabs
-            MainUICommands = GameObject.Instantiate(PluginRuntimeProvider.Context.MainUICommands, HUDContainerParent);
-            foreach (CommandButtonController commandButtonController in MainUICommands.GetComponentsInChildren<CommandButtonController>())
+            CommandsAll = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
+            foreach (CommandButtonController commandButtonController in CommandsAll.GetComponentsInChildren<CommandButtonController>())
             {
-                if (commandButtonController == null)
-                {
-                    continue;
-                }
-
-                PluginLoggerHook.LogDebug?.Invoke($"MainUICommands commandButtonController id {commandButtonController.ID} event linkin");
+                PluginLoggerHook.LogDebug?.Invoke($"CommandsAll commandButtonController id {commandButtonController.TypeInputAction} event linkin");
                 commandButtonController.OnSelected += CommandWheelButtonController_OnSelected;
             }
-            CommandsUIController = MainUICommands.GetComponent<CommandsMainUIController>();
-            CommandsUIController.SetFont(HUDManager.Instance.statsUIElements.playerNamesText[0].font);
-            MainUICommands.SetActive(false);
+            foreach (ButtonDualSwitchParentController dualSwitchController in CommandsAll.GetComponentsInChildren<ButtonDualSwitchParentController>())
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"CommandsAll dualSwitchController event linkin");
+                dualSwitchController.OnDualSwitchSelected += DualSwitchController_OnSelected;
+            }
+
+            CommandsAllUIController = CommandsAll.GetComponent<CommandsAllController>();
+            CommandsAll.SetActive(false);
         }
 
-        private void CommandWheelButtonController_OnSelected(object sender, EventArgs e)
+        private void CommandWheelButtonController_OnSelected(EnumInputAction typeInputAction)
         {
-            CommandButtonController commandButtonController = (CommandButtonController)sender;
-            PluginLoggerHook.LogDebug?.Invoke($"CommandButtonController? sender {commandButtonController.ID} {(EnumInputAction)commandButtonController.ID}, e {e}, interns ? {InternsOwned}");
-
             if (!InternsOwned)
             {
                 HideCommandsWheel();
@@ -238,26 +235,38 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            EnumInputAction enumInputAction = (EnumInputAction)commandButtonController.ID;
-            if (enumInputAction != EnumInputAction.None)
+            if (typeInputAction != EnumInputAction.None)
             {
                 HideCommandsWheel();
             }
-            switch (enumInputAction)
+            switch (typeInputAction)
             {
-                case EnumInputAction.GoToPosition:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
+                case EnumInputAction.PointToAction:
+                    InputManager.Instance.SetCurrentInputAction(typeInputAction, currentPointedIntern);
                     SetPedestrianInputIcon();
                     break;
 
                 case EnumInputAction.FollowMe:
                 case EnumInputAction.GoToShip:
                 case EnumInputAction.GoToVehicle:
-                case EnumInputAction.Scavenging:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
+                case EnumInputAction.ScavengeToShip:
+                    InputManager.Instance.SetCurrentInputAction(typeInputAction, currentPointedIntern);
                     break;
 
                 default:
+                    break;
+            }
+        }
+
+        private void DualSwitchController_OnSelected((EnumInputAction, EnumClickSide) args)
+        {
+            switch (args.Item1)
+            {
+                case EnumInputAction.SetToAutoFlee:
+                    PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto flee");
+                    break;
+                case EnumInputAction.SetToAutoDefense:
+                    PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto defense");
                     break;
             }
         }
@@ -335,41 +344,34 @@ namespace LethalInternship.Core.Managers
 
         //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel {GroupCommandWheel.activeSelf}");
 
-        public bool ShowCommandsWheel(IInternAI? internAIToManage = null)
+        public IInternAI? ShowCommandsWheel()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
-                return false;
+                return null;
             }
             if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
             {
-                return false;
+                return null;
             }
             if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length == 0)
             {
-                return false;
+                return null;
             }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            InputManager.Instance.SetCurrentInputAction(EnumInputAction.None, internAIToManage);
-            this.internAIToManage = internAIToManage;
+            InputManager.Instance.SetCurrentInputAction(EnumInputAction.None, currentPointedIntern);
 
-            if (CoroutineUpdateRightPanel != null)
-            {
-                StopCoroutine(CoroutineUpdateRightPanel);
-            }
-            CoroutineUpdateRightPanel = StartCoroutine(UpdateCommandsWheelUI(internAIToManage));
-
-            MainUICommands.SetActive(true);
-            return true;
+            CommandsAll.SetActive(true);
+            return currentPointedIntern;
         }
 
         public void HideCommandsWheel()
         {
-            if (!IsMainUICommandsOpened)
+            if (!IsCommandsAllOpened)
             {
                 return;
             }
@@ -378,7 +380,7 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            MainUICommands.SetActive(false);
+            CommandsAll.SetActive(false);
         }
 
         public void ClearCursorTipText()
@@ -386,44 +388,6 @@ namespace LethalInternship.Core.Managers
             if (localPlayerController.cursorTip.text == UIConst.UI_CHOOSE_LOCATION)
             {
                 localPlayerController.cursorTip.text = string.Empty;
-            }
-        }
-
-        private IEnumerator UpdateCommandsWheelUI(IInternAI? internAIToManage)
-        {
-            yield return null;
-
-            while (IsMainUICommandsOpened)
-            {
-                // Buttons
-                CommandButtonController? commandWheelController = CommandsUIController.CommandsPanelController.GetGoToVehicleButton();
-                if (commandWheelController != null)
-                {
-                    commandWheelController.IsNotAvailable = InternManager.Instance.VehicleController == null;
-                }
-
-                // Right panel
-                if (internAIToManage == null)
-                {
-                    IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
-                    CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_INTERNS);
-
-                    StringBuilder sb = new StringBuilder();
-                    foreach (IInternAI intern in internsOwned)
-                    {
-                        sb.Append("> ");
-                        sb.Append(intern.Npc.playerUsername);
-                        sb.Append("\n");
-                    }
-                    CommandsUIController.SetTextListInterns(sb.ToString());
-                }
-                else
-                {
-                    CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_SINGLE_INTERN);
-                    CommandsUIController.SetTextListInterns("> " + internAIToManage.Npc.playerUsername);
-                }
-
-                yield return null;
             }
         }
 

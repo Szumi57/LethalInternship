@@ -61,7 +61,7 @@ namespace LethalInternship
 
         // UI
         internal static bool UIAssetsLoaded = false;
-        public static GameObject MainUICommands = null!;
+        public static GameObject CommandsAll = null!;
 
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
@@ -220,10 +220,10 @@ namespace LethalInternship
         private bool LoadUIPrefabs()
         {
             // Commands wheel
-            MainUICommands = Plugin.ModAssets.LoadAsset<GameObject>("MainUICommands");
-            if (MainUICommands == null)
+            CommandsAll = Plugin.ModAssets.LoadAsset<GameObject>("CommandsAll");
+            if (CommandsAll == null)
             {
-                Logger.LogError($"Failed to load MainUICommands prefab.");
+                Logger.LogError($"Failed to load CommandsAll prefab.");
                 return false;
             }
 
@@ -243,12 +243,12 @@ namespace LethalInternship
             }
 
             // Images prefabs
-            PointerIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PointerIconImage");
-            if (PointerIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load PointerIconImage UI prefab.");
-                return false;
-            }
+            //PointerIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PointerIconImage");
+            //if (PointerIconImagePrefab == null)
+            //{
+            //    Logger.LogError($"Failed to load PointerIconImage UI prefab.");
+            //    return false;
+            //}
 
             DefaultIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("DefaultIconImage");
             if (DefaultIconImagePrefab == null)
@@ -278,26 +278,26 @@ namespace LethalInternship
                 return false;
             }
 
-            MeetingPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("MeetingPointIconImage");
-            if (MeetingPointIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load MeetingPointIconImage UI prefab.");
-                return false;
-            }
+            //MeetingPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("MeetingPointIconImage");
+            //if (MeetingPointIconImagePrefab == null)
+            //{
+            //    Logger.LogError($"Failed to load MeetingPointIconImage UI prefab.");
+            //    return false;
+            //}
 
-            GatheringPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("GatheringPointIconImage");
-            if (GatheringPointIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load GatheringPointIconImage UI prefab.");
-                return false;
-            }
+            //GatheringPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("GatheringPointIconImage");
+            //if (GatheringPointIconImagePrefab == null)
+            //{
+            //    Logger.LogError($"Failed to load GatheringPointIconImage UI prefab.");
+            //    return false;
+            //}
 
-            AttackIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackIconImage");
-            if (AttackIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load AttackIconImage UI prefab.");
-                return false;
-            }
+            //AttackIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackIconImage");
+            //if (AttackIconImagePrefab == null)
+            //{
+            //    Logger.LogError($"Failed to load AttackIconImage UI prefab.");
+            //    return false;
+            //}
 
             return true;
         }
@@ -713,7 +713,7 @@ namespace LethalInternship
         public EnemyType InternNPCPrefab => Plugin.InternNPCPrefab;
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
-        public GameObject MainUICommands => Plugin.MainUICommands;
+        public GameObject CommandsAll => Plugin.CommandsAll;
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;

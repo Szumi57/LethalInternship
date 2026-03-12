@@ -36,7 +36,7 @@ namespace LethalInternship.Core.UI.Outlines
                            shouldOutline,
                            intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
                            rimPower,
-                           color: UIConst.OUTLINE_COLOR_DEFAULT);
+                           color: UIConst.UI_COLOR_DEFAULT);
             }
         }
 

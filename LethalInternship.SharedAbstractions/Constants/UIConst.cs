@@ -4,11 +4,14 @@ namespace LethalInternship.SharedAbstractions.Constants
 {
     public class UIConst
     {
+        public static Color UI_COLOR_DEFAULT = new Color(255 / 255f, 52 / 255f, 1 / 255f); // 255 52 1 orange kinda lethalcompany
+        public static Color UI_COLOR_BLACK = new Color(0f, 0f, 0f); // black
+
         public static string UI_CHOOSE_LOCATION = "Choose this location";
 
+        public static string UI_TITLE_COMMANDS_ALL = "Commands :";
         public static string UI_TITLE_LIST_INTERNS = "Interns close :";
         public static string UI_TITLE_LIST_SINGLE_INTERN = "Managing intern :";
-
 
         // Cursor tooltips
         public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
@@ -21,19 +24,26 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
 
         public static string[] COMMANDS_BUTTON_STRING = {
-            string.Empty, // 0 EnumInputAction
-            "Choose a position", // 1 GoToPosition
-            "Follow me", // 2 FollowMe
-            "Go to the cruiser", // 3 GoToShip
-            "Go to the vehicle", // 4 GoToVehicle
-            "",
-            "",
-            "",
-            "Go scavenging" // 8 Scavenging
+            string.Empty,
+            "Follow me",// FollowMe
+            "Point to action",// PointToAction
+            "Attack an enemy",// PointToAttack
+            "Get this item",// PointToItem
+            "Flee when an enemy is near ",// SetToAutoFlee
+            "Try to attack when an enemy is near",// SetToAutoDefense
+            "Drop held item",// DropItem
+            "Drop all items",// DropAllItems
+            "Go to the ship",// GoToShip
+            "Set new gathering point",// SetGatheringPoint
+            "Go to the gathering point",// GoToGatheringPoint
+            "Remove the gathering point",// RemoveGatheringPoint
+            "Go to the cruiser",// GoToVehicle
+            "Scavenge and return to ship",// ScavengeToShip
+            "Scavenge and return to the gathering point", // ScavengeToGatheringPoint
+            "Scavenge and return to the cruiser", // ScavengeToCruiser
         };
 
         // Outlines
-        public static Color OUTLINE_COLOR_DEFAULT = new Color(255 / 255f, 111 / 255f, 1 / 255f); // 255 111 1
         public static float OUTLINE_RIM_DEFAULT = 5f;
         public static float OUTLINE_RIM_SOLID = 0.1f;
         public static float DISTANCE_SOLID_OUTLINE = 15f;

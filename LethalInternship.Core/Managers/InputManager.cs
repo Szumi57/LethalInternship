@@ -99,7 +99,7 @@ namespace LethalInternship.Core.Managers
 
             switch (CurrentInputAction)
             {
-                case EnumInputAction.GoToPosition:
+                case EnumInputAction.PointToAction:
                     StartScanPositionCoroutine();
                     UIManager.Instance.ShowInputIcon(isPointedValid);
                     break;
@@ -119,7 +119,7 @@ namespace LethalInternship.Core.Managers
                     SetCurrentInputAction(EnumInputAction.None);
                     break;
 
-                case EnumInputAction.Scavenging:
+                case EnumInputAction.ScavengeToShip:
                     GiveOrderGoScavenging();
                     SetCurrentInputAction(EnumInputAction.None);
                     break;
@@ -414,45 +414,8 @@ namespace LethalInternship.Core.Managers
 
             StopScanPositionCoroutine();
             openCommandsInternInputIsPressed = true;
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
-            // Check if pointing intern
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                // Command single intern
-                if (UIManager.Instance.ShowCommandsWheel(intern))
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern {intern.Npc.playerUsername}");
-                    currentCommandedIntern = intern;
-                }
-                return;
-            }
-
-            // Command all close interns
-            if (UIManager.Instance.ShowCommandsWheel())
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
-                currentCommandedIntern = null;
-            }
+            currentCommandedIntern = UIManager.Instance.ShowCommandsWheel();
         }
 
         private void StartScanPositionCoroutine()
@@ -476,7 +439,7 @@ namespace LethalInternship.Core.Managers
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
-            while (CurrentInputAction == EnumInputAction.GoToPosition)
+            while (CurrentInputAction == EnumInputAction.PointToAction)
             {
                 isPointedValid = false;
                 lastColliderHit = null;

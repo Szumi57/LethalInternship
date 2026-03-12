@@ -3,13 +3,21 @@
     public enum EnumInputAction
     {
         None = 0,
-        GoToPosition,
         FollowMe,
+        PointToAction,
+        PointToAttack,
+        PointToItem,
+        SetToAutoFlee,
+        SetToAutoDefense,
+        DropItem,
+        DropAllItems,
         GoToShip,
-        GoToVehicle,
-        SetMeetingPoint,
         SetGatheringPoint,
-        Attack,
-        Scavenging
+        GoToGatheringPoint,
+        RemoveGatheringPoint,
+        GoToVehicle,
+        ScavengeToShip,
+        ScavengeToGatheringPoint,
+        ScavengeToCruiser,
     }
 }

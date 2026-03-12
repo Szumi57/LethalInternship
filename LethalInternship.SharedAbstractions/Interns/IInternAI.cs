@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.Enums;
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -81,6 +82,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SyncReleaseIntern(PlayerControllerB playerGrabberController);
         void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget);
         void GrabInternServerRpc(ulong idPlayerGrabberController);
+
+        Action<IInternAI> OnHeldItemsChanged { get; set; }
+        int GetNbHeldItems();
         void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
         void GrabItem(GrabbableObject grabbableObject);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);

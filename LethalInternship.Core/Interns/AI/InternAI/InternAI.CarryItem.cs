@@ -5,6 +5,7 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
@@ -17,6 +18,9 @@ namespace LethalInternship.Core.Interns.AI
     public partial class InternAI
     {
         public HeldItems HeldItems { get; set; } = new HeldItems();
+
+        public Action<IInternAI> OnHeldItemsChanged { get { return onHeldItemsChanged; } set { onHeldItemsChanged = value; } }
+        private Action<IInternAI> onHeldItemsChanged = null!;
 
         private Transform WeaponHolderTransform = null!;
         private bool HasWeaponAsPrimary = false;
@@ -80,6 +84,11 @@ namespace LethalInternship.Core.Interns.AI
         public bool IsHoldingTwoHandedItem()
         {
             return HeldItems.IsHoldingTwoHandedItem();
+        }
+
+        public int GetNbHeldItems()
+        {
+            return HeldItems.NbHeldItems;
         }
 
         private bool ShouldUseTwoHandedHoldAnim(bool ignoreHeldWeapon = true)
@@ -336,6 +345,9 @@ namespace LethalInternship.Core.Interns.AI
             }
             grabObjectCoroutine = StartCoroutine(GrabAnimationCoroutine(grabbableObject));
 
+            // Event
+            OnHeldItemsChanged?.Invoke(this);
+
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} Grabbed item {grabbableObject} on client #{NetworkManager.LocalClientId}");
         }
 
@@ -501,6 +513,9 @@ namespace LethalInternship.Core.Interns.AI
                     TargetFloorPosition = targetFloorPosition
                 });
             }
+
+            // Event
+            OnHeldItemsChanged?.Invoke(this);
         }
 
         public GrabbableObject? ChooseFirstPickedUpItem(EnumOptionsGetItems options)
@@ -1003,6 +1018,9 @@ namespace LethalInternship.Core.Interns.AI
 
             // Intern grab item
             GrabItem(grabbableObject);
+
+            // Event
+            OnHeldItemsChanged?.Invoke(this);
         }
 
         #endregion
