@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
@@ -41,7 +42,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Success;
             }
 
-            if (!context.InternAI.IsGrabbableObjectGrabbable(context.TargetItem))
+            if (!context.InternAI.CanHoldItem(context.TargetItem)
+                || !InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
             {
                 context.TargetItem = null;
                 ai.TryPlayCantDoCommandVoiceAudio();

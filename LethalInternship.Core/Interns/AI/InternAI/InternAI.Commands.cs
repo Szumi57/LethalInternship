@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.BT;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
@@ -24,6 +25,11 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             return this.PointOfInterest;
+        }
+
+        public void AssignOrder(Order order)
+        {
+            order.ApplyTo(this);
         }
 
         public void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true)

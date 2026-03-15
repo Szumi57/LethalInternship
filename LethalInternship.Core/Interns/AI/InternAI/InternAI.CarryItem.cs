@@ -252,7 +252,7 @@ namespace LethalInternship.Core.Interns.AI
 
             if (!itemGiven)
             {
-                if (!IsGrabbableObjectGrabbable(grabbableObject))
+                if (!InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject))
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
                     return;

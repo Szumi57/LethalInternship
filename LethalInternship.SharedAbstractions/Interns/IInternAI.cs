@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool IsEnemyDead { get; }
 
         IPointOfInterest? GetPointOfInterest();
+        void AssignOrder(Order order);
         void SetCommandToFollowPlayer(bool playVoice = true);
         void SetCommandToScavenging();
         void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);

@@ -40,6 +40,9 @@ namespace LethalInternship.PluginPatches.GameEnginePatches
             objectManager = new GameObject("UIManager");
             objectManager.AddComponent<UIManager>();
 
+            objectManager = new GameObject("TargetingManager");
+            objectManager.AddComponent<TargetingManager>();
+
             OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"));
 
             // NetworkBehaviours

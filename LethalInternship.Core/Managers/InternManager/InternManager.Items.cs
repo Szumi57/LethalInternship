@@ -1,11 +1,13 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
+using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalInternship.Core.Managers
@@ -66,6 +68,172 @@ namespace LethalInternship.Core.Managers
             }
 
             return getGrabbableObjectsListTimed.GetGrabbableObjectsList();
+        }
+
+        public List<GrabbableObject> LookingForItemsToGrabInMap()
+        {
+            var items = new List<GrabbableObject>();
+            var grabbableObjectsList = GetGrabbableObjectsList();
+            for (int i = 0; i < grabbableObjectsList.Count; i++)
+            {
+                GameObject gameObject = grabbableObjectsList[i];
+                if (gameObject == null)
+                {
+                    continue;
+                }
+
+                // Black listed ? 
+                if (IsGrabbableObjectBlackListed(gameObject))
+                {
+                    continue;
+                }
+
+                // Get grabbable object infos
+                GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
+                if (grabbableObject == null)
+                {
+                    continue;
+                }
+
+                // Grabbable object ?
+                if (!IsGrabbableObjectGrabbable(grabbableObject))
+                {
+                    continue;
+                }
+
+                items.Add(grabbableObject);
+            }
+
+            return items;
+        }
+
+        /// <summary>
+        /// Check all conditions for deciding if an item is grabbable or not.
+        /// </summary>
+        /// <param name="grabbableObject">Item to check</param>
+        /// <returns></returns>
+        public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject)
+        {
+            InternManager.Instance.TrimDictJustDroppedItems();
+
+            if (grabbableObject == null
+                || !grabbableObject.gameObject.activeSelf)
+            {
+                return false;
+            }
+
+            if (grabbableObject.isHeld
+                || !grabbableObject.grabbable
+                || grabbableObject.deactivated)
+            {
+                return false;
+            }
+
+            RagdollGrabbableObject? ragdollGrabbableObject = grabbableObject as RagdollGrabbableObject;
+            if (ragdollGrabbableObject != null)
+            {
+                if (!ragdollGrabbableObject.grabbableToEnemies)
+                {
+                    return false;
+                }
+            }
+
+            // Item just dropped, should wait a bit before grab it again
+            if (InternManager.Instance.IsGrabbableObjectJustDropped(grabbableObject))
+            {
+                // Trim dictionnary if too large
+                return false;
+            }
+
+            // Object on ship
+            if (grabbableObject.isInElevator
+                || grabbableObject.isInShipRoom)
+            {
+                return false;
+            }
+
+            // Object in cruiser vehicle
+            if (grabbableObject.transform.parent != null
+                && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
+            {
+                return false;
+            }
+
+            // Object in a container mod of some sort ?
+            if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
+            {
+                if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            // Is a pickmin (LethalMin mod) holding the object ?
+            if (PluginRuntimeProvider.Context.IsModLethalMinLoaded)
+            {
+                if (LethalMinHook.IsGrabbableObjectHeldByPikminMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
+        {
+            // Bee nest
+            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
+                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
+            {
+                return true;
+            }
+
+            // Dead bodies
+            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
+                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
+                && gameObjectToEvaluate.tag == "PhysicsProp"
+                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
+            {
+                return true;
+            }
+
+            // Maneater
+            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
+                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
+            {
+                return true;
+            }
+
+            // Wheelbarrow
+            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
+                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
+            {
+                return true;
+            }
+
+            // ShoppingCart
+            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
+                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
+            {
+                return true;
+            }
+
+            // Baby kiwi egg
+            if (!PluginRuntimeProvider.Context.Config.GrabKiwiBabyItem
+                && gameObjectToEvaluate.name.Contains("KiwiBabyItem"))
+            {
+                return true;
+            }
+
+            // Apparatus
+            if (!PluginRuntimeProvider.Context.Config.GrabApparatus
+                && gameObjectToEvaluate.name.Contains("LungApparatus"))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform)

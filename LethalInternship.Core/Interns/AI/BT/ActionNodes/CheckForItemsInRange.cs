@@ -106,7 +106,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
 
                 // Black listed ? 
-                if (ai.IsGrabbableObjectBlackListed(gameObject))
+                if (InternManager.Instance.IsGrabbableObjectBlackListed(gameObject))
                 {
                     continue;
                 }
@@ -119,7 +119,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
 
                 // Grabbable object ?
-                if (!ai.IsGrabbableObjectGrabbable(grabbableObject))
+                if (!InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject))
                 {
                     continue;
                 }

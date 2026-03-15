@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using System.Collections.Generic;
@@ -45,6 +46,8 @@ namespace LethalInternship.SharedAbstractions.Managers
         IInternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject);
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
 
+        void ExecuteOrder(Order order);
+
         void SyncLoadedJsonIdentitiesServerRpc(ulong clientId);
         void SetInternsInElevatorLateUpdate(float deltaTime);
         void UpdateAllInternsVoiceEffects();
@@ -69,6 +72,19 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         // Shovel
         bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform);
+
+        /// <summary>
+        /// Check all object array
+        /// </summary>
+        /// <returns><c>GrabbableObject</c>GrabbableObject to try to grab</returns>
+        List<GrabbableObject> LookingForItemsToGrabInMap();
+        /// <summary>
+        /// Check all conditions for deciding if an item is grabbable or not.
+        /// </summary>
+        /// <param name="grabbableObject">Item to check</param>
+        /// <returns></returns>
+        bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject);
+        bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate);
 
         List<EnemyAI> GetEnemiesList();
 

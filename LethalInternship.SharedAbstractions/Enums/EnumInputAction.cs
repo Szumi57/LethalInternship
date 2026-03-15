@@ -4,6 +4,7 @@
     {
         None = 0,
         FollowMe,
+        StayHere,
         PointToAction,
         PointToAttack,
         PointToItem,

@@ -5,7 +5,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
 {
     public class ButtonDualSwitchParentController : MonoBehaviour
     {
-        public System.Action<(EnumInputAction, EnumClickSide)> OnDualSwitchSelected = null!;
+        public static System.Action<(EnumInputAction, EnumClickSide)> OnDualSwitchSelected = null!;
 
         public ButtonDualSwitchChildController left = null!;
         public ButtonDualSwitchChildController right = null!;

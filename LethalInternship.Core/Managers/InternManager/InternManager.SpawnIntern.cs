@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
@@ -358,6 +359,13 @@ namespace LethalInternship.Core.Managers
                     radarTarget.name = internController.playerUsername;
                     break;
                 }
+            }
+
+            // Remove ignore raycast from player
+            IgnoreRaycast? ignoreRaycast = objectParent.GetComponent<IgnoreRaycast>();
+            if (ignoreRaycast != null)
+            {
+                Object.Destroy(ignoreRaycast);
             }
 
             // Init intern

@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.SharedAbstractions.Interns;
 using TMPro;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         void AttachUIToLocalPlayer(PlayerControllerB player);
 
-        IInternAI? ShowCommandsWheel();
+        void ShowAllCommands();
 
         void InitUI(Transform HUDContainerParent);
 

@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.Patches.Utils;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -151,8 +152,18 @@ namespace LethalInternship.Patches.NpcPatches
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
+                // ignore awake if intern
                 return false;
             }
+
+            // If player
+            if (__instance.gameObject.GetComponent<IgnoreRaycast>() == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke("player awake adding IgnoreRaycast !!!!!!!!");
+                __instance.gameObject.AddComponent<IgnoreRaycast>();
+            }
+
+            // contine awake if player
             return true;
         }
 

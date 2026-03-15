@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.UI.CommandsControllers;
-using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
@@ -8,6 +7,7 @@ using LethalInternship.Core.UI.Icons.WorldIcons;
 using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Core.UI.Renderers;
 using LethalInternship.Core.UI.Renderers.InterestPointsRenderer;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -59,8 +59,7 @@ namespace LethalInternship.Core.Managers
         // Outlines
         private IInternAI? currentPointedIntern = null;
         private bool allowMultipleInternOutline = false;
-        private float angleWeight = 1.0f;
-        private float distanceWeight = 0.5f;
+
         private float timerUpdateTooltips;
 
         private void Awake()
@@ -85,7 +84,7 @@ namespace LethalInternship.Core.Managers
             // Icons
             ShowWorldIconUIs();
 
-            UpdateCurrentPointedIntern();
+            //UpdateCurrentPointedIntern();
             UpdateBillBoard();
             UpdateOutlines();
 
@@ -211,33 +210,22 @@ namespace LethalInternship.Core.Managers
 
             // Instantiating prefabs
             CommandsAll = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
-            foreach (CommandButtonController commandButtonController in CommandsAll.GetComponentsInChildren<CommandButtonController>())
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"CommandsAll commandButtonController id {commandButtonController.TypeInputAction} event linkin");
-                commandButtonController.OnSelected += CommandWheelButtonController_OnSelected;
-            }
-            foreach (ButtonDualSwitchParentController dualSwitchController in CommandsAll.GetComponentsInChildren<ButtonDualSwitchParentController>())
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"CommandsAll dualSwitchController event linkin");
-                dualSwitchController.OnDualSwitchSelected += DualSwitchController_OnSelected;
-            }
-
             CommandsAllUIController = CommandsAll.GetComponent<CommandsAllController>();
             CommandsAll.SetActive(false);
         }
 
-        private void CommandWheelButtonController_OnSelected(EnumInputAction typeInputAction)
+        private void CommandButtonController_OnSelected(EnumInputAction typeInputAction)
         {
             if (!InternsOwned)
             {
-                HideCommandsWheel();
+                HideCommandsAll();
                 InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
                 return;
             }
 
             if (typeInputAction != EnumInputAction.None)
             {
-                HideCommandsWheel();
+                HideCommandsAll();
             }
             switch (typeInputAction)
             {
@@ -344,32 +332,29 @@ namespace LethalInternship.Core.Managers
 
         //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel {GroupCommandWheel.activeSelf}");
 
-        public IInternAI? ShowCommandsWheel()
+        public void ShowAllCommands()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
-                return null;
+                return;
             }
             if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
             {
-                return null;
+                return;
             }
             if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length == 0)
             {
-                return null;
+                return;
             }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            InputManager.Instance.SetCurrentInputAction(EnumInputAction.None, currentPointedIntern);
-
             CommandsAll.SetActive(true);
-            return currentPointedIntern;
         }
 
-        public void HideCommandsWheel()
+        public void HideCommandsAll()
         {
             if (!IsCommandsAllOpened)
             {
@@ -588,18 +573,24 @@ namespace LethalInternship.Core.Managers
 
         private void UpdateBillBoard()
         {
-            // Name billboard
-            if (currentPointedIntern != null)
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
             {
-                currentPointedIntern.NpcController.ShowFullNameBillboard();
+                return;
             }
+
+            // Name billboard
+            target.Value.Intern.NpcController.ShowFullNameBillboard();
         }
 
         private void UpdateOutlines()
         {
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+
             // Update intern outlines
             InternOutlineController.UpdateOutlines(InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(),
-                                                   currentPointedIntern?.Npc.playerClientId,
+                                                   target?.Intern?.Npc.playerClientId,
                                                    allowMultipleInternOutline);
         }
 
@@ -681,12 +672,12 @@ namespace LethalInternship.Core.Managers
                 }
 
                 // Score best pointed intern
-                float score = angle * angleWeight + distance * distanceWeight;
-                if (score < bestScore)
-                {
-                    bestScore = score;
-                    bestPointedIntern = internAI;
-                }
+                //float score = angle * angleWeight + distance * distanceWeight;
+                //if (score < bestScore)
+                //{
+                //    bestScore = score;
+                //    bestPointedIntern = internAI;
+                //}
             }
             return bestPointedIntern;
         }

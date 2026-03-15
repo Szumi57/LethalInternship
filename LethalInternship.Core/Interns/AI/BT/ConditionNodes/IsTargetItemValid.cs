@@ -1,4 +1,6 @@
-﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
+﻿using LethalInternship.Core.Managers;
+
+namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class IsTargetItemValid : IBTCondition
     {
@@ -8,7 +10,7 @@
             {
                 return false;
             }
-            if (!context.InternAI.IsGrabbableObjectGrabbable(context.TargetItem))
+            if (!InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
             {
                 return false;
             }

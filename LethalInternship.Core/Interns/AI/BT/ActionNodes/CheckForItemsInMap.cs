@@ -9,7 +9,6 @@ using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using Random = System.Random;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -31,7 +30,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             InternAI ai = context.InternAI;
 
             if (context.TargetItem != null
-                && ai.IsGrabbableObjectGrabbable(context.TargetItem))
+                && InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
             {
                 return BehaviourTreeStatus.Success;
             }
@@ -39,7 +38,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (itemsToCheck.Count == 0)
             {
                 itemIndex = 0;
-                itemsToCheck = LookingForItemsToGrabInMap(ai);
+                itemsToCheck = InternManager.Instance.LookingForItemsToGrabInMap();
                 context.nbItemsToCheck = count; // Count nb items to check
                 if (itemsToCheck.Count == 0)
                 {
@@ -114,47 +113,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             itemsToCheck.Clear();
             context.nbItemsToCheck = 0;
             return behaviourTreeStatus;
-        }
-
-        /// <summary>
-        /// Check all object array
-        /// </summary>
-        /// <returns><c>GrabbableObject</c>GrabbableObject to try to grab</returns>
-        private List<GrabbableObject> LookingForItemsToGrabInMap(InternAI ai)
-        {
-            var items = new List<GrabbableObject>();
-            var grabbableObjectsList = InternManager.Instance.GetGrabbableObjectsList();
-            for (int i = 0; i < grabbableObjectsList.Count; i++)
-            {
-                GameObject gameObject = grabbableObjectsList[i];
-                if (gameObject == null)
-                {
-                    continue;
-                }
-
-                // Black listed ? 
-                if (ai.IsGrabbableObjectBlackListed(gameObject))
-                {
-                    continue;
-                }
-
-                // Get grabbable object infos
-                GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
-                if (grabbableObject == null)
-                {
-                    continue;
-                }
-
-                // Grabbable object ?
-                if (!ai.IsGrabbableObjectGrabbable(grabbableObject))
-                {
-                    continue;
-                }
-
-                items.Add(grabbableObject);
-            }
-
-            return items;
         }
 
         private void CalculatePathToItem(BTContext context, GrabbableObject grabbableObject)
