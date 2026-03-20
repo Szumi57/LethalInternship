@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.UI.Icons;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.UI;
 using System;
@@ -15,7 +16,7 @@ namespace LethalInternship.Core.UI.Renderers
 
         private readonly List<Type> priorityOrder = new List<Type>()
         {
-            typeof(DefaultInterestPoint),
+            typeof(PositionInterestPoint),
             typeof(VehicleInterestPoint),
             typeof(ShipInterestPoint)
         };
@@ -30,13 +31,20 @@ namespace LethalInternship.Core.UI.Renderers
         {
             string key = string.Empty;
             var imagesPrefabs = new List<GameObject>();
-            foreach (var interestPoint in pointOfInterest.GetListInterestPoints())
+            EnumIconImagesTypes iconImagesTypes = EnumIconImagesTypes.None;
+
+            Dictionary<Type, IInterestPoint> dictTypeInterestPoint = pointOfInterest.GetDictTypeInterestPoints();
+            foreach (var type in priorityOrder)
             {
-                GameObject? imagePrefab = registery.GetImagePrefab(interestPoint);
-                if (imagePrefab != null)
+                if (dictTypeInterestPoint.TryGetValue(type, out var interestPoint))
                 {
-                    imagesPrefabs.Add(imagePrefab);
-                    key += imagePrefab.name;
+                    iconImagesTypes |= registery.GetIconImagesTypes(interestPoint);
+                    GameObject? imagePrefab = registery.GetImagePrefab(interestPoint);
+                    if (imagePrefab != null)
+                    {
+                        imagesPrefabs.Add(imagePrefab);
+                        key += imagePrefab.name;
+                    }
                 }
             }
 
@@ -45,7 +53,7 @@ namespace LethalInternship.Core.UI.Renderers
                 return iconUIInfos;
             }
 
-            dictIconInfos[key] = new IconUIInfos(key, imagesPrefabs);
+            dictIconInfos[key] = new IconUIInfos(key, imagesPrefabs, iconImagesTypes);
             return dictIconInfos[key];
         }
 

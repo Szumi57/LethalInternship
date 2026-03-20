@@ -1,5 +1,6 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+﻿using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -16,12 +17,13 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 
         private bool isIconInCenter;
         public bool IsIconInCenter { get => isIconInCenter; }
+        public GameObject[] Icons = null!;
+        public Image ImageBottom = null!;
 
         private List<GameObject> ImagesTopPrefab = null!;
         private List<Image> ImagesTop = null!;
 
         private GameObject TopRow = null!;
-        private Image ImageBottom = null!;
 
         private bool pingAnimationNextUpdate = false;
 
@@ -31,9 +33,8 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             rectTransformIcon = GetComponent<RectTransform>();
             animator = GetComponent<Animator>();
 
-            ImageBottom = GetComponentsInChildren<Image>().FirstOrDefault(x => x.name == "PointerIconImage");
+            //ImageBottom = GetComponentsInChildren<Image>().FirstOrDefault(x => x.name == "PointerIconImage");
             TopRow = GetComponentsInChildren<Component>().FirstOrDefault(x => x.name == "Top").gameObject;
-            UpdateImagesOnTop();
         }
 
         // Update is called once per frame
@@ -67,33 +68,52 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             ImagesTopPrefab = images;
         }
 
+        public void SetImagesOnTop(EnumIconImagesTypes iconImageTypes)
+        {
+            for (int i = 0; i < Icons.Length; i++)
+                Icons[i].gameObject.SetActive(false);
+
+            foreach (var iconType in Enum.GetValues(typeof(EnumIconImagesTypes)).Cast<EnumIconImagesTypes>())
+            {
+                if (iconType == EnumIconImagesTypes.None)
+                    continue;
+
+                if ((iconImageTypes & iconType) != 0)
+                {
+                    int index = Mathf.RoundToInt(Mathf.Log((int)iconType, 2));
+                    Icons[index].gameObject.SetActive(true);
+                    Icons[index].GetComponent<Image>().color = UIConst.UI_COLOR_ORANGE;
+                }
+            }
+        }
+
         private void UpdateImagesOnTop()
         {
-            if (ImagesTopPrefab == null
-                || ImagesTopPrefab.Count == 0)
-            {
-                if (PluginRuntimeProvider.Context.DefaultIconImagePrefab != null) // Unity editor
-                {
-                    ImagesTop = new List<Image>() { Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab).GetComponent<Image>() };
-                    ImagesTop.First().transform.SetParent(TopRow.transform);
-                }
-            }
-            else
-            {
-                foreach (var imageToDelete in TopRow.GetComponentsInChildren<Image>())
-                {
-                    Object.Destroy(imageToDelete.gameObject);
-                }
-                ImagesTop = new List<Image>();
+            //if (ImagesTopPrefab == null
+            //    || ImagesTopPrefab.Count == 0)
+            //{
+            //    if (PluginRuntimeProvider.Context.DefaultIconImagePrefab != null) // Unity editor
+            //    {
+            //        ImagesTop = new List<Image>() { Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab).GetComponent<Image>() };
+            //        ImagesTop.First().transform.SetParent(TopRow.transform);
+            //    }
+            //}
+            //else
+            //{
+            //    foreach (var imageToDelete in TopRow.GetComponentsInChildren<Image>())
+            //    {
+            //        UnityEngine.Object.Destroy(imageToDelete.gameObject);
+            //    }
+            //    ImagesTop = new List<Image>();
 
-                // Add images
-                foreach (var image in ImagesTopPrefab)
-                {
-                    GameObject imageInstantiated = Object.Instantiate(image);
-                    ImagesTop.Add(imageInstantiated.GetComponent<Image>());
-                    imageInstantiated.transform.SetParent(TopRow.transform);
-                }
-            }
+            //    // Add images
+            //    foreach (var image in ImagesTopPrefab)
+            //    {
+            //        GameObject imageInstantiated = Object.Instantiate(image);
+            //        ImagesTop.Add(imageInstantiated.GetComponent<Image>());
+            //        imageInstantiated.transform.SetParent(TopRow.transform);
+            //    }
+            //}
         }
 
         public void PlaceOnCanvas(Vector3 screenPos, RectTransform rectTransformCanvasParent)

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
 {
-    public class DefaultInterestPoint : InterestPointBase
+    public class PositionInterestPoint : InterestPointBase
     {
         public override Vector3 Point => position;
 
@@ -15,7 +15,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
 
         public override bool IsInvalid => false;
 
-        public DefaultInterestPoint(Vector3 position)
+        public PositionInterestPoint(Vector3 position)
         {
             this.position = position;
         }

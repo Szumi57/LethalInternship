@@ -159,7 +159,6 @@ namespace LethalInternship.Patches.NpcPatches
             // If player
             if (__instance.gameObject.GetComponent<IgnoreRaycast>() == null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("player awake adding IgnoreRaycast !!!!!!!!");
                 __instance.gameObject.AddComponent<IgnoreRaycast>();
             }
 

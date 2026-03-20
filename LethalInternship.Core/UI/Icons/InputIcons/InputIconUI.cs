@@ -22,6 +22,7 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
 
             iconUIController = this.iconGameObject.GetComponentInChildren<InputIconUIController>();
             iconUIController.SetImageOnTop(iconUIInfos.GetImagesPrefab().First());
+            iconUIController.SetImageOnTop(iconUIInfos.IconImagesTypes);
 
             SetIconActive(false);
         }
@@ -30,18 +31,6 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
         {
             iconUIController.PlaceOnCenterCanvas();
             SetIconActive(true);
-        }
-
-        public void SetColorIconValidOrNot(bool isValidNavMeshPoint)
-        {
-            if (isValidNavMeshPoint)
-            {
-                iconUIController.SetColor(new Color(255 / 255f, 111 / 255f, 1 / 255f));
-            }
-            else
-            {
-                iconUIController.SetColor(Color.red);
-            }
         }
 
         public void SetIconActive(bool active)

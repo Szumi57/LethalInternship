@@ -1,12 +1,31 @@
 ﻿using LethalInternship.Core.CommandsSystem.Orders;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.CommandsSystem;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Abilities
 {
     public class ContextOrderAbility : TargetedAbility
     {
+        public override HashSet<GameAction> NotInterruptingActions => notInterruptingActions;
+        public override HashSet<GameAction> SubmitActions => submitActions;
+
+
+        static readonly HashSet<GameAction> notInterruptingActions = new HashSet<GameAction>()
+                                                    {
+                                                        GameAction.Look,
+                                                        GameAction.Move,
+                                                        GameAction.Jump,
+                                                        GameAction.Sprint,
+                                                        GameAction.Crouch
+                                                    };
+        static readonly HashSet<GameAction> submitActions = new HashSet<GameAction>()
+                                                    {
+                                                        GameAction.Use,
+                                                    };
+
         protected override void BeginTargeting()
         {
             InputManager.Instance.StartTargeting(this);

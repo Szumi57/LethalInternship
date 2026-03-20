@@ -13,6 +13,7 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -24,6 +25,9 @@ namespace LethalInternship.Core.Managers
     public class InputManager : MonoBehaviour, IInputManager
     {
         public static InputManager Instance { get; private set; } = null!;
+
+        private InputActionAsset inputActionAsset = null!;
+        private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
 
         private EnumInputAction currentInputAction;
         public EnumInputAction CurrentInputAction { get => currentInputAction; }
@@ -94,7 +98,35 @@ namespace LethalInternship.Core.Managers
         private void Start()
         {
             currentInputAction = EnumInputAction.None;
+
+            // BuildActionMap
+            inputActionAsset = IngamePlayerSettings.Instance.playerInput.actions;
+            foreach (var map in inputActionAsset.actionMaps)
+            {
+                foreach (var action in map.actions)
+                {
+                    switch (action.name)
+                    {
+                        case "Look": actionMap[action] = GameAction.Look; break;
+                        case "Move": actionMap[action] = GameAction.Move; break;
+                        case "Jump": actionMap[action] = GameAction.Jump; break;
+                        case "Sprint": actionMap[action] = GameAction.Sprint; break;
+                        case "Crouch": actionMap[action] = GameAction.Crouch; break;
+                        case "Use": actionMap[action] = GameAction.Use; break;
+                    }
+                }
+            }
+
+            // SubscribeAllActions
+            foreach (var map in inputActionAsset.actionMaps)
+            {
+                foreach (var action in map.actions)
+                {
+                    action.started += OnAnyAction;
+                }
+            }
         }
+
 
         private void Update()
         {
@@ -109,26 +141,25 @@ namespace LethalInternship.Core.Managers
                 LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
             }
 
+
+
+            // Open commands ?
+            CheckOpenAllCommandsInput();
+
             // Commands system
-            if (currentTargetedAbility == null) return;
-
-            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
-            if (Input.GetMouseButtonDown(0)
-                && target != null)
+            if (currentTargetedAbility != null)
             {
-                Order? order = currentTargetedAbility.ResolveTarget(target.Value);
-                if (order != null)
+                // UI
+                UIManager.Instance.HideCommandsAll();
+                if (UIManager.Instance.GetPointOfInterestInCenter() != null)
                 {
-                    InternManager.Instance.ExecuteOrder(order);
-                    currentTargetedAbility = null;
-                    // UI 
-                    //UIManager.Instance.ClearTargetingUI();
+                    // Hide if another icon in center
+                    UIManager.Instance.HideInputIcon();
                 }
-            }
-
-            if (Input.GetMouseButtonDown(1))
-            {
-                CancelTargeting();
+                else
+                {
+                    UIManager.Instance.ShowInputIcon();
+                }
             }
 
             //switch (CurrentInputAction)
@@ -164,14 +195,13 @@ namespace LethalInternship.Core.Managers
             //        UIManager.Instance.HideInputIcon();
             //        break;
             //}
+        }
 
-            // Hide if another icon in center
-            if (UIManager.Instance.GetPointOfInterestInCenter() != null)
-            {
-                UIManager.Instance.HideInputIcon();
-            }
-
-            CheckOpenAllCommandsInput();
+        void OnDestroy()
+        {
+            foreach (var map in inputActionAsset.actionMaps)
+                foreach (var action in map.actions)
+                    action.started -= OnAnyAction;
         }
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)
@@ -220,6 +250,49 @@ namespace LethalInternship.Core.Managers
             return true;
         }
 
+        private void OnAnyAction(InputAction.CallbackContext ctx)
+        {
+            if (currentTargetedAbility == null)
+                return;
+
+            if (!InputLock.CanProcessWorldInput)
+                return;
+
+            // Unknown action
+            if (!actionMap.TryGetValue(ctx.action, out var gameAction))
+            {
+                CancelTargeting();
+                return;
+            }
+
+            // Submitting action
+            if (currentTargetedAbility.SubmitActions.Contains(gameAction))
+            {
+                TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+                if (Mouse.current.leftButton.wasPressedThisFrame
+                    && target != null)
+                {
+                    Order? order = currentTargetedAbility.ResolveTarget(target.Value);
+                    if (order != null)
+                    {
+                        InternManager.Instance.ExecuteOrder(order);
+                        currentTargetedAbility = null;
+                        UIManager.Instance.HideInputIcon();
+                    }
+                }
+                return;
+            }
+
+            // Not interrupting action
+            if (!currentTargetedAbility.NotInterruptingActions.Contains(gameAction))
+            {
+                CancelTargeting();
+                return;
+            }
+
+            // Do nothing
+        }
+
         #region Commands System
 
         public void StartTargeting(TargetedAbility ability)
@@ -229,7 +302,8 @@ namespace LethalInternship.Core.Managers
 
         public void CancelTargeting()
         {
-            currentTargetedAbility = null!;
+            currentTargetedAbility = null;
+            UIManager.Instance.HideInputIcon();
         }
 
         #endregion
@@ -238,6 +312,8 @@ namespace LethalInternship.Core.Managers
 
         private void CommandButtonController_OnSelected(EnumInputAction typeInputAction)
         {
+            InputLock.BlockThisFrame();
+
             switch (typeInputAction)
             {
                 case EnumInputAction.FollowMe:
@@ -245,8 +321,7 @@ namespace LethalInternship.Core.Managers
                     break;
 
                 case EnumInputAction.PointToAction:
-                    //StartScanPositionCoroutine();
-                    //UIManager.Instance.ShowInputIcon(isPointedValid);
+                    new ContextOrderAbility().Activate();
                     break;
 
 
@@ -478,7 +553,7 @@ namespace LethalInternship.Core.Managers
                 RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
                 if (raycastHits.Length == 0)
                 {
-                    UIManager.Instance.SetPedestrianInputIcon();
+                    //UIManager.Instance.SetPedestrianInputIcon();
                     yield return null;
                     continue;
                 }
@@ -519,7 +594,7 @@ namespace LethalInternship.Core.Managers
                     //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
 
                     // Pedestrian
-                    UIManager.Instance.SetPedestrianInputIcon();
+                    UIManager.Instance.SetPositionInputIcon();
                     lastPointedHitPoint = hit.point;
                     isPointedValid = lastHitPoint != null;
 
@@ -824,5 +899,18 @@ namespace LethalInternship.Core.Managers
         }
 
         #endregion
+
+        public static class InputLock
+        {
+            static int blockedFrame = -1;
+
+            public static bool CanProcessWorldInput =>
+                Time.frameCount != blockedFrame;
+
+            public static void BlockThisFrame()
+            {
+                blockedFrame = Time.frameCount;
+            }
+        }
     }
 }

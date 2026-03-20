@@ -15,6 +15,7 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using LethalInternship.SharedAbstractions.UI;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -84,7 +85,6 @@ namespace LethalInternship.Core.Managers
             // Icons
             ShowWorldIconUIs();
 
-            //UpdateCurrentPointedIntern();
             UpdateBillBoard();
             UpdateOutlines();
 
@@ -198,7 +198,7 @@ namespace LethalInternship.Core.Managers
 
             // Renderers
             interestPointRendererRegistery = new InterestPointRendererRegistery();
-            interestPointRendererRegistery.Register(new DefaultInterestPointRenderer());
+            interestPointRendererRegistery.Register(new PositionInterestPointRenderer());
             interestPointRendererRegistery.Register(new VehicleInterestPointRenderer());
             interestPointRendererRegistery.Register(new ShipInterestPointRenderer());
 
@@ -231,7 +231,7 @@ namespace LethalInternship.Core.Managers
             {
                 case EnumInputAction.PointToAction:
                     InputManager.Instance.SetCurrentInputAction(typeInputAction, currentPointedIntern);
-                    SetPedestrianInputIcon();
+                    //SetPedestrianInputIcon();
                     break;
 
                 case EnumInputAction.FollowMe:
@@ -259,7 +259,7 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        public void ShowInputIcon(bool isValid)
+        public void ShowInputIcon()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
@@ -271,9 +271,9 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }));
+            GetInputIcon(); // enlever
+            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }, GetInputIcon()));
             inputIconUI.SetPositionUICenter();
-            inputIconUI.SetColorIconValidOrNot(isValid);
             inputIconUI.SetIconActive(true);
 
             inputIconUIPool.DisableOtherIcons();
@@ -295,13 +295,46 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool.DisableOtherIcons();
         }
 
+        private EnumIconImagesTypes GetInputIcon()
+        {
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null)
+            {
+                return EnumIconImagesTypes.None;
+            }
+
+            if (target.Value.PointOfInterest != null)
+            {
+                IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointOfInterest);
+                List<GameObject> imagesPrefab = iconUIInfos.GetImagesPrefab();
+                if (imagesPrefab.Count > 0)
+                {
+                    if (inputIconImagePrefab != imagesPrefab[0])
+                    {
+                        PluginLoggerHook.LogDebug?.Invoke($"UpdateInputIcon using input icon image {imagesPrefab[0].name}");
+                    }
+                    inputIconImagePrefab = imagesPrefab[0];
+                }
+                return iconUIInfos.IconImagesTypes;
+            }
+            //else if(target.Value.Enemy != null)
+            //{
+
+            //}else if(target.Value.Item != null)
+            //{
+
+            //}
+
+            return EnumIconImagesTypes.None;
+        }
+
         public void SetDefaultInputIcon()
         {
             inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
         }
-        public void SetPedestrianInputIcon()
+        public void SetPositionInputIcon()
         {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.PedestrianIconImagePrefab;
+            inputIconImagePrefab = PluginRuntimeProvider.Context.PositionIconImagePrefab;
         }
         public void SetVehicleInputIcon()
         {
@@ -339,10 +372,6 @@ namespace LethalInternship.Core.Managers
                 return;
             }
             if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
-            {
-                return;
-            }
-            if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length == 0)
             {
                 return;
             }

@@ -109,7 +109,7 @@ namespace LethalInternship.Core.Managers
                 && directTarget.Value.IsTargetNotEmpty())
             {
                 // Pointed something directly
-                PluginLoggerHook.LogDebug?.Invoke($"directTarget 2 !! target intern ? {directTarget.Value.Intern?.Npc.playerUsername} target enemy ? {directTarget.Value.Enemy?.enemyType.enemyName}");
+                //PluginLoggerHook.LogDebug?.Invoke($"directTarget 2 !! target intern ? {directTarget.Value.Intern?.Npc.playerUsername} target enemy ? {directTarget.Value.Enemy?.enemyType.enemyName}");
                 currentTarget = directTarget;
             }
             else

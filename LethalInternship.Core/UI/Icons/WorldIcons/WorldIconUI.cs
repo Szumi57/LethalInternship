@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.UI;
+﻿using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.UI;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Icons.WorldIcons
@@ -14,7 +15,6 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 
         private GameObject iconGameObject;
         private RectTransform rectTransformCanvasOverlay;
-        //private List<GameObject> images;
 
         private Vector3 iconWorldPosition;
 
@@ -26,14 +26,9 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             this.key = iconUIInfos.GetUIKey();
             this.rectTransformCanvasOverlay = rectTransformCanvasOverlay;
 
-            //images = new List<GameObject>();
-            //foreach (GameObject prefab in iconUIInfos.GetImagesPrefab())
-            //{
-            //    images.Add(prefab);
-            //}
-
             iconUIController = this.iconGameObject.GetComponentInChildren<WorldIconUIController>();
             iconUIController.SetImagesOnTop(iconUIInfos.GetImagesPrefab());
+            iconUIController.SetImagesOnTop(iconUIInfos.IconImagesTypes);
 
             SetIconActive(false);
         }
@@ -53,7 +48,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         public void SetDefaultColor()
         {
             // r255 g111 b1 #ff6f01
-            iconUIController.SetColor(new Color(255 / 255f, 111 / 255f, 1 / 255f));
+            iconUIController.SetColor(UIConst.UI_COLOR_ORANGE);
         }
 
         public void SetIconActive(bool toActive)

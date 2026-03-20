@@ -4,7 +4,8 @@ namespace LethalInternship.SharedAbstractions.Constants
 {
     public class UIConst
     {
-        public static Color UI_COLOR_DEFAULT = new Color(255 / 255f, 52 / 255f, 1 / 255f); // 255 52 1 orange kinda lethalcompany
+        public static Color UI_COLOR_DEFAULT = new Color(255 / 255f, 52 / 255f, 1 / 255f); // 255 52 1 orange/red kinda lethalcompany
+        public static Color UI_COLOR_ORANGE = new Color(255 / 255f, 111 / 255f, 1 / 255f); // 255 111 1 orange
         public static Color UI_COLOR_BLACK = new Color(0f, 0f, 0f); // black
 
         public static string UI_CHOOSE_LOCATION = "Choose this location";
@@ -26,9 +27,8 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static string[] COMMANDS_BUTTON_STRING = {
             string.Empty,
             "Follow me",// FollowMe
+            "Stay here",// StayHere
             "Point to action",// PointToAction
-            "Attack an enemy",// PointToAttack
-            "Get this item",// PointToItem
             "Flee when an enemy is near ",// SetToAutoFlee
             "Try to attack when an enemy is near",// SetToAutoDefense
             "Drop held item",// DropItem

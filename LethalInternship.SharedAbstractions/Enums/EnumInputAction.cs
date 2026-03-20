@@ -6,8 +6,6 @@
         FollowMe,
         StayHere,
         PointToAction,
-        PointToAttack,
-        PointToItem,
         SetToAutoFlee,
         SetToAutoDefense,
         DropItem,

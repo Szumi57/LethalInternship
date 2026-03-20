@@ -33,7 +33,7 @@ namespace LethalInternship.Core.Managers
             }
 
             pointOfInterest = new PointOfInterest();
-            pointOfInterest.TryAddInterestPoint(new DefaultInterestPoint(pos));
+            pointOfInterest.TryAddInterestPoint(new PositionInterestPoint(pos));
             listPointOfInterest.Add(pointOfInterest);
             return pointOfInterest;
         }

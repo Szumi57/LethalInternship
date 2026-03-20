@@ -13,7 +13,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
 
         private readonly List<Type> priorityOrder = new List<Type>()
         {
-            typeof(DefaultInterestPoint),
+            typeof(PositionInterestPoint),
             typeof(VehicleInterestPoint),
             typeof(ShipInterestPoint)
         };
