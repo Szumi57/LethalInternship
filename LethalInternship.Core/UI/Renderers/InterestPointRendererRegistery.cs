@@ -25,16 +25,6 @@ namespace LethalInternship.Core.UI.Renderers
             return EnumIconImagesTypes.None;
         }
 
-        public GameObject? GetImagePrefab(IInterestPoint interestPoint)
-        {
-            if (wrappers.TryGetValue(interestPoint.GetType(), out var interestPointRendererWrapper))
-            {
-                return interestPointRendererWrapper.GetImagePrefab(interestPoint);
-            }
-
-            return null;
-        }
-
         public Vector3 GetUIPosOffset(IInterestPoint interestPoint)
         {
             if (wrappers.TryGetValue(interestPoint.GetType(), out var interestPointRendererWrapper))

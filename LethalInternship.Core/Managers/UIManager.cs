@@ -271,8 +271,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            GetInputIcon(); // enlever
-            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }, GetInputIcon()));
+            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(GetInputIcon()));
             inputIconUI.SetPositionUICenter();
             inputIconUI.SetIconActive(true);
 
@@ -306,15 +305,6 @@ namespace LethalInternship.Core.Managers
             if (target.Value.PointOfInterest != null)
             {
                 IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointOfInterest);
-                List<GameObject> imagesPrefab = iconUIInfos.GetImagesPrefab();
-                if (imagesPrefab.Count > 0)
-                {
-                    if (inputIconImagePrefab != imagesPrefab[0])
-                    {
-                        PluginLoggerHook.LogDebug?.Invoke($"UpdateInputIcon using input icon image {imagesPrefab[0].name}");
-                    }
-                    inputIconImagePrefab = imagesPrefab[0];
-                }
                 return iconUIInfos.IconImagesTypes;
             }
             //else if(target.Value.Enemy != null)
@@ -330,19 +320,19 @@ namespace LethalInternship.Core.Managers
 
         public void SetDefaultInputIcon()
         {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
+            //inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
         }
         public void SetPositionInputIcon()
         {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.PositionIconImagePrefab;
+            //inputIconImagePrefab = PluginRuntimeProvider.Context.PositionIconImagePrefab;
         }
         public void SetVehicleInputIcon()
         {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.VehicleIconImagePrefab;
+            //inputIconImagePrefab = PluginRuntimeProvider.Context.VehicleIconImagePrefab;
         }
         public void SetShipInputIcon()
         {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.ShipIconImagePrefab;
+            //inputIconImagePrefab = PluginRuntimeProvider.Context.ShipIconImagePrefab;
         }
 
         public IPointOfInterest? GetPointOfInterestInCenter()

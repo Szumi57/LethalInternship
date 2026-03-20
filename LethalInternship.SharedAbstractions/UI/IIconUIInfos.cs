@@ -1,6 +1,4 @@
 ﻿using LethalInternship.SharedAbstractions.Enums;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace LethalInternship.SharedAbstractions.UI
 {
@@ -8,7 +6,6 @@ namespace LethalInternship.SharedAbstractions.UI
     {
         EnumIconImagesTypes IconImagesTypes { get; }
 
-        string GetUIKey();
-        List<GameObject> GetImagesPrefab();
+        int GetUIKey();
     }
 }

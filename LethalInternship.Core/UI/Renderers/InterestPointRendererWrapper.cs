@@ -18,11 +18,6 @@ namespace LethalInternship.Core.UI.Renderers
             return renderer.GetIconImagesTypes((T)interestPoint);
         }
 
-        public GameObject GetImagePrefab(IInterestPoint interestPoint)
-        {
-            return renderer.GetImagePrefab((T)interestPoint);
-        }
-
         public Vector3 GetUIPos(IInterestPoint interestPoint)
         {
             return renderer.GetUIPos((T)interestPoint);

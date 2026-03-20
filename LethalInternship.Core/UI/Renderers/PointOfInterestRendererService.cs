@@ -12,7 +12,7 @@ namespace LethalInternship.Core.UI.Renderers
     public class PointOfInterestRendererService
     {
         private readonly InterestPointRendererRegistery registery;
-        private readonly Dictionary<string, IIconUIInfos> dictIconInfos;
+        private readonly Dictionary<int, IIconUIInfos> dictIconInfos;
 
         private readonly List<Type> priorityOrder = new List<Type>()
         {
@@ -24,12 +24,11 @@ namespace LethalInternship.Core.UI.Renderers
         public PointOfInterestRendererService(InterestPointRendererRegistery registery)
         {
             this.registery = registery;
-            dictIconInfos = new Dictionary<string, IIconUIInfos>();
+            dictIconInfos = new Dictionary<int, IIconUIInfos>();
         }
 
         public IIconUIInfos GetIconUIInfos(IPointOfInterest pointOfInterest)
         {
-            string key = string.Empty;
             var imagesPrefabs = new List<GameObject>();
             EnumIconImagesTypes iconImagesTypes = EnumIconImagesTypes.None;
 
@@ -39,22 +38,16 @@ namespace LethalInternship.Core.UI.Renderers
                 if (dictTypeInterestPoint.TryGetValue(type, out var interestPoint))
                 {
                     iconImagesTypes |= registery.GetIconImagesTypes(interestPoint);
-                    GameObject? imagePrefab = registery.GetImagePrefab(interestPoint);
-                    if (imagePrefab != null)
-                    {
-                        imagesPrefabs.Add(imagePrefab);
-                        key += imagePrefab.name;
-                    }
                 }
             }
 
-            if (dictIconInfos.TryGetValue(key, out IIconUIInfos iconUIInfos))
+            if (dictIconInfos.TryGetValue((int)iconImagesTypes, out IIconUIInfos iconUIInfos))
             {
                 return iconUIInfos;
             }
 
-            dictIconInfos[key] = new IconUIInfos(key, imagesPrefabs, iconImagesTypes);
-            return dictIconInfos[key];
+            dictIconInfos[(int)iconImagesTypes] = new IconUIInfos(iconImagesTypes);
+            return dictIconInfos[(int)iconImagesTypes];
         }
 
         public Vector3 GetUIIcon(IPointOfInterest pointOfInterest)

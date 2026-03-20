@@ -2,7 +2,7 @@
 {
     public interface IIconUI
     {
-        string Key { get; }
+        int Key { get; }
 
         void SetIconActive(bool active);
     }

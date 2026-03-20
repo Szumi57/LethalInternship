@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
@@ -11,11 +10,6 @@ namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
         public EnumIconImagesTypes GetIconImagesTypes(VehicleInterestPoint interestPoint)
         {
             return EnumIconImagesTypes.Vehicle;
-        }
-
-        public GameObject GetImagePrefab(VehicleInterestPoint interestPoint)
-        {
-            return PluginRuntimeProvider.Context.VehicleIconImagePrefab;
         }
 
         public Vector3 GetUIPos(VehicleInterestPoint interestPoint)

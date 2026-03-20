@@ -6,8 +6,8 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 {
     public class WorldIconUI : IIconUI
     {
-        public string Key => key;
-        private string key;
+        public int Key => key;
+        private int key;
 
         public bool IsIconActive => iconGameObject.activeSelf;
         public bool IsIconInCenter => IsIconActive && iconUIController.IsIconInCenter;
@@ -27,7 +27,6 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             this.rectTransformCanvasOverlay = rectTransformCanvasOverlay;
 
             iconUIController = this.iconGameObject.GetComponentInChildren<WorldIconUIController>();
-            iconUIController.SetImagesOnTop(iconUIInfos.GetImagesPrefab());
             iconUIController.SetImagesOnTop(iconUIInfos.IconImagesTypes);
 
             SetIconActive(false);

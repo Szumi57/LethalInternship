@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
@@ -11,11 +10,6 @@ namespace LethalInternship.Core.UI.Renderers.InterestPointsRenderer
         public EnumIconImagesTypes GetIconImagesTypes(ShipInterestPoint interestPoint)
         {
             return EnumIconImagesTypes.Ship;
-        }
-
-        public GameObject GetImagePrefab(ShipInterestPoint interestPoint)
-        {
-            return PluginRuntimeProvider.Context.ShipIconImagePrefab;
         }
 
         public Vector3 GetUIPos(ShipInterestPoint interestPoint)

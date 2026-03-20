@@ -1,7 +1,5 @@
 ﻿using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.UI;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace LethalInternship.Core.UI.Icons
 {
@@ -9,23 +7,16 @@ namespace LethalInternship.Core.UI.Icons
     {
         public EnumIconImagesTypes IconImagesTypes => iconImagesTypes;
 
-        private string UIKey;
-        private List<GameObject> imagesPrefabs;
+        private int UIKey;
         private EnumIconImagesTypes iconImagesTypes;
 
-        public IconUIInfos(string uIKey, List<GameObject> imagesPrefabs, EnumIconImagesTypes iconImagesTypes)
+        public IconUIInfos(EnumIconImagesTypes iconImagesTypes)
         {
             this.iconImagesTypes = iconImagesTypes;
-            this.imagesPrefabs = imagesPrefabs;
-            UIKey = uIKey;
+            UIKey = (int)iconImagesTypes;
         }
 
-        public List<GameObject> GetImagesPrefab()
-        {
-            return imagesPrefabs;
-        }
-
-        public string GetUIKey()
+        public int GetUIKey()
         {
             return UIKey;
         }

@@ -66,13 +66,6 @@ namespace LethalInternship
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
 
-        public static GameObject AttackIconImagePrefab = null!;
-        public static GameObject DefaultIconImagePrefab = null!;
-        public static GameObject GatheringPointIconImagePrefab = null!;
-        public static GameObject PositionIconImagePrefab = null!;
-        public static GameObject ShipIconImagePrefab = null!;
-        public static GameObject VehicleIconImagePrefab = null!;
-
         internal static string DirectoryName = null!;
         internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
@@ -237,49 +230,6 @@ namespace LethalInternship
             if (InputIconPrefab == null)
             {
                 Logger.LogError($"Failed to load InputIcon UI prefab.");
-                return false;
-            }
-
-            // Images prefabs (for icons)
-            DefaultIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("DefaultIconImage");
-            if (DefaultIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load DefaultIconImage UI prefab.");
-                return false;
-            }
-
-            PositionIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PositionIconImage");
-            if (PositionIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load PositionIconImage UI prefab.");
-                return false;
-            }
-
-            VehicleIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("VehicleIconImage");
-            if (VehicleIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load VehicleIconImage UI prefab.");
-                return false;
-            }
-
-            ShipIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("ShipIconImage");
-            if (ShipIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load ShipIconImage UI prefab.");
-                return false;
-            }
-
-            GatheringPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("GatheringPointIconImage");
-            if (GatheringPointIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load GatheringPointIconImage UI prefab.");
-                return false;
-            }
-
-            AttackIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackIconImage");
-            if (AttackIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load AttackIconImage UI prefab.");
                 return false;
             }
 
@@ -701,13 +651,6 @@ namespace LethalInternship
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;
-
-        public GameObject AttackIconImagePrefab => Plugin.AttackIconImagePrefab;
-        public GameObject DefaultIconImagePrefab => Plugin.DefaultIconImagePrefab;
-        public GameObject GatheringPointIconImagePrefab => Plugin.GatheringPointIconImagePrefab;
-        public GameObject PositionIconImagePrefab => Plugin.PositionIconImagePrefab;
-        public GameObject ShipIconImagePrefab => Plugin.ShipIconImagePrefab;
-        public GameObject VehicleIconImagePrefab => Plugin.VehicleIconImagePrefab;
 
         public string DirectoryName => Plugin.DirectoryName;
         public ILethalInternshipInputs InputActionsInstance => Plugin.InputActionsInstance;

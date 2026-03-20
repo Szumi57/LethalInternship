@@ -1,7 +1,6 @@
 ﻿using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,10 +19,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         public GameObject[] Icons = null!;
         public Image ImageBottom = null!;
 
-        private List<GameObject> ImagesTopPrefab = null!;
-        private List<Image> ImagesTop = null!;
-
-        private GameObject TopRow = null!;
+        private Image ImageTop = null!;
 
         private bool pingAnimationNextUpdate = false;
 
@@ -32,9 +28,6 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         {
             rectTransformIcon = GetComponent<RectTransform>();
             animator = GetComponent<Animator>();
-
-            //ImageBottom = GetComponentsInChildren<Image>().FirstOrDefault(x => x.name == "PointerIconImage");
-            TopRow = GetComponentsInChildren<Component>().FirstOrDefault(x => x.name == "Top").gameObject;
         }
 
         // Update is called once per frame
@@ -45,27 +38,6 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 TriggerPingAnimation();
                 pingAnimationNextUpdate = false;
             }
-
-            //if (rectTransformIcon == null)
-            //{
-            //    return;
-            //}
-
-            //if (rectTransformIcon.sizeDelta.x < MinWidth)
-            //{
-            //    rectTransformIcon.sizeDelta = new Vector2(MinWidth, rectTransformIcon.sizeDelta.y);
-            //}
-            //if (rectTransformIcon.sizeDelta.y < MinHeight)
-            //{
-            //    rectTransformIcon.sizeDelta = new Vector2(rectTransformIcon.sizeDelta.x, MinHeight);
-            //}
-
-            //rectTransformIcon.sizeDelta = new Vector2(MinWidth / MinHeight * rectTransformIcon.sizeDelta.y, rectTransformIcon.sizeDelta.y);
-        }
-
-        public void SetImagesOnTop(List<GameObject> images)
-        {
-            ImagesTopPrefab = images;
         }
 
         public void SetImagesOnTop(EnumIconImagesTypes iconImageTypes)
@@ -82,38 +54,10 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 {
                     int index = Mathf.RoundToInt(Mathf.Log((int)iconType, 2));
                     Icons[index].gameObject.SetActive(true);
-                    Icons[index].GetComponent<Image>().color = UIConst.UI_COLOR_ORANGE;
+                    ImageTop = Icons[index].GetComponent<Image>();
+                    ImageTop.color = UIConst.UI_COLOR_ORANGE;
                 }
             }
-        }
-
-        private void UpdateImagesOnTop()
-        {
-            //if (ImagesTopPrefab == null
-            //    || ImagesTopPrefab.Count == 0)
-            //{
-            //    if (PluginRuntimeProvider.Context.DefaultIconImagePrefab != null) // Unity editor
-            //    {
-            //        ImagesTop = new List<Image>() { Object.Instantiate(PluginRuntimeProvider.Context.DefaultIconImagePrefab).GetComponent<Image>() };
-            //        ImagesTop.First().transform.SetParent(TopRow.transform);
-            //    }
-            //}
-            //else
-            //{
-            //    foreach (var imageToDelete in TopRow.GetComponentsInChildren<Image>())
-            //    {
-            //        UnityEngine.Object.Destroy(imageToDelete.gameObject);
-            //    }
-            //    ImagesTop = new List<Image>();
-
-            //    // Add images
-            //    foreach (var image in ImagesTopPrefab)
-            //    {
-            //        GameObject imageInstantiated = Object.Instantiate(image);
-            //        ImagesTop.Add(imageInstantiated.GetComponent<Image>());
-            //        imageInstantiated.transform.SetParent(TopRow.transform);
-            //    }
-            //}
         }
 
         public void PlaceOnCanvas(Vector3 screenPos, RectTransform rectTransformCanvasParent)
@@ -176,12 +120,9 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 
         private void SetTransparency(float alpha)
         {
-            if (ImagesTop != null)
+            if (ImageTop != null)
             {
-                foreach (var imageTop in ImagesTop)
-                {
-                    imageTop.color = new Color(imageTop.color.r, imageTop.color.g, imageTop.color.b, alpha);
-                }
+                ImageTop.color = new Color(ImageTop.color.r, ImageTop.color.g, ImageTop.color.b, alpha);
             }
             if (ImageBottom != null)
             {
@@ -191,12 +132,9 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 
         public void SetColor(Color color)
         {
-            if (ImagesTop != null)
+            if (ImageTop != null)
             {
-                foreach (var imageTop in ImagesTop)
-                {
-                    imageTop.color = new Color(color.r, color.g, color.b, imageTop.color.a);
-                }
+                ImageTop.color = new Color(color.r, color.g, color.b, ImageTop.color.a);
             }
             if (ImageBottom != null)
             {
