@@ -2395,9 +2395,9 @@ namespace LethalInternship.Core.Interns
                                lastPosition.z);
         }
 
-        public float GetSqrDistanceWithLocalPlayer(Vector3 internBodyPos)
+        public float GetSqrDistanceWithLocalPlayer()
         {
-            return SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(internBodyPos);
+            return SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(this.Npc.transform.position);
         }
 
         public Bounds GetBoundsModel(GameObject model)

@@ -157,7 +157,7 @@ namespace LethalInternship.Core.Managers
 
             float distance = (StartOfRound.Instance.localPlayerController.transform.position - transform.position).sqrMagnitude;
             float angle = Vector3.Angle(localPlayerCamera.transform.forward, (transform.position + new Vector3(0f, 1f, 0f)) - localPlayerCamera.transform.position);
-            float allowedAngle = GetAllowedAngle(distance) + 2f; // anti flickering margin
+            float allowedAngle = GetAllowedAngle(distance) + GetFlickerMargin(distance); // anti flickering margin
 
             return angle <= allowedAngle
                 && HasPlayerLineOfSightOn(target);
@@ -182,7 +182,7 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
+                float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer();
                 float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position
                                                                                                + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f));
                 float allowedAngle = GetAllowedAngle(distance);
@@ -335,10 +335,22 @@ namespace LethalInternship.Core.Managers
         private float GetAllowedAngle(float distance)
         {
             float minDistance = Mathf.Pow(1f, 2);   // very close
-            float maxDistance = Mathf.Pow(15f, 2);  // far
+            float maxDistance = Mathf.Pow(20f, 2);  // far
 
-            float maxAngleClose = 20f; // degrees when very close
-            float maxAngleFar = 4f;  // degrees when far
+            float maxAngleClose = 30f; // degrees when very close
+            float maxAngleFar = 3f;  // degrees when far
+
+            float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
+            return Mathf.Lerp(maxAngleClose, maxAngleFar, t);
+        }
+
+        private float GetFlickerMargin(float distance)
+        {
+            float minDistance = Mathf.Pow(1f, 2);   // very close
+            float maxDistance = Mathf.Pow(20f, 2);  // far
+
+            float maxAngleClose = 10f; // degrees when very close
+            float maxAngleFar = 2f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
             return Mathf.Lerp(maxAngleClose, maxAngleFar, t);

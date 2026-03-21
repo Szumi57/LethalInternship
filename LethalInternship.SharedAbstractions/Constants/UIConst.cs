@@ -43,6 +43,13 @@ namespace LethalInternship.SharedAbstractions.Constants
             "Scavenge and return to the cruiser", // ScavengeToCruiser
         };
 
+        public static string[] CATEGORIES_STRING = {
+            "- In proximity ({0})",// Proximity
+            "- Too far ({0})",// TooFar
+            "- Dead ({0})",// Dead
+        };
+        public static float DISTANCE_UI_PROXIMITY = 300f;
+
         // Outlines
         public static float OUTLINE_RIM_DEFAULT = 5f;
         public static float OUTLINE_RIM_SOLID = 0.1f;

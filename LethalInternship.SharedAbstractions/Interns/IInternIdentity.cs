@@ -4,6 +4,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 {
     public interface IInternIdentity
     {
+        IInternAI? InternAI { get; set; }
         int IdIdentity { get; }
         string Name { get; }
         int Hp { get; set; }

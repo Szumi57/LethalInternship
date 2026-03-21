@@ -8,6 +8,8 @@ namespace LethalInternship.SharedAbstractions.Managers
         int[] GetIdentitiesSpawned();
         int[] GetIdentitiesToDrop();
 
+        IInternIdentity[] GetIdentitiesOwnedByLocal();
+
         IInternIdentity? FindIdentityFromBodyName(string bodyName);
     }
 }

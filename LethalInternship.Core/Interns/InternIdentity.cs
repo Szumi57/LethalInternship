@@ -9,6 +9,7 @@ namespace LethalInternship.Core.Interns
 {
     public class InternIdentity : IInternIdentity
     {
+        public IInternAI? InternAI { get => internAI; set => internAI = value; }
         public int IdIdentity => idIdentity;
         public string Name => name;
         public int Hp { get => hp; set => hp = value; }
@@ -24,6 +25,8 @@ namespace LethalInternship.Core.Interns
         public int[] ItemsInInventory => itemsInInventory;
 
         private int idIdentity;
+
+        private IInternAI? internAI;
         private string name;
 
         private int hp;
@@ -50,6 +53,7 @@ namespace LethalInternship.Core.Interns
                 return $"{SuitID.Value}: {suitName}";
             }
         }
+
 
         public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
         {

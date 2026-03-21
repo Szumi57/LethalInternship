@@ -410,7 +410,7 @@ namespace LethalInternship.Core.Interns.AI
         public string GetSizedBillboardStateIndicator()
         {
             string indicator;
-            int sizePercentage = Math.Clamp((int)(100f + 2.5f * NpcController.GetSqrDistanceWithLocalPlayer(NpcController.Npc.transform.position)),
+            int sizePercentage = Math.Clamp((int)(100f + 2.5f * NpcController.GetSqrDistanceWithLocalPlayer()),
                                  100, 500);
 
             if (IsOwner)

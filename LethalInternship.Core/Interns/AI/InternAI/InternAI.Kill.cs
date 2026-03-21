@@ -3,14 +3,20 @@ using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Hooks.ReviveCompanyHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using System;
 using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.Interns.AI
 {
     public partial class InternAI
     {
+        public Action<IInternAI> OnInternDead { get { return onInternDead; } set { onInternDead = value; } }
+        private Action<IInternAI> onInternDead = null!;
+
         #region Kill intern RPC
 
         public override void KillEnemy(bool destroy = false)
@@ -247,6 +253,9 @@ namespace LethalInternship.Core.Interns.AI
 
             PointOfInterest = null;
             InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+
+            // Event
+            OnInternDead?.Invoke(this);
         }
 
         #endregion

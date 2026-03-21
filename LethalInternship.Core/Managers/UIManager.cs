@@ -526,7 +526,7 @@ namespace LethalInternship.Core.Managers
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
             StringBuilder sb = new StringBuilder();
-            float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer(intern.Npc.transform.position);
+            float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
             if (distance < localPlayer.grabDistance * localPlayer.grabDistance)
             {
                 // Line grab/drop item
@@ -627,7 +627,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
+            float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer();
             float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position + new Vector3(0f, 1f, 0f));
             float allowedAngle = GetAllowedAngle(distance, tightAngle: false) + 1.5f; // anti flickering margin
 
@@ -675,7 +675,7 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.Npc.transform.position);
+                float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer();
                 float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position
                                                                                                + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f));
                 float allowedAngle = GetAllowedAngle(distance, tightAngle);

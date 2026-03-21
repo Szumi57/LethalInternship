@@ -33,7 +33,9 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
 
         public Sprite SpriteAutoDefense = null!;
         public Sprite SpriteFlee = null!;
-        private IInternAI internAI = null!;
+        public Sprite SpriteDead = null!;
+
+        private IInternIdentity identity = null!;
 
         void OnEnable()
         {
@@ -44,10 +46,10 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
             SetBackgroundNotHovered();
         }
 
-        public void Setup(IInternAI i)
+        public void Setup(IInternIdentity i)
         {
-            internAI = i;
-            NameText.text = i.Npc.playerUsername;
+            identity = i;
+            NameText.text = i.Name;
 
             Refresh();
         }
@@ -59,13 +61,39 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
             UpdateBehaviour();
         }
 
+        public void UpdateDeadInternState()
+        {
+            if (identity.Alive)
+            {
+                Refresh();
+                return;
+            }
+
+            // Dead
+            SetBackgroundNotHovered();
+            ItemCountText.transform.parent.gameObject.SetActive(false);
+            ObjectiveIcon.transform.parent.gameObject.SetActive(false);
+            BehaviourIcon.sprite = SpriteDead;
+        }
+
         public void UpdateItemCount()
         {
-            ItemCountText.text = internAI.GetNbHeldItems().ToString();
+            if (!identity.Alive) return;
+
+            ItemCountText.transform.parent.gameObject.SetActive(true);
+            IInternAI? intern = identity.InternAI;
+            if (intern != null)
+            {
+                ItemCountText.text = intern.GetNbHeldItems().ToString();
+            }
         }
 
         public void UpdateObjective()
         {
+            if (!identity.Alive) return;
+
+            ObjectiveIcon.transform.parent.gameObject.SetActive(true);
+
             //EnumInputAction objective =
             EnumInputAction objective = EnumInputAction.FollowMe;
             if (ObjectiveSprites == null
@@ -88,13 +116,15 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
 
         public void UpdateBehaviour()
         {
+            if (!identity.Alive) return;
+
             bool autoDef = true;
             BehaviourIcon.sprite = autoDef ? SpriteAutoDefense : SpriteFlee;
         }
 
         private void SetBackgroundNotHovered()
         {
-            SetAlpha(BackgroundImage, 67f / 255f);
+            SetAlpha(BackgroundImage, 100f / 255f);
         }
 
         private void SetAlpha(Image image, float transparency)
@@ -112,16 +142,22 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
 
         public void Selected()
         {
-            PluginLoggerHook.LogDebug?.Invoke($"InternBlockUI intern {internAI.Npc.playerClientId} {internAI.Npc.playerUsername} clicked");
+            if (!identity.Alive) return;
+
+            PluginLoggerHook.LogDebug?.Invoke($"InternBlockUI intern {identity.InternAI?.Npc.playerClientId} {identity.InternAI?.Npc.playerUsername} clicked");
         }
 
         public void MouseOver()
         {
+            if (!identity.Alive) return;
+
             SetAlpha(BackgroundImage, 1f);
         }
 
         public void MouseLeave()
         {
+            if (!identity.Alive) return;
+
             SetBackgroundNotHovered();
         }
 

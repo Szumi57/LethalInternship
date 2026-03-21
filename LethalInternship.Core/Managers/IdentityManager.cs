@@ -107,7 +107,7 @@ namespace LethalInternship.Core.Managers
 
             // Voice
             InternVoice voice = new InternVoice(configIdentity.voiceFolder,
-                                                configIdentity.volume, 
+                                                configIdentity.volume,
                                                 configIdentity.voicePitch);
 
             // InternIdentity
@@ -238,6 +238,15 @@ namespace LethalInternship.Core.Managers
         public int GetNbIdentitiesSpawned()
         {
             return InternIdentities.FilterSpawnedAlive().Count();
+        }
+
+        public IInternIdentity[] GetIdentitiesOwnedByLocal()
+        {
+            ulong actualClientId = GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return InternIdentities.FilterSpawned()
+                                   .Where(x => x.InternAI != null
+                                            && x.InternAI.OwnerClientId == actualClientId)
+                                   .ToArray();
         }
     }
 

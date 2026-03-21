@@ -297,6 +297,7 @@ namespace LethalInternship.Core.Managers
             internAI.AdaptController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             internAI.InternIdentity = internIdentity;
+            internAI.InternIdentity.InternAI = internAI;
             internAI.InternIdentity.Hp = spawnParamsNetworkSerializable.Hp == 0 ? PluginRuntimeProvider.Context.Config.InternMaxHealth : spawnParamsNetworkSerializable.Hp;
             internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
             internAI.InternIdentity.Status = EnumStatusIdentity.Spawned;

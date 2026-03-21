@@ -44,6 +44,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         void DropTwoHandItem();
         void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true);
         void StopSinkingState();
+
+        Action<IInternAI> OnInternDead { get; set; }
         void SyncDamageIntern(int damageNumber,
                               CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
                               int deathAnimation = 0,

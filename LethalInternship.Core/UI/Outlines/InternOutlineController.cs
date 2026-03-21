@@ -27,7 +27,7 @@ namespace LethalInternship.Core.UI.Outlines
             {
                 bool shouldOutline = intern.Npc.playerClientId == pointedInternClientId || allowMultiple;
 
-                float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer(intern.Npc.transform.position);
+                float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
                 float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, distance);
                 float rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,
                                             UIConst.OUTLINE_RIM_SOLID,
