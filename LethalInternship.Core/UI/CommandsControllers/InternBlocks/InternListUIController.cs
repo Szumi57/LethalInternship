@@ -30,7 +30,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
         void OnEnable()
         {
             InitUIPools();
-            SyncList(IdentityManager.Instance.GetIdentitiesOwnedByLocal().ToList());
+            if (GameNetworkManager.Instance != null
+                && GameNetworkManager.Instance.localPlayerController != null)
+            {
+                SyncList(IdentityManager.Instance.GetIdentitiesOwnedByLocal().ToList());
+            }
         }
 
         private void InitUIPools()

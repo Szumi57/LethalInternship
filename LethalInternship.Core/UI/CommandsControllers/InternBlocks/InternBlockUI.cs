@@ -2,6 +2,7 @@
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -37,6 +38,15 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
 
         private IInternIdentity identity = null!;
 
+        // Typing animation
+        private string fullText = string.Empty;
+        private string cursorChar = "$";
+        private float cursorBlink = 0.2f;
+        private Coroutine typingCoroutine = null!;
+        private Coroutine cursorCoroutine = null!;
+        private bool showCursor = true;
+        private string currentText = string.Empty;
+
         void OnEnable()
         {
             TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
@@ -44,12 +54,27 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
             ItemCountText.font = fontToUse;
 
             SetBackgroundNotHovered();
+
+            if (!string.IsNullOrWhiteSpace(fullText))
+            {
+                // Typing animation
+                NameText.text = string.Empty;
+                currentText = string.Empty;
+                typingCoroutine = StartCoroutine(TypeText());
+                cursorCoroutine = StartCoroutine(CursorBlink());
+            }
         }
 
         public void Setup(IInternIdentity i)
         {
             identity = i;
-            NameText.text = i.Name;
+            fullText = i.Name;
+
+            // Typing animation
+            NameText.text = string.Empty;
+            currentText = string.Empty;
+            typingCoroutine = StartCoroutine(TypeText());
+            cursorCoroutine = StartCoroutine(CursorBlink());
 
             Refresh();
         }
@@ -136,6 +161,34 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
                 alpha.a = transparency;
                 image.color = alpha;
             }
+        }
+
+        IEnumerator TypeText()
+        {
+            foreach (char c in fullText)
+            {
+                currentText += c;
+                UpdateText();
+                yield return new WaitForSeconds(Random.Range(0.02f, 0.07f));
+            }
+        }
+
+        IEnumerator CursorBlink()
+        {
+            while (currentText != fullText)
+            {
+                showCursor = !showCursor;
+                UpdateText();
+                yield return new WaitForSeconds(cursorBlink);
+            }
+            // No cursor after the end
+            showCursor = false;
+            UpdateText();
+        }
+
+        void UpdateText()
+        {
+            NameText.text = currentText + (showCursor ? cursorChar : " ");
         }
 
         #region Events

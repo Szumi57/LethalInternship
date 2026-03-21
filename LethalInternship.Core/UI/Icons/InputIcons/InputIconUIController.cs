@@ -1,6 +1,7 @@
 ﻿using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +13,17 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
         public RectTransform RectTransformIcon = null!;
         public Image ImageBottom = null!;
         public GameObject[] Icons = null!;
+
+        private Image ImageTop = null!;
+        private float visibleTime = 1f;
+        private float hiddenTime = 0.2f;
+
+        Coroutine blinkRoutine = null!;
+
+        void OnEnable()
+        {
+            StartBlink();
+        }
 
         // Start after SetImageOnTop
         void Start()
@@ -33,7 +45,8 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
                 {
                     int index = Mathf.RoundToInt(Mathf.Log((int)iconType, 2));
                     Icons[index].gameObject.SetActive(true);
-                    Icons[index].GetComponent<Image>().color = UIConst.UI_COLOR_ORANGE;
+                    ImageTop = Icons[index].GetComponent<Image>();
+                    ImageTop.color = UIConst.UI_COLOR_ORANGE;
                     return;// just the first icon found
                 }
             }
@@ -54,6 +67,44 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
 
             // Position
             RectTransformIcon.localPosition = new Vector3(screenPos.x, screenPos.y, 0f);
+        }
+
+        public void StartBlink()
+        {
+            StopBlink();
+            blinkRoutine = StartCoroutine(Blink());
+        }
+
+        public void StopBlink()
+        {
+            if (blinkRoutine != null)
+            {
+                StopCoroutine(blinkRoutine);
+                blinkRoutine = null!;
+            }
+
+            if (ImageTop != null)
+            {
+                ImageTop.enabled = false;
+            }
+        }
+
+        IEnumerator Blink()
+        {
+            while (true)
+            {
+                if (ImageTop == null)
+                {
+                    yield return new WaitForSeconds(hiddenTime);
+                    continue;
+                }
+
+                ImageTop.enabled = true;
+                yield return new WaitForSeconds(visibleTime);
+
+                ImageTop.enabled = false;
+                yield return new WaitForSeconds(hiddenTime);
+            }
         }
     }
 }
