@@ -335,7 +335,7 @@ namespace LethalInternship.Core.Managers
         private float GetAllowedAngle(float distance)
         {
             float minDistance = Mathf.Pow(1f, 2);   // very close
-            float maxDistance = Mathf.Pow(20f, 2);  // far
+            float maxDistance = Mathf.Pow(30f, 2);  // far
 
             float maxAngleClose = 30f; // degrees when very close
             float maxAngleFar = 3f;  // degrees when far
@@ -347,9 +347,9 @@ namespace LethalInternship.Core.Managers
         private float GetFlickerMargin(float distance)
         {
             float minDistance = Mathf.Pow(1f, 2);   // very close
-            float maxDistance = Mathf.Pow(20f, 2);  // far
+            float maxDistance = Mathf.Pow(30f, 2);  // far
 
-            float maxAngleClose = 10f; // degrees when very close
+            float maxAngleClose = 7f; // degrees when very close
             float maxAngleFar = 2f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);

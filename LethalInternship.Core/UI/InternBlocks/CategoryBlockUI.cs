@@ -4,7 +4,7 @@ using LethalInternship.SharedAbstractions.Enums;
 using TMPro;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
+namespace LethalInternship.Core.UI.InternBlocks
 {
     public class CategoryBlockUI : MonoBehaviour
     {

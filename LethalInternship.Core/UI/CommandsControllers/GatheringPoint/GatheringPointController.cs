@@ -1,7 +1,7 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -41,7 +41,6 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         void Awake()
         {
-            removeGatheringPointController.OnSelected += RemoveButtonSelected;
         }
 
         void OnEnable()
@@ -187,6 +186,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             TMPDescription.text = currentText + (showCursor ? cursorChar : " ");
         }
 
+        #region Events
+
         public void Selected()
         {
             gatheringPointSet = !gatheringPointSet;
@@ -197,29 +198,24 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             UpdateStateRemoveButton();
         }
 
-        private void RemoveButtonSelected(EnumInputAction enumInputAction)
-        {
-            PluginLoggerHook.LogDebug?.Invoke($"RemoveButtonSelected {enumInputAction} click !");
-        }
-
         public void MouseOver()
         {
-            if (IsNotAvailable)
-            {
-                return;
-            }
+            TooltipBarUI.Instance.RequestShow("another long message with text another long message with text another long message with text another long message with text another long message with text another long message with text");
+
+            if (IsNotAvailable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            if (IsNotAvailable)
-            {
-                return;
-            }
+            TooltipBarUI.Instance.Hide();
+
+            if (IsNotAvailable) return;
 
             SetButtonNotHovered();
         }
+
+        #endregion
     }
 }

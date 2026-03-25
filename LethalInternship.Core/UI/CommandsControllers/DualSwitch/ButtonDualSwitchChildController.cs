@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.UI.TooltipBar;
+using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -62,20 +63,18 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
 
         public void MouseOver()
         {
-            if (IsNotAvailable)
-            {
-                return;
-            }
+            TooltipBarUI.Instance.RequestShow("test looooooooooooooooooooooooooooooooooooooooooooog looooooooooooooooooooooong loooooooooogn long");
+
+            if (IsNotAvailable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            if (IsNotAvailable)
-            {
-                return;
-            }
+            TooltipBarUI.Instance.Hide();
+
+            if (IsNotAvailable) return;
 
             SetButtonNotHovered();
         }

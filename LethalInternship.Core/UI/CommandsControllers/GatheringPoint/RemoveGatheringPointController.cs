@@ -1,4 +1,6 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.UI.TooltipBar;
+using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,7 +16,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         public bool IsNotAvailable;
 
-        float transparency = 1f;
+        private float transparency = 1f;
+        private float holdTime = 1.2f;
 
         void OnEnable()
         {
@@ -57,18 +60,35 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             FrameImage.pixelsPerUnitMultiplier = 25f;
         }
 
-        public void Selected()
+        private void ActionValidated()
         {
+            TooltipBarUI.Instance.Hide();
             OnSelected?.Invoke(TypeInputAction);
+
+            PluginLoggerHook.LogDebug?.Invoke($"RemoveButtonSelected {TypeInputAction} click !");
+        }
+
+        public void PointerDown()
+        {
+            TooltipBarUI.Instance.StartHold(holdTime, ActionValidated);
         }
 
         public void MouseOver()
         {
+            TooltipBarUI.Instance.RequestShow("Hold !!");
+
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
+            TooltipBarUI.Instance.Hide();
+            SetButtonNotHovered();
+        }
+
+        public void PointerUp()
+        {
+            TooltipBarUI.Instance.StopHold();
             SetButtonNotHovered();
         }
     }

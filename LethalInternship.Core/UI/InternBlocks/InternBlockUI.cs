@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
@@ -7,7 +8,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
+namespace LethalInternship.Core.UI.InternBlocks
 {
     public class InternBlockUI : MonoBehaviour
     {
@@ -204,12 +205,16 @@ namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
         {
             if (!identity.Alive) return;
 
+            TooltipBarUI.Instance.RequestShow($"block UI {NameText.text}, click to ...");
+
             SetAlpha(BackgroundImage, 1f);
         }
 
         public void MouseLeave()
         {
             if (!identity.Alive) return;
+
+            TooltipBarUI.Instance.Hide();
 
             SetBackgroundNotHovered();
         }

@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System.Collections;
@@ -140,20 +141,18 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         public void MouseOver()
         {
-            if (IsNotAvailable)
-            {
-                return;
-            }
+            TooltipBarUI.Instance.RequestShow("test");
+
+            if (IsNotAvailable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            if (IsNotAvailable)
-            {
-                return;
-            }
+            TooltipBarUI.Instance.Hide();
+
+            if (IsNotAvailable) return;
 
             SetButtonNotHovered();
         }

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.CommandsControllers.InternBlocks
+namespace LethalInternship.Core.UI.InternBlocks
 {
     public class InternListUIController : MonoBehaviour
     {

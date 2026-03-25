@@ -7,6 +7,7 @@ using LethalInternship.Core.UI.Icons.WorldIcons;
 using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Core.UI.Renderers;
 using LethalInternship.Core.UI.Renderers.InterestPointsRenderer;
+using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
@@ -384,6 +385,7 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
+            TooltipBarUI.Instance.Hide();
             CommandsAll.SetActive(false);
         }
 
