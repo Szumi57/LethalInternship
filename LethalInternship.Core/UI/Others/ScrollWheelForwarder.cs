@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace LethalInternship.Core.UI.InternBlocks
+namespace LethalInternship.Core.UI.Others
 {
     public class ScrollWheelForwarder : MonoBehaviour, IScrollHandler
     {

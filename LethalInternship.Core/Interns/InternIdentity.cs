@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
@@ -88,40 +89,21 @@ namespace LethalInternship.Core.Interns
 
         public int GetRandomSuitID()
         {
-            StartOfRound instanceSOR = StartOfRound.Instance;
-            UnlockableItem unlockableItem;
-            List<int> indexesSpawnedUnlockables = new List<int>();
-            foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
-            {
-                if (unlockable.Value == null)
-                {
-                    continue;
-                }
-
-                unlockableItem = instanceSOR.unlockablesList.unlockables[unlockable.Key];
-                if (unlockableItem != null
-                    && unlockableItem.unlockableType == 0)
-                {
-                    // Suits
-                    indexesSpawnedUnlockables.Add(unlockable.Key);
-                    //PluginLoggerHook.LogDebug?.Invoke($"unlockable index {unlockable.Key}");
-                }
-            }
-
-            if (indexesSpawnedUnlockables.Count == 0)
+            List<int> indexesSpawnedSuits = InternManager.Instance.GetListOfAvailableSuitIDs();
+            if (indexesSpawnedSuits.Count == 0)
             {
                 return 0;
             }
 
-            //PluginLoggerHook.LogDebug?.Invoke($"indexesSpawnedUnlockables.Count {indexesSpawnedUnlockables.Count}");
+            //PluginLoggerHook.LogDebug?.Invoke($"indexesSpawnedSuits.Count {indexesSpawnedSuits.Count}");
             Random randomInstance = new Random();
-            int randomIndex = randomInstance.Next(0, indexesSpawnedUnlockables.Count);
-            if (randomIndex >= indexesSpawnedUnlockables.Count)
+            int randomIndex = randomInstance.Next(0, indexesSpawnedSuits.Count);
+            if (randomIndex >= indexesSpawnedSuits.Count)
             {
                 return 0;
             }
 
-            return indexesSpawnedUnlockables[randomIndex];
+            return indexesSpawnedSuits[randomIndex];
         }
 
         public void UpdateItemsInInventory(int[] itemsID)

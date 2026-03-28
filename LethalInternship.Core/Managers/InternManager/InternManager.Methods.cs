@@ -529,5 +529,29 @@ namespace LethalInternship.Core.Managers
         {
             return IsPlayerIntern(player);
         }
+
+        public List<int> GetListOfAvailableSuitIDs()
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            UnlockableItem unlockableItem;
+            List<int> indexesSpawnedSuits = new List<int>();
+            foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
+            {
+                if (unlockable.Value == null)
+                {
+                    continue;
+                }
+
+                unlockableItem = instanceSOR.unlockablesList.unlockables[unlockable.Key];
+                if (unlockableItem != null
+                    && unlockableItem.unlockableType == 0) // Suit
+                {
+                    // Suits
+                    indexesSpawnedSuits.Add(unlockable.Key);
+                    //PluginLoggerHook.LogDebug?.Invoke($"unlockable index {unlockable.Key}");
+                }
+            }
+            return indexesSpawnedSuits;
+        }
     }
 }

@@ -2,6 +2,7 @@
 using LethalInternship.Core.CommandsSystem.Abilities;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
+using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
@@ -64,6 +65,10 @@ namespace LethalInternship.Core.Managers
 
             CommandButtonController.OnSelected += CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
+
+            // Suits
+            ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
+            ButtonSelectSuit.OnSuitSelected += ButtonSelectSuit_OnSuitSelected;
         }
 
         public void RemoveEventHandlers()
@@ -74,8 +79,13 @@ namespace LethalInternship.Core.Managers
             PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
 
+#pragma warning disable CS8601 // Possible null reference assignment.
             CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected -= DualSwitchController_OnSelected;
+
+            ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
+            ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
+#pragma warning restore CS8601 // Possible null reference assignment.
         }
 
         public string GetKeyAction(InputAction inputAction)
@@ -140,8 +150,6 @@ namespace LethalInternship.Core.Managers
             {
                 LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
             }
-
-
 
             // Open commands ?
             CheckOpenAllCommandsInput();
@@ -356,6 +364,16 @@ namespace LethalInternship.Core.Managers
                     PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto defense");
                     break;
             }
+        }
+
+        private void ButtonSuitsController_OnSuitSelected(EnumInputAction typeInputAction)
+        {
+            PluginLoggerHook.LogDebug?.Invoke($"ButtonSuitsController_OnSuitSelected {typeInputAction}");
+        }
+
+        private void ButtonSelectSuit_OnSuitSelected(int suitID)
+        {
+            PluginLoggerHook.LogDebug?.Invoke($"ButtonSelectSuit_OnSuitSelected {suitID} {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
         }
 
         private void GiveOrderFollowMe()

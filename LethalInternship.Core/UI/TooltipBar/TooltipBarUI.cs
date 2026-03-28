@@ -21,7 +21,7 @@ namespace LethalInternship.Core.UI.TooltipBar
         private RectTransform content = null!;
 
         private Vector2 offset = new Vector2(0, 10);
-        private float showDelay = 0.8f;
+        private float showDelay = 0.7f;
 
         private Coroutine showRoutine = null!;
         private Coroutine holdRoutine = null!;
@@ -33,7 +33,6 @@ namespace LethalInternship.Core.UI.TooltipBar
                 Destroy(gameObject);
                 return;
             }
-
             Instance = this;
 
             HideImmediate();

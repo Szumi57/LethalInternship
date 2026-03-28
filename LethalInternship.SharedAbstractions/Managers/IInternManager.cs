@@ -89,5 +89,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         List<EnemyAI> GetEnemiesList();
 
         bool ShouldIgnoreInternsEndScreen(PlayerControllerB player);
+
+        List<int> GetListOfAvailableSuitIDs();
     }
 }

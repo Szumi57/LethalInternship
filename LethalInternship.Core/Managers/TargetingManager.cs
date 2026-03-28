@@ -5,6 +5,7 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 namespace LethalInternship.Core.Managers
 {
@@ -56,8 +57,6 @@ namespace LethalInternship.Core.Managers
                 && directTarget.Value.IsTargetNotPointOfInterest())
             {
                 // Pointed something directly
-                PluginLoggerHook.LogDebug?.Invoke($"directTarget !! target intern ? {directTarget.Value.Intern?.Npc.playerUsername} target enemy ? {directTarget.Value.Enemy?.enemyType.enemyName}");
-
                 currentTarget = directTarget;
                 return;
             }
@@ -81,7 +80,7 @@ namespace LethalInternship.Core.Managers
             TargetData? internTarget = FindPointedIntern();
             if (internTarget != null)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"++ internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
+                PluginLoggerHook.LogDebug?.Invoke($"++ scan angle internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
                 currentTarget = internTarget;
                 return;
             }
@@ -90,7 +89,7 @@ namespace LethalInternship.Core.Managers
             TargetData? enemyTarget = FindPointedEnemy();
             if (enemyTarget != null)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"++ enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
+                PluginLoggerHook.LogDebug?.Invoke($"++ scan angle enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
                 currentTarget = enemyTarget;
                 return;
             }
@@ -99,7 +98,7 @@ namespace LethalInternship.Core.Managers
             TargetData? enemyItem = FindPointedItem();
             if (enemyItem != null)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"++ Item {enemyItem.Value.Item?.itemProperties.itemName}");
+                PluginLoggerHook.LogDebug?.Invoke($"++ scan angle Item {enemyItem.Value.Item?.itemProperties.itemName}");
                 currentTarget = enemyItem;
                 return;
             }
@@ -125,13 +124,16 @@ namespace LethalInternship.Core.Managers
             Vector3 forward = cam.transform.forward;
 
             Ray ray = new Ray(origin, forward);
-            int count = Physics.RaycastNonAlloc(ray, buffer, maxDistanceRay);
+            LayerMask layerMask = StartOfRound.Instance.collidersRoomMaskDefaultAndPlayers;
+            layerMask |= 64;// "6: Props" PlayerControllerB.grabbableObjectsMask
+            layerMask |= 1 << 19;// "19: Enemies" StartOfRound.allPlayersCollideWithMask
+            int count = Physics.RaycastNonAlloc(ray, buffer, maxDistanceRay, layerMask);
 
-            //for (int i = count - 1; i >= 0; i--)
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke($"?? {buffer[i].collider.gameObject.name} {buffer[i].collider.transform.parent?.name} {buffer[i].collider.transform.parent?.parent?.name} {buffer[i].collider.transform.parent?.parent?.parent?.name} {GetColliderIntern(buffer[i].collider)?.Npc.playerUsername} {buffer[i].distance}");
-            //}
-            for (int i = count - 1; i >= 0; i--)
+            // find the colliders
+            int nearestIndex = -1;
+            float nearestDist = float.MaxValue;
+
+            for (int i = 0; i < count; i++)
             {
                 if (buffer[i].collider.GetComponentInParent<IIgnoreRaycast>() != null)
                 {
@@ -144,10 +146,37 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                //PluginLoggerHook.LogDebug?.Invoke($"--> hit {buffer[i].collider.gameObject.name} {buffer[i].collider.transform.parent?.name} {buffer[i].collider.transform.parent?.parent?.name} {buffer[i].collider.transform.parent?.parent?.parent?.name} {GetColliderIntern(buffer[i].collider)?.Npc.playerUsername}");
-                return BuildTarget(buffer[i]);
+                float d = buffer[i].distance;
+                if (d < nearestDist)
+                {
+                    nearestDist = d;
+                    nearestIndex = i;
+                }
             }
-            return null;
+            if (nearestIndex < 0)
+            {
+                return null;
+            }
+
+            //PluginLoggerHook.LogDebug?.Invoke($"??????");
+            //for (int i = 0; i < count; i++)
+            //{
+            //    if (buffer[i].collider.GetComponentInParent<IIgnoreRaycast>() != null)
+            //    {
+            //        continue;
+            //    }
+
+            //    if (buffer[i].collider.gameObject.name.StartsWith("LineOfS")
+            //        || buffer[i].collider.gameObject.name.StartsWith("Collision"))
+            //    {
+            //        continue;
+            //    }
+
+            //    PluginLoggerHook.LogDebug?.Invoke($"?? {buffer[i].collider.gameObject.name} \"{buffer[i].collider.gameObject.GetComponent<PlayerControllerB>()?.playerUsername}\" layer:{buffer[i].collider.gameObject.layer} \"{LayerMask.LayerToName(buffer[i].collider.gameObject.layer)}\" | {buffer[i].collider.transform.parent?.name} {buffer[i].collider.transform.parent?.parent?.name} {buffer[i].collider.transform.parent?.parent?.parent?.name} {GetInternFromCollider(buffer[i].collider)?.Npc.playerUsername} {buffer[i].distance}");
+            //}
+
+            //PluginLoggerHook.LogDebug?.Invoke($"--> hit {buffer[nearestIndex].collider.gameObject.name} \"{buffer[nearestIndex].collider.gameObject.GetComponent<PlayerControllerB>()?.playerUsername}\" layer:{buffer[nearestIndex].collider.gameObject.layer} \"{LayerMask.LayerToName(buffer[nearestIndex].collider.gameObject.layer)}\" | {buffer[nearestIndex].collider.transform.parent?.name} {buffer[nearestIndex].collider.transform.parent?.parent?.name} {buffer[nearestIndex].collider.transform.parent?.parent?.parent?.name} {GetInternFromCollider(buffer[nearestIndex].collider)?.Npc.playerUsername} {buffer[nearestIndex].distance}");
+            return BuildTarget(buffer[nearestIndex]);
         }
 
         private bool IsPointedTargetStillValid(TargetData target)
@@ -337,7 +366,7 @@ namespace LethalInternship.Core.Managers
             float minDistance = Mathf.Pow(1f, 2);   // very close
             float maxDistance = Mathf.Pow(30f, 2);  // far
 
-            float maxAngleClose = 30f; // degrees when very close
+            float maxAngleClose = 25f; // degrees when very close
             float maxAngleFar = 3f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
@@ -349,7 +378,7 @@ namespace LethalInternship.Core.Managers
             float minDistance = Mathf.Pow(1f, 2);   // very close
             float maxDistance = Mathf.Pow(30f, 2);  // far
 
-            float maxAngleClose = 7f; // degrees when very close
+            float maxAngleClose = 5f; // degrees when very close
             float maxAngleFar = 2f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
@@ -386,22 +415,34 @@ namespace LethalInternship.Core.Managers
                 }
             }
 
-            return new TargetData
+            // BuildTarget
+            TargetData targetData = new TargetData();
+            targetData.Root = col.gameObject;
+            targetData.PointOfInterest = pointOfInterest;
+            targetData.Score = angle;
+
+            IInternAI? internAI = GetInternFromCollider(col);
+            if (internAI != null)
             {
-                Root = col.gameObject,
+                PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
+                targetData.Intern = internAI;
+                return targetData;
+            }
 
-                // Special target
-                Intern = GetColliderIntern(col),
-                Enemy = col.gameObject.GetComponentInParent<EnemyAI>(),
-                Item = col.gameObject.GetComponentInParent<GrabbableObject>(),
-                // PointOfInterest target
-                PointOfInterest = pointOfInterest,
+            EnemyAI enemyAI = col.gameObject.GetComponentInParent<EnemyAI>();
+            if (enemyAI != null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target enemy ? {enemyAI?.enemyType.enemyName}");
+                targetData.Enemy = enemyAI;
+                return targetData;
+            }
 
-                Score = angle
-            };
+            targetData.Item = col.gameObject.GetComponentInParent<GrabbableObject>();
+            if (targetData.Item != null) { PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}"); }
+            return targetData;
         }
 
-        private IInternAI? GetColliderIntern(Collider col)
+        private IInternAI? GetInternFromCollider(Collider col)
         {
             PlayerControllerB? controller = col.GetComponentInParent<PlayerControllerB>();
             if (controller != null)

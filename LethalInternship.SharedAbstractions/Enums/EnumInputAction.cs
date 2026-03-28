@@ -18,5 +18,10 @@
         ScavengeToShip,
         ScavengeToGatheringPoint,
         ScavengeToCruiser,
+        PreviousSuit,
+        NextSuit,
+        SameSuit,
+        RandomSuit,
+        SelectSuit
     }
 }
