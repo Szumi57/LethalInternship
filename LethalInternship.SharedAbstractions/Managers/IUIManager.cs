@@ -10,7 +10,9 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         void AttachUIToLocalPlayer(PlayerControllerB player);
 
+        void ToogleAllCommands();
         void ShowAllCommands();
+        void HideCommandsAll();
 
         void InitUI(Transform HUDContainerParent);
 

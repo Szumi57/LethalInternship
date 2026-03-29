@@ -33,7 +33,6 @@ namespace LethalInternship.Core.Managers
         private EnumInputAction currentInputAction;
         public EnumInputAction CurrentInputAction { get => currentInputAction; }
 
-        private bool openCommandsInternInputIsPressed;
         private IInternAI? currentCommandedIntern = null!;
         private LineRendererUtil LineRendererUtil = null!;
 
@@ -62,6 +61,7 @@ namespace LethalInternship.Core.Managers
             PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed += OpenAllCommandsIntern_performed;
 
             CommandButtonController.OnSelected += CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
@@ -78,6 +78,7 @@ namespace LethalInternship.Core.Managers
             PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed -= OpenAllCommandsIntern_performed;
 
 #pragma warning disable CS8601 // Possible null reference assignment.
             CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
@@ -123,6 +124,7 @@ namespace LethalInternship.Core.Managers
                         case "Sprint": actionMap[action] = GameAction.Sprint; break;
                         case "Crouch": actionMap[action] = GameAction.Crouch; break;
                         case "Use": actionMap[action] = GameAction.Use; break;
+                        case "ActivateItem": actionMap[action] = GameAction.ActivateItem; break;
                     }
                 }
             }
@@ -150,9 +152,6 @@ namespace LethalInternship.Core.Managers
             {
                 LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
             }
-
-            // Open commands ?
-            CheckOpenAllCommandsInput();
 
             // Commands system
             if (currentTargetedAbility != null)
@@ -260,18 +259,31 @@ namespace LethalInternship.Core.Managers
 
         private void OnAnyAction(InputAction.CallbackContext ctx)
         {
-            if (currentTargetedAbility == null)
-                return;
-
             if (!InputLock.CanProcessWorldInput)
                 return;
+
+            // Any action
 
             // Unknown action
             if (!actionMap.TryGetValue(ctx.action, out var gameAction))
             {
+                UIManager.Instance.HideCommandsAll();
                 CancelTargeting();
                 return;
             }
+
+            // Anything but
+            if (gameAction != GameAction.Use
+                && gameAction != GameAction.ActivateItem
+                && gameAction != GameAction.Look)
+            {
+                UIManager.Instance.HideCommandsAll();
+            }
+
+            // If waiting for a targeted ability
+            // ---------------------------------
+            if (currentTargetedAbility == null)
+                return;
 
             // Submitting action
             if (currentTargetedAbility.SubmitActions.Contains(gameAction))
@@ -291,13 +303,12 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Not interrupting action
             if (!currentTargetedAbility.NotInterruptingActions.Contains(gameAction))
             {
                 CancelTargeting();
                 return;
             }
-
+            // Not interrupting action
             // Do nothing
         }
 
@@ -345,6 +356,10 @@ namespace LethalInternship.Core.Managers
                     GiveOrderGoScavenging();
                     break;
 
+                case EnumInputAction.Close:
+                    UIManager.Instance.HideCommandsAll();
+                    break;
+
                 case EnumInputAction.None:
                 default:
                     StopScanPositionCoroutine();
@@ -355,6 +370,8 @@ namespace LethalInternship.Core.Managers
 
         private void DualSwitchController_OnSelected((EnumInputAction, EnumClickSide) args)
         {
+            InputLock.BlockThisFrame();
+
             switch (args.Item1)
             {
                 case EnumInputAction.SetToAutoFlee:
@@ -517,27 +534,6 @@ namespace LethalInternship.Core.Managers
                 //HUDManager.Instance.ChangeControlTipMultiple(new string[] { Const.TOOLTIPS_ORDER_1 });
                 return;
             }
-        }
-
-        private void CheckOpenAllCommandsInput()
-        {
-            if (!PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern.IsPressed())
-            {
-                openCommandsInternInputIsPressed = false;
-                UIManager.Instance.HideCommandsAll();
-                return;
-            }
-
-            // If already open, do nothing
-            if (openCommandsInternInputIsPressed)
-            {
-                return;
-            }
-
-            StopScanPositionCoroutine();
-            openCommandsInternInputIsPressed = true;
-
-            UIManager.Instance.ShowAllCommands();
         }
 
         private void StartScanPositionCoroutine()
@@ -914,6 +910,13 @@ namespace LethalInternship.Core.Managers
 
                 return;
             }
+        }
+
+        private void OpenAllCommandsIntern_performed(InputAction.CallbackContext obj)
+        {
+            InputLock.BlockThisFrame();
+
+            UIManager.Instance.ToogleAllCommands();
         }
 
         #endregion

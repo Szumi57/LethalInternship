@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -206,6 +207,11 @@ namespace LethalInternship.Core.UI.InternBlocks
             if (!identity.Alive) return;
 
             TooltipBarUI.Instance.RequestShow($"block UI {NameText.text}, click to ...");
+
+            if (identity.InternAI != null)
+            {
+                CameraFocusUI.Instance.FocusOnIntern(identity.InternAI.Npc.transform);
+            }
 
             SetAlpha(BackgroundImage, 1f);
         }

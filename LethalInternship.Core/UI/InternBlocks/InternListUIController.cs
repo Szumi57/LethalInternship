@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
@@ -187,6 +188,16 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             if (identityMap.TryGetValue(intern.InternIdentity, out var block))
                 block.UpdateDeadInternState();
+        }
+
+        public void MouseOver()
+        {
+            UIVisibilityController.Instance.SetOnlyListInternsAndSuitCommandsVisible();
+        }
+
+        public void MouseLeave()
+        {
+            UIVisibilityController.Instance.SetAllVisible();
         }
 
         #endregion

@@ -4,6 +4,7 @@ using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
 using LethalInternship.Core.UI.Icons.WorldIcons;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Core.UI.Renderers;
 using LethalInternship.Core.UI.Renderers.InterestPointsRenderer;
@@ -356,6 +357,18 @@ namespace LethalInternship.Core.Managers
 
         //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel {GroupCommandWheel.activeSelf}");
 
+        public void ToogleAllCommands()
+        {
+            if (IsCommandsAllOpened)
+            {
+                HideCommandsAll();
+            }
+            else
+            {
+                ShowAllCommands();
+            }
+        }
+
         public void ShowAllCommands()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
@@ -386,6 +399,8 @@ namespace LethalInternship.Core.Managers
             Cursor.visible = false;
 
             TooltipBarUI.Instance.Hide();
+            CameraFocusUI.Instance.ReturnToInitial();
+
             CommandsAll.SetActive(false);
         }
 
@@ -431,7 +446,7 @@ namespace LethalInternship.Core.Managers
             if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length > 0)
             {
                 tooltipsToAdd.Add(("commands", string.Format(UIConst.TOOLTIP_COMMANDS,
-                                                             InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern))));
+                                                             InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern))));
             }
 
             SetTooltips(hudManager.controlTipLines[index],
@@ -564,8 +579,8 @@ namespace LethalInternship.Core.Managers
             }
 
             // Open commands for intern
-            sb.Append(string.Format(UIConst.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
-                .AppendLine();
+            //sb.Append(string.Format(UIConst.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
+            //    .AppendLine();
 
             localPlayer.cursorTip.text = sb.ToString();
         }

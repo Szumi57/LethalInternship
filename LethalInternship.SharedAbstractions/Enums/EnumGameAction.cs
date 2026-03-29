@@ -10,7 +10,7 @@
         //Interact,
         Crouch,
         Use,
-        //ActivateItem,
+        ActivateItem,
         //Discard,
         //SwitchItem,
         //QEItemInteract,

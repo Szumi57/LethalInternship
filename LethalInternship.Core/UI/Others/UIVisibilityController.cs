@@ -45,11 +45,11 @@ namespace LethalInternship.Core.UI.Others
             SetImagesVisible(ImagesUI, visible: true);
         }
 
-        public void SetOnlySuitCommandsVisible()
+        public void SetOnlyListInternsAndSuitCommandsVisible()
         {
             SetGameObjectVisible(SuitCommandsUI, visible: true);
+            SetGameObjectVisible(ListInternUI, visible: true);
 
-            SetGameObjectVisible(ListInternUI, visible: false);
             SetGameObjectVisible(QuickCommandsUI, visible: false);
             SetGameObjectVisible(PointerCommandsUI, visible: false);
             SetGameObjectVisible(AutoDefenseCommandsUI, visible: false);

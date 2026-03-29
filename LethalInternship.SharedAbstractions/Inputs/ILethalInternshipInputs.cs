@@ -16,6 +16,6 @@ namespace LethalInternship.SharedAbstractions.Inputs
 
         public InputAction MakeInternLookAtPosition { get; set; }
 
-        public InputAction OpenCommandsIntern { get; set; }
+        public InputAction OpenAllCommandsIntern { get; set; }
     }
 }

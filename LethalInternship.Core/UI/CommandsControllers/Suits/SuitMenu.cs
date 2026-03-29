@@ -14,7 +14,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
 
         public void MouseOver()
         {
-            UIVisibilityController.Instance.SetOnlySuitCommandsVisible();
+            UIVisibilityController.Instance.SetOnlyListInternsAndSuitCommandsVisible();
         }
 
         public void MouseLeave()

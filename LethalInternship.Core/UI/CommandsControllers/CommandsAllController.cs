@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -31,6 +32,11 @@ namespace LethalInternship.Core.UI.CommandsControllers
                 StopCoroutine(CoroutineUpdateCommandsUI);
             }
             CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
+
+            if (UIVisibilityController.Instance != null)
+            {
+                UIVisibilityController.Instance.SetAllVisible();
+            }
         }
 
         void Start()

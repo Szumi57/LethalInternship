@@ -22,6 +22,7 @@
         NextSuit,
         SameSuit,
         RandomSuit,
-        SelectSuit
+        SelectSuit,
+        Close,
     }
 }
