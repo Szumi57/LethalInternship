@@ -190,6 +190,16 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private ulong GetActualClientId()
+        {
+            if (GameNetworkManager.Instance == null
+               || GameNetworkManager.Instance.localPlayerController == null)
+            {
+                return ulong.MaxValue;
+            }
+
+            return GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
 
         /// <summary>
         /// Get <c>InternAI</c> from <c>PlayerControllerB</c> <c>playerClientId</c>
@@ -224,7 +234,7 @@ namespace LethalInternship.Core.Managers
         {
             IInternAI? internAI = GetInternAI(index);
             if (internAI != null
-                && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                && internAI.OwnerClientId == GetActualClientId())
             {
                 return internAI;
             }
@@ -332,7 +342,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return internAI.OwnerClientId == GetActualClientId();
         }
 
         /// <summary>
@@ -365,7 +375,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return internAI.OwnerClientId == GetActualClientId();
         }
 
         /// <summary>
@@ -384,7 +394,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return internAI.OwnerClientId == GetActualClientId();
         }
 
         public bool IsPlayerInternControlledAndOwner(PlayerControllerB player)
@@ -419,14 +429,14 @@ namespace LethalInternship.Core.Managers
         public IInternAI[] GetInternsAIOwnedByLocal()
         {
             return AllInternAIs.Where(x => x != null
-                                        && x.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                                        && x.OwnerClientId == GetActualClientId())
                                .ToArray();
         }
 
         public IInternAI[] GetAliveAndSpawnInternsAIOwnedByLocal()
         {
             return AllInternAIs.Where(x => x != null
-                                        && x.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
+                                        && x.OwnerClientId == GetActualClientId()
                                         && !x.IsEnemyDead
                                         && x.NpcController != null
                                         && x.NpcController.Npc != null
@@ -471,7 +481,7 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                if (internAI.OwnerClientId == GetActualClientId())
                 {
                     return true;
                 }

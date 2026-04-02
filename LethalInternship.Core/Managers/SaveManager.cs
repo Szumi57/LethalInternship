@@ -25,39 +25,35 @@ namespace LethalInternship.Core.Managers
         private SaveFile Save = null!;
         private ClientRpcParams ClientRpcParams = new ClientRpcParams();
 
-        /// <summary>
-        /// When manager awake, read the save file and load infos for LethalInternship, only for the host
-        /// </summary>
-        private void Awake()
+        public override void OnNetworkSpawn()
         {
             if (Instance != null && Instance != this)
             {
-                if (Instance.IsSpawned && Instance.IsServer)
-                {
-                    Instance.NetworkObject.Despawn(destroy: true);
-                }
-                else
-                {
-                    Destroy(Instance.gameObject);
-                }
+                this.NetworkObject.Despawn(true);
+                return;
             }
 
             Instance = this;
+            SaveManagerProvider.Register(this);
+
+            // Init
             FetchSaveFile();
+            // Load data from save
+            LoadAllDataFromSave();
+
+            // On client connected
+            if (!this.IsServer && !this.IsHost)
+            {
+                SyncCurrentValuesServerRpc(this.NetworkManager.LocalClientId);
+            }
         }
 
-        public override void OnNetworkSpawn()
+        public override void OnNetworkDespawn()
         {
-            base.OnNetworkSpawn();
-
-            if (!base.NetworkManager.IsServer)
+            if (Instance == this)
             {
-                // Destroy local manager
-                Destroy(SaveManagerProvider.Instance.ManagerGameObject);
-
-                // Use manager from server
-                SaveManagerProvider.Instance = this;
-                Instance = this;
+                Instance = null!;
+                SaveManagerProvider.Unregister(this);
             }
         }
 
@@ -75,6 +71,7 @@ namespace LethalInternship.Core.Managers
                 {
                     PluginLoggerHook.LogInfo?.Invoke($"Loading save file.");
                     Save = JsonConvert.DeserializeObject<SaveFile>(json) ?? new SaveFile();
+                    //Debug.Log($"{Save.ToString()}");
                 }
                 else
                 {

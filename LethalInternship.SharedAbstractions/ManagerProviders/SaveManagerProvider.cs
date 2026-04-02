@@ -1,26 +1,39 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Managers;
+﻿using LethalInternship.SharedAbstractions.Managers;
+using System;
 
 namespace LethalInternship.SharedAbstractions.ManagerProviders
 {
     public class SaveManagerProvider
     {
-        private static ISaveManager instance = null!;
+        private static ISaveManager? instance;
+
+        public static bool IsReady => instance != null;
 
         public static ISaveManager Instance
         {
             get
             {
                 if (instance == null)
-                {
-                    // Error
-                    PluginLoggerHook.LogError?.Invoke("Save manager not initialized !");
-                    return null!;
-                }
+                    throw new InvalidOperationException("SaveManager not available yet");
+
                 return instance;
             }
+        }
 
-            set => instance = value;
+        public static void Register(ISaveManager manager)
+        {
+            instance = manager;
+        }
+
+        public static void Unregister(ISaveManager manager)
+        {
+            if (instance == manager)
+                instance = null;
+        }
+
+        public static void ForceClear()
+        {
+            instance = null;
         }
     }
 }

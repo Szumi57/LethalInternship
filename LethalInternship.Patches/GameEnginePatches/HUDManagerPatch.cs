@@ -232,8 +232,6 @@ namespace LethalInternship.Patches.GameEnginePatches
         public static void Start_Postfix(HUDManager __instance)
         {
             ResizeStatsUIElements(__instance);
-
-            UIManagerProvider.Instance.InitUI(__instance.HUDContainer.transform.parent);
         }
 
         private static void ResizeStatsUIElements(HUDManager instance)

@@ -69,44 +69,38 @@ namespace LethalInternship.Core.Managers
         private GameObject[] AllPlayerObjectsBackUp = null!;
         private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
 
-        /// <summary>
-        /// Initialize instance,
-        /// repopulate pool of interns if InternManager reset when loading game
-        /// </summary>
-        private void Awake()
+        public override void OnNetworkSpawn()
         {
             if (Instance != null && Instance != this)
             {
-                if (Instance.IsSpawned && Instance.IsServer)
-                {
-                    Instance.NetworkObject.Despawn(destroy: true);
-                }
-                else
-                {
-                    Destroy(Instance.gameObject);
-                }
+                this.NetworkObject.Despawn(true);
+                return;
             }
 
             Instance = this;
+            InternManagerProvider.Register(this);
+
+            // Inits
             if (PluginEventsProvider.Events != null)
             {
                 PluginEventsProvider.Events.InitialSyncCompleted += Config_InitialSyncCompleted;
             }
-            PluginLoggerHook.LogDebug?.Invoke($"Client {NetworkManager.LocalClientId}, MaxInternsAvailable before CSync {PluginRuntimeProvider.Context.Config.MaxInternsAvailable}");
+
+            // On client connected
+            if (!this.IsServer && !this.IsHost)
+            {
+                SyncLoadedJsonIdentitiesServerRpc(this.NetworkManager.LocalClientId);
+            }
         }
 
-        public override void OnNetworkSpawn()
+        public override void OnNetworkDespawn()
         {
-            base.OnNetworkSpawn();
-
-            if (!base.NetworkManager.IsServer)
+            if (Instance == this)
             {
-                // Destroy local manager
-                Destroy(InternManagerProvider.Instance.ManagerGameObject);
+                Debug.Log($"???????????----- OnNetworkDespawn {this.GetInstanceID()} ");
 
-                // Use manager from server
-                InternManagerProvider.Instance = this;
-                Instance = this;
+                Instance = null!;
+                InternManagerProvider.Unregister(this);
             }
         }
 
@@ -126,21 +120,21 @@ namespace LethalInternship.Core.Managers
             RegisterAINoiseListener(Time.fixedDeltaTime);
         }
 
-        private void Start()
+        private void Update()
         {
-            // Identities
-            IdentityManager.Instance.InitIdentities(PluginRuntimeProvider.Context.Config.ConfigIdentities.configIdentities);
+            CheckAnimationsCulling();
+
+            CheckIsAnInternScheduledToLand();
+
+            ProcessCalculatePathQueue();
+        }
+
+        public void Init()
+        {
+            PluginLoggerHook.LogInfo?.Invoke("Initializing InternManager...");
 
             // Intern objects
-            if (PluginRuntimeProvider.Context.PluginIrlPlayersCount > 0)
-            {
-                // only resize if irl players not 0, which means we already tried to populate pool of interns
-                // But the manager somehow reset
-                ManagePoolOfInterns();
-            }
-
-            // Load data from save
-            SaveManager.Instance.LoadAllDataFromSave();
+            ManagePoolOfInterns();
 
             // Init footstep surfaces tags
             DictTagSurfaceIndex.Clear();
@@ -151,15 +145,19 @@ namespace LethalInternship.Core.Managers
 
             OrderedInternDistanceListTimedCheck = new TimedOrderedInternBodiesDistanceListCheck();
             InternBodiesSpawned = new List<IInternCullingBodyInfo>();
+            listPointOfInterest = new List<IPointOfInterest>();
+
+            // Managers
+            UIManager.Instance.InitUI(HUDManager.Instance.HUDContainer.transform.parent);
+            AudioManager.Instance.Init();
         }
 
-        private void Update()
+        public void DestroyMonoManagers()
         {
-            CheckAnimationsCulling();
-
-            CheckIsAnInternScheduledToLand();
-
-            ProcessCalculatePathQueue();
+            Object.Destroy(AudioManager.Instance);
+            Object.Destroy(IdentityManager.Instance);
+            Object.Destroy(InputManager.Instance);
+            Object.Destroy(TargetingManager.Instance);
         }
 
         /// <summary>
@@ -167,6 +165,7 @@ namespace LethalInternship.Core.Managers
         /// </summary>
         public void ManagePoolOfInterns()
         {
+            PluginLoggerHook.LogInfo?.Invoke("Installing pool of interns...");
             StartOfRound instance = StartOfRound.Instance;
             int maxInternsPossible = PluginRuntimeProvider.Context.Config.MaxInternsAvailable;
 
@@ -297,7 +296,7 @@ namespace LethalInternship.Core.Managers
                 internObject.SetActive(false);
             }
 
-            PluginLoggerHook.LogInfo?.Invoke("Pool of interns populated.");
+            PluginLoggerHook.LogInfo?.Invoke($"Pool of interns populated with {AllPlayerObjectsBackUp.Length} interns.");
         }
 
         private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)

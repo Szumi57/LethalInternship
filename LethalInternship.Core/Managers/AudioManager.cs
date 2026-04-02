@@ -17,19 +17,37 @@ namespace LethalInternship.Core.Managers
 {
     public class AudioManager : MonoBehaviour
     {
-        public static AudioManager Instance { get; private set; } = null!;
+        private static AudioManager _instance = null!;
+        public static AudioManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(AudioManager));
+                    _instance = go.AddComponent<AudioManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
         public Dictionary<string, AudioClip?> DictAudioClipsByPath = new Dictionary<string, AudioClip?>();
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
+            _instance = this;
+        }
 
+        public void Init()
+        {
+            PluginLoggerHook.LogInfo?.Invoke("Audio manager : Loading assets...");
             try
             {
                 LoadAllVoiceLanguageAudioAssets();

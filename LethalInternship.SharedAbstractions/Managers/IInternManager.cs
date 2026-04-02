@@ -23,6 +23,8 @@ namespace LethalInternship.SharedAbstractions.Managers
         Transform? ShipTransform { get; }
         VehicleController? VehicleController { get; }
 
+        void Init();
+        void DestroyMonoManagers();
         IInternAI? GetInternAI(int playerClientId);
         IInternAI? GetInternAIByInternId(int internId);
         void ManagePoolOfInterns();

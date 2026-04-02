@@ -11,7 +11,20 @@ namespace LethalInternship.Core.Managers
 {
     public class TargetingManager : MonoBehaviour
     {
-        public static TargetingManager Instance { get; private set; } = null!;
+        private static TargetingManager _instance = null!;
+        public static TargetingManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(TargetingManager));
+                    _instance = go.AddComponent<TargetingManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
         private TargetData? currentTarget;
 
@@ -23,12 +36,14 @@ namespace LethalInternship.Core.Managers
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
+            _instance = this;
+            PluginLoggerHook.LogInfo?.Invoke("Initializing TargetingManager...");
         }
 
         void Update()
@@ -181,6 +196,8 @@ namespace LethalInternship.Core.Managers
 
         private bool IsPointedTargetStillValid(TargetData target)
         {
+            if (target.Root == null) return false; // quit game while targeting
+
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
             Transform transform = target.Root.transform;
 
@@ -252,11 +269,13 @@ namespace LethalInternship.Core.Managers
             List<EnemyAI> enemies = InternManager.Instance.GetEnemiesList();
             foreach (EnemyAI enemy in enemies)
             {
-                if (enemy.isEnemyDead)
+                if (enemy == null
+                    || enemy.transform == null)
                 {
                     continue;
                 }
-                if (StartOfRound.Instance.localPlayerController.isInsideFactory == enemy.isOutside)
+                if (enemy.isEnemyDead
+                    && StartOfRound.Instance.localPlayerController.isInsideFactory == enemy.isOutside)
                 {
                     continue;
                 }

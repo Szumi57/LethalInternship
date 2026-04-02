@@ -11,6 +11,7 @@ using LethalInternship.SharedAbstractions.Hooks.MonoProfilerHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections;
@@ -25,7 +26,20 @@ namespace LethalInternship.Core.Managers
 {
     public class InputManager : MonoBehaviour, IInputManager
     {
-        public static InputManager Instance { get; private set; } = null!;
+        private static InputManager _instance = null!;
+        public static InputManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(InputManager));
+                    _instance = go.AddComponent<InputManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
         private InputActionAsset inputActionAsset = null!;
         private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
@@ -45,48 +59,14 @@ namespace LethalInternship.Core.Managers
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
-            AddEventHandlers();
-        }
-
-        private void AddEventHandlers()
-        {
-            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed += Manage_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed += OpenAllCommandsIntern_performed;
-
-            CommandButtonController.OnSelected += CommandButtonController_OnSelected;
-            ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
-
-            // Suits
-            ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
-            ButtonSelectSuit.OnSuitSelected += ButtonSelectSuit_OnSuitSelected;
-        }
-
-        public void RemoveEventHandlers()
-        {
-            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed -= Manage_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed -= OpenAllCommandsIntern_performed;
-
-#pragma warning disable CS8601 // Possible null reference assignment.
-            CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
-            ButtonDualSwitchParentController.OnDualSwitchSelected -= DualSwitchController_OnSelected;
-
-            ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
-            ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
-#pragma warning restore CS8601 // Possible null reference assignment.
+            _instance = this;
+            InputManagerProvider.Register(this);
         }
 
         public string GetKeyAction(InputAction inputAction)
@@ -105,10 +85,23 @@ namespace LethalInternship.Core.Managers
             return inputAction.GetBindingDisplayString(bindingIndex);
         }
 
-
-        private void Start()
+        private void OnEnable()
         {
-            currentInputAction = EnumInputAction.None;
+            PluginLoggerHook.LogInfo?.Invoke("Initializing InputManager...");
+
+            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed += Manage_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed += OpenAllCommandsIntern_performed;
+
+            CommandButtonController.OnSelected += CommandButtonController_OnSelected;
+            ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
+
+            // Suits
+            ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
+            ButtonSelectSuit.OnSuitSelected += ButtonSelectSuit_OnSuitSelected;
 
             // BuildActionMap
             inputActionAsset = IngamePlayerSettings.Instance.playerInput.actions;
@@ -139,6 +132,33 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private void OnDisable()
+        {
+            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed -= Manage_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed -= OpenAllCommandsIntern_performed;
+
+#pragma warning disable CS8601 // Possible null reference assignment.
+            CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
+            ButtonDualSwitchParentController.OnDualSwitchSelected -= DualSwitchController_OnSelected;
+
+            ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
+            ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
+#pragma warning restore CS8601 // Possible null reference assignment.
+
+            // UnsubscribeAllActions
+            foreach (var map in inputActionAsset.actionMaps)
+                foreach (var action in map.actions)
+                    action.started -= OnAnyAction;
+        }
+
+        private void OnDestroy()
+        {
+            InputManagerProvider.Unregister(this);
+        }
 
         private void Update()
         {
@@ -202,13 +222,6 @@ namespace LethalInternship.Core.Managers
             //        UIManager.Instance.HideInputIcon();
             //        break;
             //}
-        }
-
-        void OnDestroy()
-        {
-            foreach (var map in inputActionAsset.actionMaps)
-                foreach (var action in map.actions)
-                    action.started -= OnAnyAction;
         }
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)

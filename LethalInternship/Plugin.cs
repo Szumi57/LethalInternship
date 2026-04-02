@@ -2,9 +2,9 @@
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
+using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Inputs;
 using LethalInternship.Managers;
-using LethalInternship.PluginPatches.GameEnginePatches;
 using LethalInternship.SharedAbstractions.Configs;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Events;
@@ -233,6 +233,8 @@ namespace LethalInternship
                 return false;
             }
 
+            OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"));
+
             return true;
         }
 
@@ -262,7 +264,6 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.NetworkObjectPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.RoundManagerPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.SoundManagerPatch"));
-            _harmony.PatchAll(typeof(StartOfRoundPatch));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch"));
 
             // Npc

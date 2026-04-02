@@ -3,29 +3,29 @@ using System;
 
 namespace LethalInternship.SharedAbstractions.ManagerProviders
 {
-    public class UIManagerProvider
+    public class PluginManagerProvider
     {
-        private static IUIManager? instance;
+        private static IPluginManager? instance;
 
         public static bool IsReady => instance != null;
 
-        public static IUIManager Instance
+        public static IPluginManager Instance
         {
             get
             {
                 if (instance == null)
-                    throw new InvalidOperationException("UIManager not available yet");
+                    throw new InvalidOperationException("PluginManager not available yet");
 
                 return instance;
             }
         }
 
-        public static void Register(IUIManager manager)
+        public static void Register(IPluginManager manager)
         {
             instance = manager;
         }
 
-        public static void Unregister(IUIManager manager)
+        public static void Unregister(IPluginManager manager)
         {
             if (instance == manager)
                 instance = null;

@@ -27,37 +27,28 @@ namespace LethalInternship.Core.Managers
         private Terminal Terminal = null!;
         private TerminalParser terminalParser = null!;
 
-        private void Awake()
+        public override void OnNetworkSpawn()
         {
             if (Instance != null && Instance != this)
             {
-                if (Instance.IsSpawned && Instance.IsServer)
-                {
-                    Instance.NetworkObject.Despawn(destroy: true);
-                }
-                else
-                {
-                    Destroy(Instance.gameObject);
-                }
+                this.NetworkObject.Despawn(true);
+                return;
             }
 
             Instance = this;
+            TerminalManagerProvider.Register(this);
+
+            // Inits
             this.CommandIntershipProgram = PluginRuntimeProvider.Context.Config.TitleInHelpMenu.ToLower();
             this.StringIntershipProgram = PluginRuntimeProvider.Context.Config.GetTitleInternshipProgram();
         }
 
-        public override void OnNetworkSpawn()
+        public override void OnNetworkDespawn()
         {
-            base.OnNetworkSpawn();
-
-            if (!base.NetworkManager.IsServer)
+            if (Instance == this)
             {
-                // Destroy local manager
-                Destroy(TerminalManagerProvider.Instance.ManagerGameObject);
-
-                // Use manager from server
-                TerminalManagerProvider.Instance = this;
-                Instance = this;
+                Instance = null!;
+                TerminalManagerProvider.Unregister(this);
             }
         }
 
@@ -212,6 +203,7 @@ namespace LethalInternship.Core.Managers
             for (int i = 0; i < idsRandomIdentities.Length; i++)
             {
                 IInternIdentity internIdentity = IdentityManager.Instance.InternIdentities[idsRandomIdentities[i]];
+                PluginLoggerHook.LogDebug?.Invoke($"New intern {internIdentity.Name} to drop");
                 internIdentity.Status = EnumStatusIdentity.ToDrop;
                 internIdentity.Hp = internIdentity.Alive ? internIdentity.Hp : internIdentity.HpMax;
             }

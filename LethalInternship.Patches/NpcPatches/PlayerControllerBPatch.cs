@@ -13,7 +13,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
 namespace LethalInternship.Patches.NpcPatches
@@ -149,6 +151,45 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyPrefix]
         static bool Awake_PreFix(PlayerControllerB __instance)
         {
+            // Spawning network managers
+            var nm = NetworkManager.Singleton;
+            if (!InternManagerProvider.IsReady)
+            {
+                if (nm.IsHost || nm.IsServer)
+                {
+                    // Server
+                    PluginLoggerHook.LogInfo?.Invoke("Spawning InternManager networkBehaviour in PlayerControllerBPatch Awake_PreFix");
+                    var go = Object.Instantiate(PluginManagerProvider.Instance.InternManagerPrefab);
+                    go.GetComponent<NetworkObject>().Spawn();
+                }
+            }
+            if (!SaveManagerProvider.IsReady)
+            {
+                if (nm.IsHost || nm.IsServer)
+                {
+                    // Server
+                    PluginLoggerHook.LogInfo?.Invoke("Spawning SaveManager networkBehaviour in PlayerControllerBPatch Awake_PreFix");
+                    var go = Object.Instantiate(PluginManagerProvider.Instance.SaveManagerPrefab);
+                    go.GetComponent<NetworkObject>().Spawn();
+                }
+            }
+            if (!TerminalManagerProvider.IsReady)
+            {
+                if (nm.IsHost || nm.IsServer)
+                {
+                    // Server
+                    PluginLoggerHook.LogInfo?.Invoke("Spawning TerminalManager networkBehaviour in PlayerControllerBPatch Awake_PreFix");
+                    var go = Object.Instantiate(PluginManagerProvider.Instance.TerminalManagerPrefab);
+                    go.GetComponent<NetworkObject>().Spawn();
+                }
+            }
+            // -------------------
+
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {

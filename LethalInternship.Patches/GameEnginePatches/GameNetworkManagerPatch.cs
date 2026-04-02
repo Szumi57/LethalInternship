@@ -10,13 +10,16 @@ namespace LethalInternship.Patches.GameEnginePatches
     internal class GameNetworkManagerPatch
     {
         /// <summary>
-        /// Patch to intercept when saving base game, save our also plugin 
+        /// Patch to intercept when saving base game, save also our plugin 
         /// </summary>
         [HarmonyPatch("SaveGame")]
         [HarmonyPostfix]
         public static void SaveGame_Postfix()
         {
-            SaveManagerProvider.Instance.SavePluginInfos();
+            if (SaveManagerProvider.IsReady)
+            {
+                SaveManagerProvider.Instance.SavePluginInfos();
+            }
         }
     }
 }

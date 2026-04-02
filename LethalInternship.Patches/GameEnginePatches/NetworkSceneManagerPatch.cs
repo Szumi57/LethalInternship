@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using Unity.Netcode;
 
@@ -26,7 +25,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 UpdateIrlPlayerAfterMoreCompany();
             }
 
-            InternManagerProvider.Instance.ManagePoolOfInterns();
+            //InternManagerProvider.Instance.ManagePoolOfInterns();
         }
 
         private static void UpdateIrlPlayerAfterMoreCompany()

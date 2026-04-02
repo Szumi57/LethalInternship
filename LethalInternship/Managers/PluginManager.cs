@@ -1,32 +1,48 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.ManagerProviders;
+using LethalInternship.SharedAbstractions.Managers;
 using UnityEngine;
 
 namespace LethalInternship.Managers
 {
     /// <summary>
-    /// Manager in charge of initializing other managers for LethalInternship
+    /// Manager in charge of initializing network behaviours for LethalInternship
     /// </summary>
-    internal class PluginManager : MonoBehaviour
+    internal class PluginManager : MonoBehaviour, IPluginManager
     {
-        public static PluginManager Instance { get; private set; } = null!;
+        private static PluginManager _instance = null!;
+        public static PluginManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(PluginManager));
+                    _instance = go.AddComponent<PluginManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
-        /// <summary>
-        /// <c>GameObject</c> prefab of the <c>SaveManager</c>, see: <see cref="SaveManager"><c>SaveManager</c></see>
-        /// </summary>
-        public GameObject SaveManagerPrefab = null!;
-        /// <summary>
-        /// <c>GameObject</c> prefab of the <c>InternManager</c>, see: <see cref="InternManager"><c>InternManager</c></see>
-        /// </summary>
-        public GameObject InternManagerPrefab = null!;
-        /// <summary>
-        /// <c>GameObject</c> prefab of the <c>TerminalManager</c>, see: <see cref="TerminalManager"><c>TerminalManager</c></see>
-        /// </summary>
-        public GameObject TerminalManagerPrefab = null!;
+        private GameObject saveManagerPrefab = null!;
+        private GameObject internManagerPrefab = null!;
+        private GameObject terminalManagerPrefab = null!;
+
+        public GameObject SaveManagerPrefab => saveManagerPrefab;
+        public GameObject InternManagerPrefab => internManagerPrefab;
+        public GameObject TerminalManagerPrefab => terminalManagerPrefab;
 
         private void Awake()
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            PluginManagerProvider.Register(this);
         }
 
         /// <summary>
@@ -37,14 +53,14 @@ namespace LethalInternship.Managers
         /// </remarks>
         public void InitManagers()
         {
-            InternManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("InternManager");
-            InternManagerPrefab.AddComponent<InternManager>();
+            internManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("InternManager");
+            internManagerPrefab.AddComponent<InternManager>();
 
-            SaveManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("SaveManager");
-            SaveManagerPrefab.AddComponent<SaveManager>();
+            saveManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("SaveManager");
+            saveManagerPrefab.AddComponent<SaveManager>();
 
-            TerminalManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("TerminalManager");
-            TerminalManagerPrefab.AddComponent<TerminalManager>();
+            terminalManagerPrefab = LethalLib.Modules.NetworkPrefabs.CreateNetworkPrefab("TerminalManager");
+            terminalManagerPrefab.AddComponent<TerminalManager>();
         }
     }
 }

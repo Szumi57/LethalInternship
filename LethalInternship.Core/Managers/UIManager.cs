@@ -30,7 +30,20 @@ namespace LethalInternship.Core.Managers
 {
     public class UIManager : MonoBehaviour, IUIManager
     {
-        public static UIManager Instance { get; private set; } = null!;
+        private static UIManager _instance = null!;
+        public static UIManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(UIManager));
+                    _instance = go.AddComponent<UIManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
         // Commands panel
         public GameObject CommandsAll = null!;
@@ -67,15 +80,20 @@ namespace LethalInternship.Core.Managers
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
+            _instance = this;
+            UIManagerProvider.Register(this);
         }
 
-        private void Start() { }
+        private void OnDestroy()
+        {
+            UIManagerProvider.Unregister(this);
+        }
 
         private void Update()
         {
@@ -188,7 +206,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"InitUI");
+            PluginLoggerHook.LogInfo?.Invoke($"UIManager : Initialization...");
 
             if (CanvasOverlay == null)
             {
@@ -211,6 +229,10 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool ??= new InputIconUIPool(CanvasOverlay);
 
             // Instantiating prefabs
+            if (CommandsAll != null)
+            {
+                Object.Destroy(CommandsAll);
+            }
             CommandsAll = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
             CommandsAllUIController = CommandsAll.GetComponent<CommandsAllController>();
             CommandsAll.SetActive(false);

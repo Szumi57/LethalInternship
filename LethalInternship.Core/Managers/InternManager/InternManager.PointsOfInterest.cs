@@ -26,7 +26,7 @@ namespace LethalInternship.Core.Managers
 
         public IPointOfInterest GetPointOfInterestOrDefaultInterestPoint(Vector3 pos)
         {
-            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == pos);
+            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => !x.IsInvalid && x.GetPoint() == pos);
             if (pointOfInterest != null)
             {
                 return pointOfInterest;
@@ -40,7 +40,7 @@ namespace LethalInternship.Core.Managers
 
         public IPointOfInterest GetPointOfInterestOrVehicleInterestPoint(VehicleController vehicleController)
         {
-            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == VehicleInterestPoint.GetVehiclePoint(vehicleController));
+            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => !x.IsInvalid && x.GetPoint() == VehicleInterestPoint.GetVehiclePoint(vehicleController));
             if (pointOfInterest != null)
             {
                 return pointOfInterest;
@@ -54,7 +54,7 @@ namespace LethalInternship.Core.Managers
 
         public IPointOfInterest GetPointOfInterestOrShipInterestPoint(Transform shipTransform)
         {
-            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => x.GetPoint() == ShipInterestPoint.GetShipPoint(shipTransform));
+            IPointOfInterest? pointOfInterest = listPointOfInterest.FirstOrDefault(x => !x.IsInvalid && x.GetPoint() == ShipInterestPoint.GetShipPoint(shipTransform));
             if (pointOfInterest != null)
             {
                 return pointOfInterest;

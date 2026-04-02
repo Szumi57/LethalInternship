@@ -27,7 +27,11 @@ namespace LethalInternship.Core.UI.Others
 
         void OnEnable()
         {
-            cam = StartOfRound.Instance.localPlayerController.gameplayCamera;
+            if (StartOfRound.Instance != null
+                && StartOfRound.Instance.localPlayerController != null)
+            {
+                cam = StartOfRound.Instance.localPlayerController.gameplayCamera;
+            }
         }
 
         public void FocusOnIntern(Transform target)

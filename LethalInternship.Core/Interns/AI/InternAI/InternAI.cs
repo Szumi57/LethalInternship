@@ -37,7 +37,8 @@ namespace LethalInternship.Core.Interns.AI
         public PlayerControllerB Npc => npcController.Npc;
         public IInternIdentity InternIdentity { get => internIdentity; set => internIdentity = value; }
 
-        public GameObject GameObject => this.gameObject;
+        private GameObject _cachedGo = null!;
+        public GameObject GameObject => _cachedGo;
         public new ulong OwnerClientId => base.OwnerClientId;
         public new NetworkObject NetworkObject => base.NetworkObject;
         public Transform Transform => this.transform;
@@ -63,6 +64,8 @@ namespace LethalInternship.Core.Interns.AI
 
         private void Awake()
         {
+            _cachedGo = this.gameObject;
+
             // Behaviour states
             currentBehaviourStateIndex = -1;
         }

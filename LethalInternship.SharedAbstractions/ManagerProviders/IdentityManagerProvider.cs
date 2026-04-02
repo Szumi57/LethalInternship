@@ -1,26 +1,34 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Managers;
+﻿using LethalInternship.SharedAbstractions.Managers;
+using System;
 
 namespace LethalInternship.SharedAbstractions.ManagerProviders
 {
-    public class IdentityManagerProvider
+    public static class IdentityManagerProvider
     {
-        private static IIdentityManager instance = null!;
+        private static IIdentityManager? instance;
+
+        public static bool IsReady => instance != null;
 
         public static IIdentityManager Instance
         {
             get
             {
                 if (instance == null)
-                {
-                    // Error
-                    PluginLoggerHook.LogError?.Invoke("Identity manager not initialized !");
-                    return null!;
-                }
+                    throw new InvalidOperationException("IdentityManager not available yet");
+
                 return instance;
             }
+        }
 
-            set => instance = value;
+        public static void Register(IIdentityManager manager)
+        {
+            instance = manager;
+        }
+
+        public static void Unregister(IIdentityManager manager)
+        {
+            if (instance == manager)
+                instance = null;
         }
     }
 }
