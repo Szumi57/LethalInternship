@@ -12,8 +12,10 @@ namespace LethalInternship.Inputs
         [InputAction(KeyboardControl.E, Name = "Manage intern", GamepadPath = "<Gamepad>/dpad/up")]
         public InputAction ManageIntern { get; set; }
 
+
         [InputAction(KeyboardControl.G, Name = "Give/take item", GamepadControl = GamepadControl.ButtonEast)]
-        public InputAction GiveTakeItem { get; set; }
+        public InputAction GiveItemToIntern { get; set; }
+
 
         [InputAction(KeyboardControl.Q, Name = "Grab intern", GamepadPath = "<Gamepad>/dpad/down")]
         public InputAction GrabIntern { get; set; }
@@ -21,14 +23,16 @@ namespace LethalInternship.Inputs
         [InputAction(KeyboardControl.R, Name = "Release grabbed interns", GamepadControl = GamepadControl.LeftShoulder)]
         public InputAction ReleaseInterns { get; set; }
 
-        [InputAction(KeyboardControl.X, Name = "Change suit of intern", GamepadPath = "<Gamepad>/dpad/left")]
-        public InputAction ChangeSuitIntern { get; set; }
 
-        [InputAction(KeyboardControl.C, Name = "Make intern look at position", GamepadPath = "<Gamepad>/dpad/up")]
-        public InputAction MakeInternLookAtPosition { get; set; }
+        [InputAction(KeyboardControl.X, Name = "Command for this intern", GamepadPath = "<Gamepad>/dpad/left")]
+        public InputAction OpenCommandsOneIntern { get; set; }
 
         [InputAction(KeyboardControl.Z, Name = "Commands for all interns", GamepadPath = "<Gamepad>/dpad/right")]
         public InputAction OpenAllCommandsIntern { get; set; }
+
+
+        [InputAction(KeyboardControl.C, Name = "Make intern look at position", GamepadPath = "<Gamepad>/dpad/up")]
+        public InputAction MakeInternLookAtPosition { get; set; }
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     }

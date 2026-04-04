@@ -62,6 +62,8 @@ namespace LethalInternship
         // UI
         internal static bool UIAssetsLoaded = false;
         public static GameObject CommandsAll = null!;
+        public static GameObject CommandsOne = null!;
+        public static GameObject TooltipBar = null!;
 
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
@@ -210,11 +212,27 @@ namespace LethalInternship
 
         private bool LoadUIPrefabs()
         {
-            // Commands wheel
+            // Commands all
             CommandsAll = Plugin.ModAssets.LoadAsset<GameObject>("CommandsAll");
             if (CommandsAll == null)
             {
                 Logger.LogError($"Failed to load CommandsAll prefab.");
+                return false;
+            }
+
+            // Commands all
+            CommandsOne = Plugin.ModAssets.LoadAsset<GameObject>("CommandsOne");
+            if (CommandsOne == null)
+            {
+                Logger.LogError($"Failed to load CommandsOne prefab.");
+                return false;
+            }
+
+            // TooltipBar
+            TooltipBar = Plugin.ModAssets.LoadAsset<GameObject>("Tooltip");
+            if (TooltipBar == null)
+            {
+                Logger.LogError($"Failed to load TooltipBar prefab.");
                 return false;
             }
 
@@ -649,6 +667,8 @@ namespace LethalInternship
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
         public GameObject CommandsAll => Plugin.CommandsAll;
+        public GameObject CommandsOne => Plugin.CommandsOne;
+        public GameObject TooltipBar => Plugin.TooltipBar;
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;

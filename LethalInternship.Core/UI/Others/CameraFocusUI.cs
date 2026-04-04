@@ -1,55 +1,83 @@
-﻿using System.Collections;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using System.Collections;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Others
 {
-    public class CameraFocusUI : MonoBehaviour
+    public class CameraFocusUI
     {
-        public static CameraFocusUI Instance { get; private set; } = null!;
+        private static CameraFocusUI _instance = null!;
+        public static CameraFocusUI Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = new CameraFocusUI();
+
+                return _instance;
+            }
+        }
+        private CameraFocusUI() { }
 
         private Camera cam = null!;
 
         private float focusSpeed = 4f;
-        private float returnSpeed = 4f;
+        //private float returnSpeed = 4f;
 
         CameraState initialState;
         Coroutine currentRoutine = null!;
 
-        void Awake()
+        private bool UpdateCam()
         {
-            if (Instance != null && Instance != this)
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
             {
-                Destroy(gameObject);
-                return;
+                PluginLoggerHook.LogWarning?.Invoke("CameraFocusUI : no local Player available !");
+                return false;
             }
-            Instance = this;
-        }
 
-        void OnEnable()
-        {
-            if (StartOfRound.Instance != null
-                && StartOfRound.Instance.localPlayerController != null)
+            cam = StartOfRound.Instance.localPlayerController.gameplayCamera;
+            if (cam == null)
             {
-                cam = StartOfRound.Instance.localPlayerController.gameplayCamera;
+                PluginLoggerHook.LogWarning?.Invoke("CameraFocusUI : no local Player gameplayCamera available !");
+                return false;
             }
+
+            return true;
         }
 
         public void FocusOnIntern(Transform target)
         {
+            if (!UpdateCam())
+            {
+                return;
+            }
+
             if (currentRoutine != null)
-                StopCoroutine(currentRoutine);
+                UIManager.Instance.StopCoroutine(currentRoutine);
 
             initialState.Capture(cam);
-            currentRoutine = StartCoroutine(FocusRotationOnly(target));
+            currentRoutine = UIManager.Instance.StartCoroutine(FocusRotationOnly(target));
         }
 
         public void ReturnToInitial()
         {
+            if (!UpdateCam())
+            {
+                return;
+            }
+
             initialState.Apply(cam);
         }
 
         IEnumerator FocusRotationOnly(Transform target)
         {
+            if (!UpdateCam())
+            {
+                yield break;
+            }
+
             Vector3 targetPos = target.position + new Vector3(0f, 1.5f, 0f);
 
             Vector3 camWorldPos = cam.transform.position;

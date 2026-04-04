@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -20,7 +21,7 @@ namespace LethalInternship.Core.UI.TooltipBar
         private Canvas canvas = null!;
         private RectTransform content = null!;
 
-        private Vector2 offset = new Vector2(0, 10);
+        private Vector2 offset = new Vector2(4f, 14f);
         private float showDelay = 0.7f;
 
         private Coroutine showRoutine = null!;
@@ -30,25 +31,22 @@ namespace LethalInternship.Core.UI.TooltipBar
         {
             if (Instance != null && Instance != this)
             {
+                PluginLoggerHook.LogWarning?.Invoke($"A new TooltipBarUI exist at the same time ! Destroying the old one...");
                 Destroy(gameObject);
                 return;
             }
             Instance = this;
 
             HideImmediate();
-
-            canvas = this.transform.parent.parent.GetComponent<Canvas>();
-            content = Text.transform.parent.GetComponent<RectTransform>();
-        }
-
-        void OnEnable()
-        {
             Text.font = UIManager.Instance.FontToUse;
+
+            canvas = this.transform.parent.GetComponent<Canvas>();
+            content = Text.transform.parent.GetComponent<RectTransform>();
         }
 
         void Update()
         {
-            if (!UIManager.Instance.IsCommandsAllOpened)
+            if (!UIManager.Instance.IsAnyCommandsPanelOpened)
                 return;
 
             // Follow the mouse

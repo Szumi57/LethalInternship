@@ -19,6 +19,8 @@ namespace LethalInternship.SharedAbstractions.PluginRuntimeProvider
         bool UIAssetsLoaded { get; }
 
         GameObject CommandsAll { get; }
+        GameObject CommandsOne { get; }
+        GameObject TooltipBar { get; }
 
         GameObject WorldIconPrefab { get; }
         GameObject InputIconPrefab { get; }

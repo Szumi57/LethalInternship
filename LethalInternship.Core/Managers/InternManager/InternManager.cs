@@ -158,6 +158,7 @@ namespace LethalInternship.Core.Managers
             Object.Destroy(IdentityManager.Instance);
             Object.Destroy(InputManager.Instance);
             Object.Destroy(TargetingManager.Instance);
+            Object.Destroy(UIManager.Instance);
         }
 
         /// <summary>

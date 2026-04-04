@@ -1,4 +1,5 @@
-﻿using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Enums;
@@ -23,6 +24,8 @@ namespace LethalInternship.Core.UI.InternBlocks
             GoToGatheringPoint,
             Fighting,
         }
+
+        public static System.Action OnSelected = null!;
 
         public TextMeshProUGUI NameText = null!;
         public TextMeshProUGUI ItemCountText = null!;
@@ -199,7 +202,8 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             if (!identity.Alive) return;
 
-            PluginLoggerHook.LogDebug?.Invoke($"InternBlockUI intern {identity.InternAI?.Npc.playerClientId} {identity.InternAI?.Npc.playerUsername} clicked");
+            IdentitySelectionService.Instance.SelectSingle(identity);
+            OnSelected?.Invoke();
         }
 
         public void MouseOver()

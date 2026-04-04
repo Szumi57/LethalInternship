@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
@@ -45,13 +44,20 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        // Commands panel
-        public GameObject CommandsAll = null!;
-        public bool IsCommandsAllOpened { get { return CommandsAll != null && CommandsAll.activeSelf; } }
+        // Commands all panel
+        private GameObject commandsAll = null!;
+        public bool IsCommandsAllOpened { get { return commandsAll != null && commandsAll.activeSelf; } }
+
+        // Commands one panel
+        private GameObject commandsOne = null!;
+        public bool IsCommandsOneOpened { get { return commandsOne != null && commandsOne.activeSelf; } }
+
+        public bool IsAnyCommandsPanelOpened { get { return IsCommandsAllOpened || IsCommandsOneOpened; } }
+
+        // TooltipBar
+        private GameObject toolTipBarUI = null!;
 
         public TMP_FontAsset FontToUse => HUDManager.Instance.statsUIElements.playerNamesText[0].font;
-
-        private CommandsAllController CommandsAllUIController = null!;
 
         // Canvas overlay
         public Canvas CanvasOverlay = null!;
@@ -229,13 +235,29 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool ??= new InputIconUIPool(CanvasOverlay);
 
             // Instantiating prefabs
-            if (CommandsAll != null)
+            // ---------------------
+            // CommandsAll
+            if (commandsAll != null)
             {
-                Object.Destroy(CommandsAll);
+                Object.Destroy(commandsAll);
             }
-            CommandsAll = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
-            CommandsAllUIController = CommandsAll.GetComponent<CommandsAllController>();
-            CommandsAll.SetActive(false);
+            commandsAll = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
+            commandsAll.SetActive(false);
+
+            // CommandsOne
+            if (commandsOne != null)
+            {
+                Object.Destroy(commandsOne);
+            }
+            commandsOne = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsOne, HUDContainerParent);
+            commandsOne.SetActive(false);
+
+            // Tooltip
+            if (toolTipBarUI != null)
+            {
+                Object.Destroy(toolTipBarUI);
+            }
+            toolTipBarUI = GameObject.Instantiate(PluginRuntimeProvider.Context.TooltipBar, HUDContainerParent);
         }
 
         private void CommandButtonController_OnSelected(EnumInputAction typeInputAction)
@@ -364,22 +386,9 @@ namespace LethalInternship.Core.Managers
             return PointOfInterestInCenter;
         }
 
-        //PluginLoggerHook.LogDebug?.Invoke($"pos {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.position}, {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.GetSiblingIndex()}");
+        #region Show/Hide commands
 
-        //Component[] components = GroupCommandWheel.GetComponentsInChildren(typeof(Component));
-        //PluginLoggerHook.LogDebug?.Invoke($"==================");
-        //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel component n {components.Length}");
-        //foreach (Component component in components)
-        //{
-        //    if (component == null) continue;
-
-        //    component.transform.SetAsLastSibling();
-        //    PluginLoggerHook.LogDebug?.Invoke($"pos {component.transform.position}, index {component.transform.GetSiblingIndex()}, active {component.gameObject.activeSelf} {component.ToString()}");
-        //}
-
-        //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel {GroupCommandWheel.activeSelf}");
-
-        public void ToogleAllCommands()
+        public void ToogleCommandsAll()
         {
             if (IsCommandsAllOpened)
             {
@@ -387,11 +396,37 @@ namespace LethalInternship.Core.Managers
             }
             else
             {
-                ShowAllCommands();
+                ShowCommandsAll();
             }
         }
 
-        public void ShowAllCommands()
+        public void ToogleCommandsOne()
+        {
+            if (IsCommandsOneOpened)
+            {
+                HideCommandsOne();
+            }
+            else
+            {
+                ShowCommandsOne();
+            }
+        }
+
+        public void SwitchCommandsPanel()
+        {
+            if (IsCommandsAllOpened)
+            {
+                HideCommandsAll();
+                ShowCommandsOne();
+            }
+            else if (IsCommandsOneOpened)
+            {
+                HideCommandsOne();
+                ShowCommandsAll();
+            }
+        }
+
+        public void ShowCommandsAll()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
@@ -406,7 +441,25 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            CommandsAll.SetActive(true);
+            commandsAll.SetActive(true);
+        }
+
+        public void ShowCommandsOne()
+        {
+            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
+            {
+                return;
+            }
+            if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
+            {
+                return;
+            }
+
+            GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            commandsOne.SetActive(true);
         }
 
         public void HideCommandsAll()
@@ -423,8 +476,33 @@ namespace LethalInternship.Core.Managers
             TooltipBarUI.Instance.Hide();
             CameraFocusUI.Instance.ReturnToInitial();
 
-            CommandsAll.SetActive(false);
+            commandsAll.SetActive(false);
         }
+
+        public void HideCommandsOne()
+        {
+            if (!IsCommandsOneOpened)
+            {
+                return;
+            }
+
+            GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            TooltipBarUI.Instance.Hide();
+            CameraFocusUI.Instance.ReturnToInitial();
+
+            commandsOne.SetActive(false);
+        }
+
+        public void HideAll()
+        {
+            HideCommandsAll();
+            HideCommandsOne();
+        }
+
+        #endregion
 
         public void ClearCursorTipText()
         {
@@ -434,7 +512,7 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        #region Tips display
+        #region Tips top right display
 
         const string SEPARATOR = "--------------";
         const string TT_START = "<tt id=";
@@ -556,6 +634,7 @@ namespace LethalInternship.Core.Managers
 
         public void UpdateCursorTooltipsOfPointedIntern()
         {
+            // TODO: rework with targeting manager
             IInternAI? intern = currentPointedIntern;
             if (intern == null)
             {
@@ -571,12 +650,12 @@ namespace LethalInternship.Core.Managers
                 // Line grab/drop item
                 if (!intern.AreHandsFree())
                 {
-                    sb.Append(string.Format(UIConst.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
+                    sb.Append(string.Format(UIConst.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern)))
                         .AppendLine();
                 }
                 else if (localPlayer.currentlyHeldObjectServer != null)
                 {
-                    sb.Append(string.Format(UIConst.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem)))
+                    sb.Append(string.Format(UIConst.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern)))
                         .AppendLine();
                 }
 
@@ -590,14 +669,6 @@ namespace LethalInternship.Core.Managers
                 // Grab intern
                 sb.Append(string.Format(UIConst.TOOLTIP_GRAB_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern)))
                     .AppendLine();
-
-                // Change suit intern
-                if (localPlayer.currentSuitID != 0
-                    || intern.Npc.currentSuitID != localPlayer.currentSuitID)
-                {
-                    sb.Append(string.Format(UIConst.TOOLTIP_CHANGE_SUIT_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern)))
-                      .AppendLine();
-                }
             }
 
             // Open commands for intern
@@ -698,7 +769,7 @@ namespace LethalInternship.Core.Managers
         private IInternAI? FindPointedIntern(bool tightAngle)
         {
             IInternAI? bestPointedIntern = null;
-            float bestScore = float.MaxValue;
+            //float bestScore = float.MaxValue;
 
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
             IInternAI[] internAIs = InternManager.Instance.GetAliveAndSpawnInternsAI();

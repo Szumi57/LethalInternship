@@ -1,4 +1,4 @@
-﻿using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
@@ -34,7 +34,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             if (GameNetworkManager.Instance != null
                 && GameNetworkManager.Instance.localPlayerController != null)
             {
-                SyncList(IdentityManager.Instance.GetIdentitiesOwnedByLocal().ToList());
+                SyncList(IdentitySelectionService.Instance.SelectedInterns.ToList());
             }
         }
 

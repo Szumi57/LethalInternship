@@ -24,5 +24,6 @@
         RandomSuit,
         SelectSuit,
         Close,
+        ReturnToAll,
     }
 }

@@ -1,8 +1,10 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.CommandsSystem.Abilities;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
 using LethalInternship.Core.UI.CommandsControllers.Suits;
+using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
@@ -90,14 +92,15 @@ namespace LethalInternship.Core.Managers
             PluginLoggerHook.LogInfo?.Invoke("Initializing InputManager...");
 
             PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed += Manage_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern.performed += GiveItemToIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern.performed += OpenCommandsOneIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed += OpenAllCommandsIntern_performed;
 
             CommandButtonController.OnSelected += CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
+            InternBlockUI.OnSelected += InternBlockUI_OnSelected;
 
             // Suits
             ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
@@ -135,15 +138,16 @@ namespace LethalInternship.Core.Managers
         private void OnDisable()
         {
             PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed -= Manage_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern.performed -= GiveItemToIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern.performed -= OpenCommandsOneIntern_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed -= OpenAllCommandsIntern_performed;
 
 #pragma warning disable CS8601 // Possible null reference assignment.
             CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected -= DualSwitchController_OnSelected;
+            InternBlockUI.OnSelected -= InternBlockUI_OnSelected;
 
             ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
             ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
@@ -177,7 +181,7 @@ namespace LethalInternship.Core.Managers
             if (currentTargetedAbility != null)
             {
                 // UI
-                UIManager.Instance.HideCommandsAll();
+                UIManager.Instance.HideAll();
                 if (UIManager.Instance.GetPointOfInterestInCenter() != null)
                 {
                     // Hide if another icon in center
@@ -280,7 +284,7 @@ namespace LethalInternship.Core.Managers
             // Unknown action
             if (!actionMap.TryGetValue(ctx.action, out var gameAction))
             {
-                UIManager.Instance.HideCommandsAll();
+                UIManager.Instance.HideAll();
                 CancelTargeting();
                 return;
             }
@@ -290,7 +294,7 @@ namespace LethalInternship.Core.Managers
                 && gameAction != GameAction.ActivateItem
                 && gameAction != GameAction.Look)
             {
-                UIManager.Instance.HideCommandsAll();
+                UIManager.Instance.HideAll();
             }
 
             // If waiting for a targeted ability
@@ -370,7 +374,12 @@ namespace LethalInternship.Core.Managers
                     break;
 
                 case EnumInputAction.Close:
-                    UIManager.Instance.HideCommandsAll();
+                    UIManager.Instance.HideAll();
+                    break;
+
+                case EnumInputAction.ReturnToAll:
+                    UIManager.Instance.HideCommandsOne();
+                    UIManager.Instance.ShowCommandsAll();
                     break;
 
                 case EnumInputAction.None:
@@ -406,6 +415,13 @@ namespace LethalInternship.Core.Managers
             PluginLoggerHook.LogDebug?.Invoke($"ButtonSelectSuit_OnSuitSelected {suitID} {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
         }
 
+        private void InternBlockUI_OnSelected()
+        {
+            UIManager.Instance.HideCommandsAll();
+            UIManager.Instance.ShowCommandsOne();
+        }
+
+        // Remove ?
         private void GiveOrderFollowMe()
         {
             // Give order
@@ -746,7 +762,7 @@ namespace LethalInternship.Core.Managers
             SetCurrentInputAction(EnumInputAction.None);
         }
 
-        private void GiveTakeItem_performed(InputAction.CallbackContext obj)
+        private void GiveItemToIntern_performed(InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
@@ -815,7 +831,6 @@ namespace LethalInternship.Core.Managers
                 return;
             }
         }
-
 
         private void GrabIntern_performed(InputAction.CallbackContext obj)
         {
@@ -929,7 +944,21 @@ namespace LethalInternship.Core.Managers
         {
             InputLock.BlockThisFrame();
 
-            UIManager.Instance.ToogleAllCommands();
+            IdentitySelectionService.Instance.SelectMultiple(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+            UIManager.Instance.ToogleCommandsAll();
+        }
+
+        private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)
+        {
+            InputLock.BlockThisFrame();
+
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
+                return;
+
+            IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
+            UIManager.Instance.ToogleCommandsOne();
         }
 
         #endregion
