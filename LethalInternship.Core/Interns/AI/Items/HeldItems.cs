@@ -120,6 +120,14 @@ namespace LethalInternship.Core.Interns.AI.Items
             return HeldWeapon?.GrabbableObject;
         }
 
+        public GrabbableObject? GetGrabbableObjectByItemName(string itemName)
+        {
+            return Items.Where(x => x.GrabbableObject != null
+                                 && x.GrabbableObject.itemProperties.itemName == itemName)
+                        .Select(x => x.GrabbableObject)
+                        .FirstOrDefault();
+        }
+
         public HeldItem? GetHeldWeaponAsHeldItem()
         {
             return HeldWeapon;

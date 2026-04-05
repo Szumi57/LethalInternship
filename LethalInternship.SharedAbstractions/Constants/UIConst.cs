@@ -44,10 +44,14 @@ namespace LethalInternship.SharedAbstractions.Constants
         };
 
         public static string[] CATEGORIES_STRING = {
-            "- In proximity ({0})",// Proximity
-            "- Too far ({0})",// TooFar
-            "- Dead ({0})",// Dead
+            "- None ({0})",// None
+            "- In proximity ({0})",// InternClose
+            "- Too far ({0})",// InternTooFar
+            "- Dead ({0})",// InternDead
+            "- Weapon",// HeldWeapon
+            "- {0} Items ${1}",// HeldItem
         };
+
         public static float DISTANCE_UI_PROXIMITY = 300f;
 
         // Outlines
@@ -55,5 +59,8 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static float OUTLINE_RIM_SOLID = 0.1f;
         public static float DISTANCE_SOLID_OUTLINE = 15f;
         public static float OUTLINE_INTENSITY_DEFAULT = 0.7f;
+
+        // TooltipBarUI
+        public static string TOOLTIPBAR_ITEM = "{0} ${1}, hold click to drop";
     }
 }

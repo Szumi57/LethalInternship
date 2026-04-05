@@ -21,7 +21,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         private Coroutine CoroutineUpdateCommandsUI = null!;
 
-        IInternIdentity currentCommandIdentity = null!;
+        IInternIdentity currentIdentity = null!;
 
         void OnEnable()
         {
@@ -42,11 +42,11 @@ namespace LethalInternship.Core.UI.CommandsControllers
                 UIManager.Instance.HideCommandsOne();
                 return;
             }
-            this.currentCommandIdentity = identity;
+            this.currentIdentity = identity;
 
-            if (currentCommandIdentity.InternAI != null)
+            if (currentIdentity.InternAI != null)
             {
-                CameraFocusUI.Instance.FocusOnIntern(currentCommandIdentity.InternAI.Npc.transform);
+                CameraFocusUI.Instance.FocusOnIntern(currentIdentity.InternAI.Npc.transform);
             }
         }
 
@@ -56,7 +56,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
             {
                 PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI TitleUI found while loading CommandsAllController !");
             }
-            SetTitleUIText(currentCommandIdentity.Name);
+            SetTitleUIText(currentIdentity.Name);
 
             if (ModNamePanelDescription == null)
             {

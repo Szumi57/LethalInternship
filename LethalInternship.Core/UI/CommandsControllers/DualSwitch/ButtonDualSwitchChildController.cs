@@ -56,6 +56,18 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
             }
         }
 
+        private void SetButtonHovered()
+        {
+            FrameImage.pixelsPerUnitMultiplier = 7f;
+        }
+
+        private void SetButtonNotHovered()
+        {
+            FrameImage.pixelsPerUnitMultiplier = 15f;
+        }
+
+        #region Events
+
         public void Selected()
         {
             OnSideSelected?.Invoke(side);
@@ -79,14 +91,6 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
             SetButtonNotHovered();
         }
 
-        private void SetButtonHovered()
-        {
-            FrameImage.pixelsPerUnitMultiplier = 7f;
-        }
-
-        private void SetButtonNotHovered()
-        {
-            FrameImage.pixelsPerUnitMultiplier = 15f;
-        }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
@@ -429,17 +430,15 @@ namespace LethalInternship.Core.Managers
         public void ShowCommandsAll()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
-            {
                 return;
-            }
             if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
-            {
                 return;
-            }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            IdentitySelectionService.Instance.SelectMultiple(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
 
             commandsAll.SetActive(true);
         }
@@ -447,13 +446,9 @@ namespace LethalInternship.Core.Managers
         public void ShowCommandsOne()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
-            {
                 return;
-            }
             if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
-            {
                 return;
-            }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
@@ -462,19 +457,19 @@ namespace LethalInternship.Core.Managers
             commandsOne.SetActive(true);
         }
 
-        public void HideCommandsAll()
+        public void HideCommandsAll(bool resetCameraFocus = true)
         {
             if (!IsCommandsAllOpened)
-            {
                 return;
-            }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
             TooltipBarUI.Instance.Hide();
-            CameraFocusUI.Instance.ReturnToInitial();
+
+            if (resetCameraFocus)
+                CameraFocusUI.Instance.ReturnToInitial();
 
             commandsAll.SetActive(false);
         }
@@ -482,9 +477,7 @@ namespace LethalInternship.Core.Managers
         public void HideCommandsOne()
         {
             if (!IsCommandsOneOpened)
-            {
                 return;
-            }
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
@@ -720,7 +713,8 @@ namespace LethalInternship.Core.Managers
             // Update intern outlines
             InternOutlineController.UpdateOutlines(InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(),
                                                    target?.Intern?.Npc.playerClientId,
-                                                   allowMultipleInternOutline);
+                                                   allowMultipleInternOutline,
+                                                   forceNoOutlines: IsAnyCommandsPanelOpened);
         }
 
         private bool IsPointedInternStillValid(IInternAI internAI)

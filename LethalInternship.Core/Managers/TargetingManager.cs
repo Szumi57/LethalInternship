@@ -50,9 +50,10 @@ namespace LethalInternship.Core.Managers
         {
             if (StartOfRound.Instance == null
                 || StartOfRound.Instance.localPlayerController == null)
-            {
                 return;
-            }
+
+            if (UIManager.Instance.IsAnyCommandsPanelOpened)
+                return;
 
             if (Time.frameCount % 2 != 0) return;
 

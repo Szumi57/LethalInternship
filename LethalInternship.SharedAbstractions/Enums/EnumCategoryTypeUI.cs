@@ -2,8 +2,11 @@
 {
     public enum EnumCategoryTypeUI
     {
-        Proximity,
-        TooFar,
-        Dead
+        None = 0,
+        InternClose,
+        InternTooFar,
+        InternDead,
+        HeldWeapon,
+        HeldItem
     }
 }

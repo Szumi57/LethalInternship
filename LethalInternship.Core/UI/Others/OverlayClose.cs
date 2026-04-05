@@ -7,7 +7,7 @@ namespace LethalInternship.Core.UI.Others
     {
         public void MouseClick()
         {
-            UIManager.Instance.HideCommandsAll();
+            UIManager.Instance.HideAll();
         }
     }
 }

@@ -3,6 +3,7 @@ using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.CommandsSystem.Abilities;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
+using LethalInternship.Core.UI.CommandsControllers.ItemBlocks;
 using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.Utils;
@@ -101,6 +102,7 @@ namespace LethalInternship.Core.Managers
             CommandButtonController.OnSelected += CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
             InternBlockUI.OnSelected += InternBlockUI_OnSelected;
+            ItemBlockUI.OnSelected += ItemBlockUI_OnSelected;
 
             // Suits
             ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
@@ -148,6 +150,7 @@ namespace LethalInternship.Core.Managers
             CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected -= DualSwitchController_OnSelected;
             InternBlockUI.OnSelected -= InternBlockUI_OnSelected;
+            ItemBlockUI.OnSelected -= ItemBlockUI_OnSelected;
 
             ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
             ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
@@ -417,8 +420,26 @@ namespace LethalInternship.Core.Managers
 
         private void InternBlockUI_OnSelected()
         {
-            UIManager.Instance.HideCommandsAll();
+            UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
             UIManager.Instance.ShowCommandsOne();
+        }
+
+        private void ItemBlockUI_OnSelected(string itemName)
+        {
+            IInternIdentity? identity = IdentitySelectionService.Instance.SelectedInterns.FirstOrDefault();
+            if (identity == null
+                || !identity.Alive
+                || identity.InternAI == null)
+            {
+                return;
+            }
+
+            // Drop item
+            GrabbableObject? itemToDrop = identity.InternAI.GetGrabbableObjectFromItemName(itemName);
+            if (itemToDrop != null)
+            {
+                identity.InternAI.DropItem(itemToDrop);
+            }
         }
 
         // Remove ?
@@ -944,20 +965,21 @@ namespace LethalInternship.Core.Managers
         {
             InputLock.BlockThisFrame();
 
-            IdentitySelectionService.Instance.SelectMultiple(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+            UIManager.Instance.HideCommandsOne();
             UIManager.Instance.ToogleCommandsAll();
         }
 
         private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)
         {
-            InputLock.BlockThisFrame();
-
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null
                 || target.Value.Intern == null)
                 return;
 
             IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
+
+            InputLock.BlockThisFrame();
+            UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
             UIManager.Instance.ToogleCommandsOne();
         }
 

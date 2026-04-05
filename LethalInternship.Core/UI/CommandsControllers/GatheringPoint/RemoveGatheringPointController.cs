@@ -8,7 +8,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 {
     public class RemoveGatheringPointController : MonoBehaviour
     {
-        public System.Action<EnumInputAction> OnSelected = null!;
+        public static System.Action<EnumInputAction> OnSelected = null!;
 
         public EnumInputAction TypeInputAction;
         public Image FrameImage = null!;
@@ -73,6 +73,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             TooltipBarUI.Instance.StartHold(holdTime, ActionValidated);
         }
 
+        public void PointerUp()
+        {
+            TooltipBarUI.Instance.StopHold();
+            SetButtonNotHovered();
+        }
+
         public void MouseOver()
         {
             TooltipBarUI.Instance.RequestShow("Hold !!");
@@ -83,12 +89,6 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         public void MouseLeave()
         {
             TooltipBarUI.Instance.Hide();
-            SetButtonNotHovered();
-        }
-
-        public void PointerUp()
-        {
-            TooltipBarUI.Instance.StopHold();
             SetButtonNotHovered();
         }
     }

@@ -10,6 +10,8 @@ using LethalInternship.SharedAbstractions.NetworkSerializers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -19,7 +21,7 @@ namespace LethalInternship.Core.Interns.AI
     {
         public HeldItems HeldItems { get; set; } = new HeldItems();
 
-        public Action<IInternAI> OnHeldItemsChanged { get { return onHeldItemsChanged; } set { onHeldItemsChanged = value; } }
+        public Action<IInternAI>? OnHeldItemsChanged { get { return onHeldItemsChanged; } set { onHeldItemsChanged = value!; } }
         private Action<IInternAI> onHeldItemsChanged = null!;
 
         private Transform WeaponHolderTransform = null!;
@@ -89,6 +91,16 @@ namespace LethalInternship.Core.Interns.AI
         public int GetNbHeldItems()
         {
             return HeldItems.NbHeldItems;
+        }
+
+        public List<GrabbableObject> GetHeldGrabbableObjects()
+        {
+            return HeldItems.Items.Where(x => x.GrabbableObject != null).Select(x => x.GrabbableObject!).ToList();
+        }
+
+        public GrabbableObject? GetHeldWeapon()
+        {
+            return HeldItems.GetHeldWeapon();
         }
 
         private bool ShouldUseTwoHandedHoldAnim(bool ignoreHeldWeapon = true)
@@ -513,9 +525,6 @@ namespace LethalInternship.Core.Interns.AI
                     TargetFloorPosition = targetFloorPosition
                 });
             }
-
-            // Event
-            OnHeldItemsChanged?.Invoke(this);
         }
 
         public GrabbableObject? ChooseFirstPickedUpItem(EnumOptionsGetItems options)
@@ -640,6 +649,11 @@ namespace LethalInternship.Core.Interns.AI
                 default:
                     return null;
             }
+        }
+
+        public GrabbableObject? GetGrabbableObjectFromItemName(string itemName)
+        {
+            return HeldItems.GetGrabbableObjectByItemName(itemName);
         }
 
         public void DropTwoHandItem()
@@ -899,6 +913,8 @@ namespace LethalInternship.Core.Interns.AI
             // Battery
             SyncBatteryIntern(grabbableObject, (int)(grabbableObject.insertedBattery.charge * 100f));
 
+            // Event dropped item
+            OnHeldItemsChanged?.Invoke(this);
             PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} dropped {grabbableObject}, on client #{NetworkManager.LocalClientId}");
         }
 

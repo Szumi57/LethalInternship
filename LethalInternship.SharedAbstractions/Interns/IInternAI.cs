@@ -41,6 +41,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void DropItem(GrabbableObject itemToDrop);
         GrabbableObject? ChooseFirstPickedUpItem(EnumOptionsGetItems options);
         GrabbableObject? ChooseLastPickedUpItem(EnumOptionsGetItems options);
+        GrabbableObject? GetGrabbableObjectFromItemName(string itemName);
         void DropTwoHandItem();
         void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true);
         void StopSinkingState();
@@ -87,7 +88,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget);
         void GrabInternServerRpc(ulong idPlayerGrabberController);
 
-        Action<IInternAI> OnHeldItemsChanged { get; set; }
+        Action<IInternAI>? OnHeldItemsChanged { get; set; }
+        List<GrabbableObject> GetHeldGrabbableObjects();
+        GrabbableObject? GetHeldWeapon();
         int GetNbHeldItems();
         void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
         void GrabItem(GrabbableObject grabbableObject);

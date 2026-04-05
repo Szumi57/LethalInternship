@@ -54,9 +54,9 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             var grouped = new Dictionary<EnumCategoryTypeUI, List<IInternIdentity>>
             {
-                { EnumCategoryTypeUI.Proximity, new List<IInternIdentity>() },
-                { EnumCategoryTypeUI.TooFar, new List<IInternIdentity>() },
-                { EnumCategoryTypeUI.Dead, new List<IInternIdentity>() }
+                { EnumCategoryTypeUI.InternClose, new List<IInternIdentity>() },
+                { EnumCategoryTypeUI.InternTooFar, new List<IInternIdentity>() },
+                { EnumCategoryTypeUI.InternDead, new List<IInternIdentity>() }
             };
 
             foreach (var identity in identities)
@@ -67,20 +67,20 @@ namespace LethalInternship.Core.UI.InternBlocks
             int siblingIndex = 0;
 
             siblingIndex = SyncCategory(
-                EnumCategoryTypeUI.Proximity,
-                grouped[EnumCategoryTypeUI.Proximity],
+                EnumCategoryTypeUI.InternClose,
+                grouped[EnumCategoryTypeUI.InternClose],
                 siblingIndex
             );
 
             siblingIndex = SyncCategory(
-                EnumCategoryTypeUI.TooFar,
-                grouped[EnumCategoryTypeUI.TooFar],
+                EnumCategoryTypeUI.InternTooFar,
+                grouped[EnumCategoryTypeUI.InternTooFar],
                 siblingIndex
             );
 
             siblingIndex = SyncCategory(
-                EnumCategoryTypeUI.Dead,
-                grouped[EnumCategoryTypeUI.Dead],
+                EnumCategoryTypeUI.InternDead,
+                grouped[EnumCategoryTypeUI.InternDead],
                 siblingIndex
             );
         }
@@ -88,16 +88,16 @@ namespace LethalInternship.Core.UI.InternBlocks
         private EnumCategoryTypeUI GetCategory(IInternIdentity identity)
         {
             if (!identity.Alive)
-                return EnumCategoryTypeUI.Dead;
+                return EnumCategoryTypeUI.InternDead;
 
             IInternAI? intern = identity.InternAI;
             if (intern == null)
-                return EnumCategoryTypeUI.TooFar;
+                return EnumCategoryTypeUI.InternTooFar;
 
             if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY)
-                return EnumCategoryTypeUI.Proximity;
+                return EnumCategoryTypeUI.InternClose;
 
-            return EnumCategoryTypeUI.TooFar;
+            return EnumCategoryTypeUI.InternTooFar;
         }
 
         private int SyncCategory(EnumCategoryTypeUI type,
@@ -172,7 +172,7 @@ namespace LethalInternship.Core.UI.InternBlocks
                 categoryMap[type] = cat;
             }
 
-            cat.UpdateInternCount(internCount);
+            cat.UpdateTitleText(string.Format($"{UIConst.CATEGORIES_STRING[(int)type]}", internCount));
             return cat;
         }
 

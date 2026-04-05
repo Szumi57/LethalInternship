@@ -21,12 +21,12 @@ namespace LethalInternship.Core.UI.Outlines
 
         public static void UpdateOutlines(IInternAI[] interns,
                                           ulong? pointedInternClientId,
-                                          bool allowMultiple)
+                                          bool allowMultiple,
+                                          bool forceNoOutlines = false)
         {
             foreach (IInternAI intern in interns)
             {
-                bool shouldOutline = intern.Npc.playerClientId == pointedInternClientId || allowMultiple;
-
+                bool shouldOutline = forceNoOutlines ? false : intern.Npc.playerClientId == pointedInternClientId || allowMultiple;
                 float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
                 float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, distance);
                 float rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,

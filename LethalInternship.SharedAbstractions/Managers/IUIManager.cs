@@ -12,7 +12,7 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         void ToogleCommandsAll();
         void ShowCommandsAll();
-        void HideCommandsAll();
+        void HideCommandsAll(bool resetCameraFocus = true);
 
         void HideAll();
 

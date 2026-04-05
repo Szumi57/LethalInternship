@@ -85,16 +85,10 @@ namespace LethalInternship.Core.UI.TooltipBar
             root.anchoredPosition = pos;
         }
 
-        public void ShowImmediate(Sprite iconSprite = null!)
+        public void ShowImmediate(string message, Sprite iconSprite = null!)
         {
-            if (icon != null)
-            {
-                icon.enabled = iconSprite != null;
-                icon.sprite = iconSprite;
-            }
-
-            CanvasGroup.alpha = 1f;
-            CanvasGroup.blocksRaycasts = false;
+            Text.text = message;
+            Show(iconSprite);
         }
 
         public void RequestShow(string message, Sprite iconSprite = null!)
@@ -109,6 +103,18 @@ namespace LethalInternship.Core.UI.TooltipBar
             HideImmediate();
         }
 
+        private void Show(Sprite iconSprite = null!)
+        {
+            if (icon != null)
+            {
+                icon.enabled = iconSprite != null;
+                icon.sprite = iconSprite;
+            }
+
+            CanvasGroup.alpha = 1f;
+            CanvasGroup.blocksRaycasts = false;
+        }
+
         IEnumerator ShowAfterDelay(string message, Sprite iconSprite)
         {
             Text.text = message;
@@ -117,12 +123,12 @@ namespace LethalInternship.Core.UI.TooltipBar
             if (CanvasGroup.alpha > 0f)
             {
                 yield return null;
-                ShowImmediate(iconSprite);
+                Show(iconSprite);
             }
             else
             {
                 yield return new WaitForSeconds(showDelay);
-                ShowImmediate(iconSprite);
+                Show(iconSprite);
             }
         }
 

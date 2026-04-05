@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.InternBlocks
+namespace LethalInternship.Core.UI.Others
 {
     public class BlocksUIPool<T> where T : Component
     {

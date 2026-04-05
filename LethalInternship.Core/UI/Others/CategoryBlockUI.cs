@@ -1,16 +1,15 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using TMPro;
 using UnityEngine;
 
-namespace LethalInternship.Core.UI.InternBlocks
+namespace LethalInternship.Core.UI.Others
 {
     public class CategoryBlockUI : MonoBehaviour
     {
         public TextMeshProUGUI CategoryTitle = null!;
 
-        private EnumCategoryTypeUI categoryTypeUI = EnumCategoryTypeUI.TooFar;
+        private EnumCategoryTypeUI categoryTypeUI = EnumCategoryTypeUI.None;
 
         void OnEnable()
         {
@@ -22,9 +21,9 @@ namespace LethalInternship.Core.UI.InternBlocks
             this.categoryTypeUI = categoryTypeUI;
         }
 
-        public void UpdateInternCount(int internCount)
+        public void UpdateTitleText(string text)
         {
-            CategoryTitle.text = string.Format($"{UIConst.CATEGORIES_STRING[(int)categoryTypeUI]}", internCount);
+            CategoryTitle.text = text;
         }
     }
 }
