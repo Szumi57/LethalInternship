@@ -123,6 +123,7 @@ namespace LethalInternship.Core.Managers
                         case "Crouch": actionMap[action] = GameAction.Crouch; break;
                         case "Use": actionMap[action] = GameAction.Use; break;
                         case "ActivateItem": actionMap[action] = GameAction.ActivateItem; break;
+                        case "SwitchItem": actionMap[action] = GameAction.SwitchItem; break;
                     }
                 }
             }
@@ -294,8 +295,9 @@ namespace LethalInternship.Core.Managers
 
             // Anything but
             if (gameAction != GameAction.Use
-                && gameAction != GameAction.ActivateItem
-                && gameAction != GameAction.Look)
+                && gameAction != GameAction.ActivateItem // Click
+                && gameAction != GameAction.Look // Move mouse
+                && gameAction != GameAction.SwitchItem) // Scroll
             {
                 UIManager.Instance.HideAll();
             }
@@ -424,7 +426,7 @@ namespace LethalInternship.Core.Managers
             UIManager.Instance.ShowCommandsOne();
         }
 
-        private void ItemBlockUI_OnSelected(string itemName)
+        private void ItemBlockUI_OnSelected(GrabbableObject grabbableObject)
         {
             IInternIdentity? identity = IdentitySelectionService.Instance.SelectedInterns.FirstOrDefault();
             if (identity == null
@@ -435,11 +437,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Drop item
-            GrabbableObject? itemToDrop = identity.InternAI.GetGrabbableObjectFromItemName(itemName);
-            if (itemToDrop != null)
-            {
-                identity.InternAI.DropItem(itemToDrop);
-            }
+            identity.InternAI.DropItem(grabbableObject);
         }
 
         // Remove ?

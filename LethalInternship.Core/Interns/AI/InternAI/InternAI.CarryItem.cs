@@ -651,11 +651,6 @@ namespace LethalInternship.Core.Interns.AI
             }
         }
 
-        public GrabbableObject? GetGrabbableObjectFromItemName(string itemName)
-        {
-            return HeldItems.GetGrabbableObjectByItemName(itemName);
-        }
-
         public void DropTwoHandItem()
         {
             GrabbableObject? twoHandItem = HeldItems.GetTwoHandItem();

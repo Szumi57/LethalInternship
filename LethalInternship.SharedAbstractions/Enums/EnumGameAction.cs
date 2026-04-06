@@ -12,7 +12,7 @@
         Use,
         ActivateItem,
         //Discard,
-        //SwitchItem,
+        SwitchItem,
         //QEItemInteract,
         //EnableChat,
         //SubmitChat,

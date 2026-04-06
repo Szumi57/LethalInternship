@@ -4,11 +4,11 @@ using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.UI.ItemBlocks
 {
@@ -18,12 +18,9 @@ namespace LethalInternship.Core.UI.ItemBlocks
         public ItemBlockUI PrefabItemBlockUI = null!;
         public CategoryBlockUI PrefabCategoryBlockUI = null!;
 
-        private BlocksUIPool<ItemBlockUI> itemsPool = null!;
         private BlocksUIPool<CategoryBlockUI> categoryPool = null!;
 
-        private Dictionary<int, ItemBlockUI> blocksByUID = new Dictionary<int, ItemBlockUI>();
-        private Dictionary<string, List<ItemBlockUI>> blocksByItemName = new Dictionary<string, List<ItemBlockUI>>();
-
+        private Dictionary<GrabbableObject, ItemBlockUI> blocksByGrabbableObject = new Dictionary<GrabbableObject, ItemBlockUI>();
         private Dictionary<EnumCategoryTypeUI, CategoryBlockUI> categoryMap = new Dictionary<EnumCategoryTypeUI, CategoryBlockUI>();
 
         private int weaponScrapValue = 0;
@@ -61,17 +58,8 @@ namespace LethalInternship.Core.UI.ItemBlocks
             currentInternAI.OnHeldItemsChanged += UpdateItems;
         }
 
-        void OnDisable()
-        {
-            ReleaseUnusedItemBlocks();
-        }
-
         private void InitUIPools()
         {
-            if (itemsPool == null)
-            {
-                itemsPool = new BlocksUIPool<ItemBlockUI>(PrefabItemBlockUI, Content, PluginRuntimeProvider.Context.Config.NbMaxCanCarry);
-            }
             if (categoryPool == null)
             {
                 categoryPool = new BlocksUIPool<CategoryBlockUI>(PrefabCategoryBlockUI, Content, Enum.GetNames(typeof(EnumCategoryTypeUI)).Length);
@@ -90,18 +78,16 @@ namespace LethalInternship.Core.UI.ItemBlocks
             itemsScrapValue = 0;
 
             // Init categories
-            var grouped = new Dictionary<EnumCategoryTypeUI, List<ItemUIInfos>>
+            var grouped = new Dictionary<EnumCategoryTypeUI, List<GrabbableObject>>
             {
-                { EnumCategoryTypeUI.HeldWeapon, new List<ItemUIInfos>() },
-                { EnumCategoryTypeUI.HeldItem, new List<ItemUIInfos>() },
+                { EnumCategoryTypeUI.HeldWeapon, new List<GrabbableObject>() },
+                { EnumCategoryTypeUI.HeldItem, new List<GrabbableObject>() },
             };
 
-            // Mark all block to unused
-            foreach (var block in blocksByUID.Values)
-                block.MarkUnused();
+            foreach (var itemGrabbableObject in items)
+                grouped[GetCategory(itemGrabbableObject)].Add(itemGrabbableObject);
 
-            foreach (var item in items)
-                grouped[GetCategory(item)].Add(new ItemUIInfos() { ItemName = item.itemProperties.itemName, ItemValue = item.scrapValue });
+            DisableMissingItems(items);
 
             int siblingIndex = 0;
 
@@ -133,7 +119,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
         }
 
         private int SyncCategory(EnumCategoryTypeUI type,
-                                 List<ItemUIInfos> itemsInfos,
+                                 List<GrabbableObject> itemsGrabbableObjects,
                                  int totalValue,
                                  int startIndex)
         {
@@ -143,81 +129,39 @@ namespace LethalInternship.Core.UI.ItemBlocks
             //    return startIndex;
             //}
 
-            var category = GetOrCreateCategory(type, itemsInfos.Count, totalValue);
+            var category = GetOrCreateCategory(type, itemsGrabbableObjects.Count, totalValue);
             category.transform.SetSiblingIndex(startIndex++);
 
-            foreach (var itemInfos in itemsInfos)
+            foreach (var itemGrabbableObject in itemsGrabbableObjects)
             {
-                ItemBlockUI block = GetReusableBlock(itemInfos);
-                block.MarkUsed();
-                block.gameObject.SetActive(true);
-                Debug.Log($"UpdateInfos for {itemInfos.ItemName} in block {block.ItemName}");
-                Debug.Log($"-----------");
-                block.UpdateInfos(itemInfos);
+                if (!blocksByGrabbableObject.TryGetValue(itemGrabbableObject, out ItemBlockUI block))
+                {
+                    // Get intern block
+                    block = Object.Instantiate(PrefabItemBlockUI, Content);
+                    block.Setup(itemGrabbableObject);
 
+                    blocksByGrabbableObject[itemGrabbableObject] = block;
+                }
+
+                block.gameObject.SetActive(true);
                 block.transform.SetSiblingIndex(startIndex++);
             }
 
             return startIndex;
         }
 
-        private ItemBlockUI GetReusableBlock(ItemUIInfos itemInfos)
+        private void DisableMissingItems(List<GrabbableObject> newItems)
         {
-            Debug.Log($"blocksByItemName looking for {itemInfos.ItemName}");
-            foreach (var (key, value) in blocksByItemName)
+            var set = new HashSet<GrabbableObject>(newItems);
+            var toDisable = new List<GrabbableObject>();
+
+            foreach (var item in blocksByGrabbableObject.Keys)
+                if (!set.Contains(item))
+                    toDisable.Add(item);
+
+            foreach (var item in toDisable)
             {
-                foreach (var blockItem in value)
-                {
-                    if (blockItem != null)
-                        Debug.Log($"blocksByItemName {key} -> {blockItem.ItemName} isUsed:{blockItem.IsUsed}");
-                }
-            }
-
-            if (blocksByItemName.TryGetValue(itemInfos.ItemName, out var list))
-            {
-                var reusable = list.FirstOrDefault(b => !b.IsUsed);
-                if (reusable != null)
-                    return reusable;
-            }
-
-            Debug.Log($"new block for {itemInfos.ItemName}");
-            // not found -> new block
-            var block = itemsPool.Get();
-            block.AssignRuntimeUID();
-            block.Setup(itemInfos);
-
-            blocksByUID[block.RuntimeUID] = block;
-
-            if (!blocksByItemName.TryGetValue(itemInfos.ItemName, out list))
-                blocksByItemName[itemInfos.ItemName] = list = new List<ItemBlockUI>();
-
-            list.Add(block);
-            return block;
-        }
-
-
-        private void ReleaseUnusedItemBlocks()
-        {
-            Debug.Log($"ReleaseUnusedItemBlocks ----------");
-            foreach (var (key, value) in blocksByUID)
-            {
-                if (value != null)
-                    Debug.Log($"blocksByUID {key} -> {value.ItemName} isUsed:{value.IsUsed}");
-            }
-
-            var toRelease = blocksByUID
-                            //.Where(kv => !kv.Value.IsUsed)
-                            .Select(kv => kv.Key)
-                            .ToList();
-
-            foreach (var uid in toRelease)
-            {
-                var block = blocksByUID[uid];
-                block.MarkUnused();
-                itemsPool.Release(block);
-                //blocksByUID.Remove(uid);
-
-                Debug.Log($"ReleaseUnusedItemBlocks block {block.ItemName} used:{block.IsUsed}");
+                blocksByGrabbableObject[item].gameObject.SetActive(false);
             }
         }
 

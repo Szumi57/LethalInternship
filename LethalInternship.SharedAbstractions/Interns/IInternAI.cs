@@ -41,7 +41,6 @@ namespace LethalInternship.SharedAbstractions.Interns
         void DropItem(GrabbableObject itemToDrop);
         GrabbableObject? ChooseFirstPickedUpItem(EnumOptionsGetItems options);
         GrabbableObject? ChooseLastPickedUpItem(EnumOptionsGetItems options);
-        GrabbableObject? GetGrabbableObjectFromItemName(string itemName);
         void DropTwoHandItem();
         void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true);
         void StopSinkingState();
