@@ -124,26 +124,6 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        private void LateUpdate()
-        {
-            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
-            {
-                return;
-            }
-
-            switch (InputManager.Instance.CurrentInputAction)
-            {
-                case EnumInputAction.PointToAction:
-                    localPlayerController.cursorTip.text = UIConst.UI_CHOOSE_LOCATION;
-                    break;
-
-                case EnumInputAction.None:
-                default:
-                    //ClearCursorTipText();
-                    break;
-            }
-        }
-
         private void ShowWorldIconUIs()
         {
             if (worldIconUIPool == null)
@@ -158,7 +138,9 @@ namespace LethalInternship.Core.Managers
             InternsOwned = internsOwned.Length > 0;
             if (!InternsOwned)
             {
-                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
+                // Clear remaining icons
+                worldIconUIPool.DisableOtherIcons();
+                return;
             }
 
             List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
@@ -261,51 +243,6 @@ namespace LethalInternship.Core.Managers
             toolTipBarUI = GameObject.Instantiate(PluginRuntimeProvider.Context.TooltipBar, HUDContainerParent);
         }
 
-        private void CommandButtonController_OnSelected(EnumInputAction typeInputAction)
-        {
-            if (!InternsOwned)
-            {
-                HideCommandsAll();
-                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
-                return;
-            }
-
-            if (typeInputAction != EnumInputAction.None)
-            {
-                HideCommandsAll();
-            }
-            switch (typeInputAction)
-            {
-                case EnumInputAction.PointToAction:
-                    InputManager.Instance.SetCurrentInputAction(typeInputAction, currentPointedIntern);
-                    //SetPedestrianInputIcon();
-                    break;
-
-                case EnumInputAction.FollowMe:
-                case EnumInputAction.GoToShip:
-                case EnumInputAction.GoToVehicle:
-                case EnumInputAction.ScavengeToShip:
-                    InputManager.Instance.SetCurrentInputAction(typeInputAction, currentPointedIntern);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        private void DualSwitchController_OnSelected((EnumInputAction, EnumClickSide) args)
-        {
-            switch (args.Item1)
-            {
-                case EnumInputAction.SetToAutoFlee:
-                    PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto flee");
-                    break;
-                case EnumInputAction.SetToAutoDefense:
-                    PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto defense");
-                    break;
-            }
-        }
-
         public void ShowInputIcon()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
@@ -363,23 +300,6 @@ namespace LethalInternship.Core.Managers
             //}
 
             return EnumIconImagesTypes.None;
-        }
-
-        public void SetDefaultInputIcon()
-        {
-            //inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
-        }
-        public void SetPositionInputIcon()
-        {
-            //inputIconImagePrefab = PluginRuntimeProvider.Context.PositionIconImagePrefab;
-        }
-        public void SetVehicleInputIcon()
-        {
-            //inputIconImagePrefab = PluginRuntimeProvider.Context.VehicleIconImagePrefab;
-        }
-        public void SetShipInputIcon()
-        {
-            //inputIconImagePrefab = PluginRuntimeProvider.Context.ShipIconImagePrefab;
         }
 
         public IPointOfInterest? GetPointOfInterestInCenter()

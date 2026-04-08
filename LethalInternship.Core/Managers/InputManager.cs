@@ -16,12 +16,9 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 namespace LethalInternship.Core.Managers
@@ -46,16 +43,7 @@ namespace LethalInternship.Core.Managers
         private InputActionAsset inputActionAsset = null!;
         private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
 
-        private EnumInputAction currentInputAction;
-        public EnumInputAction CurrentInputAction { get => currentInputAction; }
-
-        private IInternAI? currentCommandedIntern = null!;
         private LineRendererUtil LineRendererUtil = null!;
-
-        private Coroutine? scanPositionCoroutine;
-        private Collider? lastColliderHit = null;
-        private Vector3? lastPointedHitPoint = null;
-        private bool isPointedValid;
 
         TargetedAbility? currentTargetedAbility;
 
@@ -408,7 +396,6 @@ namespace LethalInternship.Core.Managers
 
                 case EnumInputAction.None:
                 default:
-                    StopScanPositionCoroutine();
                     UIManager.Instance.HideInputIcon();
                     break;
             }
@@ -469,232 +456,80 @@ namespace LethalInternship.Core.Managers
         }
 
         // Remove ?
-        private void GiveOrderFollowMe()
-        {
-            // Give order
-            if (currentCommandedIntern == null)
-            {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandToFollowPlayer();
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandToFollowPlayer();
-            }
-            SetCurrentInputAction(EnumInputAction.None);
-        }
-
         private void GiveOrderGoToShip()
         {
-            Transform? shipTransform = InternManager.Instance.ShipTransform;
-            if (shipTransform == null)
-            {
-                PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");
-                return;
-            }
+            //Transform? shipTransform = InternManager.Instance.ShipTransform;
+            //if (shipTransform == null)
+            //{
+            //    PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");
+            //    return;
+            //}
 
-            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
-            // Give order
-            if (currentCommandedIntern == null)
-            {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandTo(pointOfInterest);
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandTo(pointOfInterest);
-            }
+            //IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+            //// Give order
+            //if (currentCommandedIntern == null)
+            //{
+            //    // All owned interns (later close interns)
+            //    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+            //    foreach (IInternAI intern in internsOwned)
+            //    {
+            //        intern.SetCommandTo(pointOfInterest);
+            //    }
+            //}
+            //else
+            //{
+            //    // Current intern
+            //    currentCommandedIntern.SetCommandTo(pointOfInterest);
+            //}
         }
 
         private void GiveOrderGoToVehicle()
         {
-            VehicleController? vehicleController = InternManager.Instance.VehicleController;
-            if (vehicleController == null)
-            {
-                PluginLoggerHook.LogDebug?.Invoke("vehicleController not found !");
-                return;
-            }
+            //VehicleController? vehicleController = InternManager.Instance.VehicleController;
+            //if (vehicleController == null)
+            //{
+            //    PluginLoggerHook.LogDebug?.Invoke("vehicleController not found !");
+            //    return;
+            //}
 
-            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(vehicleController);
-            // Give order
-            if (currentCommandedIntern == null)
-            {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandTo(pointOfInterest);
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandTo(pointOfInterest);
-            }
+            //IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(vehicleController);
+            //// Give order
+            //if (currentCommandedIntern == null)
+            //{
+            //    // All owned interns (later close interns)
+            //    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+            //    foreach (IInternAI intern in internsOwned)
+            //    {
+            //        intern.SetCommandTo(pointOfInterest);
+            //    }
+            //}
+            //else
+            //{
+            //    // Current intern
+            //    currentCommandedIntern.SetCommandTo(pointOfInterest);
+            //}
         }
 
         private void GiveOrderGoScavenging()
         {
-            // Give order
-            if (currentCommandedIntern == null)
-            {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandToScavenging();
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandToScavenging();
-            }
+            //// Give order
+            //if (currentCommandedIntern == null)
+            //{
+            //    // All owned interns (later close interns)
+            //    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
+            //    foreach (IInternAI intern in internsOwned)
+            //    {
+            //        intern.SetCommandToScavenging();
+            //    }
+            //}
+            //else
+            //{
+            //    // Current intern
+            //    currentCommandedIntern.SetCommandToScavenging();
+            //}
         }
 
         #endregion
-
-        public void SetCurrentInputAction(EnumInputAction action, IInternAI? internAIToCommand = null)
-        {
-            currentInputAction = action;
-            this.currentCommandedIntern = internAIToCommand;
-        }
-
-        private void StartScanPositionCoroutine()
-        {
-            if (scanPositionCoroutine == null)
-            {
-                scanPositionCoroutine = StartCoroutine(ScanPosition());
-            }
-        }
-
-        private void StopScanPositionCoroutine()
-        {
-            if (scanPositionCoroutine != null)
-            {
-                StopCoroutine(scanPositionCoroutine);
-                scanPositionCoroutine = null;
-            }
-        }
-
-        private IEnumerator ScanPosition()
-        {
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-
-            while (CurrentInputAction == EnumInputAction.PointToAction)
-            {
-                isPointedValid = false;
-                lastColliderHit = null;
-
-                // Scan 3D world
-                Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-                RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
-                if (raycastHits.Length == 0)
-                {
-                    //UIManager.Instance.SetPedestrianInputIcon();
-                    yield return null;
-                    continue;
-                }
-
-                Vector3? lastHitPoint = null;
-                raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
-                NavMeshPath path = new NavMeshPath();
-                // Check if looking too far in the distance or at a valid position
-                foreach (var hit in raycastHits)
-                {
-                    if (hit.distance < 1f)
-                    {
-                        continue;
-                    }
-
-                    if (hit.collider.tag == "Player")
-                    {
-                        continue;
-                    }
-
-                    lastHitPoint = hit.point;
-
-                    // Check for what we hit
-                    if (IsColliderFromVehicle(hit.collider))
-                    {
-                        lastColliderHit = hit.collider;
-                        isPointedValid = true;
-                        UIManager.Instance.SetVehicleInputIcon();
-                        break;
-                    }
-                    else if (IsColliderFromShip(hit.collider))
-                    {
-                        lastColliderHit = hit.collider;
-                        isPointedValid = true;
-                        UIManager.Instance.SetShipInputIcon();
-                        break;
-                    }
-                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
-
-                    // Pedestrian
-                    UIManager.Instance.SetPositionInputIcon();
-                    lastPointedHitPoint = hit.point;
-                    isPointedValid = lastHitPoint != null;
-
-                    break;
-                }
-                yield return null;
-            }
-
-            isPointedValid = false;
-            yield break;
-        }
-
-        private bool IsColliderFromVehicle(Collider? collider)
-        {
-            return collider?.gameObject.GetComponentInParent<VehicleController>();
-        }
-
-        private bool IsColliderFromShip(Collider? collider)
-        {
-            return IsParentShip(collider?.gameObject.transform);
-        }
-
-        private bool IsParentShip(Transform? transform)
-        {
-            if (transform == null)
-            {
-                return false;
-            }
-
-            if (transform.name == "HangarShip")
-            {
-                return true;
-            }
-
-            return IsParentShip(transform.parent);
-        }
-
-        private Transform? GetParentShip(Transform? transform)
-        {
-            if (transform == null)
-            {
-                return null;
-            }
-
-            if (transform.name == "HangarShip")
-            {
-                return transform;
-            }
-
-            return GetParentShip(transform.parent);
-        }
-
 
         #region Shortcut performed
 

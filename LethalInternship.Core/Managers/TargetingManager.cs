@@ -178,7 +178,6 @@ namespace LethalInternship.Core.Managers
             // find the colliders
             int nearestIndex = -1;
             float nearestDist = float.MaxValue;
-
             for (int i = 0; i < count; i++)
             {
                 if (buffer[i].collider.GetComponentInParent<IIgnoreRaycast>() != null)
@@ -478,7 +477,7 @@ namespace LethalInternship.Core.Managers
                 && internAI.NpcController != null
                 && internAI.NpcController.Npc != null
                 && !internAI.Npc.isPlayerDead
-                && internAI.IsSpawningAnimationRunning())
+                && !internAI.IsSpawningAnimationRunning())
             {
                 PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
                 targetData.Intern = internAI;
