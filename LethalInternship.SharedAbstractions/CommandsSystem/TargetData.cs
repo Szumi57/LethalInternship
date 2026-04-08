@@ -29,5 +29,27 @@ namespace LethalInternship.SharedAbstractions.CommandsSystem
                 || Enemy != null
                 || Item != null;
         }
+
+        public override string ToString()
+        {
+            string target = string.Empty;
+            if (Intern != null)
+            {
+                return $"Intern ({Intern.Npc.playerUsername})";
+            }
+            if (Enemy != null)
+            {
+                return $"Enemy ({Enemy.enemyType.enemyName})";
+            }
+            if (Item != null)
+            {
+                return $"Item({Item.itemProperties.itemName})";
+            }
+            if (PointOfInterest != null)
+            {
+                return $"Point of interest ({PointOfInterest.GetPoint().ToString()})";
+            }
+            return target;
+        }
     }
 }

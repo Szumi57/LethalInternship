@@ -6,7 +6,6 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.InternBlocks
@@ -34,7 +33,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             if (GameNetworkManager.Instance != null
                 && GameNetworkManager.Instance.localPlayerController != null)
             {
-                SyncList(IdentitySelectionService.Instance.SelectedInterns.ToList());
+                SyncList(IdentitySelectionService.Instance.GetSelected());
             }
         }
 
@@ -50,7 +49,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             }
         }
 
-        public void SyncList(List<IInternIdentity> identities)
+        public void SyncList(IEnumerable<IInternIdentity> identities)
         {
             var grouped = new Dictionary<EnumCategoryTypeUI, List<IInternIdentity>>
             {
@@ -138,7 +137,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             return startIndex;
         }
 
-        private void RemoveMissingInterns(List<IInternIdentity> newIdentities)
+        private void RemoveMissingInterns(IEnumerable<IInternIdentity> newIdentities)
         {
             var set = new HashSet<IInternIdentity>(newIdentities);
             var toRemove = new List<IInternIdentity>();

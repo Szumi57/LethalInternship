@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LethalInternship.SharedAbstractions.Interns;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -52,7 +53,9 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             timer.Start();
 
             enemiesInMap.Clear();
-            enemiesInMap = UnityEngine.Object.FindObjectsByType<EnemyAI>(UnityEngine.FindObjectsSortMode.None).ToList();
+            enemiesInMap = UnityEngine.Object.FindObjectsByType<EnemyAI>(UnityEngine.FindObjectsSortMode.None)
+                .Where(x => !(x is IInternAI))
+                .ToList();
 
             timer.Stop();
         }

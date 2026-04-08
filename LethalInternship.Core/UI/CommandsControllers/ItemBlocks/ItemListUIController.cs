@@ -6,7 +6,6 @@ using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -42,7 +41,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
                 return;
             }
 
-            IInternIdentity? identity = IdentitySelectionService.Instance.SelectedInterns.FirstOrDefault();
+            IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
             if (identity == null
                 || !identity.Alive
                 || identity.InternAI == null)
@@ -71,7 +70,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
             SyncList(currentInternAI.GetHeldGrabbableObjects());
         }
 
-        public void SyncList(List<GrabbableObject> items)
+        public void SyncList(IEnumerable<GrabbableObject> items)
         {
             // Reset
             weaponScrapValue = 0;
@@ -150,7 +149,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
             return startIndex;
         }
 
-        private void DisableMissingItems(List<GrabbableObject> newItems)
+        private void DisableMissingItems(IEnumerable<GrabbableObject> newItems)
         {
             var set = new HashSet<GrabbableObject>(newItems);
             var toDisable = new List<GrabbableObject>();

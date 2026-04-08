@@ -8,7 +8,6 @@ using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
-using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.MonoProfilerHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
@@ -318,8 +317,7 @@ namespace LethalInternship.Core.Managers
                     if (order != null)
                     {
                         InternManager.Instance.ExecuteOrder(order);
-                        currentTargetedAbility = null;
-                        UIManager.Instance.HideInputIcon();
+                        CancelTargeting();
                     }
                 }
                 return;
@@ -339,11 +337,13 @@ namespace LethalInternship.Core.Managers
         public void StartTargeting(TargetedAbility ability)
         {
             currentTargetedAbility = ability;
+            TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Enemy | TargetingManager.TargetType.Item);
         }
 
         public void CancelTargeting()
         {
             currentTargetedAbility = null;
+            TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Intern);
             UIManager.Instance.HideInputIcon();
         }
 
@@ -383,8 +383,27 @@ namespace LethalInternship.Core.Managers
                     break;
 
                 case EnumInputAction.ReturnToAll:
-                    UIManager.Instance.HideCommandsOne();
-                    UIManager.Instance.ShowCommandsAll();
+                    InputShowCommandsAll();
+                    break;
+
+                case EnumInputAction.NextIntern:
+                    IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+                    IInternIdentity? next = IdentitySelectionService.Instance.Next();
+                    if (next != null)
+                    {
+                        IdentitySelectionService.Instance.SelectSingle(next);
+                        UIManager.Instance.ResetCommandsOne();
+                    }
+                    break;
+
+                case EnumInputAction.PreviousIntern:
+                    IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+                    IInternIdentity? previous = IdentitySelectionService.Instance.Previous();
+                    if (previous != null)
+                    {
+                        IdentitySelectionService.Instance.SelectSingle(previous);
+                        UIManager.Instance.ResetCommandsOne();
+                    }
                     break;
 
                 case EnumInputAction.None:
@@ -428,7 +447,7 @@ namespace LethalInternship.Core.Managers
 
         private void ItemBlockUI_OnSelected(GrabbableObject grabbableObject)
         {
-            IInternIdentity? identity = IdentitySelectionService.Instance.SelectedInterns.FirstOrDefault();
+            IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
             if (identity == null
                 || !identity.Alive
                 || identity.InternAI == null)
@@ -438,6 +457,15 @@ namespace LethalInternship.Core.Managers
 
             // Drop item
             identity.InternAI.DropItem(grabbableObject);
+        }
+
+        private void InputShowCommandsAll()
+        {
+            UIManager.Instance.HideCommandsOne();
+
+            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+            IdentitySelectionService.Instance.SelectAll();
+            UIManager.Instance.ToogleCommandsAll();
         }
 
         // Remove ?
@@ -540,48 +568,6 @@ namespace LethalInternship.Core.Managers
         {
             currentInputAction = action;
             this.currentCommandedIntern = internAIToCommand;
-        }
-
-        private void TryManageIntern()
-        {
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-
-            // Use of interact key to assign intern to player
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                if (intern.OwnerClientId != localPlayer.actualClientId)
-                {
-                    intern.SyncAssignTargetAndSetMovingTo(localPlayer);
-
-                    if (PluginRuntimeProvider.Context.Config.ChangeSuitAutoBehaviour)
-                    {
-                        intern.ChangeSuitInternServerRpc(player.playerClientId, localPlayer.currentSuitID);
-                    }
-                }
-
-                //HUDManager.Instance.ClearControlTips();
-                //HUDManager.Instance.ChangeControlTipMultiple(new string[] { Const.TOOLTIPS_ORDER_1 });
-                return;
-            }
         }
 
         private void StartScanPositionCoroutine()
@@ -720,65 +706,21 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Check if we are giving orders
-            IPointOfInterest? pointOfInterest;
-
-            // Get point in center
-            pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
-
-            // No point of interest pointed
-            if (pointOfInterest == null)
-            {
-                if (lastColliderHit != null && IsColliderFromVehicle(lastColliderHit))
-                {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(lastColliderHit.gameObject.GetComponentInParent<VehicleController>());
-                }
-                else if (lastColliderHit != null && IsColliderFromShip(lastColliderHit))
-                {
-                    Transform? shipTransform = GetParentShip(lastColliderHit.gameObject.transform);
-                    if (shipTransform != null)
-                    {
-                        pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
-                    }
-                }
-                else if (isPointedValid
-                         && lastPointedHitPoint.HasValue)
-                {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastPointedHitPoint.Value);
-                }
-            }
-            isPointedValid = false;
-            lastColliderHit = null;
-            lastPointedHitPoint = null;
-
-            // If still nothing, maybe try manage intern
-            if (pointOfInterest == null)
-            {
-                if (CurrentInputAction == EnumInputAction.None)
-                {
-                    TryManageIntern();
-                    return;
-                }
-
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
                 return;
-            }
 
-            // Give orders
-            if (currentCommandedIntern == null)
+            IInternAI intern = target.Value.Intern;
+            if (intern.OwnerClientId != localPlayer.actualClientId)
             {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
+                intern.SyncAssignTargetAndSetMovingTo(localPlayer);
+
+                if (PluginRuntimeProvider.Context.Config.ChangeSuitAutoBehaviour)
                 {
-                    intern.SetCommandTo(pointOfInterest);
+                    intern.ChangeSuitInternServerRpc(intern.Npc.playerClientId, localPlayer.currentSuitID);
                 }
             }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandTo(pointOfInterest);
-            }
-            SetCurrentInputAction(EnumInputAction.None);
         }
 
         private void GiveItemToIntern_performed(InputAction.CallbackContext obj)
@@ -789,65 +731,38 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Make an intern drop his object
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB internController = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (internController == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)internController.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                // To cut Discard_performed from triggering after this input
-                FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                fieldInfo.SetValue(localPlayer, 0f);
-
-                // Player has no item to give
-                if (localPlayer.currentlyHeldObjectServer == null)
-                {
-                    // Intern just drop item
-                    GrabbableObject? itemToDrop = intern.ChooseLastPickedUpItem(EnumOptionsGetItems.ChooseWeaponLast);
-                    if (itemToDrop != null)
-                    {
-                        intern.DropItem(itemToDrop);
-                    }
-                }
-                else // Player has an item to give
-                {
-                    if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
-                    {
-                        if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
-                        {
-                            intern.DropTwoHandItem();
-                        }
-                        else
-                        {
-                            GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All);
-                            if (itemToDrop != null)
-                            {
-                                intern.DropItem(itemToDrop);
-                            }
-                        }
-                    }
-
-                    // Intern take item from player hands
-                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
-                }
-
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
                 return;
+
+            IInternAI intern = target.Value.Intern;
+
+            // To cut Discard_performed from triggering after this input
+            FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            fieldInfo.SetValue(localPlayer, 0f);
+
+            // Player has an item to give
+            if (localPlayer.currentlyHeldObjectServer != null)
+            {
+                if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
+                {
+                    if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
+                    {
+                        intern.DropTwoHandItem();
+                    }
+                    else
+                    {
+                        GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All);
+                        if (itemToDrop != null)
+                        {
+                            intern.DropItem(itemToDrop);
+                        }
+                    }
+                }
+
+                // Intern take item from player hands
+                intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
             }
         }
 
@@ -859,33 +774,15 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                intern.SyncAssignTargetAndSetMovingTo(localPlayer);
-                // Grab intern
-                intern.GrabInternServerRpc(localPlayer.playerClientId);
-
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
                 return;
-            }
+
+            IInternAI intern = target.Value.Intern;
+            intern.SyncAssignTargetAndSetMovingTo(localPlayer);
+            // Grab intern
+            intern.GrabInternServerRpc(localPlayer.playerClientId);
         }
 
         private void ReleaseInterns_performed(InputAction.CallbackContext obj)
@@ -915,56 +812,11 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        private void ChangeSuitIntern_performed(InputAction.CallbackContext obj)
-        {
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-            if (!IsPerformedValid(localPlayer))
-            {
-                return;
-            }
-
-            // Use of change suit key to change suit of intern
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-
-                if (intern.NpcController.Npc.currentSuitID == localPlayer.currentSuitID)
-                {
-                    intern.ChangeSuitInternServerRpc(intern.NpcController.Npc.playerClientId, 0);
-                }
-                else
-                {
-                    intern.ChangeSuitInternServerRpc(intern.NpcController.Npc.playerClientId, localPlayer.currentSuitID);
-                }
-
-                return;
-            }
-        }
-
         private void OpenAllCommandsIntern_performed(InputAction.CallbackContext obj)
         {
             InputLock.BlockThisFrame();
 
-            UIManager.Instance.HideCommandsOne();
-            UIManager.Instance.ToogleCommandsAll();
+            InputShowCommandsAll();
         }
 
         private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)
@@ -974,10 +826,11 @@ namespace LethalInternship.Core.Managers
                 || target.Value.Intern == null)
                 return;
 
-            IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
-
             InputLock.BlockThisFrame();
             UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
+
+            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+            IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
             UIManager.Instance.ToogleCommandsOne();
         }
 

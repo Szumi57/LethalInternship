@@ -25,5 +25,7 @@
         SelectSuit,
         Close,
         ReturnToAll,
+        PreviousIntern,
+        NextIntern,
     }
 }

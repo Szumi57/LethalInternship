@@ -30,8 +30,6 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
         protected override void BeginTargeting()
         {
             InputManager.Instance.StartTargeting(this);
-            // UI
-            //UIManager.Instance.ShowContextHint();
         }
 
         public override Order? ResolveTarget(TargetData target)

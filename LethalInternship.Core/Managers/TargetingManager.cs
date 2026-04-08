@@ -26,6 +26,15 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        public enum TargetType
+        {
+            None = 0,
+            Intern = 1 << 0,
+            Enemy = 1 << 1,
+            Item = 1 << 2
+        }
+        public TargetType ActiveSearch { get; private set; } = TargetType.Intern;
+
         private TargetData? currentTarget;
 
         private RaycastHit[] buffer = new RaycastHit[16];
@@ -65,6 +74,12 @@ namespace LethalInternship.Core.Managers
             return currentTarget;
         }
 
+        public void SetActiveSearch(TargetType targetType)
+        {
+            ActiveSearch = targetType;
+            currentTarget = null;
+        }
+
         public void UpdateTarget()
         {
             // Check for direct cast
@@ -74,6 +89,7 @@ namespace LethalInternship.Core.Managers
             {
                 // Pointed something directly
                 currentTarget = directTarget;
+                PluginLoggerHook.LogDebug?.Invoke($"?? directTarget {currentTarget}");
                 return;
             }
             else
@@ -83,9 +99,10 @@ namespace LethalInternship.Core.Managers
 
             // Check if already scanned something not too far (latching)
             if (currentTarget != null
-                && currentTarget.Value.IsTargetNotEmpty()
+                && currentTarget.Value.IsTargetNotPointOfInterest()
                 && IsPointedTargetStillValid(currentTarget.Value))
             {
+                PluginLoggerHook.LogDebug?.Invoke($"?? IsPointedTargetStillValid target {currentTarget}");
                 return;
             }
 
@@ -93,30 +110,40 @@ namespace LethalInternship.Core.Managers
             // -----------------------------
 
             // Scan for interns
-            TargetData? internTarget = FindPointedIntern();
-            if (internTarget != null)
+            if (ActiveSearch.HasFlag(TargetType.Intern))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"++ scan angle internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
-                currentTarget = internTarget;
-                return;
+                PluginLoggerHook.LogDebug?.Invoke($"?? check intern");
+                TargetData? internTarget = FindPointedIntern();
+                if (internTarget != null)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"++ scan angle internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
+                    currentTarget = internTarget;
+                    return;
+                }
             }
 
             // Scan for enemies
-            TargetData? enemyTarget = FindPointedEnemy();
-            if (enemyTarget != null)
+            if (ActiveSearch.HasFlag(TargetType.Enemy))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"++ scan angle enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
-                currentTarget = enemyTarget;
-                return;
+                TargetData? enemyTarget = FindPointedEnemy();
+                if (enemyTarget != null)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"++ scan angle enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
+                    currentTarget = enemyTarget;
+                    return;
+                }
             }
 
             // Scan for items
-            TargetData? enemyItem = FindPointedItem();
-            if (enemyItem != null)
+            if (ActiveSearch.HasFlag(TargetType.Item))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"++ scan angle Item {enemyItem.Value.Item?.itemProperties.itemName}");
-                currentTarget = enemyItem;
-                return;
+                TargetData? enemyItem = FindPointedItem();
+                if (enemyItem != null)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"++ scan angle Item {enemyItem.Value.Item?.itemProperties.itemName}");
+                    currentTarget = enemyItem;
+                    return;
+                }
             }
 
             // Get back direct target
@@ -141,8 +168,11 @@ namespace LethalInternship.Core.Managers
 
             Ray ray = new Ray(origin, forward);
             LayerMask layerMask = StartOfRound.Instance.collidersRoomMaskDefaultAndPlayers;
-            layerMask |= 64;// "6: Props" PlayerControllerB.grabbableObjectsMask
-            layerMask |= 1 << 19;// "19: Enemies" StartOfRound.allPlayersCollideWithMask
+            if (ActiveSearch.HasFlag(TargetType.Enemy))
+                layerMask |= 1 << 19;// "19: Enemies" StartOfRound.allPlayersCollideWithMask
+            if (ActiveSearch.HasFlag(TargetType.Item))
+                layerMask |= 64;// "6: Props" PlayerControllerB.grabbableObjectsMask
+
             int count = Physics.RaycastNonAlloc(ray, buffer, maxDistanceRay, layerMask);
 
             // find the colliders
@@ -276,7 +306,7 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
                 if (enemy.isEnemyDead
-                    && StartOfRound.Instance.localPlayerController.isInsideFactory == enemy.isOutside)
+                    || StartOfRound.Instance.localPlayerController.isInsideFactory == enemy.isOutside)
                 {
                     continue;
                 }
@@ -441,14 +471,21 @@ namespace LethalInternship.Core.Managers
             targetData.PointOfInterest = pointOfInterest;
             targetData.Score = angle;
 
+            // Intern
             IInternAI? internAI = GetInternFromCollider(col);
-            if (internAI != null)
+            if (internAI != null
+                && !internAI.IsEnemyDead
+                && internAI.NpcController != null
+                && internAI.NpcController.Npc != null
+                && !internAI.Npc.isPlayerDead
+                && internAI.IsSpawningAnimationRunning())
             {
                 PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
                 targetData.Intern = internAI;
                 return targetData;
             }
 
+            // Enemy
             EnemyAI enemyAI = col.gameObject.GetComponentInParent<EnemyAI>();
             if (enemyAI != null)
             {
@@ -457,8 +494,10 @@ namespace LethalInternship.Core.Managers
                 return targetData;
             }
 
+            // Item
             targetData.Item = col.gameObject.GetComponentInParent<GrabbableObject>();
             if (targetData.Item != null) { PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}"); }
+
             return targetData;
         }
 

@@ -25,29 +25,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         void OnEnable()
         {
-            TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
-            SetTitleUIFont(fontToUse);
-            SetModNamePanelDescriptionFont(fontToUse);
-
-            // Update commands UI while displaying
-            if (CoroutineUpdateCommandsUI != null)
-            {
-                StopCoroutine(CoroutineUpdateCommandsUI);
-            }
-            CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
-
-            IInternIdentity? identity = IdentitySelectionService.Instance.SelectedInterns.FirstOrDefault();
-            if (identity == null)
-            {
-                UIManager.Instance.HideCommandsOne();
-                return;
-            }
-            this.currentIdentity = identity;
-
-            if (currentIdentity.InternAI != null)
-            {
-                CameraFocusUI.Instance.FocusOnIntern(currentIdentity.InternAI.Npc.transform);
-            }
+            Init();
         }
 
         void Start()
@@ -70,6 +48,33 @@ namespace LethalInternship.Core.UI.CommandsControllers
                 || CommandButtons.Length == 0)
             {
                 PluginLoggerHook.LogWarning?.Invoke("No CommandButtons found while loading CommandsAllController !");
+            }
+        }
+
+        public void Init()
+        {
+            TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
+            SetTitleUIFont(fontToUse);
+            SetModNamePanelDescriptionFont(fontToUse);
+
+            // Update commands UI while displaying
+            if (CoroutineUpdateCommandsUI != null)
+            {
+                StopCoroutine(CoroutineUpdateCommandsUI);
+            }
+            CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
+
+            IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
+            if (identity == null)
+            {
+                UIManager.Instance.HideCommandsOne();
+                return;
+            }
+            this.currentIdentity = identity;
+
+            if (currentIdentity.InternAI != null)
+            {
+                CameraFocusUI.Instance.FocusOnIntern(currentIdentity.InternAI.Npc.transform);
             }
         }
 

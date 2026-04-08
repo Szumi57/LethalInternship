@@ -1,5 +1,5 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
@@ -413,20 +413,6 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        public void SwitchCommandsPanel()
-        {
-            if (IsCommandsAllOpened)
-            {
-                HideCommandsAll();
-                ShowCommandsOne();
-            }
-            else if (IsCommandsOneOpened)
-            {
-                HideCommandsOne();
-                ShowCommandsAll();
-            }
-        }
-
         public void ShowCommandsAll()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
@@ -437,8 +423,6 @@ namespace LethalInternship.Core.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-
-            IdentitySelectionService.Instance.SelectMultiple(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
 
             commandsAll.SetActive(true);
         }
@@ -455,6 +439,19 @@ namespace LethalInternship.Core.Managers
             Cursor.visible = true;
 
             commandsOne.SetActive(true);
+        }
+
+        public void ResetCommandsOne()
+        {
+            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
+                return;
+            if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
+                return;
+
+            if (!IsCommandsOneOpened)
+                ShowCommandsOne();
+
+            commandsOne.GetComponent<CommandsOneController>().Init();
         }
 
         public void HideCommandsAll(bool resetCameraFocus = true)
