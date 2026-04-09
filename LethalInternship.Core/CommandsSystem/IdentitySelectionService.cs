@@ -1,4 +1,5 @@
 ﻿using LethalInternship.SharedAbstractions.Interns;
+using System;
 using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem
@@ -72,6 +73,29 @@ namespace LethalInternship.Core.CommandsSystem
             return _currentList[_currentIndex];
         }
 
+        public IInternIdentity? NextWhere(Func<IInternIdentity, bool> predicate)
+        {
+            if (_currentList.Count == 0)
+                return null;
+
+            int startIndex = _currentIndex;
+            int index = (_currentIndex + 1) % _currentList.Count;
+
+            while (index != startIndex)
+            {
+                var identity = _currentList[index];
+                if (predicate(identity))
+                {
+                    _currentIndex = index;
+                    return identity;
+                }
+
+                index = (index + 1) % _currentList.Count;
+            }
+
+            return GetCurrent();
+        }
+
         public IInternIdentity? Previous()
         {
             if (_currentList.Count == 0) return null;
@@ -81,6 +105,36 @@ namespace LethalInternship.Core.CommandsSystem
                 _currentIndex = _currentList.Count - 1;
 
             return _currentList[_currentIndex];
+        }
+
+        public IInternIdentity? PreviousWhere(Func<IInternIdentity, bool> predicate)
+        {
+            if (_currentList.Count == 0)
+                return null;
+
+            int startIndex = _currentIndex;
+
+            // on commence par le précédent
+            int index = _currentIndex - 1;
+            if (index < 0)
+                index = _currentList.Count - 1;
+
+            while (index != startIndex)
+            {
+                var identity = _currentList[index];
+                if (predicate(identity))
+                {
+                    _currentIndex = index;
+                    return identity;
+                }
+
+                index--;
+                if (index < 0)
+                    index = _currentList.Count - 1;
+            }
+
+            // tour complet → on garde l'élément courant
+            return GetCurrent();
         }
 
         public IInternIdentity? GetCurrent()

@@ -8,6 +8,7 @@ using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.MonoProfilerHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
@@ -347,55 +348,40 @@ namespace LethalInternship.Core.Managers
             {
                 case EnumInputAction.FollowMe:
                     new FollowMeAbility().Activate();
+                    UIManager.Instance.HideAll();
                     break;
-
                 case EnumInputAction.PointToAction:
                     new ContextOrderAbility().Activate();
                     break;
-
-
                 case EnumInputAction.GoToShip:
-                    GiveOrderGoToShip();
+                    new GoToShipAbility().Activate();
+                    UIManager.Instance.HideAll();
                     break;
-
                 case EnumInputAction.GoToVehicle:
-                    GiveOrderGoToVehicle();
+                    new GoToVehicleAbility().Activate();
+                    UIManager.Instance.HideAll();
                     break;
-
                 case EnumInputAction.ScavengeToShip:
-                    GiveOrderGoScavenging();
+                    new ScavengeToShipAbility().Activate();
+                    UIManager.Instance.HideAll();
                     break;
 
                 case EnumInputAction.Close:
                     UIManager.Instance.HideAll();
                     break;
-
                 case EnumInputAction.ReturnToAll:
-                    InputShowCommandsAll();
+                    InputAction_ShowCommandsAll();
                     break;
-
                 case EnumInputAction.NextIntern:
-                    IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
-                    IInternIdentity? next = IdentitySelectionService.Instance.Next();
-                    if (next != null)
-                    {
-                        IdentitySelectionService.Instance.SelectSingle(next);
-                        UIManager.Instance.ResetCommandsOne();
-                    }
+                    InputAction_NextIntern();
                     break;
-
                 case EnumInputAction.PreviousIntern:
-                    IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
-                    IInternIdentity? previous = IdentitySelectionService.Instance.Previous();
-                    if (previous != null)
-                    {
-                        IdentitySelectionService.Instance.SelectSingle(previous);
-                        UIManager.Instance.ResetCommandsOne();
-                    }
+                    InputAction_PreviousIntern();
                     break;
 
                 case EnumInputAction.None:
                 default:
+                    UIManager.Instance.HideAll();
                     UIManager.Instance.HideInputIcon();
                     break;
             }
@@ -446,7 +432,11 @@ namespace LethalInternship.Core.Managers
             identity.InternAI.DropItem(grabbableObject);
         }
 
-        private void InputShowCommandsAll()
+        #endregion
+
+        #region Input action
+
+        private void InputAction_ShowCommandsAll()
         {
             UIManager.Instance.HideCommandsOne();
 
@@ -455,78 +445,30 @@ namespace LethalInternship.Core.Managers
             UIManager.Instance.ToogleCommandsAll();
         }
 
-        // Remove ?
-        private void GiveOrderGoToShip()
+        private void InputAction_NextIntern()
         {
-            //Transform? shipTransform = InternManager.Instance.ShipTransform;
-            //if (shipTransform == null)
-            //{
-            //    PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");
-            //    return;
-            //}
-
-            //IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
-            //// Give order
-            //if (currentCommandedIntern == null)
-            //{
-            //    // All owned interns (later close interns)
-            //    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-            //    foreach (IInternAI intern in internsOwned)
-            //    {
-            //        intern.SetCommandTo(pointOfInterest);
-            //    }
-            //}
-            //else
-            //{
-            //    // Current intern
-            //    currentCommandedIntern.SetCommandTo(pointOfInterest);
-            //}
+            IInternIdentity? next = IdentitySelectionService.Instance
+                                                .NextWhere(i => i.Alive
+                                                             && i.InternAI != null
+                                                             && i.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY);
+            if (next != null)
+            {
+                IdentitySelectionService.Instance.SelectSingle(next);
+                UIManager.Instance.RefreshCommandsOne();
+            }
         }
 
-        private void GiveOrderGoToVehicle()
+        private void InputAction_PreviousIntern()
         {
-            //VehicleController? vehicleController = InternManager.Instance.VehicleController;
-            //if (vehicleController == null)
-            //{
-            //    PluginLoggerHook.LogDebug?.Invoke("vehicleController not found !");
-            //    return;
-            //}
-
-            //IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(vehicleController);
-            //// Give order
-            //if (currentCommandedIntern == null)
-            //{
-            //    // All owned interns (later close interns)
-            //    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-            //    foreach (IInternAI intern in internsOwned)
-            //    {
-            //        intern.SetCommandTo(pointOfInterest);
-            //    }
-            //}
-            //else
-            //{
-            //    // Current intern
-            //    currentCommandedIntern.SetCommandTo(pointOfInterest);
-            //}
-        }
-
-        private void GiveOrderGoScavenging()
-        {
-            //// Give order
-            //if (currentCommandedIntern == null)
-            //{
-            //    // All owned interns (later close interns)
-            //    IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-            //    foreach (IInternAI intern in internsOwned)
-            //    {
-            //        intern.SetCommandToScavenging();
-            //    }
-            //}
-            //else
-            //{
-            //    // Current intern
-            //    currentCommandedIntern.SetCommandToScavenging();
-            //}
+            IInternIdentity? previous = IdentitySelectionService.Instance
+                                                    .PreviousWhere(i => i.Alive
+                                                                     && i.InternAI != null
+                                                                     && i.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY);
+            if (previous != null)
+            {
+                IdentitySelectionService.Instance.SelectSingle(previous);
+                UIManager.Instance.RefreshCommandsOne();
+            }
         }
 
         #endregion
@@ -651,7 +593,7 @@ namespace LethalInternship.Core.Managers
         {
             InputLock.BlockThisFrame();
 
-            InputShowCommandsAll();
+            InputAction_ShowCommandsAll();
         }
 
         private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)

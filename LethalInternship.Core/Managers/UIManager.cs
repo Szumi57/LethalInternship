@@ -361,17 +361,15 @@ namespace LethalInternship.Core.Managers
             commandsOne.SetActive(true);
         }
 
-        public void ResetCommandsOne()
+        public void RefreshCommandsOne()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
-                return;
-            if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
                 return;
 
             if (!IsCommandsOneOpened)
                 ShowCommandsOne();
 
-            commandsOne.GetComponent<CommandsOneController>().Init();
+            commandsOne.GetComponent<CommandsOneController>().Refresh();
         }
 
         public void HideCommandsAll(bool resetCameraFocus = true)

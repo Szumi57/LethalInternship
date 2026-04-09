@@ -12,7 +12,7 @@ using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.InternBlocks
 {
-    public class InternBlockUI : MonoBehaviour
+    public class InternBlockUI : MonoBehaviour, IRefreshableUI
     {
         private enum EnumBehaviourIcon
         {
@@ -86,16 +86,11 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void Refresh()
         {
-            UpdateItemCount();
-            UpdateObjective();
-            UpdateBehaviour();
-        }
-
-        public void UpdateDeadInternState()
-        {
             if (identity.Alive)
             {
-                Refresh();
+                UpdateItemCount();
+                UpdateObjective();
+                UpdateBehaviour();
                 return;
             }
 

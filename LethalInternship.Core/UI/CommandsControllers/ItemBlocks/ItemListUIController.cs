@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.UI.ItemBlocks
 {
-    public class ItemListUIController : MonoBehaviour
+    public class ItemListUIController : MonoBehaviour, IRefreshableUI
     {
         public Transform Content = null!;
         public ItemBlockUI PrefabItemBlockUI = null!;
@@ -27,12 +27,12 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
         IInternAI currentInternAI = null!;
 
-        void Start()
+        void OnEnable()
         {
-            InitUIPools();
+            Refresh();
         }
 
-        void OnEnable()
+        public void Refresh()
         {
             InitUIPools();
             if (GameNetworkManager.Instance == null

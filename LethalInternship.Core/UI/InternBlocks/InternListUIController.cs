@@ -22,11 +22,6 @@ namespace LethalInternship.Core.UI.InternBlocks
         private Dictionary<IInternIdentity, InternBlockUI> identityMap = new Dictionary<IInternIdentity, InternBlockUI>();
         private Dictionary<EnumCategoryTypeUI, CategoryBlockUI> categoryMap = new Dictionary<EnumCategoryTypeUI, CategoryBlockUI>();
 
-        void Start()
-        {
-            InitUIPools();
-        }
-
         void OnEnable()
         {
             InitUIPools();
@@ -126,8 +121,8 @@ namespace LethalInternship.Core.UI.InternBlocks
                     IInternAI? intern = identity.InternAI;
                     if (intern != null)
                     {
-                        intern.OnHeldItemsChanged += UpdateItemsCount;
-                        intern.OnInternDead += UpdateInternDead;
+                        intern.OnHeldItemsChanged += RefreshBlock;
+                        intern.OnInternDead += RefreshBlock;
                     }
                 }
 
@@ -177,16 +172,10 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         #region Events
 
-        void UpdateItemsCount(IInternAI intern)
+        private void RefreshBlock(IInternAI intern)
         {
             if (identityMap.TryGetValue(intern.InternIdentity, out var block))
-                block.UpdateItemCount();
-        }
-
-        void UpdateInternDead(IInternAI intern)
-        {
-            if (identityMap.TryGetValue(intern.InternIdentity, out var block))
-                block.UpdateDeadInternState();
+                ((IRefreshableUI)block).Refresh();
         }
 
         public void MouseOver()

@@ -23,24 +23,19 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         IInternIdentity currentIdentity = null!;
 
-        void OnEnable()
-        {
-            Init();
-        }
+        private IRefreshableUI[] refreshables = null!;
 
-        void Start()
+        void Awake()
         {
             if (TitleUI == null)
             {
                 PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI TitleUI found while loading CommandsAllController !");
             }
-            SetTitleUIText(currentIdentity.Name);
 
             if (ModNamePanelDescription == null)
             {
                 PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI ModNamePanelDescription found while loading CommandsAllController !");
             }
-            SetModDescriptionText($"{PluginRuntimeProvider.Context.Plugin_Name} v{PluginRuntimeProvider.Context.Plugin_Version}");
 
             // List of command buttons
             CommandButtons = GetComponentsInChildren<CommandButtonController>();
@@ -49,21 +44,17 @@ namespace LethalInternship.Core.UI.CommandsControllers
             {
                 PluginLoggerHook.LogWarning?.Invoke("No CommandButtons found while loading CommandsAllController !");
             }
+
+            refreshables = GetComponentsInChildren<IRefreshableUI>(true);
         }
 
-        public void Init()
+        void OnEnable()
         {
-            TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
-            SetTitleUIFont(fontToUse);
-            SetModNamePanelDescriptionFont(fontToUse);
+            Refresh();
+        }
 
-            // Update commands UI while displaying
-            if (CoroutineUpdateCommandsUI != null)
-            {
-                StopCoroutine(CoroutineUpdateCommandsUI);
-            }
-            CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
-
+        public void Refresh()
+        {
             IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
             if (identity == null)
             {
@@ -72,10 +63,31 @@ namespace LethalInternship.Core.UI.CommandsControllers
             }
             this.currentIdentity = identity;
 
+            // Camera focus
             if (currentIdentity.InternAI != null)
             {
                 CameraFocusUI.Instance.FocusOnIntern(currentIdentity.InternAI.Npc.transform);
             }
+
+            // Update UI
+            TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
+
+            SetTitleUIFont(fontToUse);
+            SetTitleUIText(currentIdentity.Name);
+
+            SetModNamePanelDescriptionFont(fontToUse);
+            SetModDescriptionText($"{PluginRuntimeProvider.Context.Plugin_Name} v{PluginRuntimeProvider.Context.Plugin_Version}");
+
+            // Update commands UI while displaying
+            if (CoroutineUpdateCommandsUI != null)
+            {
+                StopCoroutine(CoroutineUpdateCommandsUI);
+            }
+            CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
+
+            // Refresh UI
+            foreach (var refreshable in refreshables)
+                refreshable.Refresh();
         }
 
         private IEnumerator UpdateCommandsUI()
