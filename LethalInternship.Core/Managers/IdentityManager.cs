@@ -136,7 +136,11 @@ namespace LethalInternship.Core.Managers
                                                 configIdentity.voicePitch);
 
             // InternIdentity
-            return new InternIdentity(idIdentity, name, suitID, voice);
+            return new InternIdentity(idIdentity,
+                                      name,
+                                      suitID,
+                                      configIdentity.autoDefenseMode,
+                                      voice);
         }
 
         public string[] GetIdentitiesNamesLowerCaseWithoutSpace()

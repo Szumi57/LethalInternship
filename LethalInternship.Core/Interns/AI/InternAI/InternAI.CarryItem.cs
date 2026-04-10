@@ -50,7 +50,6 @@ namespace LethalInternship.Core.Interns.AI
         {
             heldItemTemp = new HeldItem(grabbableObject);
             if (heldItemTemp.IsWeapon
-                && PluginRuntimeProvider.Context.Config.CanUseWeapons
                 && !HeldItems.IsHoldingWeaponAsWeapon())
             {
                 return true;
@@ -321,7 +320,7 @@ namespace LethalInternship.Core.Interns.AI
             grabbableObject.EquipItem();
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
-            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: PluginRuntimeProvider.Context.Config.CanUseWeapons);
+            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: true);
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
@@ -890,7 +889,7 @@ namespace LethalInternship.Core.Interns.AI
             InternManager.Instance.AddToDictJustDroppedItems(grabbableObject);
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
-            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: PluginRuntimeProvider.Context.Config.CanUseWeapons);
+            NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: true);
             NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
             NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.GrabbedObjectValidated = false;

@@ -1,5 +1,4 @@
 ﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -135,8 +134,7 @@ namespace LethalInternship.Core.Interns.AI.Items
             }
 
             if (newItem.IsWeapon
-                && HeldWeapon == null
-                && PluginRuntimeProvider.Context.Config.CanUseWeapons)
+                && HeldWeapon == null)
             {
                 HeldWeapon = newItem;
             }

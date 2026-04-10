@@ -29,6 +29,7 @@ namespace LethalInternship.Core.SaveAdapter
         public int SuitID;
         public int Hp;
         public int Status;
+        public bool AutoDefense = true;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public Inventory Inventory;
@@ -36,7 +37,8 @@ namespace LethalInternship.Core.SaveAdapter
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, suitID {SuitID}, Hp {Hp}, Status {Status} {(EnumStatusIdentity)Status}, inventory {Inventory?.ToString()}";
+            return $"IdIdentity: {IdIdentity}, suitID {SuitID}, Hp {Hp}, Status {Status} {(EnumStatusIdentity)Status}" +
+                   $", inventory {Inventory?.ToString()}, autoDefense {AutoDefense}";
         }
     }
 

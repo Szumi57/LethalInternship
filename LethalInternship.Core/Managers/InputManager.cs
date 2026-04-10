@@ -88,7 +88,7 @@ namespace LethalInternship.Core.Managers
             PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed += OpenAllCommandsIntern_performed;
 
             CommandButtonController.OnSelected += CommandButtonController_OnSelected;
-            ButtonDualSwitchParentController.OnDualSwitchSelected += DualSwitchController_OnSelected;
+            ButtonDualSwitchParentController.OnDualSwitchSelected += CommandButtonController_OnSelected;
             InternBlockUI.OnSelected += InternBlockUI_OnSelected;
             ItemBlockUI.OnSelected += ItemBlockUI_OnSelected;
 
@@ -137,7 +137,7 @@ namespace LethalInternship.Core.Managers
 
 #pragma warning disable CS8601 // Possible null reference assignment.
             CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
-            ButtonDualSwitchParentController.OnDualSwitchSelected -= DualSwitchController_OnSelected;
+            ButtonDualSwitchParentController.OnDualSwitchSelected -= CommandButtonController_OnSelected;
             InternBlockUI.OnSelected -= InternBlockUI_OnSelected;
             ItemBlockUI.OnSelected -= ItemBlockUI_OnSelected;
 
@@ -366,6 +366,14 @@ namespace LethalInternship.Core.Managers
                     UIManager.Instance.HideAll();
                     break;
 
+                case EnumInputAction.SetToAutoFlee:
+                    new SetAutoDefenseAbility(autoDefense: false).Activate();
+                    break;
+                case EnumInputAction.SetToAutoDefense:
+                    new SetAutoDefenseAbility(autoDefense: true).Activate();
+                    break;
+
+                // UI
                 case EnumInputAction.Close:
                     UIManager.Instance.HideAll();
                     break;
@@ -387,29 +395,29 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        private void DualSwitchController_OnSelected((EnumInputAction, EnumClickSide) args)
+        private void ButtonSuitsController_OnSuitSelected(EnumInputAction typeInputAction)
         {
-            InputLock.BlockThisFrame();
-
-            switch (args.Item1)
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+            switch (typeInputAction)
             {
-                case EnumInputAction.SetToAutoFlee:
-                    PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto flee");
+                case EnumInputAction.PreviousSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Previous).Activate();
                     break;
-                case EnumInputAction.SetToAutoDefense:
-                    PluginLoggerHook.LogDebug?.Invoke($"DualSwitchController_OnSelected cliked auto defense");
+                case EnumInputAction.NextSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Next).Activate();
+                    break;
+                case EnumInputAction.SameSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Same, localPlayer.currentSuitID).Activate();
+                    break;
+                case EnumInputAction.RandomSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Random).Activate();
                     break;
             }
         }
 
-        private void ButtonSuitsController_OnSuitSelected(EnumInputAction typeInputAction)
-        {
-            PluginLoggerHook.LogDebug?.Invoke($"ButtonSuitsController_OnSuitSelected {typeInputAction}");
-        }
-
         private void ButtonSelectSuit_OnSuitSelected(int suitID)
         {
-            PluginLoggerHook.LogDebug?.Invoke($"ButtonSelectSuit_OnSuitSelected {suitID} {StartOfRound.Instance.unlockablesList.unlockables[suitID].unlockableName}");
+            new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Selected, suitID).Activate();
         }
 
         private void InternBlockUI_OnSelected()
@@ -530,7 +538,7 @@ namespace LethalInternship.Core.Managers
                     }
                     else
                     {
-                        GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All);
+                        GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(EnumOptionsGetItems.IgnoreWeapon);
                         if (itemToDrop != null)
                         {
                             intern.DropItem(itemToDrop);

@@ -167,7 +167,8 @@ namespace LethalInternship.Core.Managers
                 identity.UpdateIdentity(identitySaveFile.Hp,
                                         identitySaveFile.SuitID < 0 ? (int?)null : identitySaveFile.SuitID,
                                         (EnumStatusIdentity)identitySaveFile.Status,
-                                        identitySaveFile.Inventory?.GetItemIDs());
+                                        identitySaveFile.Inventory?.GetItemIDs(),
+                                        identitySaveFile.AutoDefense);
                 PluginLoggerHook.LogDebug?.Invoke($"Loaded and updated identity from save : {identity.ToString()}");
             }
         }
@@ -200,7 +201,8 @@ namespace LethalInternship.Core.Managers
                     Hp = internIdentity.Hp,
                     SuitID = internIdentity.SuitID.HasValue ? internIdentity.SuitID.Value : -1,
                     Status = (int)internIdentity.Status,
-                    ItemIDs = internIdentity.ItemsInInventory
+                    ItemIDs = internIdentity.ItemsInInventory,
+                    AutoDefense = internIdentity.AutoDefense,
                 };
 
                 identitiesSaveNS[i] = identitySaveNS;
@@ -247,7 +249,8 @@ namespace LethalInternship.Core.Managers
                 identity.UpdateIdentity(identitySaveNS.Hp,
                                         identitySaveNS.SuitID < 0 ? (int?)null : identitySaveNS.SuitID,
                                         (EnumStatusIdentity)identitySaveNS.Status,
-                                        identitySaveNS.ItemIDs);
+                                        identitySaveNS.ItemIDs,
+                                        identitySaveNS.AutoDefense);
 
                 PluginLoggerHook.LogDebug?.Invoke($"Client {NetworkManager.LocalClientId} : sync in current values, identity {identity.ToString()}");
             }

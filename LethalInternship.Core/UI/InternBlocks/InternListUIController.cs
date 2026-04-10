@@ -123,6 +123,7 @@ namespace LethalInternship.Core.UI.InternBlocks
                     {
                         intern.OnHeldItemsChanged += RefreshBlock;
                         intern.OnInternDead += RefreshBlock;
+                        intern.InternIdentity.OnAutoDefenseChanged += RefreshBlock;
                     }
                 }
 
@@ -174,7 +175,12 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         private void RefreshBlock(IInternAI intern)
         {
-            if (identityMap.TryGetValue(intern.InternIdentity, out var block))
+            RefreshBlock(intern.InternIdentity);
+        }
+
+        private void RefreshBlock(IInternIdentity identity)
+        {
+            if (identityMap.TryGetValue(identity, out var block))
                 ((IRefreshableUI)block).Refresh();
         }
 

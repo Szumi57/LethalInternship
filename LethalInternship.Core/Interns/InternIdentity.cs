@@ -2,6 +2,7 @@
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Random = System.Random;
@@ -19,6 +20,10 @@ namespace LethalInternship.Core.Interns
         public DeadBodyInfo? DeadBody { get => deadBody; set => deadBody = value; }
         public EnumStatusIdentity Status { get => status; set => status = value; }
 
+        private Action<IInternIdentity> onAutoDefenseChanged = null!;
+        public Action<IInternIdentity>? OnAutoDefenseChanged { get { return onAutoDefenseChanged; } set { onAutoDefenseChanged = value!; } }
+        public bool AutoDefense { get; private set; }
+
         public IInternVoice Voice => voice;
         public object? BodyReplacementBase { get => bodyReplacementBase; set => bodyReplacementBase = value; }
         public bool Alive { get { return Hp > 0; } }
@@ -34,6 +39,9 @@ namespace LethalInternship.Core.Interns
         private int hpMax;
 
         private int? suitID;
+        private List<int> _indexesSpawnedSuits = new List<int>();
+        private int _currentSuitIndex = -1;
+
         private DeadBodyInfo? deadBody;
         public EnumStatusIdentity status;
         private IInternVoice voice;
@@ -56,7 +64,7 @@ namespace LethalInternship.Core.Interns
         }
 
 
-        public InternIdentity(int idIdentity, string name, int? suitID, InternVoice voice)
+        public InternIdentity(int idIdentity, string name, int? suitID, bool autoDefense, InternVoice voice)
         {
             this.idIdentity = idIdentity;
             this.name = name;
@@ -66,12 +74,14 @@ namespace LethalInternship.Core.Interns
             this.Hp = hpMax;
             this.status = EnumStatusIdentity.Available;
             this.itemsInInventory = new int[0];
+            this.AutoDefense = autoDefense;
         }
 
         public void UpdateIdentity(int Hp,
                                    int? suitID,
                                    EnumStatusIdentity enumStatusIdentity,
-                                   int[]? itemsInInventory)
+                                   int[]? itemsInInventory,
+                                   bool autoDefense)
         {
             this.Hp = Hp;
             this.suitID = suitID;
@@ -80,35 +90,85 @@ namespace LethalInternship.Core.Interns
             {
                 this.itemsInInventory = itemsInInventory;
             }
+            this.AutoDefense = autoDefense;
         }
 
         public override string ToString()
         {
-            return $"IdIdentity: {IdIdentity}, name: {Name}, suit {Suit}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', Voice : {{{Voice.ToString()}}}, Items : {string.Join(",", itemsInInventory)}";
+            return $"IdIdentity: {IdIdentity}, name: {Name}, suit {Suit}, Hp {Hp}/{HpMax}, Status {(int)Status} '{Status}', " +
+                   $"Voice : {{{Voice.ToString()}}}, Items : {string.Join(",", itemsInInventory)}, AutoDefense: {AutoDefense}";
+        }
+
+        #region Suits
+
+        private void RefreshListSuits()
+        {
+            _indexesSpawnedSuits = InternManager.Instance.GetListOfAvailableSuitIDs();
+        }
+
+        public int GetPreviousSuitID()
+        {
+            RefreshListSuits();
+            if (_indexesSpawnedSuits.Count == 0) return 0;
+
+            _currentSuitIndex--;
+
+            if (_currentSuitIndex < 0)
+                _currentSuitIndex = _indexesSpawnedSuits.Count - 1;
+
+            if (_currentSuitIndex >= _indexesSpawnedSuits.Count)
+                _currentSuitIndex = 0;
+
+            return _indexesSpawnedSuits[_currentSuitIndex];
+        }
+
+        public int GetNextSuitID()
+        {
+            RefreshListSuits();
+            if (_indexesSpawnedSuits.Count == 0) return 0;
+
+            _currentSuitIndex = (_currentSuitIndex + 1) % _indexesSpawnedSuits.Count;
+
+            if (_currentSuitIndex < 0)
+                _currentSuitIndex = _indexesSpawnedSuits.Count - 1;
+
+            if (_currentSuitIndex >= _indexesSpawnedSuits.Count)
+                _currentSuitIndex = 0;
+
+            return _indexesSpawnedSuits[_currentSuitIndex];
         }
 
         public int GetRandomSuitID()
         {
-            List<int> indexesSpawnedSuits = InternManager.Instance.GetListOfAvailableSuitIDs();
-            if (indexesSpawnedSuits.Count == 0)
+            RefreshListSuits();
+            if (_indexesSpawnedSuits.Count == 0)
             {
                 return 0;
             }
 
             //PluginLoggerHook.LogDebug?.Invoke($"indexesSpawnedSuits.Count {indexesSpawnedSuits.Count}");
             Random randomInstance = new Random();
-            int randomIndex = randomInstance.Next(0, indexesSpawnedSuits.Count);
-            if (randomIndex >= indexesSpawnedSuits.Count)
+            int randomIndex = randomInstance.Next(0, _indexesSpawnedSuits.Count);
+            if (randomIndex >= _indexesSpawnedSuits.Count)
             {
                 return 0;
             }
 
-            return indexesSpawnedSuits[randomIndex];
+            _currentSuitIndex = randomIndex;
+            return _indexesSpawnedSuits[_currentSuitIndex];
         }
+
+        #endregion
 
         public void UpdateItemsInInventory(int[] itemsID)
         {
             itemsInInventory = itemsID;
+        }
+
+        public void SetAutoDefense(bool autoDefense)
+        {
+            AutoDefense = autoDefense;
+            OnAutoDefenseChanged?.Invoke(this);
         }
     }
 }

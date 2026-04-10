@@ -86,6 +86,9 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void Refresh()
         {
+            ItemCountText.transform.parent.gameObject.SetActive(identity.Alive);
+            ObjectiveIcon.transform.parent.gameObject.SetActive(identity.Alive);
+
             if (identity.Alive)
             {
                 UpdateItemCount();
@@ -96,8 +99,6 @@ namespace LethalInternship.Core.UI.InternBlocks
 
             // Dead
             SetBackgroundNotHovered();
-            ItemCountText.transform.parent.gameObject.SetActive(false);
-            ObjectiveIcon.transform.parent.gameObject.SetActive(false);
             BehaviourIcon.sprite = SpriteDead;
         }
 
@@ -143,8 +144,8 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             if (!identity.Alive) return;
 
-            bool autoDef = true;
-            BehaviourIcon.sprite = autoDef ? SpriteAutoDefense : SpriteFlee;
+            BehaviourIcon.sprite = identity.AutoDefense ? SpriteAutoDefense : SpriteFlee;
+            Debug.Log($"BehaviourIcon.sprite {BehaviourIcon.sprite.name}");
         }
 
         private void SetBackgroundNotHovered()

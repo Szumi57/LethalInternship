@@ -13,6 +13,7 @@ namespace LethalInternship.SharedAbstractions.NetworkSerializers
         public string voiceFolder;
         public float volume;
         public float voicePitch;
+        public bool autoDefenseMode;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -22,11 +23,12 @@ namespace LethalInternship.SharedAbstractions.NetworkSerializers
             serializer.SerializeValue(ref voiceFolder);
             serializer.SerializeValue(ref volume);
             serializer.SerializeValue(ref voicePitch);
+            serializer.SerializeValue(ref autoDefenseMode);
         }
 
         public override string ToString()
         {
-            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, volume {volume}, voicePitch {voicePitch}";
+            return $"name: {name}, suitID {suitID}, suitConfigOption {suitConfigOption} {(EnumOptionSuitConfig)suitConfigOption}, voiceFolder {voiceFolder}, volume {volume}, voicePitch {voicePitch}, autoDefense {autoDefenseMode}";
         }
     }
 

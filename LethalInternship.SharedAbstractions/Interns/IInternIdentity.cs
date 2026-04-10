@@ -1,4 +1,5 @@
 ﻿using LethalInternship.SharedAbstractions.Enums;
+using System;
 
 namespace LethalInternship.SharedAbstractions.Interns
 {
@@ -17,9 +18,18 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool Alive { get; }
         int[] ItemsInInventory { get; }
 
+        Action<IInternIdentity>? OnAutoDefenseChanged { get; set; }
+        bool AutoDefense { get; }
+
+        int GetPreviousSuitID();
+        int GetNextSuitID();
         int GetRandomSuitID();
-        void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity, int[]? itemsInInventory);
+
+
+        void UpdateIdentity(int Hp, int? suitID, EnumStatusIdentity enumStatusIdentity, int[]? itemsInInventory, bool autoDefense);
 
         void UpdateItemsInInventory(int[] itemsID);
+
+        void SetAutoDefense(bool autoDefense);
     }
 }

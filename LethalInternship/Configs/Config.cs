@@ -34,7 +34,6 @@ namespace LethalInternship.Configs
         public bool CanSpectateInterns => canSpectateInterns.Value;
         public bool RadarEnabled => radarEnabled.Value;
         public bool SpawnIdentitiesRandomly => spawnIdentitiesRandomly.Value;
-        public bool CanUseWeapons => canUseWeapons.Value;
         //public bool CanLosePlayer => canLosePlayer.Value;
         public bool FollowCrouchWithPlayer => followCrouchWithPlayer.Value;
         public bool ChangeSuitAutoBehaviour => changeSuitAutoBehaviour.Value;
@@ -77,7 +76,6 @@ namespace LethalInternship.Configs
 
         // Behaviour       
         //[SyncedEntryField] private SyncedEntry<bool> canLosePlayer;
-        [SyncedEntryField] private SyncedEntry<bool> canUseWeapons;
         [SyncedEntryField] private SyncedEntry<bool> followCrouchWithPlayer;
         [SyncedEntryField] private SyncedEntry<bool> changeSuitAutoBehaviour;
         //[SyncedEntryField] private SyncedEntry<bool> TeleportWhenUsingLadders;
@@ -177,11 +175,6 @@ namespace LethalInternship.Configs
             //                                   "Can lose the player",
             //                                   defaultVal: false,
             //                                   "Can the intern lose the player if he goes too far ?");
-
-            canUseWeapons = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Can use weapons",
-                                               defaultVal: true,
-                                               "Can the intern use weapons ? (shovel, signs, knife, shotgun, ...)");
 
             followCrouchWithPlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Crouch with player",
