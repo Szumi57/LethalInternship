@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Constants;
+﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,27 +17,48 @@ namespace LethalInternship.Core.UI.Outlines
         }
 
         const float RIM_EPSILON = 0.02f;
-        private static readonly Dictionary<ulong, OutlineState> states =
-        new Dictionary<ulong, OutlineState>();
+        private static readonly Dictionary<ulong, OutlineState> states = new Dictionary<ulong, OutlineState>();
 
-        public static void UpdateOutlines(IInternAI[] interns,
+        public static void UpdateOutlines(IEnumerable<IInternAI> interns,
                                           ulong? pointedInternClientId,
                                           bool allowMultiple,
                                           bool forceNoOutlines = false)
         {
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
+
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
             foreach (IInternAI intern in interns)
             {
-                bool shouldOutline = forceNoOutlines ? false : intern.Npc.playerClientId == pointedInternClientId || allowMultiple;
+                bool shouldOutline;
+                if (forceNoOutlines)
+                {
+                    shouldOutline = false;
+                }
+                else
+                {
+                    shouldOutline = !intern.Npc.isPlayerDead
+                                    && (intern.Npc.playerClientId == pointedInternClientId || allowMultiple)
+                                    && ((intern.OwnerClientId == localPlayer.OwnerClientId && intern.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY)
+                                        || intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance);
+                }
+
                 float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
                 float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, distance);
                 float rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,
                                             UIConst.OUTLINE_RIM_SOLID,
                                             t);
+                bool owned = StartOfRound.Instance != null
+                            && StartOfRound.Instance.localPlayerController != null
+                            && StartOfRound.Instance.localPlayerController.actualClientId == intern.OwnerClientId;
+
                 ApplyState(intern,
                            shouldOutline,
                            intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
                            rimPower,
-                           color: UIConst.UI_COLOR_DEFAULT);
+                           color: owned ? UIConst.UI_COLOR_ORANGE : UIConst.UI_COLOR_DEFAULT);
             }
         }
 

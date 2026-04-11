@@ -25,6 +25,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.Managers
 {
@@ -77,13 +78,11 @@ namespace LethalInternship.Core.Managers
         private InterestPointRendererRegistery interestPointRendererRegistery = null!;
         private PointOfInterestRendererService pointOfInterestRendererService = null!;
 
-        private PlayerControllerB localPlayerController = null!;
         private bool InternsOwned;
         private IPointOfInterest? PointOfInterestInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
 
         // Outlines
-        private IInternAI? currentPointedIntern = null;
         private bool allowMultipleInternOutline = false;
 
         private float timerUpdateTooltips;
@@ -183,11 +182,6 @@ namespace LethalInternship.Core.Managers
             {
                 worldIconUIPool.ReturnIcon(icon);
             }
-        }
-
-        public void AttachUIToLocalPlayer(PlayerControllerB player)
-        {
-            localPlayerController = player;
         }
 
         public void InitUI(Transform HUDContainerParent)
@@ -418,13 +412,76 @@ namespace LethalInternship.Core.Managers
 
         #endregion
 
+        #region CursorTooltip
+
         public void ClearCursorTipText()
         {
-            if (localPlayerController.cursorTip.text == UIConst.UI_CHOOSE_LOCATION)
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
+
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            if (localPlayer.cursorTip.text == UIConst.UI_CHOOSE_LOCATION)
             {
-                localPlayerController.cursorTip.text = string.Empty;
+                localPlayer.cursorTip.text = string.Empty;
             }
         }
+
+        public void UpdateCursorTooltipsOfPointedIntern()
+        {
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
+
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
+                return;
+
+            IInternAI intern = target.Value.Intern;
+            List<(string id, string text)> tooltipsToAdd = new List<(string id, string text)>();
+
+            float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
+            if (distance < localPlayer.grabDistance * localPlayer.grabDistance)
+            {
+                // Grab distance
+                // Line give item
+                if (localPlayer.currentlyHeldObjectServer != null)
+                {
+                    tooltipsToAdd.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
+                                                                 InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern))));
+                }
+
+                // Owning ?
+                if (intern.OwnerClientId != localPlayer.actualClientId)
+                {
+                    // Line manage
+                    tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_MANAGE,
+                                                               InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern))));
+                }
+
+                // Grab intern
+                tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_GRAB_INTERNS,
+                                                           InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern))));
+            }
+
+            // Owning ?
+            if (intern.OwnerClientId == localPlayer.actualClientId)
+            {
+                // Line manage
+                tooltipsToAdd.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
+                                                                InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
+            }
+
+            SetTooltips(localPlayer.cursorTip,
+                        isSeparatorToAdd: false,
+                        tooltipsToAdd);
+        }
+
+        #endregion
 
         #region Tips top right display
 
@@ -459,7 +516,7 @@ namespace LethalInternship.Core.Managers
             // Intern commands 
             if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length > 0)
             {
-                tooltipsToAdd.Add(("commands", string.Format(UIConst.TOOLTIP_COMMANDS,
+                tooltipsToAdd.Add(("commandsAll", string.Format(UIConst.TOOLTIP_COMMANDS_ALL,
                                                              InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern))));
             }
 
@@ -474,8 +531,8 @@ namespace LethalInternship.Core.Managers
         }
 
         private void SetTooltips(TextMeshProUGUI tmp,
-                         bool isSeparatorToAdd,
-                         List<(string id, string text)> tooltips)
+                                 bool isSeparatorToAdd,
+                                 List<(string id, string text)> tooltips)
         {
             string baseText = StripAllTooltips(tmp.text);
 
@@ -486,7 +543,7 @@ namespace LethalInternship.Core.Managers
             }
 
             var sb = new StringBuilder(baseText);
-            if (isSeparatorToAdd || !string.IsNullOrWhiteSpace(baseText))
+            if (isSeparatorToAdd && !string.IsNullOrWhiteSpace(baseText))
             {
                 sb.Append('\n').Append(SEPARATOR);
             }
@@ -546,73 +603,9 @@ namespace LethalInternship.Core.Managers
             return src.Remove(lineStart, lineEnd - lineStart);
         }
 
-        public void UpdateCursorTooltipsOfPointedIntern()
-        {
-            // TODO: rework with targeting manager
-            IInternAI? intern = currentPointedIntern;
-            if (intern == null)
-            {
-                return;
-            }
-
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-
-            StringBuilder sb = new StringBuilder();
-            float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
-            if (distance < localPlayer.grabDistance * localPlayer.grabDistance)
-            {
-                // Line grab/drop item
-                if (!intern.AreHandsFree())
-                {
-                    sb.Append(string.Format(UIConst.TOOLTIP_DROP_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern)))
-                        .AppendLine();
-                }
-                else if (localPlayer.currentlyHeldObjectServer != null)
-                {
-                    sb.Append(string.Format(UIConst.TOOLTIP_TAKE_ITEM, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern)))
-                        .AppendLine();
-                }
-
-                // Line Follow manage
-                if (intern.OwnerClientId != localPlayer.actualClientId)
-                {
-                    sb.Append(string.Format(UIConst.TOOLTIP_FOLLOW_ME, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern)))
-                        .AppendLine();
-                }
-
-                // Grab intern
-                sb.Append(string.Format(UIConst.TOOLTIP_GRAB_INTERNS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern)))
-                    .AppendLine();
-            }
-
-            // Open commands for intern
-            //sb.Append(string.Format(UIConst.TOOLTIP_COMMANDS, InputManagerProvider.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern)))
-            //    .AppendLine();
-
-            localPlayer.cursorTip.text = sb.ToString();
-        }
-
         #endregion
 
         #region Outlines
-
-        private void UpdateCurrentPointedIntern()
-        {
-            // Look for almost pointed on intern
-            IInternAI? bestPointedIntern = FindPointedIntern(tightAngle: true);
-            if (bestPointedIntern != null)
-            {
-                currentPointedIntern = bestPointedIntern;
-                return;
-            }
-
-            // Keep pointed intern outline from flickering between other interns
-            if (currentPointedIntern == null
-                || !IsPointedInternStillValid(currentPointedIntern))
-            {
-                currentPointedIntern = FindPointedIntern(tightAngle: false);
-            }
-        }
 
         private void UpdateBillBoard()
         {
@@ -630,100 +623,13 @@ namespace LethalInternship.Core.Managers
         private void UpdateOutlines()
         {
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            var internsToOuline = IdentityManager.Instance.GetIdentitiesSpawned().Select(x => x.InternAI!);
 
             // Update intern outlines
-            InternOutlineController.UpdateOutlines(InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(),
+            InternOutlineController.UpdateOutlines(internsToOuline,
                                                    target?.Intern?.Npc.playerClientId,
                                                    allowMultipleInternOutline,
                                                    forceNoOutlines: IsAnyCommandsPanelOpened);
-        }
-
-        private bool IsPointedInternStillValid(IInternAI internAI)
-        {
-            Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
-
-            if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
-            {
-                return false;
-            }
-            // No action if in spawning animation
-            if (internAI.IsSpawningAnimationRunning())
-            {
-                return false;
-            }
-
-            float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer();
-            float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position + new Vector3(0f, 1f, 0f));
-            float allowedAngle = GetAllowedAngle(distance, tightAngle: false) + 1.5f; // anti flickering margin
-
-            return angle <= allowedAngle
-                && HasPlayerLineOfSightOnIntern(internAI);
-        }
-
-        private float GetAllowedAngle(float distance, bool tightAngle)
-        {
-            float minDistance = Mathf.Pow(1f, 2);   // very close
-            float maxDistance = Mathf.Pow(15f, 2);  // far
-
-            float maxAngleClose = tightAngle ? 10f : 20f; // degrees when very close
-            float maxAngleFar = tightAngle ? 1f : 4f;  // degrees when far
-
-            float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
-            return Mathf.Lerp(maxAngleClose, maxAngleFar, t);
-        }
-
-        private bool HasPlayerLineOfSightOnIntern(IInternAI internAI)
-        {
-            return !Physics.Linecast(StartOfRound.Instance.localPlayerController.gameplayCamera.transform.position,
-                                     internAI.Npc.transform.position
-                                        + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f),
-                                     StartOfRound.Instance.collidersAndRoomMaskAndDefault,
-                                     QueryTriggerInteraction.Ignore);
-        }
-
-        private IInternAI? FindPointedIntern(bool tightAngle)
-        {
-            IInternAI? bestPointedIntern = null;
-            //float bestScore = float.MaxValue;
-
-            Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
-            IInternAI[] internAIs = InternManager.Instance.GetAliveAndSpawnInternsAI();
-            foreach (IInternAI internAI in internAIs)
-            {
-                if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
-                {
-                    continue;
-                }
-                // No action if in spawning animation
-                if (internAI.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                float distance = internAI.NpcController.GetSqrDistanceWithLocalPlayer();
-                float angle = internAI.GetAngleFOVWithLocalPlayer(localPlayerCamera.transform, internAI.Npc.transform.position
-                                                                                               + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f));
-                float allowedAngle = GetAllowedAngle(distance, tightAngle);
-
-                if (angle > allowedAngle)
-                {
-                    continue;
-                }
-
-                if (!HasPlayerLineOfSightOnIntern(internAI))
-                {
-                    continue;
-                }
-
-                // Score best pointed intern
-                //float score = angle * angleWeight + distance * distanceWeight;
-                //if (score < bestScore)
-                //{
-                //    bestScore = score;
-                //    bestPointedIntern = internAI;
-                //}
-            }
-            return bestPointedIntern;
         }
 
         #endregion

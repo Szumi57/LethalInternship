@@ -37,7 +37,6 @@ namespace LethalInternship.Patches.GameEnginePatches
                     newOwnerClientId = internAI.OwnerClientId;
                 }
             }
-
             return true;
         }
 

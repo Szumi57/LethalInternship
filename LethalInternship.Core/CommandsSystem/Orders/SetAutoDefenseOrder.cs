@@ -14,7 +14,7 @@ namespace LethalInternship.Core.CommandsSystem.Orders
 
         public override void ApplyTo(IInternAI intern)
         {
-            intern.InternIdentity.SetAutoDefense(_autoDefense);
+            intern.SetAutoDefenseModeServerRpc(_autoDefense);
         }
     }
 }

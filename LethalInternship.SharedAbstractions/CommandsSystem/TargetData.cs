@@ -13,8 +13,6 @@ namespace LethalInternship.SharedAbstractions.CommandsSystem
 
         public IPointOfInterest? PointOfInterest;
 
-        public float Score;
-
         public bool IsTargetNotEmpty()
         {
             return Intern != null

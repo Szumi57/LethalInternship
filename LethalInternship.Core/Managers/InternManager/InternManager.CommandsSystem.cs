@@ -9,7 +9,9 @@ namespace LethalInternship.Core.Managers
     {
         public void ExecuteOrder(Order order)
         {
-            var internsOwned = IdentitySelectionService.Instance.GetSelected().Select(x => x.InternAI);
+            var internsOwned = IdentitySelectionService.Instance.GetSelected()
+                                .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
+                                .Select(x => x.InternAI);
             foreach (IInternAI? intern in internsOwned)
             {
                 if (intern == null)

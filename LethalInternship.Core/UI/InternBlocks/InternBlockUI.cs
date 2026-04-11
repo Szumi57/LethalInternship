@@ -103,6 +103,7 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             ItemCountText.transform.parent.gameObject.SetActive(isStateValid);
             ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);
+            ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);
 
             if (isStateValid)
             {
@@ -110,10 +111,16 @@ namespace LethalInternship.Core.UI.InternBlocks
                 UpdateObjective();
                 UpdateBehaviour();
             }
+            else if (!identity.Alive)
+            {
+                // Dead
+                ObjectiveIcon.transform.parent.gameObject.SetActive(true);
+                BehaviourIcon.sprite = SpriteDead;
+                SetBackgroundNotHovered();
+            }
             else
             {
                 SetBackgroundNotHovered();
-                BehaviourIcon.sprite = SpriteDead;
             }
         }
 

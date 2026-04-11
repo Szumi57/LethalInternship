@@ -4,6 +4,7 @@ using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using Unity.Netcode;
 
 namespace LethalInternship.Core.Interns.AI
 {
@@ -166,6 +167,18 @@ namespace LethalInternship.Core.Interns.AI
             RoundManager.PlayRandomClip(knife.knifeAudio, knife.hitSFX, true, 1f, 0, 1000);
             RoundManager.Instance.PlayAudibleNoise(base.transform.position, 17f, 0.8f, 0, false, 0);
             knife.HitShovelServerRpc(-1);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SetAutoDefenseModeServerRpc(bool autoDefense)
+        {
+            SetAutoDefenseModeClientRpc(autoDefense);
+        }
+
+        [ClientRpc]
+        private void SetAutoDefenseModeClientRpc(bool autoDefense)
+        {
+            this.InternIdentity.SetAutoDefense(autoDefense);
         }
     }
 }

@@ -34,6 +34,11 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         void OnEnable()
         {
+            Init();
+        }
+
+        private void Init()
+        {
             InitUIPools();
             if (GameNetworkManager.Instance != null
                 && GameNetworkManager.Instance.localPlayerController != null)
@@ -73,7 +78,9 @@ namespace LethalInternship.Core.UI.InternBlocks
             };
 
             foreach (var identity in identities)
+            {
                 grouped[GetCategory(identity)].Add(identity);
+            }
 
             RemoveMissingInterns(identities);
 
@@ -121,7 +128,9 @@ namespace LethalInternship.Core.UI.InternBlocks
             }
 
             if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY)
+            {
                 return EnumCategoryTypeUI.InternClose;
+            }
 
             return EnumCategoryTypeUI.InternTooFar;
         }
@@ -153,9 +162,15 @@ namespace LethalInternship.Core.UI.InternBlocks
                     IInternAI? intern = identity.InternAI;
                     if (intern != null)
                     {
+                        intern.OnHeldItemsChanged -= RefreshBlock;
+                        intern.OnInternDead -= RefreshList;
+                        intern.InternIdentity.OnAutoDefenseChanged -= RefreshBlock;
+                        intern.OnOwnerChanged -= RefreshList;
+
                         intern.OnHeldItemsChanged += RefreshBlock;
-                        intern.OnInternDead += RefreshBlock;
+                        intern.OnInternDead += RefreshList;
                         intern.InternIdentity.OnAutoDefenseChanged += RefreshBlock;
+                        intern.OnOwnerChanged += RefreshList;
                     }
                 }
 
@@ -204,6 +219,11 @@ namespace LethalInternship.Core.UI.InternBlocks
         }
 
         #region Events
+
+        private void RefreshList(IInternAI intern)
+        {
+            Init();
+        }
 
         private void RefreshBlock(IInternAI intern)
         {

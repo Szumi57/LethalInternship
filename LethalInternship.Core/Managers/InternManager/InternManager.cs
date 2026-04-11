@@ -150,6 +150,7 @@ namespace LethalInternship.Core.Managers
             // Managers
             UIManager.Instance.InitUI(HUDManager.Instance.HUDContainer.transform.parent);
             AudioManager.Instance.Init();
+            InputManager.Instance.Init();
         }
 
         public void DestroyMonoManagers()

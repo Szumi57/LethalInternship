@@ -16,12 +16,13 @@ namespace LethalInternship.SharedAbstractions.Constants
 
         // Cursor tooltips
         public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
-        public static readonly string TOOLTIP_TAKE_ITEM = "Take my item : [{0}]";
-        public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
+        public static readonly string TOOLTIP_GIVE_ITEM = "Give item : [{0}]";
+        public static readonly string TOOLTIP_MANAGE = "Manage : [{0}]";
         public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
         public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
         public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
-        public static readonly string TOOLTIP_COMMANDS = "Intern commands : [{0}]";
+        public static readonly string TOOLTIP_COMMANDS_ALL = "Commands for all interns : [{0}]";
+        public static readonly string TOOLTIP_COMMANDS_ONE = "Commands : [{0}]";
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
 
         public static string[] COMMANDS_BUTTON_STRING = {

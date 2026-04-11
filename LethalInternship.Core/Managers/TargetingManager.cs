@@ -89,7 +89,7 @@ namespace LethalInternship.Core.Managers
             {
                 // Pointed something directly
                 currentTarget = directTarget;
-                PluginLoggerHook.LogDebug?.Invoke($"?? directTarget {currentTarget}");
+                //PluginLoggerHook.LogDebug?.Invoke($"?? directTarget {currentTarget}");
                 return;
             }
             else
@@ -102,7 +102,7 @@ namespace LethalInternship.Core.Managers
                 && currentTarget.Value.IsTargetNotPointOfInterest()
                 && IsPointedTargetStillValid(currentTarget.Value))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"?? IsPointedTargetStillValid target {currentTarget}");
+                //PluginLoggerHook.LogDebug?.Invoke($"?? IsPointedTargetStillValid target {currentTarget}");
                 return;
             }
 
@@ -112,11 +112,10 @@ namespace LethalInternship.Core.Managers
             // Scan for interns
             if (ActiveSearch.HasFlag(TargetType.Intern))
             {
-                PluginLoggerHook.LogDebug?.Invoke($"?? check intern");
                 TargetData? internTarget = FindPointedIntern();
                 if (internTarget != null)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"++ scan angle internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
+                    //PluginLoggerHook.LogDebug?.Invoke($"++ scan angle internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
                     currentTarget = internTarget;
                     return;
                 }
@@ -128,7 +127,7 @@ namespace LethalInternship.Core.Managers
                 TargetData? enemyTarget = FindPointedEnemy();
                 if (enemyTarget != null)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"++ scan angle enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
+                    //PluginLoggerHook.LogDebug?.Invoke($"++ scan angle enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
                     currentTarget = enemyTarget;
                     return;
                 }
@@ -140,7 +139,7 @@ namespace LethalInternship.Core.Managers
                 TargetData? enemyItem = FindPointedItem();
                 if (enemyItem != null)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"++ scan angle Item {enemyItem.Value.Item?.itemProperties.itemName}");
+                    //PluginLoggerHook.LogDebug?.Invoke($"++ scan angle Item {enemyItem.Value.Item?.itemProperties.itemName}");
                     currentTarget = enemyItem;
                     return;
                 }
@@ -468,7 +467,6 @@ namespace LethalInternship.Core.Managers
             TargetData targetData = new TargetData();
             targetData.Root = col.gameObject;
             targetData.PointOfInterest = pointOfInterest;
-            targetData.Score = angle;
 
             // Intern
             IInternAI? internAI = GetInternFromCollider(col);
@@ -479,7 +477,7 @@ namespace LethalInternship.Core.Managers
                 && !internAI.Npc.isPlayerDead
                 && !internAI.IsSpawningAnimationRunning())
             {
-                PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
+                //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
                 targetData.Intern = internAI;
                 return targetData;
             }
@@ -488,14 +486,14 @@ namespace LethalInternship.Core.Managers
             EnemyAI enemyAI = col.gameObject.GetComponentInParent<EnemyAI>();
             if (enemyAI != null)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target enemy ? {enemyAI?.enemyType.enemyName}");
+                //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target enemy ? {enemyAI?.enemyType.enemyName}");
                 targetData.Enemy = enemyAI;
                 return targetData;
             }
 
             // Item
             targetData.Item = col.gameObject.GetComponentInParent<GrabbableObject>();
-            if (targetData.Item != null) { PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}"); }
+            //if (targetData.Item != null) { PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}"); }
 
             return targetData;
         }

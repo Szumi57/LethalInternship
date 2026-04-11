@@ -1,4 +1,6 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.SharedAbstractions.Interns;
+using System;
 using Unity.Netcode;
 
 namespace LethalInternship.Core.Interns.AI
@@ -6,6 +8,9 @@ namespace LethalInternship.Core.Interns.AI
     public partial class InternAI
     {
         #region AssignTargetAndSetMovingTo RPC
+
+        public Action<IInternAI>? OnOwnerChanged { get { return onOwnerChanged; } set { onOwnerChanged = value!; } }
+        private Action<IInternAI> onOwnerChanged = null!;
 
         /// <summary>
         /// Change the ownership of the intern to the new player target,
@@ -54,6 +59,8 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void SyncFromAssignTargetAndSetMovingToClientRpc(ulong playerid)
         {
+            OnOwnerChanged?.Invoke(this);
+
             if (!IsOwner)
             {
                 return;
@@ -68,7 +75,6 @@ namespace LethalInternship.Core.Interns.AI
             SetMovingTowardsTargetPlayer(targetPlayer);
 
             SetDestinationToPositionInternAI(this.targetPlayer.transform.position);
-
             SetCommandToFollowPlayer();
         }
 

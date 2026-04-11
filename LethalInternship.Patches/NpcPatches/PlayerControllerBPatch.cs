@@ -846,13 +846,6 @@ namespace LethalInternship.Patches.NpcPatches
             ___nearByPlayers = new Collider[InternManagerProvider.Instance.AllEntitiesCount];
         }
 
-        [HarmonyPatch("ConnectClientToPlayerObject")]
-        [HarmonyPostfix]
-        public static void ConnectClientToPlayerObject_Postfix(PlayerControllerB __instance)
-        {
-            UIManagerProvider.Instance.AttachUIToLocalPlayer(__instance);
-        }
-
         /// <summary>
         /// Debug patch to spawn an intern at will
         /// </summary>

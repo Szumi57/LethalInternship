@@ -1,4 +1,6 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Interns;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,6 +30,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
             right.OnSideSelected += HandleSide;
 
             StatusImage.enabled = IsStatusImageEnabled;
+
+            IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
+            if (identity != null)
+            {
+                identity.OnAutoDefenseChanged += Refresh;
+            }
         }
 
         void HandleSide(EnumClickSide side)
@@ -45,6 +53,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
                         StatusImage.sprite = StatusSprites[(int)StateAutoDefenseUI.AutoDefense];
                     break;
             }
+        }
+
+        private void Refresh(IInternIdentity identity)
+        {
+            if (IsStatusImageEnabled)
+                StatusImage.sprite = identity.AutoDefense ? StatusSprites[(int)StateAutoDefenseUI.AutoDefense] : StatusSprites[(int)StateAutoDefenseUI.Flee];
         }
     }
 }

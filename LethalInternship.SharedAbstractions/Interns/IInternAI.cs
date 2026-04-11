@@ -45,7 +45,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true);
         void StopSinkingState();
 
-        Action<IInternAI> OnInternDead { get; set; }
+        Action<IInternAI>? OnInternDead { get; set; }
         void SyncDamageIntern(int damageNumber,
                               CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
                               int deathAnimation = 0,
@@ -84,6 +84,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         void HideShowLevelStickerBetaBadge(bool show);
         void ChangeSuitInternServerRpc(ulong idInternController, int suitID);
         void SyncReleaseIntern(PlayerControllerB playerGrabberController);
+
+        Action<IInternAI>? OnOwnerChanged { get; set; }
         void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget);
         void GrabInternServerRpc(ulong idPlayerGrabberController);
 
@@ -97,6 +99,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
         void HitTargetWithShovel(Shovel shovel);
         void HitTargetWithKnife(KnifeItem knife);
+
+        void SetAutoDefenseModeServerRpc(bool autoDefense);
 
         // Npc adapter
         Vector3 GetBillBoardPosition(GameObject bodyModel);

@@ -78,7 +78,7 @@ namespace LethalInternship.Core.Managers
 
         private void OnEnable()
         {
-            PluginLoggerHook.LogInfo?.Invoke("Initializing InputManager...");
+            PluginLoggerHook.LogInfo?.Invoke("InputManager loading input events...");
 
             PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed += Manage_performed;
             PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern.performed += GiveItemToIntern_performed;
@@ -184,6 +184,12 @@ namespace LethalInternship.Core.Managers
                     UIManager.Instance.ShowInputIcon();
                 }
             }
+        }
+
+        public void Init()
+        {
+            // Just to trigger lazy loading with Awake
+            PluginLoggerHook.LogDebug?.Invoke("Initializing InputManager...");
         }
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)
@@ -463,6 +469,9 @@ namespace LethalInternship.Core.Managers
                 return;
 
             IInternAI intern = target.Value.Intern;
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() > localPlayer.grabDistance * localPlayer.grabDistance)
+                return;
+
             if (intern.OwnerClientId != localPlayer.actualClientId)
             {
                 intern.SyncAssignTargetAndSetMovingTo(localPlayer);
@@ -488,6 +497,8 @@ namespace LethalInternship.Core.Managers
                 return;
 
             IInternAI intern = target.Value.Intern;
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() > localPlayer.grabDistance * localPlayer.grabDistance)
+                return;
 
             // To cut Discard_performed from triggering after this input
             FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -531,6 +542,9 @@ namespace LethalInternship.Core.Managers
                 return;
 
             IInternAI intern = target.Value.Intern;
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() > localPlayer.grabDistance * localPlayer.grabDistance)
+                return;
+
             intern.SyncAssignTargetAndSetMovingTo(localPlayer);
             // Grab intern
             intern.GrabInternServerRpc(localPlayer.playerClientId);

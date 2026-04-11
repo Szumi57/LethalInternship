@@ -14,7 +14,7 @@ namespace LethalInternship.Core.Interns.AI
 {
     public partial class InternAI
     {
-        public Action<IInternAI> OnInternDead { get { return onInternDead; } set { onInternDead = value; } }
+        public Action<IInternAI>? OnInternDead { get { return onInternDead; } set { onInternDead = value!; } }
         private Action<IInternAI> onInternDead = null!;
 
         #region Kill intern RPC
