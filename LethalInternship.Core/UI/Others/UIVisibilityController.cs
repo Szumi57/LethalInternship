@@ -4,9 +4,9 @@ using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.Others
 {
-    public class UIVisibilityController : MonoBehaviour
+    public class UIVisibgilityController : MonoBehaviour
     {
-        public static UIVisibilityController Instance { get; private set; } = null!;
+        public static UIVisibgilityController Instance { get; private set; } = null!;
 
         public List<GameObject> ListInternUI = null!;
         public List<GameObject> SuitCommandsUI = null!;

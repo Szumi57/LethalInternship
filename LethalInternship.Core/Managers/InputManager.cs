@@ -3,9 +3,9 @@ using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.CommandsSystem.Abilities;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
-using LethalInternship.Core.UI.CommandsControllers.ItemBlocks;
 using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.InternBlocks;
+using LethalInternship.Core.UI.ItemBlocks;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
@@ -184,40 +184,6 @@ namespace LethalInternship.Core.Managers
                     UIManager.Instance.ShowInputIcon();
                 }
             }
-
-            //switch (CurrentInputAction)
-            //{
-            //    case EnumInputAction.PointToAction:
-            //        StartScanPositionCoroutine();
-            //        UIManager.Instance.ShowInputIcon(isPointedValid);
-            //        break;
-
-            //    case EnumInputAction.FollowMe:
-            //        GiveOrderFollowMe();
-            //        SetCurrentInputAction(EnumInputAction.None);
-            //        break;
-
-            //    case EnumInputAction.GoToShip:
-            //        GiveOrderGoToShip();
-            //        SetCurrentInputAction(EnumInputAction.None);
-            //        break;
-
-            //    case EnumInputAction.GoToVehicle:
-            //        GiveOrderGoToVehicle();
-            //        SetCurrentInputAction(EnumInputAction.None);
-            //        break;
-
-            //    case EnumInputAction.ScavengeToShip:
-            //        GiveOrderGoScavenging();
-            //        SetCurrentInputAction(EnumInputAction.None);
-            //        break;
-
-            //    case EnumInputAction.None:
-            //    default:
-            //        StopScanPositionCoroutine();
-            //        UIManager.Instance.HideInputIcon();
-            //        break;
-            //}
         }
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)

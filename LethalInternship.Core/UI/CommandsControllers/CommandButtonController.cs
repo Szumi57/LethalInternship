@@ -1,5 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.Core.UI.TooltipBar;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System.Collections;
@@ -9,9 +9,13 @@ using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers
 {
-    public class CommandButtonController : MonoBehaviour
+    public class CommandButtonController : MonoBehaviour, IVisibilityUI
     {
         public static System.Action<EnumInputAction> OnSelected = null!;
+
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
 
         public EnumInputAction TypeInputAction;
         public Image BgImage = null!;
@@ -29,7 +33,9 @@ namespace LethalInternship.Core.UI.CommandsControllers
         private bool showCursor = true;
         private string currentText = string.Empty;
 
-        public bool IsNotAvailable;
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "CommandButtonController";
 
         void Awake()
         {
@@ -37,6 +43,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
             {
                 fullText = UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction];
             }
+            Go = this.gameObject;
         }
 
         void OnEnable()
@@ -45,17 +52,11 @@ namespace LethalInternship.Core.UI.CommandsControllers
             SetTMPDescriptionFont(UIManager.Instance.FontToUse);
         }
 
-        void Start()
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
-            SetAlpha(IconImage, 1f);
-            SetButtonNotHovered();
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-            // Transparency
-            if (IsNotAvailable)
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            isNotInteractable = !interactable;
+            if (isNotInteractable)
             {
                 SetAlpha(IconImage, 0.2f);
             }
@@ -134,27 +135,30 @@ namespace LethalInternship.Core.UI.CommandsControllers
             TMPDescription.text = currentText + (showCursor ? cursorChar : " ");
         }
 
+        #region Events
+
         public void Selected()
         {
+            if (isNotInteractable) return;
             OnSelected?.Invoke(TypeInputAction);
         }
 
         public void MouseOver()
         {
-            TooltipBarUI.Instance.RequestShow("test");
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
 
-            if (IsNotAvailable) return;
+            if (isNotInteractable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            TooltipBarUI.Instance.Hide();
-
-            if (IsNotAvailable) return;
+            UIManager.Instance.ToolTipBarUI.Hide();
 
             SetButtonNotHovered();
         }
+
+        #endregion
     }
 }

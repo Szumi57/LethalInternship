@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
-using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
@@ -52,6 +51,11 @@ namespace LethalInternship.Core.UI.InternBlocks
         private bool showCursor = true;
         private string currentText = string.Empty;
 
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "InternBlockUI";
+        private bool isStateValid => identity.Alive && !isNotInteractable;
+
         void OnEnable()
         {
             TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
@@ -67,6 +71,16 @@ namespace LethalInternship.Core.UI.InternBlocks
                 currentText = string.Empty;
                 typingCoroutine = StartCoroutine(TypeText());
                 cursorCoroutine = StartCoroutine(CursorBlink());
+            }
+        }
+
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            if (isNotInteractable == interactable)
+            {
+                isNotInteractable = !interactable;
+                Refresh();
             }
         }
 
@@ -86,25 +100,25 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void Refresh()
         {
-            ItemCountText.transform.parent.gameObject.SetActive(identity.Alive);
-            ObjectiveIcon.transform.parent.gameObject.SetActive(identity.Alive);
+            ItemCountText.transform.parent.gameObject.SetActive(isStateValid);
+            ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);
 
-            if (identity.Alive)
+            if (isStateValid)
             {
                 UpdateItemCount();
                 UpdateObjective();
                 UpdateBehaviour();
-                return;
             }
-
-            // Dead
-            SetBackgroundNotHovered();
-            BehaviourIcon.sprite = SpriteDead;
+            else
+            {
+                SetBackgroundNotHovered();
+                BehaviourIcon.sprite = SpriteDead;
+            }
         }
 
         public void UpdateItemCount()
         {
-            if (!identity.Alive) return;
+            if (!isStateValid) return;
 
             ItemCountText.transform.parent.gameObject.SetActive(true);
             IInternAI? intern = identity.InternAI;
@@ -116,7 +130,7 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void UpdateObjective()
         {
-            if (!identity.Alive) return;
+            if (!isStateValid) return;
 
             ObjectiveIcon.transform.parent.gameObject.SetActive(true);
 
@@ -142,7 +156,7 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void UpdateBehaviour()
         {
-            if (!identity.Alive) return;
+            if (!isStateValid) return;
 
             BehaviourIcon.sprite = identity.AutoDefense ? SpriteAutoDefense : SpriteFlee;
             Debug.Log($"BehaviourIcon.sprite {BehaviourIcon.sprite.name}");
@@ -196,7 +210,7 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void Selected()
         {
-            if (!identity.Alive) return;
+            if (!isStateValid) return;
 
             IdentitySelectionService.Instance.SelectSingle(identity);
             OnSelected?.Invoke();
@@ -204,24 +218,19 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void MouseOver()
         {
-            if (!identity.Alive) return;
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
 
-            TooltipBarUI.Instance.RequestShow($"block UI {NameText.text}, click to ...");
+            if (!isStateValid) return;
 
             if (identity.InternAI != null)
-            {
                 CameraFocusUI.Instance.FocusOnIntern(identity.InternAI.Npc.transform);
-            }
 
             SetAlpha(BackgroundImage, 1f);
         }
 
         public void MouseLeave()
         {
-            if (!identity.Alive) return;
-
-            TooltipBarUI.Instance.Hide();
-
+            UIManager.Instance.ToolTipBarUI.Hide();
             SetBackgroundNotHovered();
         }
 

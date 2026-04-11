@@ -1,5 +1,4 @@
 ﻿using LethalInternship.Core.CommandsSystem;
-using LethalInternship.Core.UI.CommandsControllers.ItemBlocks;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
@@ -11,8 +10,12 @@ using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.UI.ItemBlocks
 {
-    public class ItemListUIController : MonoBehaviour, IRefreshableUI
+    public class ItemListUIController : MonoBehaviour, IRefreshableUI, IVisibilityUI
     {
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+
         public Transform Content = null!;
         public ItemBlockUI PrefabItemBlockUI = null!;
         public CategoryBlockUI PrefabCategoryBlockUI = null!;
@@ -26,6 +29,11 @@ namespace LethalInternship.Core.UI.ItemBlocks
         private int itemsScrapValue = 0;
 
         IInternAI currentInternAI = null!;
+
+        void Awake()
+        {
+            Go = null!; // we don't want the whole panel to be disabled
+        }
 
         void OnEnable()
         {
@@ -55,6 +63,14 @@ namespace LethalInternship.Core.UI.ItemBlocks
             // Event
             currentInternAI.OnHeldItemsChanged -= UpdateItems;
             currentInternAI.OnHeldItemsChanged += UpdateItems;
+        }
+
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            foreach (var (identity, block) in blocksByGrabbableObject)
+            {
+                block.SetInteractable(interactable, tooltipMessageNotInteractable);
+            }
         }
 
         private void InitUIPools()

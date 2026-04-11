@@ -1,5 +1,4 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -10,8 +9,6 @@ namespace LethalInternship.Core.UI.TooltipBar
 {
     public class TooltipBarUI : MonoBehaviour
     {
-        public static TooltipBarUI Instance { get; private set; } = null!;
-
         public CanvasGroup CanvasGroup = null!;
         public TMP_Text Text = null!;
         public Image icon = null!;
@@ -29,14 +26,6 @@ namespace LethalInternship.Core.UI.TooltipBar
 
         void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                PluginLoggerHook.LogWarning?.Invoke($"A new TooltipBarUI exist at the same time ! Destroying the old one...");
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-
             HideImmediate();
             Text.font = UIManager.Instance.FontToUse;
 

@@ -21,6 +21,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
         public Image StatusImage = null!;
         public Sprite[] StatusSprites = null!;
 
+
         void Awake()
         {
             left.OnSideSelected += HandleSide;

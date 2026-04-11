@@ -1,5 +1,4 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.Core.UI.TooltipBar;
 using LethalInternship.SharedAbstractions.Constants;
 using System.Collections;
 using System.Linq;
@@ -7,7 +6,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
+namespace LethalInternship.Core.UI.ItemBlocks
 {
     public class ItemBlockUI : MonoBehaviour
     {
@@ -29,6 +28,10 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
 
         private float holdTime = 0.5f;
 
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : UIConst.TOOLTIPBAR_ITEM;
+
         // Rotation animation
         private enum RotationAxis { X, Y, Z }
         private RotationAxis mainAxis = RotationAxis.X;
@@ -39,8 +42,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
 
         void Awake()
         {
-            viewport = this.transform.parent.parent.GetComponent<RectTransform>();
-            this.transform.parent.parent.parent.GetComponent<ScrollRect>().onValueChanged.AddListener(OnScroll);
+            viewport = transform.parent.parent.GetComponent<RectTransform>();
+            transform.parent.parent.parent.GetComponent<ScrollRect>().onValueChanged.AddListener(OnScroll);
         }
 
         void OnEnable()
@@ -53,6 +56,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
             PlayAnimationRotation();
             StartCoroutine(FitNextFrame());
             StartCoroutine(CheckVisibilityNextFrame());
+        }
+
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            isNotInteractable = !interactable;
         }
 
         private void SetButtonHovered()
@@ -71,7 +80,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
             itemGrabbableObject = grabbableObject;
 
             // Item Hologram
-            itemHologram = Object.Instantiate<GameObject>(grabbableObject.itemProperties.spawnPrefab, Content);
+            itemHologram = Instantiate(grabbableObject.itemProperties.spawnPrefab, Content);
             hologramRenderers = itemHologram.GetComponentsInChildren<Renderer>(true);
 
             // Position in the container
@@ -100,12 +109,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
             }
 
             // Clean gameobject just for hologram
-            Object.Destroy(itemHologram.GetComponent<NetworkObject>());
-            Object.Destroy(itemHologram.GetComponent<GrabbableObject>());
-            Object.Destroy(itemHologram.GetComponent<Collider>());
+            Destroy(itemHologram.GetComponent<NetworkObject>());
+            Destroy(itemHologram.GetComponent<GrabbableObject>());
+            Destroy(itemHologram.GetComponent<Collider>());
             GameObject? scanNode = itemHologram.GetComponentsInChildren<Transform>().Where(x => x.name == "ScanNode").FirstOrDefault()?.gameObject;
             if (scanNode != null)
-                Object.Destroy(scanNode);
+                Destroy(scanNode);
 
             // Start coroutine only when active, ex : event when grabbing object triggers Setup while "not active"
             if (UIManager.Instance.IsCommandsOneOpened)
@@ -193,7 +202,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
             if (maxDimension <= 0f)
                 return 1f;
 
-            return (targetSize / maxDimension) * margin;
+            return targetSize / maxDimension * margin;
         }
 
         IEnumerator FitNextFrame()
@@ -249,7 +258,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
 
             float ratio = visibleArea / totalArea;
 
-            return ratio >= (2f / 3f);
+            return ratio >= 2f / 3f;
         }
 
         IEnumerator CheckVisibilityNextFrame()
@@ -289,30 +298,32 @@ namespace LethalInternship.Core.UI.CommandsControllers.ItemBlocks
 
         private void ActionValidated()
         {
-            TooltipBarUI.Instance.Hide();
+            UIManager.Instance.ToolTipBarUI.Hide();
+            if (isNotInteractable) return;
             OnSelected?.Invoke(itemGrabbableObject);
         }
 
         public void PointerDown()
         {
-            TooltipBarUI.Instance.StartHold(holdTime, ActionValidated);
+            if (isNotInteractable) return;
+            UIManager.Instance.ToolTipBarUI.StartHold(holdTime, ActionValidated);
         }
 
         public void PointerUp()
         {
-            TooltipBarUI.Instance.StopHold();
-            SetButtonNotHovered();
+            UIManager.Instance.ToolTipBarUI.StopHold();
         }
 
         public void MouseOver()
         {
-            TooltipBarUI.Instance.ShowImmediate(string.Format(UIConst.TOOLTIPBAR_ITEM, ItemName, ItemValue));
+            UIManager.Instance.ToolTipBarUI.ShowImmediate(string.Format(tooltipMessage, ItemName, ItemValue));
+            if (isNotInteractable) return;
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            TooltipBarUI.Instance.Hide();
+            UIManager.Instance.ToolTipBarUI.Hide();
             SetButtonNotHovered();
         }
 

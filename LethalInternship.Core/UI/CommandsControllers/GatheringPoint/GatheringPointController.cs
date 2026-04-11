@@ -1,5 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.Core.UI.TooltipBar;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System.Collections;
@@ -9,9 +9,13 @@ using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 {
-    public class GatheringPointController : MonoBehaviour
+    public class GatheringPointController : MonoBehaviour, IVisibilityUI
     {
         public System.Action<EnumInputAction> OnSelected = null!;
+
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
 
         public Image BgImage = null!;
         public Image BgRemoveButtonImage = null!;
@@ -25,8 +29,6 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         float transparency = 1f;
 
-        public bool IsNotAvailable;
-
         // ?
         bool gatheringPointSet = false;
 
@@ -39,8 +41,15 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         private bool showCursor = true;
         private string currentText = string.Empty;
 
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "GatheringPointController";
+
         void Awake()
         {
+            SetAlpha(SetImage, 1f);
+            SetAlpha(GoToImage, 0f);
+            Go = this.gameObject;
         }
 
         void OnEnable()
@@ -51,29 +60,14 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             UpdateStateRemoveButton();
         }
 
-        void Start()
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
-            SetAlpha(SetImage, 1f);
-            SetAlpha(GoToImage, 0f);
-            SetButtonNotHovered();
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-            // Transparency
-            if (IsNotAvailable)
-            {
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            isNotInteractable = !interactable;
+            if (isNotInteractable)
                 SetAlpha(GetCurrentImage(), 0.2f);
-            }
             else
-            {
                 SetAlpha(GetCurrentImage(), transparency);
-                if (removeGatheringPointController != null)
-                {
-                    removeGatheringPointController.IsNotAvailable = false;
-                }
-            }
         }
 
         private Image GetCurrentImage()
@@ -190,6 +184,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         public void Selected()
         {
+            if (isNotInteractable) return;
+
             gatheringPointSet = !gatheringPointSet;
 
             OnSelected?.Invoke(GetCurrentInputAction());
@@ -200,19 +196,16 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         public void MouseOver()
         {
-            TooltipBarUI.Instance.RequestShow("another long message with text another long message with text another long message with text another long message with text another long message with text another long message with text");
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
 
-            if (IsNotAvailable) return;
+            if (isNotInteractable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            TooltipBarUI.Instance.Hide();
-
-            if (IsNotAvailable) return;
-
+            UIManager.Instance.ToolTipBarUI.Hide();
             SetButtonNotHovered();
         }
 

@@ -1,30 +1,59 @@
-﻿using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
-using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers
 {
     public class CommandsAllController : MonoBehaviour
     {
-        public CommandButtonController[] CommandButtons = null!;
+        // Panels
+        public Image BGPanelUI = null!;
+        public GameObject QuickCommandsPanelUI = null!;
+        public GameObject PointerCommandsPanelUI = null!;
+        public GameObject AutoDefenseCommandsPanelUI = null!;
+        public GameObject CarryBehaviourCommandsPanelUI = null!;
+        public GameObject GotoCommandsPanelUI = null!;
+        public GameObject ScavengeCommandsPanelUI = null!;
 
         public TextMeshProUGUI TitleUI = null!;
         public TextMeshProUGUI ModNamePanelDescription = null!;
 
         private Coroutine CoroutineUpdateCommandsUI = null!;
 
+        private IVisibilityUI[] visibilityUIs = null!;
+
+        void Awake()
+        {
+            if (TitleUI == null)
+            {
+                PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI TitleUI found while loading CommandsAllController !");
+            }
+
+            if (ModNamePanelDescription == null)
+            {
+                PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI ModNamePanelDescription found while loading CommandsAllController !");
+            }
+            visibilityUIs = GetComponentsInChildren<IVisibilityUI>(includeInactive: true);
+        }
+
         void OnEnable()
         {
             TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
+
             SetTitleUIFont(fontToUse);
+            SetTitleUIText(UIConst.UI_TITLE_COMMANDS_ALL);
+
             SetModNamePanelDescriptionFont(fontToUse);
+            SetModDescriptionText($"{PluginRuntimeProvider.Context.Plugin_Name} v{PluginRuntimeProvider.Context.Plugin_Version}");
 
             // Update commands UI while displaying
             if (CoroutineUpdateCommandsUI != null)
@@ -33,59 +62,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
             }
             CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
 
-            if (UIVisibilityController.Instance != null)
-            {
-                UIVisibilityController.Instance.SetAllVisible();
-            }
-        }
-
-        void Start()
-        {
-            if (TitleUI == null)
-            {
-                PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI TitleUI found while loading CommandsAllController !");
-            }
-            SetTitleUIText(UIConst.UI_TITLE_COMMANDS_ALL);
-
-            if (ModNamePanelDescription == null)
-            {
-                PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI ModNamePanelDescription found while loading CommandsAllController !");
-            }
-            SetModDescriptionText($"{PluginRuntimeProvider.Context.Plugin_Name} v{PluginRuntimeProvider.Context.Plugin_Version}");
-
-            // List of command buttons
-            CommandButtons = GetComponentsInChildren<CommandButtonController>();
-            if (CommandButtons == null
-                || CommandButtons.Length == 0)
-            {
-                PluginLoggerHook.LogWarning?.Invoke("No CommandButtons found while loading CommandsAllController !");
-            }
-        }
-
-        private IEnumerator UpdateCommandsUI()
-        {
-            yield return null;
-
-            while (this.enabled)
-            {
-                // Buttons
-                CommandButtonController? commandWheelController = GetGoToVehicleButton();
-                if (commandWheelController != null)
-                {
-                    commandWheelController.IsNotAvailable = InternManager.Instance.VehicleController == null;
-                }
-
-                yield return null;
-            }
-        }
-
-        private CommandButtonController? GetGoToVehicleButton()
-        {
-            if (CommandButtons != null)
-            {
-                return CommandButtons.FirstOrDefault(x => x.TypeInputAction == EnumInputAction.GoToVehicle);
-            }
-            return null;
+            SetAllVisible();
         }
 
         private void SetModNamePanelDescriptionFont(TMP_FontAsset font)
@@ -116,6 +93,123 @@ namespace LethalInternship.Core.UI.CommandsControllers
             {
                 ModNamePanelDescription.text = text;
             }
+        }
+
+        private IEnumerator UpdateCommandsUI()
+        {
+            if (GameNetworkManager.Instance == null
+                || GameNetworkManager.Instance.localPlayerController == null)
+                yield break;
+
+            ulong actualClientId = GameNetworkManager.Instance.localPlayerController.actualClientId;
+            StartOfRound instanceSOR = StartOfRound.Instance;
+
+            while (this.enabled)
+            {
+                if (DebugConst.ALLOW_COMMANDS_ALWAYS)
+                {
+                    foreach (var uiElement in visibilityUIs)
+                    {
+                        uiElement.SetInteractable(interactable: true);
+                    }
+                    yield return null;
+                    continue;
+                }
+
+                // Managing interns ?
+                bool managingInterns = IdentitySelectionService.Instance.GetSelected()
+                                            .Where(x => x.Alive
+                                                     && x.InternAI != null
+                                                     && x.InternAI.OwnerClientId == actualClientId)
+                                            .Any();
+                if (managingInterns)
+                {
+                    // Clean all
+                    foreach (var uiElement in visibilityUIs)
+                    {
+                        uiElement.SetInteractable(interactable: true);
+                    }
+
+                    // Vehicle ?
+                    foreach (var uiElement in visibilityUIs)
+                    {
+                        if (uiElement.GroupUI == EnumUIGroups.VehicleGroupButtons)
+                        {
+                            uiElement.SetInteractable(interactable: InternManager.Instance.VehicleController != null, UIConst.TOOLTIPBAR_NO_CRUISER);
+                        }
+                    }
+
+                    // In space or on company building moon
+                    if (instanceSOR.inShipPhase
+                        || instanceSOR.shipIsLeaving
+                        || InternManager.Instance.IsCurrentMoonCompanyMoon())
+                    {
+                        // Disable all but
+                        foreach (var uiElement in visibilityUIs.Where(x => x.GroupUI != EnumUIGroups.InternsList
+                                                                        && x.GroupUI != EnumUIGroups.SuitMenu
+                                                                        && x.GroupUI != EnumUIGroups.AutoDefenseButton
+                                                                        && x.GroupUI != EnumUIGroups.NavigationGroupButtons
+                                                                        && x.GroupUI != EnumUIGroups.CarryItemBehaviourButton))
+                        {
+                            uiElement.SetInteractable(interactable: false, UIConst.TOOLTIPBAR_NOT_IN_SPACE);
+                        }
+                    }
+                }
+                else
+                {
+                    // Disable all
+                    foreach (var uiElement in visibilityUIs)
+                    {
+                        uiElement.SetInteractable(interactable: false, UIConst.TOOLTIPBAR_NO_INTERNS_TO_MANAGE);
+                    }
+                }
+
+                yield return null;
+            }
+        }
+
+        public void SetAllVisible()
+        {
+            SetUIElementVisible(BGPanelUI, visible: true);
+            SetUIElementVisible(visibilityUIs.Select(x => x.Go), visible: true);
+            SetUIElementVisible(QuickCommandsPanelUI, visible: true);
+            SetUIElementVisible(PointerCommandsPanelUI, visible: true);
+            SetUIElementVisible(AutoDefenseCommandsPanelUI, visible: true);
+            SetUIElementVisible(CarryBehaviourCommandsPanelUI, visible: true);
+            SetUIElementVisible(GotoCommandsPanelUI, visible: true);
+            SetUIElementVisible(ScavengeCommandsPanelUI, visible: true);
+        }
+
+        public void SetOnlyListInternsAndSuitCommandsVisible()
+        {
+            SetUIElementVisible(visibilityUIs.Where(x => x.GroupUI == EnumUIGroups.SuitMenu).Select(x => x.Go), visible: true);
+
+            SetUIElementVisible(visibilityUIs.Where(x => x.GroupUI != EnumUIGroups.InternsList
+                                                      && x.GroupUI != EnumUIGroups.SuitMenu).Select(x => x.Go), visible: false);
+            SetUIElementVisible(BGPanelUI, visible: false);
+            SetUIElementVisible(QuickCommandsPanelUI, visible: false);
+            SetUIElementVisible(PointerCommandsPanelUI, visible: false);
+            SetUIElementVisible(AutoDefenseCommandsPanelUI, visible: false);
+            SetUIElementVisible(CarryBehaviourCommandsPanelUI, visible: false);
+            SetUIElementVisible(GotoCommandsPanelUI, visible: false);
+            SetUIElementVisible(ScavengeCommandsPanelUI, visible: false);
+        }
+
+        private void SetUIElementVisible(IEnumerable<GameObject> list, bool visible)
+        {
+            foreach (var go in list) SetUIElementVisible(go, visible);
+        }
+
+        private void SetUIElementVisible(GameObject go, bool visible)
+        {
+            if (go != null)
+                go.SetActive(visible);
+        }
+
+        private void SetUIElementVisible(Image img, bool visible)
+        {
+            if (img != null)
+                img.enabled = visible;
         }
     }
 }

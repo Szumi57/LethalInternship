@@ -1,4 +1,4 @@
-﻿using LethalInternship.Core.UI.Others;
+﻿using LethalInternship.Core.Managers;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.CommandsControllers.Suits
@@ -14,7 +14,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
 
         public void MouseOver()
         {
-            UIVisibilityController.Instance.SetOnlyListInternsAndSuitCommandsVisible();
+            if (UIManager.Instance.IsCommandsAllOpened)
+                UIManager.Instance.CommandsAllController.SetOnlyListInternsAndSuitCommandsVisible();
         }
 
         public void MouseLeave()
@@ -26,7 +27,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
                 return;
             }
 
-            UIVisibilityController.Instance.SetAllVisible();
+            if (UIManager.Instance.IsCommandsAllOpened)
+                UIManager.Instance.CommandsAllController.SetAllVisible();
         }
     }
 }

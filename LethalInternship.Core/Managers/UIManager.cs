@@ -46,17 +46,20 @@ namespace LethalInternship.Core.Managers
         }
 
         // Commands all panel
-        private GameObject commandsAll = null!;
-        public bool IsCommandsAllOpened { get { return commandsAll != null && commandsAll.activeSelf; } }
+        private GameObject commandsAllGo = null!;
+        public CommandsAllController CommandsAllController { get; private set; } = null!;
+        public bool IsCommandsAllOpened { get { return commandsAllGo != null && commandsAllGo.activeSelf; } }
 
         // Commands one panel
-        private GameObject commandsOne = null!;
-        public bool IsCommandsOneOpened { get { return commandsOne != null && commandsOne.activeSelf; } }
+        private GameObject commandsOneGo = null!;
+        public CommandsOneController CommandsOneController { get; private set; } = null!;
+        public bool IsCommandsOneOpened { get { return commandsOneGo != null && commandsOneGo.activeSelf; } }
 
         public bool IsAnyCommandsPanelOpened { get { return IsCommandsAllOpened || IsCommandsOneOpened; } }
 
         // TooltipBar
-        private GameObject toolTipBarUI = null!;
+        private GameObject toolTipBarUIGo = null!;
+        public TooltipBarUI ToolTipBarUI { get; private set; } = null!;
 
         public TMP_FontAsset FontToUse => HUDManager.Instance.statsUIElements.playerNamesText[0].font;
 
@@ -220,27 +223,30 @@ namespace LethalInternship.Core.Managers
             // Instantiating prefabs
             // ---------------------
             // CommandsAll
-            if (commandsAll != null)
+            if (commandsAllGo != null)
             {
-                Object.Destroy(commandsAll);
+                Object.Destroy(commandsAllGo);
             }
-            commandsAll = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
-            commandsAll.SetActive(false);
+            commandsAllGo = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
+            CommandsAllController = commandsAllGo.GetComponent<CommandsAllController>();
+            commandsAllGo.SetActive(false);
 
             // CommandsOne
-            if (commandsOne != null)
+            if (commandsOneGo != null)
             {
-                Object.Destroy(commandsOne);
+                Object.Destroy(commandsOneGo);
             }
-            commandsOne = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsOne, HUDContainerParent);
-            commandsOne.SetActive(false);
+            commandsOneGo = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsOne, HUDContainerParent);
+            CommandsOneController = commandsOneGo.GetComponent<CommandsOneController>();
+            commandsOneGo.SetActive(false);
 
             // Tooltip
-            if (toolTipBarUI != null)
+            if (toolTipBarUIGo != null)
             {
-                Object.Destroy(toolTipBarUI);
+                Object.Destroy(toolTipBarUIGo);
             }
-            toolTipBarUI = GameObject.Instantiate(PluginRuntimeProvider.Context.TooltipBar, HUDContainerParent);
+            toolTipBarUIGo = GameObject.Instantiate(PluginRuntimeProvider.Context.TooltipBar, HUDContainerParent);
+            ToolTipBarUI = toolTipBarUIGo.GetComponent<TooltipBarUI>();
         }
 
         public void ShowInputIcon()
@@ -344,7 +350,7 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            commandsAll.SetActive(true);
+            commandsAllGo.SetActive(true);
         }
 
         public void ShowCommandsOne()
@@ -358,7 +364,7 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            commandsOne.SetActive(true);
+            commandsOneGo.SetActive(true);
         }
 
         public void RefreshCommandsOne()
@@ -369,7 +375,7 @@ namespace LethalInternship.Core.Managers
             if (!IsCommandsOneOpened)
                 ShowCommandsOne();
 
-            commandsOne.GetComponent<CommandsOneController>().Refresh();
+            commandsOneGo.GetComponent<CommandsOneController>().Refresh();
         }
 
         public void HideCommandsAll(bool resetCameraFocus = true)
@@ -381,12 +387,12 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            TooltipBarUI.Instance.Hide();
+            ToolTipBarUI.Hide();
 
             if (resetCameraFocus)
                 CameraFocusUI.Instance.ReturnToInitial();
 
-            commandsAll.SetActive(false);
+            commandsAllGo.SetActive(false);
         }
 
         public void HideCommandsOne()
@@ -398,10 +404,10 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            TooltipBarUI.Instance.Hide();
+            ToolTipBarUI.Hide();
             CameraFocusUI.Instance.ReturnToInitial();
 
-            commandsOne.SetActive(false);
+            commandsOneGo.SetActive(false);
         }
 
         public void HideAll()

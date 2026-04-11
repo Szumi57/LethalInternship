@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
@@ -10,8 +11,12 @@ using UnityEngine;
 
 namespace LethalInternship.Core.UI.InternBlocks
 {
-    public class InternListUIController : MonoBehaviour
+    public class InternListUIController : MonoBehaviour, IVisibilityUI
     {
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+
         public Transform Content = null!;
         public InternBlockUI PrefabInternBlockUI = null!;
         public CategoryBlockUI PrefabCategoryBlockUI = null!;
@@ -22,6 +27,11 @@ namespace LethalInternship.Core.UI.InternBlocks
         private Dictionary<IInternIdentity, InternBlockUI> identityMap = new Dictionary<IInternIdentity, InternBlockUI>();
         private Dictionary<EnumCategoryTypeUI, CategoryBlockUI> categoryMap = new Dictionary<EnumCategoryTypeUI, CategoryBlockUI>();
 
+        void Awake()
+        {
+            Go = null!; // we don't want the whole panel to be disabled
+        }
+
         void OnEnable()
         {
             InitUIPools();
@@ -29,6 +39,14 @@ namespace LethalInternship.Core.UI.InternBlocks
                 && GameNetworkManager.Instance.localPlayerController != null)
             {
                 SyncList(IdentitySelectionService.Instance.GetSelected());
+            }
+        }
+
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            foreach (var (identity, block) in identityMap)
+            {
+                block.SetInteractable(interactable, tooltipMessageNotInteractable);
             }
         }
 
@@ -186,12 +204,12 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void MouseOver()
         {
-            UIVisibilityController.Instance.SetOnlyListInternsAndSuitCommandsVisible();
+            UIManager.Instance.CommandsAllController.SetOnlyListInternsAndSuitCommandsVisible();
         }
 
         public void MouseLeave()
         {
-            UIVisibilityController.Instance.SetAllVisible();
+            UIManager.Instance.CommandsAllController.SetAllVisible();
         }
 
         #endregion

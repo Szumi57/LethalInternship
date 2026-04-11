@@ -111,7 +111,7 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
 
             // Landing status
             string landingStatus = instanceIM.LandingStatusAllowed ? TerminalConst.STRING_LANDING_STATUS_ALLOWED : TerminalConst.STRING_LANDING_STATUS_ABORTED;
-            bool isCurrentMoonCompanyBuilding = instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID;
+            bool isCurrentMoonCompanyBuilding = instanceIM.IsCurrentMoonCompanyMoon();
             if (isCurrentMoonCompanyBuilding)
             {
                 landingStatus += TerminalConst.STRING_LANDING_STATUS_ABORTED_COMPANY_MOON;

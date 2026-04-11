@@ -1,5 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
-using LethalInternship.Core.UI.TooltipBar;
+using LethalInternship.Core.UI.Others;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -7,9 +7,13 @@ using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers.Suits
 {
-    public class ButtonSelectSuit : MonoBehaviour
+    public class ButtonSelectSuit : MonoBehaviour, IVisibilityUI
     {
         public static System.Action<int> OnSuitSelected = null!;
+
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
 
         public GameObject SuitListPanel = null!;
         public Transform SuitListContentTransform = null!;
@@ -19,7 +23,42 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
         public Image FrameImage = null!;
         public Image IconImage = null!;
 
-        public bool IsNotAvailable;
+        private float transparencyFull = 1f;
+
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "ButtonSelectSuit";
+
+        void Awake()
+        {
+            Go = this.gameObject;
+        }
+
+        void OnEnable()
+        {
+            SetButtonNotHovered();
+        }
+
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            isNotInteractable = !interactable;
+            if (isNotInteractable)
+                SetAlpha(IconImage, 0.2f);
+            else
+                SetAlpha(IconImage, transparencyFull);
+        }
+
+        private void SetAlpha(Image image, float transparency)
+        {
+            if (image != null
+                && image.color.a != transparency)
+            {
+                Color alpha = image.color;
+                alpha.a = transparency;
+                image.color = alpha;
+            }
+        }
 
         private void Toggle()
         {
@@ -81,24 +120,22 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
 
         public void Selected()
         {
+            if (isNotInteractable) return;
             Toggle();
         }
 
         public void MouseOver()
         {
-            TooltipBarUI.Instance.RequestShow("Select Suit test");
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
 
-            if (IsNotAvailable) return;
+            if (isNotInteractable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            TooltipBarUI.Instance.Hide();
-
-            if (IsNotAvailable) return;
-
+            UIManager.Instance.ToolTipBarUI.Hide();
             SetButtonNotHovered();
         }
     }

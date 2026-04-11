@@ -1,33 +1,42 @@
-﻿using LethalInternship.Core.UI.TooltipBar;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers.Suits
 {
-    public class ButtonSuitsController : MonoBehaviour
+    public class ButtonSuitsController : MonoBehaviour, IVisibilityUI
     {
         public static System.Action<EnumInputAction> OnSelected = null!;
+
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
 
         public EnumInputAction TypeInputAction;
         public Image FrameImage = null!;
         public Image IconImage = null!;
 
-        public bool IsNotAvailable;
-
         private float transparencyFull = 1f;
 
-        void Update()
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "ButtonSuitsController";
+
+        void Awake()
         {
-            // Transparency
-            if (IsNotAvailable)
-            {
+            Go = this.gameObject;
+        }
+
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            isNotInteractable = !interactable;
+            if (isNotInteractable)
                 SetAlpha(IconImage, 0.2f);
-            }
             else
-            {
                 SetAlpha(IconImage, transparencyFull);
-            }
         }
 
         private void SetAlpha(Image image, float transparency)
@@ -58,19 +67,16 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
 
         public void MouseOver()
         {
-            TooltipBarUI.Instance.RequestShow("Suit test");
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
 
-            if (IsNotAvailable) return;
+            if (isNotInteractable) return;
 
             SetButtonHovered();
         }
 
         public void MouseLeave()
         {
-            TooltipBarUI.Instance.Hide();
-
-            if (IsNotAvailable) return;
-
+            UIManager.Instance.ToolTipBarUI.Hide();
             SetButtonNotHovered();
         }
     }

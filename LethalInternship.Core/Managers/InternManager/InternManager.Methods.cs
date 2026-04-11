@@ -75,7 +75,7 @@ namespace LethalInternship.Core.Managers
         public bool AreInternsScheduledToLand()
         {
             // no drop of interns on company building moon
-            if (StartOfRound.Instance.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID)
+            if (IsCurrentMoonCompanyMoon())
             {
                 return false;
             }
@@ -562,6 +562,11 @@ namespace LethalInternship.Core.Managers
                 }
             }
             return indexesSpawnedSuits;
+        }
+
+        public bool IsCurrentMoonCompanyMoon()
+        {
+            return StartOfRound.Instance.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID;
         }
     }
 }
