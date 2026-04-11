@@ -145,14 +145,22 @@ namespace LethalInternship.Core.Interns
             {
                 return 0;
             }
-
-            //PluginLoggerHook.LogDebug?.Invoke($"indexesSpawnedSuits.Count {indexesSpawnedSuits.Count}");
-            Random randomInstance = new Random();
-            int randomIndex = randomInstance.Next(0, _indexesSpawnedSuits.Count);
-            if (randomIndex >= _indexesSpawnedSuits.Count)
+            if (_indexesSpawnedSuits.Count == 1)
             {
-                return 0;
+                _currentSuitIndex = 0;
+                return _indexesSpawnedSuits[_currentSuitIndex];
             }
+
+            Random randomInstance = new Random();
+            int randomIndex;
+            do
+            {
+                randomIndex = randomInstance.Next(0, _indexesSpawnedSuits.Count);
+                //Debug.Log($"indexesSpawnedSuits.Count {_indexesSpawnedSuits.Count} randomIndex {randomIndex}");
+                if (randomIndex >= _indexesSpawnedSuits.Count)
+                    return 0;
+            }
+            while (_indexesSpawnedSuits[randomIndex] == SuitID);
 
             _currentSuitIndex = randomIndex;
             return _indexesSpawnedSuits[_currentSuitIndex];

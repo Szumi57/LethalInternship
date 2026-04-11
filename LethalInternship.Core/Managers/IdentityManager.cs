@@ -246,7 +246,7 @@ namespace LethalInternship.Core.Managers
                         .ToArray();
         }
 
-        public int[] GetIdentitiesSpawned()
+        public int[] GetIdentitiesIDsSpawned()
         {
             if (InternIdentities == null)
             {
@@ -256,6 +256,18 @@ namespace LethalInternship.Core.Managers
             return InternIdentities
                         .FilterSpawned()
                         .Select(x => x.IdIdentity)
+                        .ToArray();
+        }
+
+        public IInternIdentity[] GetIdentitiesSpawned()
+        {
+            if (InternIdentities == null)
+            {
+                return new IInternIdentity[0];
+            }
+
+            return InternIdentities
+                        .FilterSpawned()
                         .ToArray();
         }
 
@@ -276,6 +288,23 @@ namespace LethalInternship.Core.Managers
                                    .Where(x => x.InternAI != null
                                             && x.InternAI.OwnerClientId == actualClientId)
                                    .ToArray();
+        }
+
+        public bool IsIdentityValidToCommand(IInternIdentity identity)
+        {
+            if (identity == null) return false;
+
+            if (!identity.Alive) return false;
+
+            if (identity.InternAI == null) return false;
+
+            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY) return false;
+
+            if (StartOfRound.Instance == null || StartOfRound.Instance.localPlayerController == null) return false;
+
+            if (identity.InternAI.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId) return false;
+
+            return true;
         }
     }
 

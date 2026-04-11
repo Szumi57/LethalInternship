@@ -58,7 +58,7 @@ namespace LethalInternship.Patches.MapPatches
                 return;
             }
 
-            int[] idsIdentitiesSpawned = IdentityManagerProvider.Instance.GetIdentitiesSpawned();
+            int[] idsIdentitiesSpawned = IdentityManagerProvider.Instance.GetIdentitiesIDsSpawned();
             if (idsIdentitiesSpawned.Contains(internAI.InternIdentity.IdIdentity))
             {
                 // valid intern
@@ -109,7 +109,7 @@ namespace LethalInternship.Patches.MapPatches
                 return;
             }
 
-            int[] idsIdentitiesSpawned = IdentityManagerProvider.Instance.GetIdentitiesSpawned();
+            int[] idsIdentitiesSpawned = IdentityManagerProvider.Instance.GetIdentitiesIDsSpawned();
             if (idsIdentitiesSpawned.Contains(internAI.InternIdentity.IdIdentity))
             {
                 // valid intern

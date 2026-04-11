@@ -97,11 +97,9 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         private IEnumerator UpdateCommandsUI()
         {
-            if (GameNetworkManager.Instance == null
-                || GameNetworkManager.Instance.localPlayerController == null)
+            if (StartOfRound.Instance == null)
                 yield break;
 
-            ulong actualClientId = GameNetworkManager.Instance.localPlayerController.actualClientId;
             StartOfRound instanceSOR = StartOfRound.Instance;
 
             while (this.enabled)
@@ -118,9 +116,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
                 // Managing interns ?
                 bool managingInterns = IdentitySelectionService.Instance.GetSelected()
-                                            .Where(x => x.Alive
-                                                     && x.InternAI != null
-                                                     && x.InternAI.OwnerClientId == actualClientId)
+                                            .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
                                             .Any();
                 if (managingInterns)
                 {

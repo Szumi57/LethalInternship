@@ -54,7 +54,8 @@ namespace LethalInternship.Core.UI.InternBlocks
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
         private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "InternBlockUI";
-        private bool isStateValid => identity.Alive && !isNotInteractable;
+
+        private bool isStateValid => !isNotInteractable && IdentityManager.Instance.IsIdentityValidToCommand(identity);
 
         void OnEnable()
         {
@@ -178,7 +179,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             }
         }
 
-        IEnumerator TypeText()
+        private IEnumerator TypeText()
         {
             foreach (char c in fullText)
             {
@@ -188,7 +189,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             }
         }
 
-        IEnumerator CursorBlink()
+        private IEnumerator CursorBlink()
         {
             while (currentText != fullText)
             {
@@ -201,7 +202,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             UpdateText();
         }
 
-        void UpdateText()
+        private void UpdateText()
         {
             NameText.text = currentText + (showCursor ? cursorChar : " ");
         }

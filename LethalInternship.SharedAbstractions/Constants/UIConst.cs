@@ -47,6 +47,7 @@ namespace LethalInternship.SharedAbstractions.Constants
             "- None ({0})",// None
             "- In proximity ({0})",// InternClose
             "- Too far ({0})",// InternTooFar
+            "- Not managed ({0})",// InternNotOwned
             "- Dead ({0})",// InternDead
             "- Weapon ({0})",// HeldWeapon
             "- {0} Items ${1}",// HeldItem

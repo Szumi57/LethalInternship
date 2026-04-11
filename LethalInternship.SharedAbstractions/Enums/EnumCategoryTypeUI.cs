@@ -5,6 +5,7 @@
         None = 0,
         InternClose,
         InternTooFar,
+        InternNotOwned,
         InternDead,
         HeldWeapon,
         HeldItem

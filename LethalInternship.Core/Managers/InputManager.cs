@@ -414,7 +414,7 @@ namespace LethalInternship.Core.Managers
         {
             UIManager.Instance.HideCommandsOne();
 
-            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectAll();
             UIManager.Instance.ToogleCommandsAll();
         }
@@ -580,7 +580,7 @@ namespace LethalInternship.Core.Managers
             InputLock.BlockThisFrame();
             UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
 
-            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesOwnedByLocal());
+            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
             UIManager.Instance.ToogleCommandsOne();
         }

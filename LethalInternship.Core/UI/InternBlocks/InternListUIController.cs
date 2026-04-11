@@ -68,6 +68,7 @@ namespace LethalInternship.Core.UI.InternBlocks
             {
                 { EnumCategoryTypeUI.InternClose, new List<IInternIdentity>() },
                 { EnumCategoryTypeUI.InternTooFar, new List<IInternIdentity>() },
+                { EnumCategoryTypeUI.InternNotOwned, new List<IInternIdentity>() },
                 { EnumCategoryTypeUI.InternDead, new List<IInternIdentity>() }
             };
 
@@ -91,6 +92,12 @@ namespace LethalInternship.Core.UI.InternBlocks
             );
 
             siblingIndex = SyncCategory(
+                EnumCategoryTypeUI.InternNotOwned,
+                grouped[EnumCategoryTypeUI.InternNotOwned],
+                siblingIndex
+            );
+
+            siblingIndex = SyncCategory(
                 EnumCategoryTypeUI.InternDead,
                 grouped[EnumCategoryTypeUI.InternDead],
                 siblingIndex
@@ -105,6 +112,13 @@ namespace LethalInternship.Core.UI.InternBlocks
             IInternAI? intern = identity.InternAI;
             if (intern == null)
                 return EnumCategoryTypeUI.InternTooFar;
+
+            if (StartOfRound.Instance != null
+                && StartOfRound.Instance.localPlayerController != null
+                && intern.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId)
+            {
+                return EnumCategoryTypeUI.InternNotOwned;
+            }
 
             if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY)
                 return EnumCategoryTypeUI.InternClose;
