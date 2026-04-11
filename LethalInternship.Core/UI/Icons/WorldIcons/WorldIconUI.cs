@@ -66,22 +66,22 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             Vector3 viewportPosition = camera.WorldToViewportPoint(worldPos);
             Vector3 canvasPos = new Vector3(viewportPosition.x * canvasRect.sizeDelta.x - canvasRect.sizeDelta.x * 0.5f,
                                             viewportPosition.y * canvasRect.sizeDelta.y - canvasRect.sizeDelta.y * 0.5f,
-                                            Mathf.Abs(viewportPosition.z));
+                                            viewportPosition.z);
 
             // If pos behind
-            if (viewportPosition.z < 0)
-            {
-                if (canvasPos.x > 0)
-                {
-                    canvasPos.x = -Mathf.Infinity;
-                }
-                else
-                {
-                    canvasPos.x = Mathf.Infinity;
-                }
+            //if (viewportPosition.z < 0)
+            //{
+            //    if (canvasPos.x > 0)
+            //    {
+            //        canvasPos.x = -Mathf.Infinity;
+            //    }
+            //    else
+            //    {
+            //        canvasPos.x = Mathf.Infinity;
+            //    }
 
-                canvasPos.y *= -1f;
-            }
+            //    canvasPos.y *= -1f;
+            //}
 
             return canvasPos;
         }

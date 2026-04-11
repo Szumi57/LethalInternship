@@ -13,7 +13,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
-            
+
             // Set where the intern should look
             SetInternLookAt(ai);
 
@@ -34,7 +34,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private void TryPlayCurrentStateVoiceAudio(InternAI ai)
         {
-            EnumVoicesState voiceState = ai.CurrentCommand == EnumCommandTypes.FollowPlayer ? EnumVoicesState.Chilling : EnumVoicesState.Waiting;
+            EnumVoicesState voiceState = EnumVoicesState.Chilling;
 
             // Default states, wait for cooldown and if no one is talking close
             ai.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()

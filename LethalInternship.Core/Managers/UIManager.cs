@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
@@ -78,7 +79,6 @@ namespace LethalInternship.Core.Managers
         private InterestPointRendererRegistery interestPointRendererRegistery = null!;
         private PointOfInterestRendererService pointOfInterestRendererService = null!;
 
-        private bool InternsOwned;
         private IPointOfInterest? PointOfInterestInCenter = null;
         private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
 
@@ -135,10 +135,10 @@ namespace LethalInternship.Core.Managers
 
             PointOfInterestInCenter = null;
 
-            // Check for interns owned
+            // Check if nothing to show
             IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
-            InternsOwned = internsOwned.Length > 0;
-            if (!InternsOwned)
+            if (internsOwned.Length == 0
+                || IsAnyCommandsPanelOpened)
             {
                 // Clear remaining icons
                 worldIconUIPool.DisableOtherIcons();
@@ -154,7 +154,7 @@ namespace LethalInternship.Core.Managers
                          .Distinct();
             foreach (IPointOfInterest pointOfInterest in pointsOfInterest)
             {
-                //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest.}");
+                //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest}");
                 worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
                 worldIcon.SetPositionUI(pointOfInterestRendererService.GetUIIcon(pointOfInterest));
                 worldIcon.SetDefaultColor();
@@ -344,6 +344,9 @@ namespace LethalInternship.Core.Managers
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
+            // Command mode
+            CommandContextService.Instance.EnterCommandMode();
+
             commandsAllGo.SetActive(true);
         }
 
@@ -357,6 +360,9 @@ namespace LethalInternship.Core.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            // Command mode
+            CommandContextService.Instance.EnterCommandMode();
 
             commandsOneGo.SetActive(true);
         }
@@ -386,6 +392,12 @@ namespace LethalInternship.Core.Managers
             if (resetCameraFocus)
                 CameraFocusUI.Instance.ReturnToInitial();
 
+            // Command mode
+            if (InputManager.Instance.CurrentTargetedAbility == null)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+            }
+
             commandsAllGo.SetActive(false);
         }
 
@@ -400,6 +412,12 @@ namespace LethalInternship.Core.Managers
 
             ToolTipBarUI.Hide();
             CameraFocusUI.Instance.ReturnToInitial();
+
+            // Command mode
+            if (InputManager.Instance.CurrentTargetedAbility == null)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+            }
 
             commandsOneGo.SetActive(false);
         }

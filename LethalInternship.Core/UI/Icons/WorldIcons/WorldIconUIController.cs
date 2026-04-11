@@ -73,7 +73,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 float size = 1f / screenPos.z * 400f;
                 //PluginLoggerHook.LogDebug?.Invoke($"size {size}, dist {screenPos.z}");
                 if (size < 10f) { size = 10f; }
-                if (size > 200f) { size = 200f; }
+                if (size > 180f) { size = 180f; }
                 if (screenPos.z < 5f)
                 {
                     SetTransparency(screenPos.z / 5f * 0.5f);
@@ -88,23 +88,23 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             }
 
             // Limit the image to screen borders
-            if (screenPos.x - rectTransformIcon.sizeDelta.x * 0.5f < rectTransformCanvasParent.sizeDelta.x * -0.5f)
-            {
-                screenPos.x = rectTransformCanvasParent.sizeDelta.x * -0.5f + rectTransformIcon.sizeDelta.x * 0.5f;
-            }
-            if (screenPos.x + rectTransformIcon.sizeDelta.x * 0.5f > rectTransformCanvasParent.sizeDelta.x * 0.5f)
-            {
-                screenPos.x = rectTransformCanvasParent.sizeDelta.x * 0.5f - rectTransformIcon.sizeDelta.x * 0.5f;
-            }
+            //if (screenPos.x - rectTransformIcon.sizeDelta.x * 0.5f < rectTransformCanvasParent.sizeDelta.x * -0.5f)
+            //{
+            //    screenPos.x = rectTransformCanvasParent.sizeDelta.x * -0.5f + rectTransformIcon.sizeDelta.x * 0.5f;
+            //}
+            //if (screenPos.x + rectTransformIcon.sizeDelta.x * 0.5f > rectTransformCanvasParent.sizeDelta.x * 0.5f)
+            //{
+            //    screenPos.x = rectTransformCanvasParent.sizeDelta.x * 0.5f - rectTransformIcon.sizeDelta.x * 0.5f;
+            //}
 
-            if (screenPos.y < rectTransformCanvasParent.sizeDelta.y * -0.5f)
-            {
-                screenPos.y = rectTransformCanvasParent.sizeDelta.y * -0.5f;
-            }
-            if (screenPos.y + rectTransformIcon.sizeDelta.y > rectTransformCanvasParent.sizeDelta.y * 0.5f)
-            {
-                screenPos.y = rectTransformCanvasParent.sizeDelta.y * 0.5f - rectTransformIcon.sizeDelta.y;
-            }
+            //if (screenPos.y < rectTransformCanvasParent.sizeDelta.y * -0.5f)
+            //{
+            //    screenPos.y = rectTransformCanvasParent.sizeDelta.y * -0.5f;
+            //}
+            //if (screenPos.y + rectTransformIcon.sizeDelta.y > rectTransformCanvasParent.sizeDelta.y * 0.5f)
+            //{
+            //    screenPos.y = rectTransformCanvasParent.sizeDelta.y * 0.5f - rectTransformIcon.sizeDelta.y;
+            //}
             // Position
             rectTransformIcon.localPosition = new Vector3(screenPos.x, screenPos.y + rectTransformIcon.sizeDelta.y * 0.5f, 0f);
 

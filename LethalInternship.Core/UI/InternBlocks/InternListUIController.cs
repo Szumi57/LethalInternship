@@ -118,11 +118,15 @@ namespace LethalInternship.Core.UI.InternBlocks
 
             IInternAI? intern = identity.InternAI;
             if (intern == null)
-                return EnumCategoryTypeUI.InternTooFar;
+                return EnumCategoryTypeUI.InternNotOwned;
 
             if (StartOfRound.Instance != null
                 && StartOfRound.Instance.localPlayerController != null
                 && intern.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId)
+            {
+                return EnumCategoryTypeUI.InternNotOwned;
+            }
+            if (intern.IsSpawningAnimationRunning())
             {
                 return EnumCategoryTypeUI.InternNotOwned;
             }

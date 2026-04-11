@@ -97,6 +97,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "UnequipWeapon", new EquipUnequipWeapon(equip: false) },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() },
                 { "VoiceScavenging", new VoiceScavenging() },
+                { "WaitForCommand", new WaitForCommand() },
             };
 
             // Condition nodes
@@ -109,7 +110,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
-                { "IsCommandWait", new IsCommandThis(EnumCommandTypes.Wait) },
+                { "IsCommandWaitForCommand", new IsCommandThis(EnumCommandTypes.WaitForCommand) },
                 { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
@@ -202,6 +203,11 @@ namespace LethalInternship.Core.Interns.AI.BT
                                     .End()
                                     .Do("Chill", t => actions["Chill"].Action(BTContext))
                                 .End()
+                            .End()
+
+                            .Sequence("Command wait for commands")
+                                .Condition("<isCommand WaitForCommand>", t => conditions["IsCommandWaitForCommand"].Condition(BTContext))
+                                .Do("WaitForCommand", t => actions["WaitForCommand"].Action(BTContext))
                             .End()
 
                             .Sequence("Command go to vehicle")

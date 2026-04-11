@@ -304,6 +304,8 @@ namespace LethalInternship.Core.Managers
 
             if (identity.InternAI.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId) return false;
 
+            if (identity.InternAI.IsSpawningAnimationRunning()) return false;
+
             return true;
         }
     }

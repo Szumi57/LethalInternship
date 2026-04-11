@@ -262,6 +262,8 @@ namespace LethalInternship.Core.Managers
                                                                                                + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f));
                 float allowedAngle = GetAllowedAngle(distance);
 
+                Debug.Log($"angle {angle.ToString("00.0")}, distance {Mathf.Sqrt(distance).ToString("00.0")}");
+
                 if (angle > allowedAngle)
                 {
                     continue;
@@ -412,10 +414,10 @@ namespace LethalInternship.Core.Managers
         private float GetAllowedAngle(float distance)
         {
             float minDistance = Mathf.Pow(1f, 2);   // very close
-            float maxDistance = Mathf.Pow(30f, 2);  // far
+            float maxDistance = Mathf.Pow(15f, 2);  // far
 
-            float maxAngleClose = 25f; // degrees when very close
-            float maxAngleFar = 3f;  // degrees when far
+            float maxAngleClose = 15f; // degrees when very close
+            float maxAngleFar = 5f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
             return Mathf.Lerp(maxAngleClose, maxAngleFar, t);
@@ -424,10 +426,10 @@ namespace LethalInternship.Core.Managers
         private float GetFlickerMargin(float distance)
         {
             float minDistance = Mathf.Pow(1f, 2);   // very close
-            float maxDistance = Mathf.Pow(30f, 2);  // far
+            float maxDistance = Mathf.Pow(15f, 2);  // far
 
             float maxAngleClose = 5f; // degrees when very close
-            float maxAngleFar = 2f;  // degrees when far
+            float maxAngleFar = 1f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
             return Mathf.Lerp(maxAngleClose, maxAngleFar, t);

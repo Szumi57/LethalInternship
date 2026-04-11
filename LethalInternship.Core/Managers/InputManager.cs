@@ -8,7 +8,6 @@ using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.UI.ItemBlocks;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
-using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.MonoProfilerHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
@@ -41,12 +40,13 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        public TargetedAbility? CurrentTargetedAbility { get; private set; }
+
         private InputActionAsset inputActionAsset = null!;
         private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
 
         private LineRendererUtil LineRendererUtil = null!;
 
-        TargetedAbility? currentTargetedAbility;
 
         private void Awake()
         {
@@ -170,7 +170,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Commands system
-            if (currentTargetedAbility != null)
+            if (CurrentTargetedAbility != null)
             {
                 // UI
                 UIManager.Instance.HideAll();
@@ -264,17 +264,17 @@ namespace LethalInternship.Core.Managers
 
             // If waiting for a targeted ability
             // ---------------------------------
-            if (currentTargetedAbility == null)
+            if (CurrentTargetedAbility == null)
                 return;
 
             // Submitting action
-            if (currentTargetedAbility.SubmitActions.Contains(gameAction))
+            if (CurrentTargetedAbility.SubmitActions.Contains(gameAction))
             {
                 TargetData? target = TargetingManager.Instance.GetCurrentTarget();
                 if (Mouse.current.leftButton.wasPressedThisFrame
                     && target != null)
                 {
-                    Order? order = currentTargetedAbility.ResolveTarget(target.Value);
+                    Order? order = CurrentTargetedAbility.ResolveTarget(target.Value);
                     if (order != null)
                     {
                         InternManager.Instance.ExecuteOrder(order);
@@ -284,7 +284,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            if (!currentTargetedAbility.NotInterruptingActions.Contains(gameAction))
+            if (!CurrentTargetedAbility.NotInterruptingActions.Contains(gameAction))
             {
                 CancelTargeting();
                 return;
@@ -297,13 +297,14 @@ namespace LethalInternship.Core.Managers
 
         public void StartTargeting(TargetedAbility ability)
         {
-            currentTargetedAbility = ability;
+            CurrentTargetedAbility = ability;
             TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Enemy | TargetingManager.TargetType.Item);
         }
 
         public void CancelTargeting()
         {
-            currentTargetedAbility = null;
+            CurrentTargetedAbility = null;
+            CommandContextService.Instance.ExitCommandMode();
             TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Intern);
             UIManager.Instance.HideInputIcon();
         }
@@ -428,9 +429,7 @@ namespace LethalInternship.Core.Managers
         private void InputAction_NextIntern()
         {
             IInternIdentity? next = IdentitySelectionService.Instance
-                                                .NextWhere(i => i.Alive
-                                                             && i.InternAI != null
-                                                             && i.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY);
+                                                .NextWhere(i => IdentityManager.Instance.IsIdentityValidToCommand(i));
             if (next != null)
             {
                 IdentitySelectionService.Instance.SelectSingle(next);
@@ -441,9 +440,7 @@ namespace LethalInternship.Core.Managers
         private void InputAction_PreviousIntern()
         {
             IInternIdentity? previous = IdentitySelectionService.Instance
-                                                    .PreviousWhere(i => i.Alive
-                                                                     && i.InternAI != null
-                                                                     && i.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY);
+                                                    .PreviousWhere(i => IdentityManager.Instance.IsIdentityValidToCommand(i));
             if (previous != null)
             {
                 IdentitySelectionService.Instance.SelectSingle(previous);

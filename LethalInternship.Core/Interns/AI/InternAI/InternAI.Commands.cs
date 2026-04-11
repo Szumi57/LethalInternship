@@ -13,7 +13,10 @@ namespace LethalInternship.Core.Interns.AI
         public BTController BTController = null!;
 
         public IPointOfInterest? PointOfInterest = null!;
-        public EnumCommandTypes CurrentCommand;
+        public EnumCommandTypes CurrentCommand { get; private set; }
+
+        private EnumCommandTypes pendingCommand;
+        private EnumVoicesState voiceToPlay;
 
         #region Commands
 
@@ -35,11 +38,6 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true)
         {
-            if (!CanGiveOrder())
-            {
-                return;
-            }
-
             this.PointOfInterest = pointOfInterest;
 
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
@@ -48,9 +46,9 @@ namespace LethalInternship.Core.Interns.AI
                 SetCommandToFollowPlayer();
                 return;
             }
-            CurrentCommand = newCommand.Value;
 
-            PluginLoggerHook.LogDebug?.Invoke($"SetCommandTo {CurrentCommand}");
+            SetCommand(newCommand.Value, playVoice ? EnumVoicesState.OrderedToGoThere : EnumVoicesState.None);
+
             PluginLoggerHook.LogDebug?.Invoke($"VVV PointOfInterest VVV");
             foreach (var p in this.PointOfInterest.GetListInterestPoints())
             {
@@ -59,71 +57,78 @@ namespace LethalInternship.Core.Interns.AI
 
             // AI
             BTController.ResetContextNewCommandToInterestPoint(pointOfInterest);
-
-            // Voice
-            if (playVoice)
-            {
-                TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
-            }
         }
 
         public void SetCommandToFollowPlayer(bool playVoice = true)
         {
-            if (!CanGiveOrder())
-            {
-                return;
-            }
-
             if (this.targetPlayer == null)
             {
                 PluginLoggerHook.LogWarning?.Invoke($"{Npc.playerUsername} no target player assigned, wait for someone to manage this intern before giving commands.");
                 return;
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToFollowPlayer, before {CurrentCommand}");
-            CurrentCommand = EnumCommandTypes.FollowPlayer;
+            SetCommand(EnumCommandTypes.FollowPlayer, playVoice ? EnumVoicesState.OrderedToFollow : EnumVoicesState.None);
             this.PointOfInterest = null;
 
             // AI
             BTController.ResetContextNewCommandFollowPlayer();
-
-            // Voice
-            if (playVoice)
-            {
-                TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
-            }
         }
 
         public void SetCommandToScavenging()
         {
-            if (!CanGiveOrder())
-            {
-                return;
-            }
-
-            CurrentCommand = EnumCommandTypes.ScavengingMode;
+            SetCommand(EnumCommandTypes.ScavengingMode, EnumVoicesState.None);
             this.PointOfInterest = null;
-            PluginLoggerHook.LogDebug?.Invoke($"SetCommandToScavengingMode");
 
             // AI
             BTController.ResetContextNewCommandToScavenging();
         }
 
-        private bool CanGiveOrder()
+        private void SetCommand(EnumCommandTypes command, EnumVoicesState voiceCommand)
         {
-            if (!this.IsSpawned
-                || this.IsEnemyDead
-                || this.NpcController == null
-                || this.NpcController.Npc == null
-                || this.NpcController.Npc.isPlayerDead
-                || !this.NpcController.Npc.isPlayerControlled
-                || this.InternIdentity.Status != EnumStatusIdentity.Spawned
-                || this.IsSpawningAnimationRunning())
+            if (CurrentCommand == EnumCommandTypes.WaitForCommand)
             {
-                return false;
+                PluginLoggerHook.LogDebug?.Invoke($"SetPendingCommand {command}");
+                pendingCommand = command;
+                voiceToPlay = voiceCommand;
             }
+            else
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"SetCurrentCommand {command}");
+                CurrentCommand = command;
+                PlayVoiceAfterCommand(voiceCommand);
+            }
+        }
 
-            return true;
+        public void SetCommandToWaitForCommand(bool wait)
+        {
+            if (wait)
+            {
+                pendingCommand = CurrentCommand;
+                CurrentCommand = EnumCommandTypes.WaitForCommand;
+                PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait true");
+            }
+            else
+            {
+                CurrentCommand = pendingCommand;
+                if (CurrentCommand == EnumCommandTypes.WaitForCommand
+                    || CurrentCommand == EnumCommandTypes.None)
+                {
+                    PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, CurrentCommand {CurrentCommand} set to FollowPlayer");
+                    CurrentCommand = EnumCommandTypes.FollowPlayer;
+                }
+                PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, new command {CurrentCommand}");
+
+                // Voice
+                PlayVoiceAfterCommand(voiceToPlay);
+            }
+        }
+
+        private void PlayVoiceAfterCommand(EnumVoicesState voice)
+        {
+            if (voice != EnumVoicesState.None)
+            {
+                TryPlayCurrentOrderVoiceAudio(voiceToPlay);
+            }
         }
 
         #endregion
