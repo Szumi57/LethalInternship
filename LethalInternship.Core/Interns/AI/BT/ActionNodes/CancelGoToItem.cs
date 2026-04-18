@@ -12,9 +12,16 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
+            // Why cancel ?
+            // Target item null ?
             if (context.TargetItem == null)
             {
-                if (context.nbItemsToCheck == 0)
+                if (context.InternAI.CurrentCommand == EnumCommandTypes.GoFetchItem)
+                {
+                    // Item grabbed and/or null
+                    ai.SetCommandToFollowPlayer(playVoice: false);
+                }
+                else if (context.nbItemsToCheck == 0) // while scavenging
                 {
                     if (ai.AreHandsFree())
                     {
@@ -23,6 +30,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     else
                     {
                         // else return scavenged items to ship
+                        PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} context.TargetItem == null, context.nbItemsToCheck == 0, !ai.AreHandsFree()");
                         return BehaviourTreeStatus.Failure;
                     }
                 }
@@ -42,6 +50,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Success;
             }
 
+            // Or can't hold or not grabbable
             if (!context.InternAI.CanHoldItem(context.TargetItem)
                 || !InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
             {

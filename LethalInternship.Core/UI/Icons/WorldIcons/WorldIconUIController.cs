@@ -54,7 +54,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 {
                     int index = Mathf.RoundToInt(Mathf.Log((int)iconType, 2));
                     Icons[index].gameObject.SetActive(true);
-                    ImageTop = Icons[index].GetComponent<Image>();
+                    ImageTop = Icons[index].GetComponent<Image>() ?? Icons[index].GetComponentInChildren<Image>();
                     ImageTop.color = UIConst.UI_COLOR_ORANGE;
                 }
             }
@@ -73,7 +73,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 float size = 1f / screenPos.z * 400f;
                 //PluginLoggerHook.LogDebug?.Invoke($"size {size}, dist {screenPos.z}");
                 if (size < 10f) { size = 10f; }
-                if (size > 180f) { size = 180f; }
+                if (size > 150f) { size = 150f; }
                 if (screenPos.z < 5f)
                 {
                     SetTransparency(screenPos.z / 5f * 0.5f);
@@ -84,7 +84,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 }
 
                 // Size with distance
-                rectTransformIcon.sizeDelta = new Vector2(size, size);
+                rectTransformIcon.localScale = Vector3.one * size;
             }
 
             // Limit the image to screen borders

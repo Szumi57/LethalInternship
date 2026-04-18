@@ -51,8 +51,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             lastInternPos = ai.Npc.transform.position;
             if (stuckCounter > STUCK_MAX)
             {
-                // Close enough from object
+                PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} TooFarFromObject stuck, bypass distance check");
                 stuckCounter = 0;
+                // Close enough from object
                 return false;
             }
 

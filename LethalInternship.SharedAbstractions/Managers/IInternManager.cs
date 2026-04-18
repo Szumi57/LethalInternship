@@ -85,7 +85,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         /// </summary>
         /// <param name="grabbableObject">Item to check</param>
         /// <returns></returns>
-        bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject);
+        bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject, bool forcePickUp = false);
         bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate);
 
         List<EnemyAI> GetEnemiesList();

@@ -25,12 +25,6 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
             SetIconActive(false);
         }
 
-        public void SetPositionUICenter()
-        {
-            iconUIController.PlaceOnCenterCanvas();
-            SetIconActive(true);
-        }
-
         public void SetIconActive(bool active)
         {
             iconGameObject.SetActive(active);

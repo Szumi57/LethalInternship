@@ -112,7 +112,7 @@ namespace LethalInternship.Core.Managers
             // Scan for interns
             if (ActiveSearch.HasFlag(TargetType.Intern))
             {
-                TargetData? internTarget = FindPointedIntern();
+                TargetData? internTarget = FindPointedInternByAngle();
                 if (internTarget != null)
                 {
                     //PluginLoggerHook.LogDebug?.Invoke($"++ scan angle internTarget {internTarget.Value.Intern?.Npc.playerUsername}");
@@ -124,7 +124,7 @@ namespace LethalInternship.Core.Managers
             // Scan for enemies
             if (ActiveSearch.HasFlag(TargetType.Enemy))
             {
-                TargetData? enemyTarget = FindPointedEnemy();
+                TargetData? enemyTarget = FindPointedEnemyByAngle();
                 if (enemyTarget != null)
                 {
                     //PluginLoggerHook.LogDebug?.Invoke($"++ scan angle enemyTarget {enemyTarget.Value.Enemy?.enemyType.enemyName}");
@@ -136,7 +136,7 @@ namespace LethalInternship.Core.Managers
             // Scan for items
             if (ActiveSearch.HasFlag(TargetType.Item))
             {
-                TargetData? enemyItem = FindPointedItem();
+                TargetData? enemyItem = FindPointedItemByAngle();
                 if (enemyItem != null)
                 {
                     //PluginLoggerHook.LogDebug?.Invoke($"++ scan angle Item {enemyItem.Value.Item?.itemProperties.itemName}");
@@ -238,7 +238,7 @@ namespace LethalInternship.Core.Managers
                 && HasPlayerLineOfSightOn(target);
         }
 
-        private TargetData? FindPointedIntern()
+        private TargetData? FindPointedInternByAngle()
         {
             IInternAI? bestPointedIntern = null;
             float bestScore = float.MaxValue;
@@ -262,7 +262,7 @@ namespace LethalInternship.Core.Managers
                                                                                                + new Vector3(0f, 2f * PluginRuntimeProvider.Context.Config.InternSizeScale * 0.80f, 0f));
                 float allowedAngle = GetAllowedAngle(distance);
 
-                Debug.Log($"angle {angle.ToString("00.0")}, distance {Mathf.Sqrt(distance).ToString("00.0")}");
+                //Debug.Log($"angle {angle.ToString("00.0")}, distance {Mathf.Sqrt(distance).ToString("00.0")}");
 
                 if (angle > allowedAngle)
                 {
@@ -291,7 +291,7 @@ namespace LethalInternship.Core.Managers
             else { return null; }
         }
 
-        private TargetData? FindPointedEnemy()
+        private TargetData? FindPointedEnemyByAngle()
         {
             EnemyAI? bestPointedEnemy = null;
             float bestScore = float.MaxValue;
@@ -342,7 +342,7 @@ namespace LethalInternship.Core.Managers
             else { return null; }
         }
 
-        private TargetData? FindPointedItem()
+        private TargetData? FindPointedItemByAngle()
         {
             GrabbableObject? bestPointedItem = null;
             float bestScore = float.MaxValue;
@@ -437,10 +437,10 @@ namespace LethalInternship.Core.Managers
 
         private TargetData BuildTarget(RaycastHit hit)
         {
-            return BuildTarget(hit.collider, hit.point, 0f);
+            return BuildTarget(hit.collider, hit.point, hit.distance, 0f);
         }
 
-        private TargetData BuildTarget(Collider col, Vector3? hitPoint, float angle)
+        private TargetData BuildTarget(Collider col, Vector3? hitPoint, float distance, float angle)
         {
             IPointOfInterest? pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
 
@@ -468,6 +468,7 @@ namespace LethalInternship.Core.Managers
             // BuildTarget
             TargetData targetData = new TargetData();
             targetData.Root = col.gameObject;
+            targetData.Distance = distance;
             targetData.PointOfInterest = pointOfInterest;
 
             // Intern

@@ -112,7 +112,7 @@ namespace LethalInternship.Core.Managers
         /// </summary>
         /// <param name="grabbableObject">Item to check</param>
         /// <returns></returns>
-        public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject)
+        public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject, bool forcePickUp = false)
         {
             InternManager.Instance.TrimDictJustDroppedItems();
 
@@ -136,6 +136,11 @@ namespace LethalInternship.Core.Managers
                 {
                     return false;
                 }
+            }
+
+            if (forcePickUp)
+            {
+                return true;
             }
 
             // Item just dropped, should wait a bit before grab it again

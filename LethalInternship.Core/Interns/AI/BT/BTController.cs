@@ -10,6 +10,7 @@ using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 
 namespace LethalInternship.Core.Interns.AI.BT
@@ -108,10 +109,11 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsAutoDefense", new IsAutoDefense() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
+                { "IsCommandGoFetchItem", new IsCommandThis(EnumCommandTypes.GoFetchItem) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
-                { "IsCommandWaitForCommand", new IsCommandThis(EnumCommandTypes.WaitForCommand) },
                 { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
+                { "IsCommandWaitForCommand", new IsCommandThis(EnumCommandTypes.WaitForCommand) },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
@@ -173,6 +175,14 @@ namespace LethalInternship.Core.Interns.AI.BT
             BTContext.cancelScavenging = false;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
+        public void ResetContextNewCommandGoFetchItem(GrabbableObject itemToFetch)
+        {
+            BTContext.TargetItem = itemToFetch;
+            BTContext.PathController.SetNewDestination(new DJKItemPoint(itemToFetch.transform,
+                                                                        BTContext.InternAI.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale,
+                                                                        itemToFetch.itemProperties.itemName));
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
 
         public EnemyAI? GetTarget()
         {
@@ -193,6 +203,12 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .Sequence("Follow orders")
                         .Do("UnequipWeapon", t => actions["UnequipWeapon"].Action(BTContext))
                         .Selector("Check commands")
+
+                            .Sequence("Command wait for commands")
+                                .Condition("<isCommand WaitForCommand>", t => conditions["IsCommandWaitForCommand"].Condition(BTContext))
+                                .Do("WaitForCommand", t => actions["WaitForCommand"].Action(BTContext))
+                            .End()
+
                             .Sequence("Command go to position")
                                 .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
                                 .Selector("Go to position")
@@ -205,17 +221,17 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .End()
                             .End()
 
-                            .Sequence("Command wait for commands")
-                                .Condition("<isCommand WaitForCommand>", t => conditions["IsCommandWaitForCommand"].Condition(BTContext))
-                                .Do("WaitForCommand", t => actions["WaitForCommand"].Action(BTContext))
-                            .End()
-
                             .Sequence("Command go to vehicle")
                                 .Condition("<isCommand GoToVehicle>", t => conditions["IsCommandGoToVehicle"].Condition(BTContext))
                                 .Splice(CreateSubTreeGoToVehicle())
                             .End()
 
-                            .Sequence("Fetch object")
+                            .Sequence("Command GoFetchItem")
+                                .Condition("<isCommand GoFetchItem>", t => conditions["IsCommandGoFetchItem"].Condition(BTContext))
+                                .Splice(CreateSubGoFetchItem())
+                            .End()
+
+                            .Sequence("Fetch object casually")
                                 .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
                                 .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
                                 .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
@@ -387,6 +403,25 @@ namespace LethalInternship.Core.Interns.AI.BT
                                     .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
                                 .End()
                             .End()
+                        .End()
+                        .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubGoFetchItem()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Selector("Item valid or cancel ?")
+                            .Sequence("Go fetch if hands free")
+                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
+                                .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                .Selector("Go to object or grab")
+                                    .Splice(CreateSubTreeGoToObject())
+                                    .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
                         .End()
                         .Build();
         }

@@ -256,7 +256,6 @@ namespace LethalInternship.Core.Managers
             }
 
             InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(GetInputIcon()));
-            inputIconUI.SetPositionUICenter();
             inputIconUI.SetIconActive(true);
 
             inputIconUIPool.DisableOtherIcons();
@@ -286,18 +285,19 @@ namespace LethalInternship.Core.Managers
                 return EnumIconImagesTypes.None;
             }
 
-            if (target.Value.PointOfInterest != null)
+            if (target.Value.Item != null)
             {
-                IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointOfInterest);
-                return iconUIInfos.IconImagesTypes;
+                return EnumIconImagesTypes.FetchItem;
             }
             //else if(target.Value.Enemy != null)
             //{
 
-            //}else if(target.Value.Item != null)
-            //{
-
             //}
+            else if (target.Value.PointOfInterest != null)
+            {
+                IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointOfInterest);
+                return iconUIInfos.IconImagesTypes;
+            }
 
             return EnumIconImagesTypes.None;
         }
@@ -641,13 +641,21 @@ namespace LethalInternship.Core.Managers
         private void UpdateOutlines()
         {
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null)
+                return;
+
             var internsToOuline = IdentityManager.Instance.GetIdentitiesSpawned().Select(x => x.InternAI!);
 
             // Update intern outlines
-            InternOutlineController.UpdateOutlines(internsToOuline,
-                                                   target?.Intern?.Npc.playerClientId,
-                                                   allowMultipleInternOutline,
-                                                   forceNoOutlines: IsAnyCommandsPanelOpened);
+            InternOutlineController.UpdateInternsOutlines(internsToOuline,
+                                                           target?.Intern?.Npc.playerClientId,
+                                                           allowMultipleInternOutline,
+                                                           forceNoOutlines: IsAnyCommandsPanelOpened);
+
+            InternOutlineController.UpdateItemsOutlines(InternManager.Instance.GetGrabbableObjectsList(),
+                                                           target?.Item,
+                                                           allowMultipleInternOutline,
+                                                           forceNoOutlines: IsAnyCommandsPanelOpened);
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
@@ -17,12 +18,13 @@ namespace LethalInternship.Core.UI.Outlines
         }
 
         const float RIM_EPSILON = 0.02f;
-        private static readonly Dictionary<ulong, OutlineState> states = new Dictionary<ulong, OutlineState>();
+        private static readonly Dictionary<ulong, OutlineState> internStates = new Dictionary<ulong, OutlineState>();
+        private static readonly Dictionary<GrabbableObject, OutlineState> itemStates = new Dictionary<GrabbableObject, OutlineState>();
 
-        public static void UpdateOutlines(IEnumerable<IInternAI> interns,
-                                          ulong? pointedInternClientId,
-                                          bool allowMultiple,
-                                          bool forceNoOutlines = false)
+        public static void UpdateInternsOutlines(IEnumerable<IInternAI> interns,
+                                                  ulong? pointedInternClientId,
+                                                  bool allowMultiple,
+                                                  bool forceNoOutlines = false)
         {
             if (StartOfRound.Instance == null
                 || StartOfRound.Instance.localPlayerController == null)
@@ -55,38 +57,83 @@ namespace LethalInternship.Core.UI.Outlines
                             && StartOfRound.Instance.localPlayerController != null
                             && StartOfRound.Instance.localPlayerController.actualClientId == intern.OwnerClientId;
 
-                ApplyState(intern,
+                if (!internStates.TryGetValue(intern.Npc.playerClientId, out OutlineState state))
+                {
+                    state = new OutlineState();
+                    internStates[intern.Npc.playerClientId] = state;
+                }
+
+                ApplyState(intern.Npc.gameObject,
+                           state,
                            shouldOutline,
+                           onlySkinned: true,
                            intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
                            rimPower,
                            color: owned ? UIConst.UI_COLOR_ORANGE : UIConst.UI_COLOR_DEFAULT);
             }
         }
 
-        private static void ApplyState(IInternAI intern,
+        public static void UpdateItemsOutlines(IEnumerable<GameObject> items,
+                                               GrabbableObject? pointedItem,
+                                               bool allowMultiple,
+                                               bool forceNoOutlines = false)
+        {
+            foreach (GameObject item in items)
+            {
+                GrabbableObject? grabbableObject = item.GetComponent<GrabbableObject>();
+                if (grabbableObject == null)
+                {
+                    continue;
+                }
+
+                bool shouldOutline;
+                if (forceNoOutlines)
+                {
+                    shouldOutline = false;
+                }
+                else
+                {
+                    shouldOutline = InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject, forcePickUp: true)
+                                    && (grabbableObject == pointedItem || allowMultiple);
+                }
+
+                if (!itemStates.TryGetValue(grabbableObject, out OutlineState state))
+                {
+                    state = new OutlineState();
+                    itemStates[grabbableObject] = state;
+                }
+
+                ApplyState(item.gameObject,
+                           state,
+                           shouldOutline,
+                           onlySkinned: false,
+                           intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
+                           UIConst.OUTLINE_RIM_SOLID,
+                           color: UIConst.UI_COLOR_ORANGE); ;
+            }
+        }
+
+        private static void ApplyState(GameObject target,
+                                       OutlineState state,
                                        bool shouldEnable,
+                                       bool onlySkinned,
                                        float intensity,
                                        float rimPower,
                                        Color color)
         {
-            if (!states.TryGetValue(intern.Npc.playerClientId, out var state))
-            {
-                state = new OutlineState();
-                states[intern.Npc.playerClientId] = state;
-            }
-
             if (shouldEnable != state.enabled)
             {
                 if (shouldEnable)
                 {
-                    SimpleOutline.Add(intern.Npc.gameObject,
+                    SimpleOutline.Add(target,
                                       color,
+                                      onlySkinned,
                                       rimPower,
                                       intensity);
                 }
                 else
                 {
-                    SimpleOutline.Remove(intern.Npc.gameObject);
+                    SimpleOutline.Remove(target);
                 }
 
                 state.enabled = shouldEnable;
@@ -99,7 +146,7 @@ namespace LethalInternship.Core.UI.Outlines
                 bool colorChanged = state.color != color;
                 if (rimChanged || intensityChanged || colorChanged)
                 {
-                    SimpleOutline.UpdateParams(intern.Npc.gameObject,
+                    SimpleOutline.UpdateParams(target,
                                                intensity,
                                                rimPower,
                                                color);

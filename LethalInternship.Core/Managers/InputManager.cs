@@ -323,6 +323,10 @@ namespace LethalInternship.Core.Managers
                     new FollowMeAbility().Activate();
                     UIManager.Instance.HideAll();
                     break;
+                case EnumInputAction.StayHere:
+                    new StayHereAbility().Activate();
+                    UIManager.Instance.HideAll();
+                    break;
                 case EnumInputAction.PointToAction:
                     new ContextOrderAbility().Activate();
                     break;

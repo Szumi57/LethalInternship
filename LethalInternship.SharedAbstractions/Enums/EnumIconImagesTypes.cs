@@ -10,5 +10,6 @@
         Position = 1 << 3,
         Ship = 1 << 4,
         Vehicle = 1 << 5,
+        FetchItem = 1 << 6,
     }
 }

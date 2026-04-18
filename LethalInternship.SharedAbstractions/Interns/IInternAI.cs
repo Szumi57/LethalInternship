@@ -31,6 +31,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void AssignOrder(Order order);
         void SetCommandToFollowPlayer(bool playVoice = true);
         void SetCommandToScavenging();
+        void SetCommandToFetchItem(GrabbableObject itemToFetch);
         void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);
         void SetCommandToWaitForCommand(bool wait);
         void AdaptController(PlayerControllerB playerControllerB);

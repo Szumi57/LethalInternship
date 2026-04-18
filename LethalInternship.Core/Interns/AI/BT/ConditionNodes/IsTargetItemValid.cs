@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
@@ -10,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             {
                 return false;
             }
-            if (!InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
+            if (!InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem, context.InternAI.CurrentCommand == EnumCommandTypes.GoFetchItem))
             {
                 return false;
             }

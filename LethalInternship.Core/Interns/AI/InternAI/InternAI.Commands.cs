@@ -76,11 +76,20 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandToScavenging()
         {
-            SetCommand(EnumCommandTypes.ScavengingMode, EnumVoicesState.None);
+            SetCommand(EnumCommandTypes.ScavengingMode, EnumVoicesState.NowScavenging);
             this.PointOfInterest = null;
 
             // AI
             BTController.ResetContextNewCommandToScavenging();
+        }
+
+        public void SetCommandToFetchItem(GrabbableObject itemToFetch)
+        {
+            SetCommand(EnumCommandTypes.GoFetchItem, EnumVoicesState.OrderedToGoThere);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandGoFetchItem(itemToFetch);
         }
 
         private void SetCommand(EnumCommandTypes command, EnumVoicesState voiceCommand)

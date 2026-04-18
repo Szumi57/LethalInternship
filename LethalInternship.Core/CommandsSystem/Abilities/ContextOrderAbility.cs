@@ -37,8 +37,8 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
             //if (target.Enemy != null)
             //    return new AttackOrder(target.Enemy);
 
-            //if (target.Item != null)
-            //    return new PickupOrder(target.Item);
+            if (target.Item != null)
+                return new GoFetchItemOrder(target.Item);
 
             if (target.PointOfInterest == null)
             {

@@ -7,6 +7,7 @@
         GoToVehicle,
         GoToPosition,
         WaitForCommand,
-        ScavengingMode
+        ScavengingMode,
+        GoFetchItem
     }
 }

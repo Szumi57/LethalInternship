@@ -8,54 +8,36 @@ namespace LethalInternship.Core.UI.Outlines
         private class OutlineInstance
         {
             public GameObject go = null!;
-            public SkinnedMeshRenderer renderer = null!;
+            public Renderer renderer = null!;
             public MaterialPropertyBlock mpb = null!;
-            public Color color;
         }
 
-        private static readonly Dictionary<SkinnedMeshRenderer, OutlineInstance> active =
-            new Dictionary<SkinnedMeshRenderer, OutlineInstance>();
+        private static readonly Dictionary<Renderer, OutlineInstance> active = new Dictionary<Renderer, OutlineInstance>();
 
-        // -------- API --------
+        // ---------- API ----------
 
         public static void Add(GameObject target,
                                Color color,
+                               bool onlySkinned,
                                float rimPower = 2.5f,
                                float intensity = 2.5f)
         {
             if (!target) return;
             if (!OutlineResources.SilhouetteMaterial) return;
 
-            foreach (var smr in target.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            foreach (var r in target.GetComponentsInChildren<Renderer>(true))
             {
-                if (!smr.enabled || !smr.sharedMesh) continue;
-                if (active.ContainsKey(smr)) continue;
+                if (!r.enabled) continue;
+                if (active.ContainsKey(r)) continue;
 
-                GameObject go = new GameObject(smr.name + "_Outline");
-                go.transform.SetParent(smr.transform, false);
-
-                var outlineSmr = go.AddComponent<SkinnedMeshRenderer>();
-                outlineSmr.sharedMesh = smr.sharedMesh;
-                outlineSmr.bones = smr.bones;
-                outlineSmr.rootBone = smr.rootBone;
-                outlineSmr.updateWhenOffscreen = true;
-                outlineSmr.sharedMaterial = OutlineResources.SilhouetteMaterial;
-
-                var mpb = new MaterialPropertyBlock();
-                mpb.SetColor("_Color", color);
-
-                mpb.SetFloat("_RimPower", rimPower);
-                mpb.SetFloat("_Intensity", intensity);
-
-                outlineSmr.SetPropertyBlock(mpb);
-
-                active[smr] = new OutlineInstance
+                if (r is SkinnedMeshRenderer smr)
                 {
-                    go = go,
-                    renderer = outlineSmr,
-                    mpb = mpb,
-                    color = color,
-                };
+                    AddSkinned(smr, color, rimPower, intensity);
+                }
+                else if (!onlySkinned && r is MeshRenderer mr)
+                {
+                    AddStatic(mr, color, rimPower, intensity);
+                }
             }
         }
 
@@ -63,26 +45,98 @@ namespace LethalInternship.Core.UI.Outlines
         {
             if (!target) return;
 
-            foreach (var smr in target.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            foreach (var r in target.GetComponentsInChildren<Renderer>(true))
             {
-                if (!active.TryGetValue(smr, out var inst)) continue;
+                if (!active.TryGetValue(r, out var inst)) continue;
 
                 Object.Destroy(inst.go);
-                active.Remove(smr);
+                active.Remove(r);
             }
         }
 
-        public static void UpdateParams(GameObject target, float intensity, float rimPower, Color color)
+        public static void UpdateParams(GameObject target,
+                                        float intensity,
+                                        float rimPower,
+                                        Color color)
         {
-            foreach (var smr in target.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            foreach (var r in target.GetComponentsInChildren<Renderer>(true))
             {
-                if (!active.TryGetValue(smr, out var inst)) continue;
+                if (!active.TryGetValue(r, out var inst)) continue;
 
                 inst.mpb.SetFloat("_Intensity", intensity);
                 inst.mpb.SetFloat("_RimPower", rimPower);
                 inst.mpb.SetColor("_Color", color);
                 inst.renderer.SetPropertyBlock(inst.mpb);
             }
+        }
+
+        // ---------- Internals ----------
+
+        private static void AddSkinned(SkinnedMeshRenderer smr,
+                                      Color color,
+                                      float rimPower,
+                                      float intensity)
+        {
+            if (!smr.sharedMesh) return;
+
+            GameObject go = new GameObject(smr.name + "_Outline");
+            go.transform.SetParent(smr.transform, false);
+
+            var outline = go.AddComponent<SkinnedMeshRenderer>();
+            outline.sharedMesh = smr.sharedMesh;
+            outline.bones = smr.bones;
+            outline.rootBone = smr.rootBone;
+            outline.updateWhenOffscreen = true;
+            outline.sharedMaterial = OutlineResources.SilhouetteMaterial;
+
+            var mpb = CreateMPB(color, rimPower, intensity);
+            outline.SetPropertyBlock(mpb);
+
+            active[smr] = new OutlineInstance
+            {
+                go = go,
+                renderer = outline,
+                mpb = mpb
+            };
+        }
+
+        private static void AddStatic(MeshRenderer mr,
+                                      Color color,
+                                      float rimPower,
+                                      float intensity)
+        {
+            var mf = mr.GetComponent<MeshFilter>();
+            if (!mf || !mf.sharedMesh) return;
+
+            GameObject go = new GameObject(mr.name + "_Outline");
+            go.transform.SetParent(mr.transform, false);
+
+            var outlineMf = go.AddComponent<MeshFilter>();
+            outlineMf.sharedMesh = mf.sharedMesh;
+
+            var outlineMr = go.AddComponent<MeshRenderer>();
+            outlineMr.sharedMaterial = OutlineResources.SilhouetteMaterial;
+
+            var mpb = CreateMPB(color, rimPower, intensity);
+            outlineMr.SetPropertyBlock(mpb);
+
+            active[mr] = new OutlineInstance
+            {
+                go = go,
+                renderer = outlineMr,
+                mpb = mpb
+            };
+        }
+
+        private static MaterialPropertyBlock CreateMPB(Color color,
+                                                       float rimPower,
+                                                       float intensity)
+        {
+            var mpb = new MaterialPropertyBlock();
+            mpb.SetColor("_Color", color);
+            mpb.SetFloat("_RimPower", rimPower);
+            mpb.SetFloat("_Intensity", intensity);
+            return mpb;
         }
     }
 }
