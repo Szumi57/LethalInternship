@@ -8,42 +8,42 @@ namespace LethalInternship.Core.Interns.AI.CoroutineControllers
     {
         private InternAI ai;
 
-        public bool ShouldStopCoroutine;
-        public Coroutine? Coroutine;
+        private Coroutine? coroutine;
+        private bool shouldStopCoroutine;
 
         public CoroutineController(InternAI ai)
         {
             this.ai = ai;
-            ShouldStopCoroutine = true;
-            Coroutine = null;
+            shouldStopCoroutine = true;
+            coroutine = null;
         }
 
         public void KeepAlive()
         {
-            ShouldStopCoroutine = false;
+            shouldStopCoroutine = false;
         }
 
         public void Reset()
         {
-            ShouldStopCoroutine = true;
+            shouldStopCoroutine = true;
         }
 
         public void CheckCoroutine()
         {
-            if (ShouldStopCoroutine
-                && Coroutine != null)
+            if (shouldStopCoroutine
+                && coroutine != null)
             {
                 PluginLoggerHook.LogDebug?.Invoke("CoroutineController stops coroutine");
-                ai.StopCoroutine(Coroutine);
-                Coroutine = null;
+                ai.StopCoroutine(coroutine);
+                coroutine = null;
             }
         }
 
         public void StartCoroutine(IEnumerator coroutineMethod)
         {
-            if (Coroutine == null)
+            if (coroutine == null)
             {
-                Coroutine = ai.StartCoroutine(coroutineMethod);
+                coroutine = ai.StartCoroutine(coroutineMethod);
             }
         }
 
@@ -55,10 +55,10 @@ namespace LethalInternship.Core.Interns.AI.CoroutineControllers
 
         public void StopCoroutine()
         {
-            if (Coroutine != null)
+            if (coroutine != null)
             {
-                ai.StopCoroutine(Coroutine);
-                Coroutine = null;
+                ai.StopCoroutine(coroutine);
+                coroutine = null;
             }
         }
     }

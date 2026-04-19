@@ -63,7 +63,7 @@ namespace LethalInternship.Core.Interns.AI.BT
         private void InitCoroutineControllers(InternAI internAI)
         {
             CoroutineControllers = new List<CoroutineController>();
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 5; i++)
             {
                 CoroutineControllers.Add(new CoroutineController(internAI));
             }
@@ -146,6 +146,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 PanikCoroutine = CoroutineControllers[1],
                 searchingWanderCoroutineController = CoroutineControllers[2],
                 CalculatePathCoroutineController = CoroutineControllers[3],
+                ChillCoroutine = CoroutineControllers[4],
             };
         }
 

@@ -15,5 +15,6 @@
         GatheringPointGroupButtons,
         VehicleGroupButtons,
         NavigationGroupButtons,
+        Other
     }
 }

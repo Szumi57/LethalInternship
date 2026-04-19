@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Constants;
-using LethalInternship.SharedAbstractions.UI;
+﻿using LethalInternship.SharedAbstractions.UI;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Icons.WorldIcons
@@ -39,17 +38,6 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             iconUIController.PlaceOnCanvas(screenPos, rectTransformCanvasOverlay);
         }
 
-        public void SetColorIcon(Color color)
-        {
-            iconUIController.SetColor(color);
-        }
-
-        public void SetDefaultColor()
-        {
-            // r255 g111 b1 #ff6f01
-            iconUIController.SetColor(UIConst.UI_COLOR_ORANGE);
-        }
-
         public void SetIconActive(bool toActive)
         {
             iconGameObject.SetActive(toActive);
@@ -57,7 +45,12 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 
         public void TriggerPingAnimation()
         {
-            iconUIController.TriggerPingAnimation();
+            iconUIController.PingAnimation();
+        }
+
+        public void ForceVisible(bool value)
+        {
+            iconUIController.ForceVisible(value);
         }
 
         public static Vector3 WorldSpaceToCanvas(RectTransform canvasRect, Camera camera, Vector3 worldPos)

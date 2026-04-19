@@ -61,7 +61,7 @@ namespace LethalInternship.Core.Managers
                 || StartOfRound.Instance.localPlayerController == null)
                 return;
 
-            if (UIManager.Instance.IsAnyCommandsPanelOpened)
+            if (UIManager.Instance.IsAnyMenuOpened)
                 return;
 
             if (Time.frameCount % 2 != 0) return;
@@ -429,7 +429,7 @@ namespace LethalInternship.Core.Managers
             float maxDistance = Mathf.Pow(15f, 2);  // far
 
             float maxAngleClose = 5f; // degrees when very close
-            float maxAngleFar = 1f;  // degrees when far
+            float maxAngleFar = 3f;  // degrees when far
 
             float t = Mathf.InverseLerp(minDistance, maxDistance, distance);
             return Mathf.Lerp(maxAngleClose, maxAngleFar, t);

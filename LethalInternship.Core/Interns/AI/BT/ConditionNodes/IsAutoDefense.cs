@@ -22,16 +22,19 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             if (weapon == null
                 || !weapon.IsWeapon)
             {
+                ai.SetCommandFeedback(EnumTempCommandFeedback.NotHoldingWeapon);
                 return false;
             }
 
             if (!CanKillEnemy(context.CurrentEnemy))
             {
+                ai.SetCommandFeedback(EnumTempCommandFeedback.CantKillEnemy);
                 return false;
             }
 
             if (!ai.InternIdentity.AutoDefense)
             {
+                ai.SetCommandFeedback(EnumTempCommandFeedback.NotInAutoDefense);
                 return false;
             }
 

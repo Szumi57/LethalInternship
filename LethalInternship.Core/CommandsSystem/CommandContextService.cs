@@ -1,4 +1,6 @@
-﻿using LethalInternship.Core.CommandsSystem.Abilities;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Interns;
+using System.Linq;
 
 namespace LethalInternship.Core.CommandsSystem
 {
@@ -20,12 +22,24 @@ namespace LethalInternship.Core.CommandsSystem
 
         public void EnterCommandMode()
         {
-            new WaitForCommandAbility(wait: true).Activate();
+            var internsOwned = IdentityManager.Instance.GetIdentitiesSpawned()
+                                .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
+                                .Select(x => x.InternAI!);
+            foreach (IInternAI intern in internsOwned)
+            {
+                intern.SetCommandToWaitForCommand(wait: true);
+            }
         }
 
         public void ExitCommandMode()
         {
-            new WaitForCommandAbility(wait: false).Activate();
+            var internsOwned = IdentityManager.Instance.GetIdentitiesSpawned()
+                                .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
+                                .Select(x => x.InternAI!);
+            foreach (IInternAI intern in internsOwned)
+            {
+                intern.SetCommandToWaitForCommand(wait: false);
+            }
         }
     }
 }

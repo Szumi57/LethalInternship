@@ -472,6 +472,10 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            // 
+            CheckTempCommandFeedbackTimer();
+
+            // Ai interval time
             if (ShouldDoAIInterval())
             {
                 DoAIInterval();

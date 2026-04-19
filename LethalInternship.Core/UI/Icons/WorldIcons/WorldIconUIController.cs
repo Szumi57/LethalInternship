@@ -1,6 +1,8 @@
 ﻿using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,33 +13,89 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
     [ExecuteInEditMode]
     public class WorldIconUIController : MonoBehaviour
     {
-        private RectTransform rectTransformIcon = null!;
-        private Animator animator = null!;
+        private RectTransform iconRT = null!;
 
-        private bool isIconInCenter;
-        public bool IsIconInCenter { get => isIconInCenter; }
+        public bool IsIconInCenter { get; private set; }
         public GameObject[] Icons = null!;
         public Image ImageBottom = null!;
 
-        private Image ImageTop = null!;
+        private HashSet<Image> ImagesTop = new HashSet<Image>();
 
-        private bool pingAnimationNextUpdate = false;
+        private float sizeScale = 1f;
+        private float animScale = 1f;
+        private float distanceAlpha;
+
+        // Fade out
+        private Coroutine fadeRoutine = null!;
+        private bool startFadeRoutineRequested;
+        private bool stopFadeRoutineRequested;
+        private bool forceVisible;
+        private float fadeDuration = 5f;
+        private float fadeAlpha = 1f;
+
+        // Animation
+        private float baseScale = 1f;
+
+        private bool startPingRoutineRequested;
+        private float pingOvershoot = 1.5f;
+        private float pingUndershoot = 0.8f;
+        private float pingDuration = 0.35f;
+
+        private bool startFocusRoutineRequested;
+        private float focusScale = 1.5f;
+        private float focusInDuration = 0.15f;
+        private float focusOutDuration = 0.15f;
+
+        private Coroutine currentAnimationRoutine = null!;
 
         // Start is called before the first frame update
         void Start()
         {
-            rectTransformIcon = GetComponent<RectTransform>();
-            animator = GetComponent<Animator>();
+            iconRT = GetComponent<RectTransform>();
         }
 
-        // Update is called once per frame
-        private void Update()
+        void OnEnable()
         {
-            if (pingAnimationNextUpdate)
+            startFadeRoutineRequested = true;
+        }
+
+        void Update()
+        {
+            if (startFadeRoutineRequested)
             {
-                TriggerPingAnimation();
-                pingAnimationNextUpdate = false;
+                FadeOut(fadeDuration);
+                startFadeRoutineRequested = false;
             }
+            if (stopFadeRoutineRequested)
+            {
+                if (fadeRoutine != null)
+                    StopCoroutine(fadeRoutine);
+
+                fadeRoutine = null!;
+                stopFadeRoutineRequested = false;
+            }
+
+            if (startPingRoutineRequested)
+            {
+                StartNewRoutine(PingRoutine());
+                startPingRoutineRequested = false;
+            }
+
+            if (startFocusRoutineRequested)
+            {
+                if (IsIconInCenter)
+                    StartNewRoutine(FocusInRoutine());
+                else
+                    StartNewRoutine(FocusOutRoutine());
+
+                startFocusRoutineRequested = false;
+            }
+        }
+
+        void LateUpdate()
+        {
+            iconRT.localScale = Vector3.one * sizeScale * animScale;
+            SetTransparency(distanceAlpha * (forceVisible ? 1f : fadeAlpha));
         }
 
         public void SetImagesOnTop(EnumIconImagesTypes iconImageTypes)
@@ -54,37 +112,30 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
                 {
                     int index = Mathf.RoundToInt(Mathf.Log((int)iconType, 2));
                     Icons[index].gameObject.SetActive(true);
-                    ImageTop = Icons[index].GetComponent<Image>() ?? Icons[index].GetComponentInChildren<Image>();
-                    ImageTop.color = UIConst.UI_COLOR_ORANGE;
+                    ImagesTop.Add(Icons[index].GetComponent<Image>() ?? Icons[index].GetComponentInChildren<Image>());
                 }
             }
+
+            SetAllImagesColor(UIConst.UI_COLOR_ORANGE);
         }
 
         public void PlaceOnCanvas(Vector3 screenPos, RectTransform rectTransformCanvasParent)
         {
-            if (rectTransformIcon == null)
-            {
+            if (iconRT == null)
                 return;
-            }
 
             // Size
             if (screenPos.z != 0f)
             {
-                float size = 1f / screenPos.z * 400f;
-                //PluginLoggerHook.LogDebug?.Invoke($"size {size}, dist {screenPos.z}");
-                if (size < 10f) { size = 10f; }
-                if (size > 150f) { size = 150f; }
-                if (screenPos.z < 5f)
-                {
-                    SetTransparency(screenPos.z / 5f * 0.5f);
-                }
-                else
-                {
-                    SetTransparency(1f);
-                }
+                //float size = 1f / screenPos.z * 400f;
+                ////PluginLoggerHook.LogDebug?.Invoke($"size {size}, dist {screenPos.z}");
+                //if (size < 100f) { size = 100f; }
+                //if (size > 180f) { size = 180f; }
+                float t = Mathf.Clamp01(screenPos.z / 5f);
+                distanceAlpha = Mathf.Pow(t, 0.5f);
 
                 // Size with distance
-                rectTransformIcon.localScale = Vector3.one * size;
+                sizeScale = 1f;
             }
 
             // Limit the image to screen borders
@@ -106,52 +157,159 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             //    screenPos.y = rectTransformCanvasParent.sizeDelta.y * 0.5f - rectTransformIcon.sizeDelta.y;
             //}
             // Position
-            rectTransformIcon.localPosition = new Vector3(screenPos.x, screenPos.y + rectTransformIcon.sizeDelta.y * 0.5f, 0f);
+            iconRT.localPosition = new Vector3(screenPos.x, screenPos.y + iconRT.sizeDelta.y * 0.5f, 0f);
 
             // Is icon in center
-            float xLeft = rectTransformIcon.localPosition.x - rectTransformIcon.sizeDelta.x / 2;
-            float xRight = rectTransformIcon.localPosition.x + rectTransformIcon.sizeDelta.x / 2;
-            float yTop = rectTransformIcon.localPosition.y + rectTransformIcon.sizeDelta.y / 2;
-            float yBottom = rectTransformIcon.localPosition.y - rectTransformIcon.sizeDelta.y / 2;
+            float xLeft = iconRT.localPosition.x - iconRT.sizeDelta.x / 2;
+            float xRight = iconRT.localPosition.x + iconRT.sizeDelta.x / 2;
+            float yTop = iconRT.localPosition.y + iconRT.sizeDelta.y / 2;
+            float yBottom = iconRT.localPosition.y - iconRT.sizeDelta.y / 2;
 
-            isIconInCenter = xLeft < 0f && xRight > 0f && yTop > 0f && yBottom < 0f;
-            animator.SetBool("IsHovered", isIconInCenter);
+            IsIconInCenter = xLeft < 0f && xRight > 0f && yTop > 0f && yBottom < 0f;
+            Focus();
         }
 
-        private void SetTransparency(float alpha)
+        #region FadeOut
+
+        public void FadeOut(float duration)
         {
-            if (ImageTop != null)
-            {
-                ImageTop.color = new Color(ImageTop.color.r, ImageTop.color.g, ImageTop.color.b, alpha);
-            }
-            if (ImageBottom != null)
-            {
-                ImageBottom.color = new Color(ImageBottom.color.r, ImageBottom.color.g, ImageBottom.color.b, alpha);
-            }
+            TryStartFadeRoutine(FadeRoutine(1f, 0f, duration));
         }
 
-        public void SetColor(Color color)
+        public void ForceVisible(bool value)
         {
-            if (ImageTop != null)
-            {
-                ImageTop.color = new Color(color.r, color.g, color.b, ImageTop.color.a);
-            }
-            if (ImageBottom != null)
-            {
-                ImageBottom.color = new Color(color.r, color.g, color.b, ImageBottom.color.a);
-            }
-        }
-
-        public void TriggerPingAnimation()
-        {
-            if (animator == null)
-            {
-                pingAnimationNextUpdate = true;
+            if (forceVisible == value)
                 return;
+
+            forceVisible = value;
+
+            if (forceVisible)
+            {
+                StopFade();
+                SetAlpha(1f);
+            }
+            else
+            {
+                startFadeRoutineRequested = true;
+            }
+        }
+
+        private void TryStartFadeRoutine(IEnumerator routine)
+        {
+            if (fadeRoutine == null)
+            {
+                fadeRoutine = StartCoroutine(routine);
+            }
+        }
+
+        private void StopFade()
+        {
+            stopFadeRoutineRequested = true;
+        }
+
+        private IEnumerator FadeRoutine(float from, float to, float duration)
+        {
+            float t = 0f;
+            fadeAlpha = from;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime / duration;
+                fadeAlpha = Mathf.Lerp(from, to, t);
+                yield return null;
             }
 
-            animator.ResetTrigger("Ping");
-            animator.SetTrigger("Ping");
+            fadeAlpha = to;
+        }
+
+        private void SetAlpha(float a)
+        {
+            fadeAlpha = a;
+        }
+
+        #endregion
+
+        #region Animation
+
+        public void PingAnimation()
+        {
+            startPingRoutineRequested = true;
+        }
+
+        public void Focus()
+        {
+            startFocusRoutineRequested = true;
+        }
+
+        private void StartNewRoutine(IEnumerator routine)
+        {
+            if (currentAnimationRoutine != null)
+                StopCoroutine(currentAnimationRoutine);
+
+            currentAnimationRoutine = StartCoroutine(routine);
+        }
+
+        private IEnumerator PingRoutine()
+        {
+            // overshoot
+            yield return ScaleTo(baseScale * pingOvershoot, pingDuration * 0.4f);
+            // undershoot
+            yield return ScaleTo(baseScale * pingUndershoot, pingDuration * 0.3f);
+            // return to base
+            yield return ScaleTo(baseScale, pingDuration * 0.3f);
+        }
+
+        private IEnumerator FocusInRoutine()
+        {
+            yield return ScaleTo(baseScale * focusScale, focusInDuration);
+        }
+
+        private IEnumerator FocusOutRoutine()
+        {
+            yield return ScaleTo(baseScale, focusOutDuration);
+        }
+
+        private IEnumerator ScaleTo(float target, float duration)
+        {
+            float start = animScale;
+            float t = 0f;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime / duration;
+                animScale = Mathf.Lerp(start, target, EaseOut(t));
+                yield return null;
+            }
+
+            animScale = target;
+        }
+
+        private float EaseOut(float t)
+        {
+            // cubic ease-out (rebond doux)
+            return 1f - Mathf.Pow(1f - t, 3f);
+        }
+
+        #endregion
+
+        private void SetTransparency(float a)
+        {
+            foreach (Image image in ImagesTop)
+            {
+                image.color = new Color(image.color.r, image.color.g, image.color.b, a);
+            }
+            if (ImageBottom != null)
+                ImageBottom.color = new Color(ImageBottom.color.r, ImageBottom.color.g, ImageBottom.color.b, a);
+        }
+
+        private void SetAllImagesColor(Color color)
+        {
+            foreach (Image image in ImagesTop)
+            {
+                image.color = new Color(color.r, color.g, color.b, image.color.a);
+            }
+            if (ImageBottom != null)
+                ImageBottom.color = new Color(color.r, color.g, color.b, ImageBottom.color.a);
         }
     }
 }

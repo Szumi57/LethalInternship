@@ -5,6 +5,7 @@ using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI
 {
@@ -14,9 +15,12 @@ namespace LethalInternship.Core.Interns.AI
 
         public IPointOfInterest? PointOfInterest = null!;
         public EnumCommandTypes CurrentCommand { get; private set; }
+        public EnumTempCommandFeedback TempCommandFeedback { get; private set; }
 
         private EnumCommandTypes pendingCommand;
         private EnumVoicesState voiceToPlay;
+
+        private float tempCommandFeedbackTimer;
 
         #region Commands
 
@@ -141,6 +145,22 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         #endregion
+
+        private void CheckTempCommandFeedbackTimer()
+        {
+            tempCommandFeedbackTimer += Time.deltaTime;
+            if (tempCommandFeedbackTimer > 5f)
+            {
+                tempCommandFeedbackTimer = 0f;
+                TempCommandFeedback = EnumTempCommandFeedback.None;
+            }
+        }
+
+        public void SetCommandFeedback(EnumTempCommandFeedback commandFeedback)
+        {
+            TempCommandFeedback = commandFeedback;
+            tempCommandFeedbackTimer = 0f;
+        }
 
         public void HitTargetWithShovel(Shovel shovel)
         {

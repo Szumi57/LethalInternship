@@ -100,7 +100,7 @@ namespace LethalInternship.Core.Managers
             inputActionAsset = IngamePlayerSettings.Instance.playerInput.actions;
             foreach (var map in inputActionAsset.actionMaps)
             {
-                foreach (var action in map.actions)
+                foreach (InputAction? action in map.actions)
                 {
                     switch (action.name)
                     {
@@ -119,7 +119,7 @@ namespace LethalInternship.Core.Managers
             // SubscribeAllActions
             foreach (var map in inputActionAsset.actionMaps)
             {
-                foreach (var action in map.actions)
+                foreach (InputAction? action in map.actions)
                 {
                     action.started += OnAnyAction;
                 }
@@ -303,10 +303,13 @@ namespace LethalInternship.Core.Managers
 
         public void CancelTargeting()
         {
-            CurrentTargetedAbility = null;
-            CommandContextService.Instance.ExitCommandMode();
-            TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Intern);
-            UIManager.Instance.HideInputIcon();
+            if (CurrentTargetedAbility != null)
+            {
+                CurrentTargetedAbility = null;
+                CommandContextService.Instance.ExitCommandMode();
+                TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Intern);
+                UIManager.Instance.HideInputIcon();
+            }
         }
 
         #endregion
@@ -321,10 +324,12 @@ namespace LethalInternship.Core.Managers
             {
                 case EnumInputAction.FollowMe:
                     new FollowMeAbility().Activate();
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.StayHere:
                     new StayHereAbility().Activate();
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.PointToAction:
@@ -332,14 +337,17 @@ namespace LethalInternship.Core.Managers
                     break;
                 case EnumInputAction.GoToShip:
                     new GoToShipAbility().Activate();
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.GoToVehicle:
                     new GoToVehicleAbility().Activate();
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ScavengeToShip:
                     new ScavengeToShipAbility().Activate();
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
 
@@ -352,6 +360,7 @@ namespace LethalInternship.Core.Managers
 
                 // UI
                 case EnumInputAction.Close:
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ReturnToAll:
@@ -366,6 +375,7 @@ namespace LethalInternship.Core.Managers
 
                 case EnumInputAction.None:
                 default:
+                    CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     UIManager.Instance.HideInputIcon();
                     break;
@@ -423,11 +433,22 @@ namespace LethalInternship.Core.Managers
 
         private void InputAction_ShowCommandsAll()
         {
+            CancelTargeting();
             UIManager.Instance.HideCommandsOne();
 
             IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectAll();
-            UIManager.Instance.ToogleCommandsAll();
+
+            if (UIManager.Instance.IsCommandsAllOpened)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideCommandsAll();
+            }
+            else
+            {
+                CommandContextService.Instance.EnterCommandMode();
+                UIManager.Instance.ShowCommandsAll();
+            }
         }
 
         private void InputAction_NextIntern()
@@ -593,11 +614,23 @@ namespace LethalInternship.Core.Managers
                 return;
 
             InputLock.BlockThisFrame();
+
+            CancelTargeting();
             UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
 
             IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
-            UIManager.Instance.ToogleCommandsOne();
+
+            if (UIManager.Instance.IsCommandsOneOpened)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideCommandsOne();
+            }
+            else
+            {
+                CommandContextService.Instance.EnterCommandMode();
+                UIManager.Instance.ShowCommandsOne();
+            }
         }
 
         #endregion

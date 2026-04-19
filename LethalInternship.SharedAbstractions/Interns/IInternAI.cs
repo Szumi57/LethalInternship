@@ -34,6 +34,10 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SetCommandToFetchItem(GrabbableObject itemToFetch);
         void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);
         void SetCommandToWaitForCommand(bool wait);
+
+        EnumTempCommandFeedback TempCommandFeedback { get; }
+        void SetCommandFeedback(EnumTempCommandFeedback commandFeedback);
+
         void AdaptController(PlayerControllerB playerControllerB);
         void UpdateController();
 

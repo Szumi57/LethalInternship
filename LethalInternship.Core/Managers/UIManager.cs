@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
@@ -57,7 +56,8 @@ namespace LethalInternship.Core.Managers
         public CommandsOneController CommandsOneController { get; private set; } = null!;
         public bool IsCommandsOneOpened { get { return commandsOneGo != null && commandsOneGo.activeSelf; } }
 
-        public bool IsAnyCommandsPanelOpened { get { return IsCommandsAllOpened || IsCommandsOneOpened; } }
+        public bool IsAnyMenuOpened { get { return IsCommandsAllOpened || IsCommandsOneOpened || (GameNetworkManager.Instance?.localPlayerController?.quickMenuManager.isMenuOpen ?? false); } }
+        private bool wasAnyMenuOpened;
 
         // TooltipBar
         private GameObject toolTipBarUIGo = null!;
@@ -129,22 +129,26 @@ namespace LethalInternship.Core.Managers
         private void ShowWorldIconUIs()
         {
             if (worldIconUIPool == null)
-            {
                 return;
-            }
+
+            if (GameNetworkManager.Instance == null
+                || GameNetworkManager.Instance.localPlayerController == null)
+                return;
 
             PointOfInterestInCenter = null;
 
+            bool isAnyMenuWasClosed = wasAnyMenuOpened && !IsAnyMenuOpened;
+            wasAnyMenuOpened = IsAnyMenuOpened;
+
             // Check if nothing to show
-            IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
-            if (internsOwned.Length == 0
-                || IsAnyCommandsPanelOpened)
+            if (IsAnyMenuOpened)
             {
                 // Clear remaining icons
                 worldIconUIPool.DisableOtherIcons();
                 return;
             }
 
+            IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
             List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
             WorldIconUI worldIcon;
             // Show other already active icons
@@ -157,8 +161,8 @@ namespace LethalInternship.Core.Managers
                 //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest}");
                 worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
                 worldIcon.SetPositionUI(pointOfInterestRendererService.GetUIIcon(pointOfInterest));
-                worldIcon.SetDefaultColor();
                 worldIcon.SetIconActive(true);
+                worldIcon.ForceVisible(value: InputManager.Instance.CurrentTargetedAbility != null || isAnyMenuWasClosed);
                 worldIconsToReturn.Add(worldIcon);
 
                 // Scan icon in center
@@ -309,30 +313,6 @@ namespace LethalInternship.Core.Managers
 
         #region Show/Hide commands
 
-        public void ToogleCommandsAll()
-        {
-            if (IsCommandsAllOpened)
-            {
-                HideCommandsAll();
-            }
-            else
-            {
-                ShowCommandsAll();
-            }
-        }
-
-        public void ToogleCommandsOne()
-        {
-            if (IsCommandsOneOpened)
-            {
-                HideCommandsOne();
-            }
-            else
-            {
-                ShowCommandsOne();
-            }
-        }
-
         public void ShowCommandsAll()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
@@ -343,9 +323,6 @@ namespace LethalInternship.Core.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-
-            // Command mode
-            CommandContextService.Instance.EnterCommandMode();
 
             commandsAllGo.SetActive(true);
         }
@@ -360,9 +337,6 @@ namespace LethalInternship.Core.Managers
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-
-            // Command mode
-            CommandContextService.Instance.EnterCommandMode();
 
             commandsOneGo.SetActive(true);
         }
@@ -392,12 +366,6 @@ namespace LethalInternship.Core.Managers
             if (resetCameraFocus)
                 CameraFocusUI.Instance.ReturnToInitial();
 
-            // Command mode
-            if (InputManager.Instance.CurrentTargetedAbility == null)
-            {
-                CommandContextService.Instance.ExitCommandMode();
-            }
-
             commandsAllGo.SetActive(false);
         }
 
@@ -412,12 +380,6 @@ namespace LethalInternship.Core.Managers
 
             ToolTipBarUI.Hide();
             CameraFocusUI.Instance.ReturnToInitial();
-
-            // Command mode
-            if (InputManager.Instance.CurrentTargetedAbility == null)
-            {
-                CommandContextService.Instance.ExitCommandMode();
-            }
 
             commandsOneGo.SetActive(false);
         }
@@ -492,6 +454,11 @@ namespace LethalInternship.Core.Managers
                 // Line manage
                 tooltipsToAdd.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
                                                                 InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
+            }
+
+            if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
+            {
+                tooltipsToAdd.Add(("commandFeedback", intern.TempCommandFeedback.ToString()));
             }
 
             SetTooltips(localPlayer.cursorTip,
@@ -650,12 +617,12 @@ namespace LethalInternship.Core.Managers
             InternOutlineController.UpdateInternsOutlines(internsToOuline,
                                                            target?.Intern?.Npc.playerClientId,
                                                            allowMultipleInternOutline,
-                                                           forceNoOutlines: IsAnyCommandsPanelOpened);
+                                                           forceNoOutlines: IsAnyMenuOpened);
 
             InternOutlineController.UpdateItemsOutlines(InternManager.Instance.GetGrabbableObjectsList(),
                                                            target?.Item,
                                                            allowMultipleInternOutline,
-                                                           forceNoOutlines: IsAnyCommandsPanelOpened);
+                                                           forceNoOutlines: IsAnyMenuOpened);
         }
 
         #endregion

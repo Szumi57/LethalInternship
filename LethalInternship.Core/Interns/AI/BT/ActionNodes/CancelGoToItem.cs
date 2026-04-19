@@ -23,6 +23,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
                 else if (context.nbItemsToCheck == 0) // while scavenging
                 {
+                    ai.SetCommandFeedback(EnumTempCommandFeedback.NoItemsLeftToGrab);
                     if (ai.AreHandsFree())
                     {
                         ai.SetCommandToFollowPlayer(playVoice: false);
@@ -46,14 +47,22 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                         ai.NpcController.OrderToToggleCrouch();
                     }
                     TryPlayThinkingVoiceAudio(ai);
+                    ai.SetCommandFeedback(EnumTempCommandFeedback.Thinking);
                 }
                 return BehaviourTreeStatus.Success;
             }
 
             // Or can't hold or not grabbable
-            if (!context.InternAI.CanHoldItem(context.TargetItem)
-                || !InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
+            bool canHoldItem = context.InternAI.CanHoldItem(context.TargetItem);
+            bool isGrabbableObjectGrabbable = InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem);
+            if (!canHoldItem
+                || !isGrabbableObjectGrabbable)
             {
+                if (!canHoldItem)
+                    ai.SetCommandFeedback(EnumTempCommandFeedback.CantHoldItem);
+                if (!isGrabbableObjectGrabbable)
+                    ai.SetCommandFeedback(EnumTempCommandFeedback.TargetItemNotGrabbable);
+
                 context.TargetItem = null;
                 ai.TryPlayCantDoCommandVoiceAudio();
                 return BehaviourTreeStatus.Success;

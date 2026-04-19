@@ -7,7 +7,6 @@ namespace LethalInternship.SharedAbstractions.Managers
     {
         TMP_FontAsset FontToUse { get; }
 
-        void ToogleCommandsAll();
         void ShowCommandsAll();
         void HideCommandsAll(bool resetCameraFocus = true);
 

@@ -145,16 +145,17 @@ namespace LethalInternship.Core.UI.CommandsControllers
                                                                         && x.GroupUI != EnumUIGroups.SuitMenu
                                                                         && x.GroupUI != EnumUIGroups.AutoDefenseButton
                                                                         && x.GroupUI != EnumUIGroups.NavigationGroupButtons
+                                                                        && x.GroupUI != EnumUIGroups.Other
                                                                         && x.GroupUI != EnumUIGroups.CarryItemBehaviourButton))
                         {
                             uiElement.SetInteractable(interactable: false, UIConst.TOOLTIPBAR_NOT_IN_SPACE);
                         }
                     }
                 }
-                else
+                else // Not managing interns
                 {
                     // Disable all
-                    foreach (var uiElement in visibilityUIs)
+                    foreach (var uiElement in visibilityUIs.Where(x => x.GroupUI != EnumUIGroups.Other))
                     {
                         uiElement.SetInteractable(interactable: false, UIConst.TOOLTIPBAR_NO_INTERNS_TO_MANAGE);
                     }

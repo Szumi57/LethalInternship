@@ -27,5 +27,6 @@ namespace LethalInternship.Core.Interns.AI.BT
         public CoroutineController LookingAroundCoroutineController { get; set; } = null!;
         public CoroutineController searchingWanderCoroutineController { get; set; } = null!;
         public CoroutineController CalculatePathCoroutineController { get; set; } = null!;
+        public CoroutineController ChillCoroutine { get; set; } = null!;
     }
 }
