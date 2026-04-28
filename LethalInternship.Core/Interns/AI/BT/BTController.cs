@@ -63,7 +63,7 @@ namespace LethalInternship.Core.Interns.AI.BT
         private void InitCoroutineControllers(InternAI internAI)
         {
             CoroutineControllers = new List<CoroutineController>();
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 4; i++)
             {
                 CoroutineControllers.Add(new CoroutineController(internAI));
             }
@@ -78,7 +78,9 @@ namespace LethalInternship.Core.Interns.AI.BT
             {
                 { "AttackEnemy", new AttackEnemy() },
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
+                { "CancelGoAttack", new CancelGoAttack() },
                 { "CancelGoToItem", new CancelGoToItem() },
+                { "CheckForEnemies", new CheckForEnemies() },
                 { "CheckForItemsInMap", new CheckForItemsInMap() },
                 { "CheckForItemsInRange", new CheckForItemsInRange() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
@@ -105,7 +107,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             conditions = new Dictionary<string, IBTCondition>()
             {
                 { "AreFreeSlotsAvailable", new AreFreeSlotsAvailable() },
-                { "EnemySeen", new EnemySeen() },
+                { "CanAttackEnemy", new CanAttackEnemy() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsAutoDefense", new IsAutoDefense() },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
@@ -114,8 +116,11 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
                 { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
                 { "IsCommandWaitForCommand", new IsCommandThis(EnumCommandTypes.WaitForCommand) },
+                { "IsCommandKill", new IsCommandThis(EnumCommandTypes.Kill) },
+                { "IsInDanger", new IsInDanger() },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
+                { "IsStillInCombat", new IsStillInCombat() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
                 { "IsTargetItemValid", new IsTargetItemValid() },
                 { "TargetValid", new TargetValid() },
@@ -143,10 +148,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                 searchForPlayers = this.searchForPlayers,
 
                 LookingAroundCoroutineController = CoroutineControllers[0],
-                PanikCoroutine = CoroutineControllers[1],
-                searchingWanderCoroutineController = CoroutineControllers[2],
-                CalculatePathCoroutineController = CoroutineControllers[3],
-                ChillCoroutine = CoroutineControllers[4],
+                searchingWanderCoroutineController = CoroutineControllers[1],
+                CalculatePathCoroutineController = CoroutineControllers[2],
+                ChillCoroutine = CoroutineControllers[3],
             };
         }
 
@@ -184,6 +188,14 @@ namespace LethalInternship.Core.Interns.AI.BT
                                                                         itemToFetch.itemProperties.itemName));
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
+        public void ResetContextAttackEnemy(EnemyAI enemy)
+        {
+            BTContext.PathController.ResetPathAndIndex();
+            BTContext.PathController.SetNewDestination(new DJKMovingPoint(enemy.transform, $"targetEnemy {enemy.enemyType.enemyName}"));
+            BTContext.CurrentEnemy = enemy;
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
 
         public EnemyAI? GetTarget()
         {
@@ -196,9 +208,30 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Panik or commands")
 
-                    .Sequence("Enemy close ?")
-                        .Condition("<EnemySeen>", t => conditions["EnemySeen"].Condition(BTContext))
-                        .Splice(CreateSubTreePanik())
+                    .Sequence("Command kill enemy ?")
+                        .Condition("<IsCommandKill>", t => conditions["IsCommandKill"].Condition(BTContext))
+                        .Selector("Can attack enemy or cancel ?")
+                            .Sequence("Go attack if can")
+                                .Condition("<CanAttackEnemy>", t => conditions["CanAttackEnemy"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoAttack())
+                            .End()
+                            .Do("CancelGoAttack", t => actions["CancelGoAttack"].Action(BTContext))
+                        .End()
+                    .End()
+
+                    .Sequence("Is in danger ?")
+                        .Do("CheckForEnemies", t => actions["CheckForEnemies"].Action(BTContext))
+                        .Condition("<IsInDanger>", t => conditions["IsInDanger"].Condition(BTContext))
+
+                        .Selector("Attack or flee")
+                            .Sequence("Attack if auto defense ok")
+                                .Condition("<IsAutoDefense>", t => conditions["IsAutoDefense"].Condition(BTContext))
+                                .Condition("<CanAttackEnemy>", t => conditions["CanAttackEnemy"].Condition(BTContext))
+                                .Condition("<IsStillInCombat>", t => conditions["IsStillInCombat"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoAttack())
+                            .End()
+                            .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
+                        .End()
                     .End()
 
                     .Sequence("Follow orders")
@@ -354,23 +387,17 @@ namespace LethalInternship.Core.Interns.AI.BT
                 .Build();
         }
 
-        private IBehaviourTreeNode CreateSubTreePanik()
+        private IBehaviourTreeNode CreateSubTreeGoAttack()
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                        .Selector("Auto defense or flee")
+                        .Selector("Go to enemy or attack")
                             .Sequence("Attack if auto defense ok")
-                                .Condition("<IsAutoDefense>", t => conditions["IsAutoDefense"].Condition(BTContext))
-                                .Selector("Go to enemy of attack")
-                                    .Sequence("Attack if auto defense ok")
-                                        .Do("EquipWeapon", t => actions["EquipWeapon"].Action(BTContext))
-                                        .Condition("<TooFarFromEnemy>", t => conditions["TooFarFromEnemy"].Condition(BTContext))
-                                        .Do("GoToEnemy", t => actions["GoToEnemy"].Action(BTContext))
-                                    .End()
-                                    .Do("AttackEnemy", t => actions["AttackEnemy"].Action(BTContext))
-                                .End()
+                                .Do("EquipWeapon", t => actions["EquipWeapon"].Action(BTContext))
+                                .Condition("<TooFarFromEnemy>", t => conditions["TooFarFromEnemy"].Condition(BTContext))
+                                .Do("GoToEnemy", t => actions["GoToEnemy"].Action(BTContext))
                             .End()
-                            .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
+                            .Do("AttackEnemy", t => actions["AttackEnemy"].Action(BTContext))
                         .End()
                         .Build();
         }

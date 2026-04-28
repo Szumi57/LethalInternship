@@ -50,9 +50,7 @@ namespace LethalInternship.Core.UI.Others
         public void FocusOnIntern(Transform target)
         {
             if (!UpdateCam())
-            {
                 return;
-            }
 
             if (currentRoutine != null)
                 UIManager.Instance.StopCoroutine(currentRoutine);
@@ -64,8 +62,12 @@ namespace LethalInternship.Core.UI.Others
         public void ReturnToInitial()
         {
             if (!UpdateCam())
-            {
                 return;
+
+            if (currentRoutine != null)
+            {
+                UIManager.Instance.StopCoroutine(currentRoutine);
+                currentRoutine = null!;
             }
 
             initialState.Apply(cam);
@@ -74,9 +76,7 @@ namespace LethalInternship.Core.UI.Others
         IEnumerator FocusRotationOnly(Transform target)
         {
             if (!UpdateCam())
-            {
                 yield break;
-            }
 
             Vector3 targetPos = target.position + new Vector3(0f, 1.5f, 0f);
 

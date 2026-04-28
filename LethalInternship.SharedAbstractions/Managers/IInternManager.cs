@@ -89,6 +89,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate);
 
         List<EnemyAI> GetEnemiesList();
+        bool IsEnemyKillable(EnemyAI enemy);
 
         bool ShouldIgnoreInternsEndScreen(PlayerControllerB player);
 

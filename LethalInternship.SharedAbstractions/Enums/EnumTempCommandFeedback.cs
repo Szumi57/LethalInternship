@@ -10,6 +10,9 @@
         Thinking,
         NotHoldingWeapon,
         CantKillEnemy,
-        NotInAutoDefense
+        NotInAutoDefense,
+        CombatTooLong,
+        EnemyNotHere,
+        EnemyTooFar,
     }
 }

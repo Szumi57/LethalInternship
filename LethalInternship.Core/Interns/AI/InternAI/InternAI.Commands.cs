@@ -96,6 +96,15 @@ namespace LethalInternship.Core.Interns.AI
             BTController.ResetContextNewCommandGoFetchItem(itemToFetch);
         }
 
+        public void SetCommandToAttackEnemy(EnemyAI enemy)
+        {
+            SetCommand(EnumCommandTypes.Kill, EnumVoicesState.None);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextAttackEnemy(enemy);
+        }
+
         private void SetCommand(EnumCommandTypes command, EnumVoicesState voiceCommand)
         {
             if (CurrentCommand == EnumCommandTypes.WaitForCommand)

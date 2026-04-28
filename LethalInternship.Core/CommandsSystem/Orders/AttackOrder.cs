@@ -3,18 +3,18 @@ using LethalInternship.SharedAbstractions.Interns;
 
 namespace LethalInternship.Core.CommandsSystem.Orders
 {
-    public class GoFetchItemOrder : Order
+    public class AttackOrder : Order
     {
-        private readonly GrabbableObject itemToFetch;
+        private readonly EnemyAI enemyToAttack;
 
-        public GoFetchItemOrder(GrabbableObject item)
+        public AttackOrder(EnemyAI enemyToAttack)
         {
-            itemToFetch = item;
+            this.enemyToAttack = enemyToAttack;
         }
 
         public override void ApplyTo(IInternAI intern)
         {
-            intern.SetCommandToFetchItem(itemToFetch);
+            intern.SetCommandToAttackEnemy(enemyToAttack);
         }
     }
 }

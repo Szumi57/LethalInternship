@@ -487,7 +487,8 @@ namespace LethalInternship.Core.Managers
 
             // Enemy
             EnemyAI enemyAI = col.gameObject.GetComponentInParent<EnemyAI>();
-            if (enemyAI != null)
+            if (enemyAI != null
+                && !enemyAI.isEnemyDead)
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target enemy ? {enemyAI?.enemyType.enemyName}");
                 targetData.Enemy = enemyAI;

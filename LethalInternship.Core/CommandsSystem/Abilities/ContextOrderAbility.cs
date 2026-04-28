@@ -34,8 +34,8 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
 
         public override Order? ResolveTarget(TargetData target)
         {
-            //if (target.Enemy != null)
-            //    return new AttackOrder(target.Enemy);
+            if (target.Enemy != null)
+                return new AttackOrder(target.Enemy);
 
             if (target.Item != null)
                 return new GoFetchItemOrder(target.Item);

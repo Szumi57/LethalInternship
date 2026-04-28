@@ -49,7 +49,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             Shovel? shovel = weaponObject as Shovel;
             if (shovel != null)
             {
-                weaponObject.UseItemOnClient(buttonDown: !shovel.reelingUp);
+                //weaponObject.UseItemOnClient(buttonDown: !shovel.reelingUp);
                 return BehaviourTreeStatus.Success;
             }
             // Knife attack

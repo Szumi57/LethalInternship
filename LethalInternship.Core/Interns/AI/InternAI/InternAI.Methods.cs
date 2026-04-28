@@ -42,21 +42,22 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         /// <summary>
-        /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
+        /// Try to set the destination on the agent
         /// </summary>
-        public void UpdateDestinationToAgent(bool calculatePartialPath = false, bool checkForPath = false)
+        public bool UpdateDestinationToAgent()
         {
             if (IsAgentInValidState()
                 && agent.destination != base.destination)
             {
-                agent.SetDestination(destination);
+                return agent.SetDestination(destination);
             }
+            return false;
         }
 
-        public void OrderAgentAndBodyMoveToDestination(bool calculatePartialPath = false, bool checkForPath = false)
+        public void OrderAgentAndBodyMoveToDestination()
         {
             NpcController.OrderToMove();
-            UpdateDestinationToAgent(calculatePartialPath, checkForPath);
+            UpdateDestinationToAgent();
         }
 
         public void StopMoving()

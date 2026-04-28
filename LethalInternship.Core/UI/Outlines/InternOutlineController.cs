@@ -19,6 +19,7 @@ namespace LethalInternship.Core.UI.Outlines
 
         const float RIM_EPSILON = 0.02f;
         private static readonly Dictionary<ulong, OutlineState> internStates = new Dictionary<ulong, OutlineState>();
+        private static readonly Dictionary<EnemyAI, OutlineState> enemiesStates = new Dictionary<EnemyAI, OutlineState>();
         private static readonly Dictionary<GrabbableObject, OutlineState> itemStates = new Dictionary<GrabbableObject, OutlineState>();
 
         public static void UpdateInternsOutlines(IEnumerable<IInternAI> interns,
@@ -48,11 +49,16 @@ namespace LethalInternship.Core.UI.Outlines
                                         || intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance);
                 }
 
-                float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
-                float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, distance);
-                float rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,
-                                            UIConst.OUTLINE_RIM_SOLID,
-                                            t);
+                float rimPower = UIConst.OUTLINE_RIM_DEFAULT;
+                if (shouldOutline)
+                {
+                    float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
+                    float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, distance);
+                    rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,
+                                          UIConst.OUTLINE_RIM_SOLID,
+                                          t);
+                }
+
                 bool owned = StartOfRound.Instance != null
                             && StartOfRound.Instance.localPlayerController != null
                             && StartOfRound.Instance.localPlayerController.actualClientId == intern.OwnerClientId;
@@ -70,6 +76,56 @@ namespace LethalInternship.Core.UI.Outlines
                            intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
                            rimPower,
                            color: owned ? UIConst.UI_COLOR_ORANGE : UIConst.UI_COLOR_DEFAULT);
+            }
+        }
+
+        public static void UpdateEnemiesOutlines(IEnumerable<EnemyAI> enemies,
+                                                  EnemyAI? pointedEnemy,
+                                                  bool allowMultiple,
+                                                  bool forceNoOutlines = false)
+        {
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
+
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            foreach (EnemyAI enemy in enemies)
+            {
+
+                bool shouldOutline;
+                if (forceNoOutlines)
+                {
+                    shouldOutline = false;
+                }
+                else
+                {
+                    shouldOutline = enemy == pointedEnemy || allowMultiple;
+                }
+
+                float rimPower = UIConst.OUTLINE_RIM_DEFAULT;
+                if (shouldOutline)
+                {
+                    float sqrDistance = (enemy.transform.position - localPlayer.gameplayCamera.transform.position).sqrMagnitude;
+                    float t = Mathf.InverseLerp(1f, UIConst.DISTANCE_SOLID_OUTLINE * UIConst.DISTANCE_SOLID_OUTLINE, sqrDistance);
+                    rimPower = Mathf.Lerp(UIConst.OUTLINE_RIM_DEFAULT,
+                                          UIConst.OUTLINE_RIM_SOLID,
+                                          t);
+                }
+
+                if (!enemiesStates.TryGetValue(enemy, out OutlineState state))
+                {
+                    state = new OutlineState();
+                    enemiesStates[enemy] = state;
+                }
+
+                ApplyState(enemy.gameObject,
+                           state,
+                           shouldOutline,
+                           onlySkinned: true,
+                           intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
+                           rimPower,
+                           color: UIConst.UI_COLOR_ORANGE);
             }
         }
 
@@ -108,7 +164,7 @@ namespace LethalInternship.Core.UI.Outlines
                            shouldOutline,
                            onlySkinned: false,
                            intensity: UIConst.OUTLINE_INTENSITY_DEFAULT,
-                           UIConst.OUTLINE_RIM_SOLID,
+                           rimPower: UIConst.OUTLINE_RIM_SOLID,
                            color: UIConst.UI_COLOR_ORANGE); ;
             }
         }

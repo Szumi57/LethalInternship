@@ -289,14 +289,15 @@ namespace LethalInternship.Core.Managers
                 return EnumIconImagesTypes.None;
             }
 
+            // Icon are set here
             if (target.Value.Item != null)
             {
                 return EnumIconImagesTypes.FetchItem;
             }
-            //else if(target.Value.Enemy != null)
-            //{
-
-            //}
+            else if (target.Value.Enemy != null)
+            {
+                return EnumIconImagesTypes.Attack;
+            }
             else if (target.Value.PointOfInterest != null)
             {
                 IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointOfInterest);
@@ -424,8 +425,13 @@ namespace LethalInternship.Core.Managers
             IInternAI intern = target.Value.Intern;
             List<(string id, string text)> tooltipsToAdd = new List<(string id, string text)>();
 
-            float distance = intern.NpcController.GetSqrDistanceWithLocalPlayer();
-            if (distance < localPlayer.grabDistance * localPlayer.grabDistance)
+            // Temp command feedback
+            if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
+            {
+                tooltipsToAdd.Add(("commandFeedback", intern.TempCommandFeedback.ToString()));
+            }
+
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance)
             {
                 // Grab distance
                 // Line give item
@@ -456,11 +462,7 @@ namespace LethalInternship.Core.Managers
                                                                 InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
             }
 
-            if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
-            {
-                tooltipsToAdd.Add(("commandFeedback", intern.TempCommandFeedback.ToString()));
-            }
-
+            // Send tooltips
             SetTooltips(localPlayer.cursorTip,
                         isSeparatorToAdd: false,
                         tooltipsToAdd);
@@ -611,18 +613,23 @@ namespace LethalInternship.Core.Managers
             if (target == null)
                 return;
 
-            var internsToOuline = IdentityManager.Instance.GetIdentitiesSpawned().Select(x => x.InternAI!);
-
             // Update intern outlines
+            var internsToOuline = IdentityManager.Instance.GetIdentitiesSpawned().Select(x => x.InternAI!);
             InternOutlineController.UpdateInternsOutlines(internsToOuline,
-                                                           target?.Intern?.Npc.playerClientId,
-                                                           allowMultipleInternOutline,
-                                                           forceNoOutlines: IsAnyMenuOpened);
+                                                          target?.Intern?.Npc.playerClientId,
+                                                          allowMultipleInternOutline,
+                                                          forceNoOutlines: IsAnyMenuOpened);
+
+
+            InternOutlineController.UpdateEnemiesOutlines(InternManager.Instance.GetEnemiesList(),
+                                                          target?.Enemy,
+                                                          allowMultipleInternOutline,
+                                                          forceNoOutlines: IsAnyMenuOpened);
 
             InternOutlineController.UpdateItemsOutlines(InternManager.Instance.GetGrabbableObjectsList(),
-                                                           target?.Item,
-                                                           allowMultipleInternOutline,
-                                                           forceNoOutlines: IsAnyMenuOpened);
+                                                        target?.Item,
+                                                        allowMultipleInternOutline,
+                                                        forceNoOutlines: IsAnyMenuOpened);
         }
 
         #endregion

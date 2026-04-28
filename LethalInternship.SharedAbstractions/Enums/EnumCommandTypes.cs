@@ -8,6 +8,7 @@
         GoToPosition,
         WaitForCommand,
         ScavengingMode,
-        GoFetchItem
+        GoFetchItem,
+        Kill,
     }
 }
