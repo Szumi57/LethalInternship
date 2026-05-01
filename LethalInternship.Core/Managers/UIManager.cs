@@ -72,8 +72,8 @@ namespace LethalInternship.Core.Managers
         private WorldIconUIPool worldIconUIPool = null!;
         private InputIconUIPool inputIconUIPool = null!;
 
-        // Input icon current icon
-        private GameObject inputIconImagePrefab = null!;
+        // Input icon anim
+        private bool firstShowNeedAnim;
 
         // Renderers
         private InterestPointRendererRegistery interestPointRendererRegistery = null!;
@@ -124,6 +124,11 @@ namespace LethalInternship.Core.Managers
                 timerUpdateTooltips = 0f;
                 UpdateControlTip(HUDManager.Instance);
             }
+        }
+
+        private void LateUpdate()
+        {
+            UpdateCursorTooltips();
         }
 
         private void ShowWorldIconUIs()
@@ -262,6 +267,12 @@ namespace LethalInternship.Core.Managers
             InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(GetInputIcon()));
             inputIconUI.SetIconActive(true);
 
+            if (firstShowNeedAnim)
+            {
+                inputIconUI.PlayStartAnim();
+                firstShowNeedAnim = false;
+            }
+
             inputIconUIPool.DisableOtherIcons();
             inputIconUIPool.ReturnIcon(inputIconUI);
         }
@@ -272,6 +283,8 @@ namespace LethalInternship.Core.Managers
             {
                 return;
             }
+
+            firstShowNeedAnim = true;
 
             if (inputIconUIPool == null)
             {
@@ -296,7 +309,10 @@ namespace LethalInternship.Core.Managers
             }
             else if (target.Value.Enemy != null)
             {
-                return EnumIconImagesTypes.Attack;
+                if (InternManager.Instance.IsEnemyKillable(target.Value.Enemy))
+                    return EnumIconImagesTypes.Attack;
+                else
+                    return EnumIconImagesTypes.CantAttack;
             }
             else if (target.Value.PointOfInterest != null)
             {
@@ -409,7 +425,7 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        public void UpdateCursorTooltipsOfPointedIntern()
+        private void UpdateCursorTooltips()
         {
             if (StartOfRound.Instance == null
                 || StartOfRound.Instance.localPlayerController == null)
@@ -418,48 +434,70 @@ namespace LethalInternship.Core.Managers
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
-            if (target == null
-                || target.Value.Intern == null)
+            if (target == null)
                 return;
 
-            IInternAI intern = target.Value.Intern;
             List<(string id, string text)> tooltipsToAdd = new List<(string id, string text)>();
 
-            // Temp command feedback
-            if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
+            // Targeting tooltip
+            if (InputManager.Instance.CurrentTargetedAbility != null)
             {
-                tooltipsToAdd.Add(("commandFeedback", intern.TempCommandFeedback.ToString()));
-            }
-
-            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance)
-            {
-                // Grab distance
-                // Line give item
-                if (localPlayer.currentlyHeldObjectServer != null)
+                if (target.Value.Item != null)
                 {
-                    tooltipsToAdd.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
-                                                                 InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern))));
+                    tooltipsToAdd.Add(("targetingItem", UIConst.TOOLTIP_TARGETING_ITEM));
+                }
+                else if (target.Value.Enemy != null)
+                {
+                    if (InternManager.Instance.IsEnemyKillable(target.Value.Enemy))
+                        tooltipsToAdd.Add(("targetingKillableEnemy", UIConst.TOOLTIP_TARGETING_ENEMY));
+                    else
+                        tooltipsToAdd.Add(("targetingUnkillableEnemy", UIConst.TOOLTIP_TARGETING_UNKILLABLE_ENEMY));
+                }
+                else if (target.Value.PointOfInterest != null)
+                {
+                    tooltipsToAdd.Add(("targetingPosition", UIConst.TOOLTIP_TARGETING_POSITION));
+                }
+            }
+            else if (target.Value.Intern != null) // Not targeting command
+            {
+                IInternAI intern = target.Value.Intern;
+
+                // Temp command feedback
+                if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
+                {
+                    tooltipsToAdd.Add(("commandFeedback", intern.TempCommandFeedback.ToString()));
+                }
+
+                if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance)
+                {
+                    // Grab distance
+                    // Line give item
+                    if (localPlayer.currentlyHeldObjectServer != null)
+                    {
+                        tooltipsToAdd.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
+                                                                     InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern))));
+                    }
+
+                    // Owning ?
+                    if (intern.OwnerClientId != localPlayer.actualClientId)
+                    {
+                        // Line manage
+                        tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_MANAGE,
+                                                                   InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern))));
+                    }
+
+                    // Grab intern
+                    tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_GRAB_INTERNS,
+                                                               InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern))));
                 }
 
                 // Owning ?
-                if (intern.OwnerClientId != localPlayer.actualClientId)
+                if (intern.OwnerClientId == localPlayer.actualClientId)
                 {
                     // Line manage
-                    tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_MANAGE,
-                                                               InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern))));
+                    tooltipsToAdd.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
+                                                                    InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
                 }
-
-                // Grab intern
-                tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_GRAB_INTERNS,
-                                                           InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern))));
-            }
-
-            // Owning ?
-            if (intern.OwnerClientId == localPlayer.actualClientId)
-            {
-                // Line manage
-                tooltipsToAdd.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
-                                                                InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
             }
 
             // Send tooltips

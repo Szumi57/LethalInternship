@@ -84,6 +84,16 @@ namespace LethalInternship.Patches.ObjectsPatches
             return false;
         }
 
+        [HarmonyPatch("UseItemOnClient")]
+        [HarmonyPrefix]
+        public static bool UseItemOnClient_PreFix(GrabbableObject __instance)
+        {
+            // Cut input if using intern command UI to target something
+            // InputManagerProvider.Instance.CurrentTargetedAbility is set to null just before this method
+            // so we use previous
+            return InputManagerProvider.Instance.PreviousTargetedAbility == null;
+        }
+
         [HarmonyReversePatch]
         [HarmonyPatch(nameof(GrabbableObject.Update))]
         [MethodImpl(MethodImplOptions.NoInlining)]

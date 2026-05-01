@@ -79,7 +79,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         /// Check all object array
         /// </summary>
         /// <returns><c>GrabbableObject</c>GrabbableObject to try to grab</returns>
-        List<GrabbableObject> LookingForItemsToGrabInMap();
+        List<GrabbableObject> LookingForItemsToGrabInMap(bool forcePickUp = false);
         /// <summary>
         /// Check all conditions for deciding if an item is grabbable or not.
         /// </summary>

@@ -349,7 +349,7 @@ namespace LethalInternship.Core.Managers
 
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
             bool isPlayerInside = StartOfRound.Instance.localPlayerController.isInsideFactory;
-            List<GrabbableObject> items = InternManager.Instance.LookingForItemsToGrabInMap();
+            List<GrabbableObject> items = InternManager.Instance.LookingForItemsToGrabInMap(forcePickUp: true);
             foreach (GrabbableObject item in items)
             {
                 if (item == null)
@@ -442,34 +442,33 @@ namespace LethalInternship.Core.Managers
 
         private TargetData BuildTarget(Collider col, Vector3? hitPoint, float distance, float angle)
         {
-            IPointOfInterest? pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
+            // BuildTarget
+            TargetData targetData = new TargetData();
+            targetData.Distance = distance;
 
+            IPointOfInterest? pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
             // No point of interest pointed
             if (pointOfInterest == null)
             {
                 if (IsColliderFromVehicle(col))
                 {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(col.gameObject.GetComponentInParent<VehicleController>());
+                    targetData.PointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(col.gameObject.GetComponentInParent<VehicleController>());
+                    targetData.Root = col.gameObject;
                 }
                 else if (IsColliderFromShip(col))
                 {
                     Transform? shipTransform = GetParentShip(col.gameObject.transform);
                     if (shipTransform != null)
                     {
-                        pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+                        targetData.PointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+                        targetData.Root = col.gameObject;
                     }
                 }
                 else if (hitPoint.HasValue)
                 {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(hitPoint.Value);
+                    targetData.PointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(hitPoint.Value);
                 }
             }
-
-            // BuildTarget
-            TargetData targetData = new TargetData();
-            targetData.Root = col.gameObject;
-            targetData.Distance = distance;
-            targetData.PointOfInterest = pointOfInterest;
 
             // Intern
             IInternAI? internAI = GetInternFromCollider(col);
@@ -482,22 +481,30 @@ namespace LethalInternship.Core.Managers
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
                 targetData.Intern = internAI;
+                targetData.Root = col.gameObject;
                 return targetData;
             }
 
             // Enemy
             EnemyAI enemyAI = col.gameObject.GetComponentInParent<EnemyAI>();
             if (enemyAI != null
-                && !enemyAI.isEnemyDead)
+                && !enemyAI.isEnemyDead
+                && IsEnemyTargetable(enemyAI))
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target enemy ? {enemyAI?.enemyType.enemyName}");
                 targetData.Enemy = enemyAI;
+                targetData.Root = col.gameObject;
                 return targetData;
             }
 
             // Item
-            targetData.Item = col.gameObject.GetComponentInParent<GrabbableObject>();
-            //if (targetData.Item != null) { PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}"); }
+            GrabbableObject item = col.gameObject.GetComponentInParent<GrabbableObject>();
+            if (item != null)
+            {
+                targetData.Item = item;
+                targetData.Root = col.gameObject;
+                //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}");
+            }
 
             return targetData;
         }
@@ -551,6 +558,48 @@ namespace LethalInternship.Core.Managers
             }
 
             return GetParentShip(transform.parent);
+        }
+
+        private bool IsEnemyTargetable(EnemyAI enemy)
+        {
+            switch (enemy.enemyType.enemyName) // using enemyName
+            {
+                // Killable
+                case "Baboon hawk":
+                case "Bunker Spider":
+                case "Bush Wolf":
+                case "Butler":
+                case "Centipede":
+                case "Crawler":
+                case "Flowerman":
+                case "ForestGiant":
+                case "GiantKiwi":
+                case "Hoarding bug":
+                case "Jester":
+                case "Maneater":
+                case "Masked":
+                case "Manticoil":
+                case "MouthDog":
+                case "Nutcracker":
+                case "Puffer":
+                case "Blob":
+                case "RadMech":
+                case "Spring":
+                case "Tulip Snake":
+                    return true;
+
+                default:
+                    // Not killable
+
+                    // "Butler Bees":
+                    // "ImmortalSnail":
+                    // "Red Locust Bees":
+                    // "Earth Leviathan":
+                    // "Clay Surgeon":
+                    // "Docile Locust Bees":
+                    // "Girl":
+                    return false;
+            }
         }
     }
 }

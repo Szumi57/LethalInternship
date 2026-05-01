@@ -41,12 +41,12 @@ namespace LethalInternship.Core.Managers
         }
 
         public TargetedAbility? CurrentTargetedAbility { get; private set; }
+        public TargetedAbility? PreviousTargetedAbility { get; private set; }
 
         private InputActionAsset inputActionAsset = null!;
         private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
 
         private LineRendererUtil LineRendererUtil = null!;
-
 
         private void Awake()
         {
@@ -186,6 +186,11 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private void LateUpdate()
+        {
+            PreviousTargetedAbility = null;
+        }
+
         public void Init()
         {
             // Just to trigger lazy loading with Awake
@@ -305,6 +310,7 @@ namespace LethalInternship.Core.Managers
         {
             if (CurrentTargetedAbility != null)
             {
+                PreviousTargetedAbility = CurrentTargetedAbility;
                 CurrentTargetedAbility = null;
                 CommandContextService.Instance.ExitCommandMode();
                 TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Intern);

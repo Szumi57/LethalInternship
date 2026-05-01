@@ -105,6 +105,9 @@ namespace LethalInternship.Core.UI.Outlines
                                       float rimPower,
                                       float intensity)
         {
+            if (mr.name.Contains("ScanNode"))
+                return;
+
             var mf = mr.GetComponent<MeshFilter>();
             if (!mf || !mf.sharedMesh) return;
 

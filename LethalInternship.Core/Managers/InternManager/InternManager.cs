@@ -97,8 +97,6 @@ namespace LethalInternship.Core.Managers
         {
             if (Instance == this)
             {
-                Debug.Log($"???????????----- OnNetworkDespawn {this.GetInstanceID()} ");
-
                 Instance = null!;
                 InternManagerProvider.Unregister(this);
             }

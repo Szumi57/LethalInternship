@@ -11,5 +11,6 @@
         Ship = 1 << 4,
         Vehicle = 1 << 5,
         FetchItem = 1 << 6,
+        CantAttack = 1 << 7,
     }
 }

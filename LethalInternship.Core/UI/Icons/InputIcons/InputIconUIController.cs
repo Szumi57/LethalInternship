@@ -28,7 +28,7 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
         private RectTransform targetRT = null!;
         private Image targetImage = null!;
         private Image centerImage = null!;
-        private float startScale = 3.5f;
+        private float startScale = 1.5f;
         private float duration = 0.30f;
         private Coroutine startAnim = null!;
         private float animScale = 1f;       // coroutine animation
@@ -45,7 +45,6 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
         void OnEnable()
         {
             StartBlink();
-            PlayStartAnim();
         }
 
         // Start after SetImageOnTop
@@ -129,7 +128,14 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null)
             {
-                distanceScale = 1f;
+                distanceScale = minScale;
+                distanceAlpha = minAlpha;
+                return;
+            }
+            if (target.Value.Root != null)
+            {
+                distanceScale = minScale;
+                distanceAlpha = minAlpha;
                 return;
             }
 
@@ -187,10 +193,10 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
             if (startAnim != null)
                 StopCoroutine(startAnim);
 
-            startAnim = StartCoroutine(SartAnim());
+            startAnim = StartCoroutine(StartAnim());
         }
 
-        IEnumerator SartAnim()
+        IEnumerator StartAnim()
         {
             while (targetRT == null)
             {

@@ -1,5 +1,4 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -124,8 +123,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return false;
 
             ai.SetDestinationToPositionInternAI(hit.position);
-            ai.UpdateDestinationToAgent();
-            DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), ai.Npc.transform.position, hit.position, Color.magenta);
 
             return ai.agent.pathStatus == NavMeshPathStatus.PathComplete;
         }

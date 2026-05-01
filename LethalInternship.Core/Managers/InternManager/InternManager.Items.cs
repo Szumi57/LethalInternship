@@ -70,7 +70,7 @@ namespace LethalInternship.Core.Managers
             return getGrabbableObjectsListTimed.GetGrabbableObjectsList();
         }
 
-        public List<GrabbableObject> LookingForItemsToGrabInMap()
+        public List<GrabbableObject> LookingForItemsToGrabInMap(bool forcePickUp = false)
         {
             var items = new List<GrabbableObject>();
             var grabbableObjectsList = GetGrabbableObjectsList();
@@ -96,7 +96,7 @@ namespace LethalInternship.Core.Managers
                 }
 
                 // Grabbable object ?
-                if (!IsGrabbableObjectGrabbable(grabbableObject))
+                if (!IsGrabbableObjectGrabbable(grabbableObject, forcePickUp))
                 {
                     continue;
                 }

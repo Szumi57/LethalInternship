@@ -24,6 +24,10 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly string TOOLTIP_COMMANDS_ALL = "Commands for all interns : [{0}]";
         public static readonly string TOOLTIP_COMMANDS_ONE = "Commands : [{0}]";
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
+        public static readonly string TOOLTIP_TARGETING_ENEMY = "-> Attack !";
+        public static readonly string TOOLTIP_TARGETING_UNKILLABLE_ENEMY = "Can't attack this enemy !";
+        public static readonly string TOOLTIP_TARGETING_ITEM = "-> Go get this item";
+        public static readonly string TOOLTIP_TARGETING_POSITION = "-> Go there";
 
         public static string[] COMMANDS_BUTTON_STRING = {
             string.Empty,

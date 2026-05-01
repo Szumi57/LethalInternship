@@ -29,5 +29,10 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
         {
             iconGameObject.SetActive(active);
         }
+
+        public void PlayStartAnim()
+        {
+            iconUIController.PlayStartAnim();
+        }
     }
 }

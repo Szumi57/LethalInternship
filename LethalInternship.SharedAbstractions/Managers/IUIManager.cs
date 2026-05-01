@@ -13,7 +13,5 @@ namespace LethalInternship.SharedAbstractions.Managers
         void HideAll();
 
         void InitUI(Transform HUDContainerParent);
-
-        void UpdateCursorTooltipsOfPointedIntern();
     }
 }

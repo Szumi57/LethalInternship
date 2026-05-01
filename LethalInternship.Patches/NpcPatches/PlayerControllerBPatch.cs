@@ -917,9 +917,6 @@ namespace LethalInternship.Patches.NpcPatches
                     }
                 }
             }
-
-            // Cursor tooltips
-            UIManagerProvider.Instance.UpdateCursorTooltipsOfPointedIntern();
         }
 
         /// <summary>

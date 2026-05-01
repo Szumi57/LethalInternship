@@ -30,7 +30,7 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         private bool startFadeRoutineRequested;
         private bool stopFadeRoutineRequested;
         private bool forceVisible;
-        private float fadeDuration = 5f;
+        private float fadeDuration = 10f;
         private float fadeAlpha = 1f;
 
         // Animation
@@ -46,7 +46,8 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
         private float focusInDuration = 0.15f;
         private float focusOutDuration = 0.15f;
 
-        private Coroutine currentAnimationRoutine = null!;
+        private Coroutine currentPingAnimationRoutine = null!;
+        private Coroutine currentFocusAnimationRoutine = null!;
 
         // Start is called before the first frame update
         void Start()
@@ -69,7 +70,9 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             if (stopFadeRoutineRequested)
             {
                 if (fadeRoutine != null)
+                {
                     StopCoroutine(fadeRoutine);
+                }
 
                 fadeRoutine = null!;
                 stopFadeRoutineRequested = false;
@@ -77,16 +80,16 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
 
             if (startPingRoutineRequested)
             {
-                StartNewRoutine(PingRoutine());
+                StartNewPingRoutine();
                 startPingRoutineRequested = false;
             }
 
             if (startFocusRoutineRequested)
             {
                 if (IsIconInCenter)
-                    StartNewRoutine(FocusInRoutine());
+                    StartNewFocusRoutine(FocusInRoutine());
                 else
-                    StartNewRoutine(FocusOutRoutine());
+                    StartNewFocusRoutine(FocusOutRoutine());
 
                 startFocusRoutineRequested = false;
             }
@@ -127,15 +130,13 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             // Size
             if (screenPos.z != 0f)
             {
-                //float size = 1f / screenPos.z * 400f;
-                ////PluginLoggerHook.LogDebug?.Invoke($"size {size}, dist {screenPos.z}");
-                //if (size < 100f) { size = 100f; }
-                //if (size > 180f) { size = 180f; }
+                // alpha with distance
                 float t = Mathf.Clamp01(screenPos.z / 5f);
                 distanceAlpha = Mathf.Pow(t, 0.5f);
 
                 // Size with distance
-                sizeScale = 1f;
+                float size = Mathf.Clamp((1 / screenPos.z) + 0.3f, 0.3f, 1f);
+                sizeScale = size;
             }
 
             // Limit the image to screen borders
@@ -165,15 +166,16 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             float yTop = iconRT.localPosition.y + iconRT.sizeDelta.y / 2;
             float yBottom = iconRT.localPosition.y - iconRT.sizeDelta.y / 2;
 
+            bool wasInCenter = IsIconInCenter;
             IsIconInCenter = xLeft < 0f && xRight > 0f && yTop > 0f && yBottom < 0f;
-            Focus();
+            Focus(wasInCenter != IsIconInCenter);
         }
 
         #region FadeOut
 
         public void FadeOut(float duration)
         {
-            TryStartFadeRoutine(FadeRoutine(1f, 0f, duration));
+            StartFadeRoutine(FadeRoutine(fadeAlpha, 0f, duration));
         }
 
         public void ForceVisible(bool value)
@@ -191,20 +193,22 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             else
             {
                 startFadeRoutineRequested = true;
+                stopFadeRoutineRequested = false;
             }
         }
 
-        private void TryStartFadeRoutine(IEnumerator routine)
+        private void StartFadeRoutine(IEnumerator routine)
         {
-            if (fadeRoutine == null)
-            {
-                fadeRoutine = StartCoroutine(routine);
-            }
+            if (fadeRoutine != null)
+                StopCoroutine(fadeRoutine);
+
+            fadeRoutine = StartCoroutine(routine);
         }
 
         private void StopFade()
         {
             stopFadeRoutineRequested = true;
+            startFadeRoutineRequested = false;
         }
 
         private IEnumerator FadeRoutine(float from, float to, float duration)
@@ -236,17 +240,17 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             startPingRoutineRequested = true;
         }
 
-        public void Focus()
+        public void Focus(bool focus)
         {
-            startFocusRoutineRequested = true;
+            startFocusRoutineRequested = focus;
         }
 
-        private void StartNewRoutine(IEnumerator routine)
+        private void StartNewPingRoutine()
         {
-            if (currentAnimationRoutine != null)
-                StopCoroutine(currentAnimationRoutine);
+            if (currentPingAnimationRoutine != null)
+                StopCoroutine(currentPingAnimationRoutine);
 
-            currentAnimationRoutine = StartCoroutine(routine);
+            currentPingAnimationRoutine = StartCoroutine(PingRoutine());
         }
 
         private IEnumerator PingRoutine()
@@ -257,6 +261,19 @@ namespace LethalInternship.Core.UI.Icons.WorldIcons
             yield return ScaleTo(baseScale * pingUndershoot, pingDuration * 0.3f);
             // return to base
             yield return ScaleTo(baseScale, pingDuration * 0.3f);
+
+            currentPingAnimationRoutine = null!;
+        }
+
+        private void StartNewFocusRoutine(IEnumerator routine)
+        {
+            if (currentPingAnimationRoutine != null)
+                return;
+
+            if (currentFocusAnimationRoutine != null)
+                StopCoroutine(currentFocusAnimationRoutine);
+
+            currentFocusAnimationRoutine = StartCoroutine(routine);
         }
 
         private IEnumerator FocusInRoutine()
