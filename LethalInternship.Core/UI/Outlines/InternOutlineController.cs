@@ -35,6 +35,8 @@ namespace LethalInternship.Core.UI.Outlines
 
             foreach (IInternAI intern in interns)
             {
+                if (intern == null) continue;
+
                 bool shouldOutline;
                 if (forceNoOutlines)
                 {
@@ -92,6 +94,7 @@ namespace LethalInternship.Core.UI.Outlines
 
             foreach (EnemyAI enemy in enemies)
             {
+                if (enemy == null) continue;
 
                 bool shouldOutline;
                 if (forceNoOutlines)
@@ -134,8 +137,14 @@ namespace LethalInternship.Core.UI.Outlines
                                                bool allowMultiple,
                                                bool forceNoOutlines = false)
         {
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
+
             foreach (GameObject item in items)
             {
+                if (item == null) continue;
+
                 GrabbableObject? grabbableObject = item.GetComponent<GrabbableObject>();
                 if (grabbableObject == null)
                 {

@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Interns;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -9,7 +8,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            IInternAI ai = context.InternAI;
+            InternAI ai = context.InternAI;
 
             if (ai.AreHandsFree())
             {

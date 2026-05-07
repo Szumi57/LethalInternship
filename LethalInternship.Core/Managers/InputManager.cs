@@ -328,6 +328,7 @@ namespace LethalInternship.Core.Managers
 
             switch (typeInputAction)
             {
+                // Direct orders
                 case EnumInputAction.FollowMe:
                     new FollowMeAbility().Activate();
                     CommandContextService.Instance.ExitCommandMode();
@@ -337,9 +338,6 @@ namespace LethalInternship.Core.Managers
                     new StayHereAbility().Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
-                    break;
-                case EnumInputAction.PointToAction:
-                    new ContextOrderAbility().Activate();
                     break;
                 case EnumInputAction.GoToShip:
                     new GoToShipAbility().Activate();
@@ -352,16 +350,32 @@ namespace LethalInternship.Core.Managers
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ScavengeToShip:
-                    new ScavengeToShipAbility().Activate();
+                    new ScavengeToDropLocationAbility(EnumLocationGoalTypes.Ship).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.ScavengeToCruiser:
+                    new ScavengeToDropLocationAbility(EnumLocationGoalTypes.Cruiser).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.ScavengeToGatheringPoint:
+                    new ScavengeToDropLocationAbility(EnumLocationGoalTypes.GatheringPoint).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
 
+                // Update option
                 case EnumInputAction.SetToAutoFlee:
                     new SetAutoDefenseAbility(autoDefense: false).Activate();
                     break;
                 case EnumInputAction.SetToAutoDefense:
                     new SetAutoDefenseAbility(autoDefense: true).Activate();
+                    break;
+
+                // Context ability
+                case EnumInputAction.PointToAction:
+                    new ContextOrderAbility().Activate();
                     break;
 
                 // UI

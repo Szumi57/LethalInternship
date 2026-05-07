@@ -1,27 +1,24 @@
 ﻿using LethalInternship.Core.BehaviorTree;
+using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class EnterVehicle : IBTAction
+    public class SetNextDestToCruiser : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            InternAI ai = context.InternAI;
-
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {
-                PluginLoggerHook.LogError?.Invoke("EnterVehicle action, vehicleController is null !");
+                PluginLoggerHook.LogDebug?.Invoke("SetNextDestToCruiser vehicleController not found !");
                 return BehaviourTreeStatus.Failure;
             }
 
-            if (!ai.NpcController.IsControllerInCruiser)
-            {
-                ai.EnterCruiser(vehicleController);
-            }
-
+            // Calculate new destination with updated vehicle location
+            context.PathController.ResetPathAndIndex();
+            context.PathController.SetNewDestination(new DJKVehiclePoint(vehicleController.transform, $"Cruiser drop location"));
             return BehaviourTreeStatus.Success;
         }
     }

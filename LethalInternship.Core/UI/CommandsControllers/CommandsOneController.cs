@@ -64,7 +64,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
             this.currentIdentity = identity;
 
             // Camera focus
-            if (currentIdentity.InternAI != null)
+            if (currentIdentity.InternAI != null
+                && currentIdentity.InternAI.Npc != null)
             {
                 CameraFocusUI.Instance.FocusOnIntern(currentIdentity.InternAI.Npc.transform);
             }

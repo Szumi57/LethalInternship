@@ -4,6 +4,7 @@ using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -74,13 +75,31 @@ namespace LethalInternship.Core.Interns.AI
             SetCommand(EnumCommandTypes.FollowPlayer, playVoice ? EnumVoicesState.OrderedToFollow : EnumVoicesState.None);
             this.PointOfInterest = null;
 
+            Debug.Log($"{Environment.StackTrace}");
+
             // AI
             BTController.ResetContextNewCommandFollowPlayer();
         }
 
-        public void SetCommandToScavenging()
+        public void SetCommandToScavengingToShip()
         {
-            SetCommand(EnumCommandTypes.ScavengingMode, EnumVoicesState.NowScavenging);
+            SetCommand(EnumCommandTypes.ScavengingToShip, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandToScavenging();
+        }
+        public void SetCommandToScavengingToCruiser()
+        {
+            SetCommand(EnumCommandTypes.ScavengingToCruiser, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandToScavenging();
+        }
+        public void SetCommandToScavengingToGatheringPoint()
+        {
+            SetCommand(EnumCommandTypes.ScavengingToGatheringPoint, EnumVoicesState.NowScavenging);
             this.PointOfInterest = null;
 
             // AI
@@ -222,6 +241,24 @@ namespace LethalInternship.Core.Interns.AI
         private void SetAutoDefenseModeClientRpc(bool autoDefense)
         {
             this.InternIdentity.SetAutoDefense(autoDefense);
+        }
+
+        public void OnCollisionWithCruiser()
+        {
+            this.BTController.ResetContext();
+            if (this.CurrentCommand == EnumCommandTypes.ScavengingToCruiser
+                && !this.AreFreeSlotsAvailable()
+                && !this.npcController.IsControllerInCruiser)
+            {
+                VehicleController? vehicleController = InternManager.Instance.VehicleController;
+                if (vehicleController == null)
+                {
+                    PluginLoggerHook.LogError?.Invoke("EnterVehicle action, vehicleController is null !");
+                    return;
+                }
+
+                this.EnterCruiser(vehicleController);
+            }
         }
     }
 }

@@ -132,7 +132,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
 
         // Cruiser vehicle
-        public static readonly float DISTANCE_TO_CRUISER = 6f;
+        public static readonly float DISTANCE_TO_CRUISER = 10f;
 
         // Front
         public static readonly Vector3 LEFT_FRONT_POS_CRUISER = new Vector3(-0.75f, -1f, 5.5f);

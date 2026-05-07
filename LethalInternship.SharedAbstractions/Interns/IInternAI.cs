@@ -30,7 +30,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         IPointOfInterest? GetPointOfInterest();
         void AssignOrder(Order order);
         void SetCommandToFollowPlayer(bool playVoice = true);
-        void SetCommandToScavenging();
+        void SetCommandToScavengingToShip();
+        void SetCommandToScavengingToCruiser();
+        void SetCommandToScavengingToGatheringPoint();
         void SetCommandToFetchItem(GrabbableObject itemToFetch);
         void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);
         void SetCommandToWaitForCommand(bool wait);
@@ -38,6 +40,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         EnumTempCommandFeedback TempCommandFeedback { get; }
         void SetCommandFeedback(EnumTempCommandFeedback commandFeedback);
+        void OnCollisionWithCruiser();
 
         void AdaptController(PlayerControllerB playerControllerB);
         void UpdateController();

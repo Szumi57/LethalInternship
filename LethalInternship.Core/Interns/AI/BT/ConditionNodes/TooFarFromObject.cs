@@ -6,13 +6,16 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class TooFarFromObject : IBTCondition
     {
-        private const int STUCK_MAX = 10;
+        private const int STUCK_MAX = 25;
         private int stuckCounter;
         private Vector3 lastInternPos;
 
         public bool Condition(BTContext context)
         {
             InternAI ai = context.InternAI;
+
+            if (IsInternStuck(ai)) // Close enough
+                return false;
 
             if (context.TargetItem == null)
             {
@@ -35,30 +38,34 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 stuckCounter = 0;
                 return false;
             }
-            // Too far from object
 
+            // Too far from object
+            return true;
+        }
+
+        private bool IsInternStuck(InternAI ai)
+        {
             // Stuck ?
-            if ((lastInternPos - ai.Npc.transform.position).sqrMagnitude < 0.5f * 0.5f)
+            // -------
+            if ((lastInternPos - ai.Npc.transform.position).sqrMagnitude < 0.1f * 0.1f)
             {
                 stuckCounter++;
-                //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} stuckCounter {stuckCounter}");
+                //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} stuckCounter {stuckCounter} {(lastInternPos - ai.Npc.transform.position).magnitude}");
             }
-            else
-            {
-                // Not stuck
+            else // Not stuck
                 stuckCounter = 0;
-            }
+
             lastInternPos = ai.Npc.transform.position;
+
             if (stuckCounter > STUCK_MAX)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} TooFarFromObject stuck, bypass distance check");
                 stuckCounter = 0;
-                // Close enough from object
-                return false;
+                // Close enough from position
+                return true;
             }
 
-            // Too far from object
-            return true;
+            return false;
         }
     }
 }

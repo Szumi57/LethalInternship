@@ -33,7 +33,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             TimedCalculatePathResponse path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointTo(ai.transform.position));
             if (path.PathStatus == NavMeshPathStatus.PathComplete)
             {
-                //PluginLoggerHook.LogDebug?.Invoke($"- Destination reachable");
                 DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
                 // Go directly to destination
                 context.PathController.SetNextPointToDestination();
@@ -45,6 +44,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
+                //Debug.Log($"CalculatePath !path.IsDirectlyReachable {context.PathController.GetCurrentPointPos(ai.transform.position)}");
                 CalculatePath(context);
                 return BehaviourTreeStatus.Success;
             }
@@ -71,6 +71,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
                 {
+                    //Debug.Log($"CalculatePath PathStatus == NavMeshPathStatus.PathPartial");
                     CalculatePath(context);
                 }
 
@@ -86,6 +87,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
                 {
+                    //Debug.Log($"CalculatePath avMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathPartial");
                     CalculatePath(context);
                 }
 
@@ -95,6 +97,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Need to calculate further
+            //Debug.Log($"end CalculatePath path.PathStatus {path.PathStatus} , ai.agent.path.status {ai.agent.path.status}  {context.PathController.GetCurrentPointPos(ai.transform.position)}");
             CalculatePath(context);
             return BehaviourTreeStatus.Success;
         }
@@ -132,13 +135,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ------- {graph}");
+            PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ------- {graph}");
 
             // Get full path
             currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints));
 
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ======= {currentContext.PathController.GetFullPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ======= {currentContext.PathController.GetFullPathString()}");
         }
     }
 }

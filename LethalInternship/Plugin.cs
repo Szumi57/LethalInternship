@@ -326,6 +326,7 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ItemDropShipPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ManualCameraRendererPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ShipTeleporterPatch"));
+            _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.VehicleCollisionTriggerPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.VehicleControllerPatch"));
 
             patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ShipTeleporterUtils")?.GetMethod("Init")?.Invoke(null, null);

@@ -3,12 +3,12 @@ using LethalInternship.SharedAbstractions.Interns;
 
 namespace LethalInternship.Core.CommandsSystem.Orders
 {
-    public class ScavengeToShipOrder : Order
+    public class ScavengeToCruiserOrder : Order
     {
         public override void ApplyTo(IInternAI intern)
         {
             // Give order
-            intern.SetCommandToScavengingToShip();
+            intern.SetCommandToScavengingToCruiser();
         }
     }
 }

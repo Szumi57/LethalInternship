@@ -96,7 +96,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
-                { "SetNextDestToShip", new SetNextDestToShip() },
+                { "SetNextDestDropLocationCruiser", new SetNextDestDropLocationCruiser() },
+                { "SetNextDestDropLocationPos", new SetNextDestDropLocationPos() },
+                { "SetNextDestToCruiser", new SetNextDestToCruiser() },
                 { "UnequipWeapon", new EquipUnequipWeapon(equip: false) },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() },
                 { "VoiceScavenging", new VoiceScavenging() },
@@ -114,7 +116,9 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsCommandGoFetchItem", new IsCommandThis(EnumCommandTypes.GoFetchItem) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
-                { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
+                { "IsCommandScavengingMode", new IsCommandThis(new EnumCommandTypes[] { EnumCommandTypes.ScavengingToShip, EnumCommandTypes.ScavengingToCruiser, EnumCommandTypes.ScavengingToGatheringPoint }) },
+                { "IsCommandScavengingToPos", new IsCommandThis(new EnumCommandTypes[] { EnumCommandTypes.ScavengingToShip, EnumCommandTypes.ScavengingToGatheringPoint }) },
+                { "IsCommandScavengingToCruiser", new IsCommandThis(EnumCommandTypes.ScavengingToCruiser) },
                 { "IsCommandWaitForCommand", new IsCommandThis(EnumCommandTypes.WaitForCommand) },
                 { "IsCommandKill", new IsCommandThis(EnumCommandTypes.Kill) },
                 { "IsInDanger", new IsInDanger() },
@@ -124,10 +128,10 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
                 { "IsTargetItemValid", new IsTargetItemValid() },
                 { "TargetValid", new TargetValid() },
+                { "TooFarFromCruiser", new TooFarFromCruiser() },
                 { "TooFarFromEnemy", new TooFarFromEnemy() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
-                { "TooFarFromVehicle", new TooFarFromVehicle() }
             };
         }
 
@@ -170,6 +174,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 return;
             }
 
+            BTContext.PathController.ResetPathAndIndex();
             BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
@@ -178,11 +183,13 @@ namespace LethalInternship.Core.Interns.AI.BT
         {
             BTContext.TargetItem = null;
             BTContext.cancelScavenging = false;
+            BTContext.PathController.ResetPathAndIndex();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
         public void ResetContextNewCommandGoFetchItem(GrabbableObject itemToFetch)
         {
             BTContext.TargetItem = itemToFetch;
+            BTContext.PathController.ResetPathAndIndex();
             BTContext.PathController.SetNewDestination(new DJKItemPoint(itemToFetch.transform,
                                                                         BTContext.InternAI.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale,
                                                                         itemToFetch.itemProperties.itemName));
@@ -194,6 +201,12 @@ namespace LethalInternship.Core.Interns.AI.BT
             BTContext.PathController.SetNewDestination(new DJKMovingPoint(enemy.transform, $"targetEnemy {enemy.enemyType.enemyName}"));
             BTContext.CurrentEnemy = enemy;
             BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+
+        public void ResetContext()
+        {
+            BTContext.PathController.ResetPathAndIndex();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 
@@ -349,7 +362,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                     .End()
 
                     .Sequence("Go to vehicle")
-                        .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
+                        .Condition("<TooFarFromPos>", t => conditions["TooFarFromPos"].Condition(BTContext))
                         .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
                         .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
                     .End()
@@ -406,12 +419,16 @@ namespace LethalInternship.Core.Interns.AI.BT
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                        .Selector("Return to ship or scavenge ?")
+                        .Selector("Return to drop location or scavenge ?")
                             .Sequence("Look for items if hands free")
                                 .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
-                                .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
                                 .Selector("Cancel scavenging ?")
+                                    .Sequence("Intern in vehicle, exit")
+                                        .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                                        .Do("exitVehicle", t => actions["ExitVehicle"].Action(BTContext))
+                                    .End()
                                     .Sequence("Go grab if item found")
+                                        .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
                                         .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
                                         .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
                                         .Selector("Go to object or grab")
@@ -423,12 +440,39 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .End()
                             .End()
 
-                            .Sequence("Return to ship")
-                                .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
+                            .Sequence("Drop to drop location")
                                 .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
-                                .Selector("Go to position or drop object")
-                                    .Splice(CreateSubTreeGoToPosition())
-                                    .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
+
+                                .Selector("Drop location to where ?")
+                                    .Sequence("Drop location position")
+                                        .Condition("<IsCommandScavengingToPos>", t => conditions["IsCommandScavengingToPos"].Condition(BTContext))
+                                        .Do("SetNextDestDropLocationPos", t => actions["SetNextDestDropLocationPos"].Action(BTContext))
+                                        .Selector("Go to position or drop object")
+                                            .Splice(CreateSubTreeGoToPosition())
+                                            .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
+                                        .End()
+                                    .End()
+
+                                    .Sequence("Drop location cruiser")
+                                        .Condition("<IsCommandScavengingToCruiser>", t => conditions["IsCommandScavengingToCruiser"].Condition(BTContext))
+                                        .Do("SetNextDestDropLocationCruiser", t => actions["SetNextDestDropLocationCruiser"].Action(BTContext))
+                                        .Selector("Go to position or drop in cruiser")
+                                            .Sequence("Drop items")
+                                                .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                                                .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
+                                            .End()
+                                            .Sequence("Go to position if too far")
+                                                .Condition("<tooFarFromPos>", t => conditions["TooFarFromPos"].Condition(BTContext))
+                                                .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                                                .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
+                                            .End()
+                                            .Sequence("Too far from cruiser ?")
+                                                .Condition("<TooFarFromCruiser>", t => conditions["TooFarFromCruiser"].Condition(BTContext))
+                                                .Do("SetNextDestToCruiser", t => actions["SetNextDestToCruiser"].Action(BTContext))
+                                            .End()
+                                            .Do("EnterVehicle", t => actions["EnterVehicle"].Action(BTContext))
+                                        .End()
+                                    .End()
                                 .End()
                             .End()
                         .End()

@@ -7,7 +7,9 @@
         GoToVehicle,
         GoToPosition,
         WaitForCommand,
-        ScavengingMode,
+        ScavengingToShip,
+        ScavengingToCruiser,
+        ScavengingToGatheringPoint,
         GoFetchItem,
         Kill,
     }
