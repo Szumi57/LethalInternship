@@ -35,8 +35,13 @@ namespace LethalInternship.SharedAbstractions.Interns
         void SetCommandToScavengingToGatheringPoint();
         void SetCommandToFetchItem(GrabbableObject itemToFetch);
         void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);
-        void SetCommandToWaitForCommand(bool wait);
         void SetCommandToAttackEnemy(EnemyAI enemy);
+        void SetCommandToDropToShip();
+        void SetCommandToDropToGatheringPoint();
+        void SetCommandToDropToCruiser();
+        void SetCommandToUnloadFromCruiser();
+        void SetCommandToUnloadFromGatheringPoint();
+        void SetCommandToWaitForCommand(bool wait);
 
         EnumTempCommandFeedback TempCommandFeedback { get; }
         void SetCommandFeedback(EnumTempCommandFeedback commandFeedback);
@@ -101,6 +106,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         Action<IInternAI>? OnHeldItemsChanged { get; set; }
         List<GrabbableObject> GetHeldGrabbableObjects();
         GrabbableObject? GetHeldWeapon();
+        GrabbableObject? GetCurrentlyHeldItem();
         int GetNbHeldItems();
         void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
         void GrabItem(GrabbableObject grabbableObject);

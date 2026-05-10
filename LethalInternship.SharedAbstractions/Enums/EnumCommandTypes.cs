@@ -12,5 +12,10 @@
         ScavengingToGatheringPoint,
         GoFetchItem,
         Kill,
+        DropAllItemsToShip,
+        DropAllItemsOnGatheringPoint,
+        DropAllItemsInCruiser,
+        UnloadCruiser,
+        UnloadGatheringPoint
     }
 }

@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.CoroutineControllers
@@ -33,7 +32,7 @@ namespace LethalInternship.Core.Interns.AI.CoroutineControllers
             if (shouldStopCoroutine
                 && coroutine != null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("CoroutineController stops coroutine");
+                //PluginLoggerHook.LogDebug?.Invoke("CoroutineController stops coroutine");
                 ai.StopCoroutine(coroutine);
                 coroutine = null;
             }

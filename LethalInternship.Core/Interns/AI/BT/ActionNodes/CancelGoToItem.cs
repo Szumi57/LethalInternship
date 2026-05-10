@@ -30,7 +30,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     }
                     else
                     {
-                        // else return scavenged items to ship
+                        // else return scavenged items
                         PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} context.TargetItem == null, context.nbItemsToCheck == 0, !ai.AreHandsFree()");
                         return BehaviourTreeStatus.Failure;
                     }

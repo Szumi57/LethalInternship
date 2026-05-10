@@ -27,5 +27,10 @@
         ReturnToAll,
         PreviousIntern,
         NextIntern,
+        UnloadCruiser,
+        UnloadGatheringPoint,
+        DropAllItemsInShip,
+        DropAllItemsOnGatheringPoint,
+        DropAllItemsInCruiser,
     }
 }

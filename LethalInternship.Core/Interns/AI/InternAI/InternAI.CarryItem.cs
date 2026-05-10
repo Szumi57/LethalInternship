@@ -29,7 +29,7 @@ namespace LethalInternship.Core.Interns.AI
 
         private Coroutine grabObjectCoroutine = null!;
         private Coroutine? dropAllObjectsCoroutine = null!;
-        private bool dropAllObjectsCoroutineRunning = false;
+        public bool DropAllObjectsCoroutineRunning { get; private set; }
         private HeldItem heldItemTemp = null!;
 
         /// <summary>
@@ -100,6 +100,11 @@ namespace LethalInternship.Core.Interns.AI
         public GrabbableObject? GetHeldWeapon()
         {
             return HeldItems.GetHeldWeapon();
+        }
+
+        public GrabbableObject? GetCurrentlyHeldItem()
+        {
+            return HeldItems.GetCurrentlyHeldItem(ignoreWeapon: true);
         }
 
         private bool ShouldUseTwoHandedHoldAnim(bool ignoreHeldWeapon = true)
@@ -263,7 +268,8 @@ namespace LethalInternship.Core.Interns.AI
 
             if (!itemGiven)
             {
-                if (!InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject, forcePickUp: this.CurrentCommand == EnumCommandTypes.GoFetchItem))
+                if (!InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject, forcePickUp: this.CurrentCommand == EnumCommandTypes.GoFetchItem
+                                                                                                  || this.CurrentCommand == EnumCommandTypes.UnloadCruiser))
                 {
                     PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
                     return;
@@ -414,6 +420,21 @@ namespace LethalInternship.Core.Interns.AI
             bool matchRotationOfParent = true;
             Vector3 vector;
             NetworkObject physicsRegionOfDroppedObject = itemToDrop.GetPhysicsRegionOfDroppedObject(NpcController.Npc, out vector);
+
+            // Check if intern in cruiser
+            if (this.npcController.IsControllerInCruiser
+                && physicsRegionOfDroppedObject == null
+                && InternManager.Instance.VehicleController != null)
+            {
+                PlayerPhysicsRegion playerPhysicsRegion = InternManager.Instance.VehicleController.physicsRegion;
+                Debug.Log($"playerPhysicsRegion {playerPhysicsRegion}");
+                if (playerPhysicsRegion != null && playerPhysicsRegion.allowDroppingItems)
+                {
+                    Debug.Log($"physicsRegionOfDroppedObject {physicsRegionOfDroppedObject}");
+                    physicsRegionOfDroppedObject = playerPhysicsRegion.parentNetworkObject;
+                }
+            }
+
             if (physicsRegionOfDroppedObject != null)
             {
                 placePosition = vector;
@@ -666,7 +687,7 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (waitBetweenItems)
             {
-                if (!dropAllObjectsCoroutineRunning)
+                if (!DropAllObjectsCoroutineRunning)
                 {
                     if (dropAllObjectsCoroutine != null)
                     {
@@ -688,7 +709,7 @@ namespace LethalInternship.Core.Interns.AI
 
         private IEnumerator DropAllItemsCoroutine(EnumOptionsGetItems dropOptions)
         {
-            dropAllObjectsCoroutineRunning = true;
+            DropAllObjectsCoroutineRunning = true;
             GrabbableObject? itemToDrop = ChooseLastPickedUpItem(dropOptions);
             while (itemToDrop != null)
             {
@@ -696,7 +717,7 @@ namespace LethalInternship.Core.Interns.AI
                 yield return new WaitForSeconds(0.4f);
                 itemToDrop = ChooseLastPickedUpItem(dropOptions);
             }
-            dropAllObjectsCoroutineRunning = false;
+            DropAllObjectsCoroutineRunning = false;
         }
 
         private Vector3 DropItemAheadOfPlayer(GrabbableObject grabbableObject, PlayerControllerB player)

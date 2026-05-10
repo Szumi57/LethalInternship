@@ -7,11 +7,11 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
 {
     public class ScavengeToDropLocationAbility : Ability
     {
-        private readonly EnumLocationGoalTypes dropLocation;
+        private readonly EnumCommandTypes dropLocation;
 
         public override bool RequiresTargeting => false;
 
-        public ScavengeToDropLocationAbility(EnumLocationGoalTypes dropLocation)
+        public ScavengeToDropLocationAbility(EnumCommandTypes dropLocation)
         {
             this.dropLocation = dropLocation;
         }
@@ -20,15 +20,15 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
         {
             switch (dropLocation)
             {
-                case EnumLocationGoalTypes.None:
+                case EnumCommandTypes.None:
                     break;
-                case EnumLocationGoalTypes.Ship:
+                case EnumCommandTypes.ScavengingToShip:
                     InternManager.Instance.ExecuteOrder(new ScavengeToShipOrder());
                     break;
-                case EnumLocationGoalTypes.Cruiser:
+                case EnumCommandTypes.ScavengingToCruiser:
                     InternManager.Instance.ExecuteOrder(new ScavengeToCruiserOrder());
                     break;
-                case EnumLocationGoalTypes.GatheringPoint:
+                case EnumCommandTypes.ScavengingToGatheringPoint:
                     InternManager.Instance.ExecuteOrder(new ScavengeToGatheringPointOrder());
                     break;
             }

@@ -12,8 +12,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             if (ai.AreHandsFree())
             {
-                PluginLoggerHook.LogError?.Invoke("DropItem action failed, no item held !");
-                return BehaviourTreeStatus.Failure;
+                PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DropAllItems action failed, no item held ! SetCommandToFollowPlayer");
+                ai.SetCommandToFollowPlayer(playVoice: false);
+                return BehaviourTreeStatus.Success;
             }
 
             EnumOptionsGetItems options = EnumOptionsGetItems.IgnoreWeapon;

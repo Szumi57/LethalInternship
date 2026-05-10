@@ -6,7 +6,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class TooFarFromPos : IBTCondition
     {
-        private const int STUCK_MAX = 25;
+        private const int STUCK_MAX = 20;
         private int stuckCounter;
         private Vector3 lastInternPos;
 

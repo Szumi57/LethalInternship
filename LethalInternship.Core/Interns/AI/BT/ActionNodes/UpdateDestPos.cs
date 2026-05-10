@@ -2,12 +2,13 @@
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class SetNextDestDropLocationPos : IBTAction
+    public class UpdateDestPos : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -15,7 +16,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             switch (ai.CurrentCommand)
             {
-                case SharedAbstractions.Enums.EnumCommandTypes.ScavengingToShip:
+                case EnumCommandTypes.ScavengingToShip:
+                case EnumCommandTypes.DropAllItemsToShip:
+                case EnumCommandTypes.UnloadCruiser:
+                case EnumCommandTypes.UnloadGatheringPoint:
                     Transform? shipTransform = InternManager.Instance.ShipTransform;
                     if (shipTransform == null)
                     {
@@ -25,7 +29,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     context.PathController.SetNewDestination(new DJKStaticPoint(ShipInterestPoint.GetShipPoint(shipTransform), $"Ship drop location"));
 
                     break;
-                case SharedAbstractions.Enums.EnumCommandTypes.ScavengingToGatheringPoint:
+                case EnumCommandTypes.ScavengingToGatheringPoint:
 
                     Debug.Log("SetNextDestToDropLocation EnumDropLocation.GatheringPoint not implemented !!!!!!!!!!!!!");
                     break;

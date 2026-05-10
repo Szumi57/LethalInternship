@@ -5,20 +5,18 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class SetNextDestToCruiser : IBTAction
+    public class UpdateDestCruiser : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {
-                PluginLoggerHook.LogDebug?.Invoke("SetNextDestToCruiser vehicleController not found !");
+                PluginLoggerHook.LogDebug?.Invoke("SetNextDestToDropLocation vehicleController not found !");
                 return BehaviourTreeStatus.Failure;
             }
-
-            // Calculate new destination with updated vehicle location
-            context.PathController.ResetPathAndIndex();
             context.PathController.SetNewDestination(new DJKVehiclePoint(vehicleController.transform, $"Cruiser drop location"));
+
             return BehaviourTreeStatus.Success;
         }
     }

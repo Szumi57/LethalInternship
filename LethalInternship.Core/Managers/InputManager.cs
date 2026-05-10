@@ -349,18 +349,57 @@ namespace LethalInternship.Core.Managers
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
+
+                // Drop item
+                case EnumInputAction.DropItem:
+                    new DropHereAbility(dropAll: false).Activate();
+                    break;
+                case EnumInputAction.DropAllItems:
+                    new DropHereAbility(dropAll: true).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.DropAllItemsInShip:
+                    new DropToAbility(EnumCommandTypes.DropAllItemsToShip).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.DropAllItemsOnGatheringPoint:
+                    new DropToAbility(EnumCommandTypes.DropAllItemsOnGatheringPoint).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.DropAllItemsInCruiser:
+                    new DropToAbility(EnumCommandTypes.DropAllItemsInCruiser).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+
+                // Unload
+                case EnumInputAction.UnloadCruiser:
+                    new UnloadFromAbility(EnumCommandTypes.UnloadCruiser).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.UnloadGatheringPoint:
+                    new UnloadFromAbility(EnumCommandTypes.UnloadGatheringPoint).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+
+                // Scavenge
                 case EnumInputAction.ScavengeToShip:
-                    new ScavengeToDropLocationAbility(EnumLocationGoalTypes.Ship).Activate();
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToShip).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ScavengeToCruiser:
-                    new ScavengeToDropLocationAbility(EnumLocationGoalTypes.Cruiser).Activate();
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToCruiser).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ScavengeToGatheringPoint:
-                    new ScavengeToDropLocationAbility(EnumLocationGoalTypes.GatheringPoint).Activate();
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToGatheringPoint).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;

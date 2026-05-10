@@ -59,7 +59,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             else
             {
                 Vector3 currentPointPos = DJKPointsPath[IndexCurrentPoint - 1].GetNeighborPos(DJKPointsPath[IndexCurrentPoint].Id);
-                return DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(currentPointPos);
+                Vector3 newPointPos = DJKPointsPath[IndexCurrentPoint].GetClosestPointTo(currentPointPos);
+                if ((currentPointPos - newPointPos).sqrMagnitude > 1)
+                {
+                    return newPointPos;
+                }
+
+                return currentPointPos;
             }
         }
 

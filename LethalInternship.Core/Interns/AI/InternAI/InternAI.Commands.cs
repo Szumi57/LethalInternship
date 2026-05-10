@@ -4,7 +4,6 @@ using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
-using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -75,8 +74,6 @@ namespace LethalInternship.Core.Interns.AI
             SetCommand(EnumCommandTypes.FollowPlayer, playVoice ? EnumVoicesState.OrderedToFollow : EnumVoicesState.None);
             this.PointOfInterest = null;
 
-            Debug.Log($"{Environment.StackTrace}");
-
             // AI
             BTController.ResetContextNewCommandFollowPlayer();
         }
@@ -123,6 +120,49 @@ namespace LethalInternship.Core.Interns.AI
             // AI
             BTController.ResetContextAttackEnemy(enemy);
         }
+
+        public void SetCommandToDropToShip()
+        {
+            SetCommand(EnumCommandTypes.DropAllItemsToShip, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandDropTo();
+        }
+        public void SetCommandToDropToGatheringPoint()
+        {
+            SetCommand(EnumCommandTypes.DropAllItemsOnGatheringPoint, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandDropTo();
+        }
+        public void SetCommandToDropToCruiser()
+        {
+            SetCommand(EnumCommandTypes.DropAllItemsInCruiser, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandDropTo();
+        }
+
+        public void SetCommandToUnloadFromCruiser()
+        {
+            SetCommand(EnumCommandTypes.UnloadCruiser, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandUnloadFrom();
+        }
+        public void SetCommandToUnloadFromGatheringPoint()
+        {
+            SetCommand(EnumCommandTypes.UnloadGatheringPoint, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandUnloadFrom();
+        }
+
 
         private void SetCommand(EnumCommandTypes command, EnumVoicesState voiceCommand)
         {
@@ -246,18 +286,38 @@ namespace LethalInternship.Core.Interns.AI
         public void OnCollisionWithCruiser()
         {
             this.BTController.ResetContext();
-            if (this.CurrentCommand == EnumCommandTypes.ScavengingToCruiser
-                && !this.AreFreeSlotsAvailable()
-                && !this.npcController.IsControllerInCruiser)
-            {
-                VehicleController? vehicleController = InternManager.Instance.VehicleController;
-                if (vehicleController == null)
-                {
-                    PluginLoggerHook.LogError?.Invoke("EnterVehicle action, vehicleController is null !");
-                    return;
-                }
 
+            VehicleController? vehicleController = InternManager.Instance.VehicleController;
+            if (vehicleController == null)
+                return;
+
+            if (this.npcController.IsControllerInCruiser)
+                return;
+
+            if (this.CurrentCommand == EnumCommandTypes.GoToVehicle)
+            {
                 this.EnterCruiser(vehicleController);
+                return;
+            }
+
+            if (this.CurrentCommand == EnumCommandTypes.ScavengingToCruiser
+                && !this.AreFreeSlotsAvailable())
+            {
+                this.EnterCruiser(vehicleController);
+                return;
+            }
+
+            if (this.CurrentCommand == EnumCommandTypes.UnloadCruiser
+                && this.BTController.GetTargetItem() != null)
+            {
+                this.EnterCruiser(vehicleController);
+                return;
+            }
+
+            if (this.CurrentCommand == EnumCommandTypes.DropAllItemsInCruiser)
+            {
+                this.EnterCruiser(vehicleController);
+                return;
             }
         }
     }
