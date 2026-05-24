@@ -11,6 +11,6 @@
         public static readonly bool SPAWN_BUSH_WOLVES_FOR_DEBUG = false;
         public static readonly bool SPAWN_MINESHAFT_FOR_DEBUG = false;
         public static readonly bool TEST_MORE_THAN_X_PLAYER_BYPASS = false;
-        public static readonly bool ALLOW_COMMANDS_ALWAYS = true;
+        public static readonly bool ALLOW_COMMANDS_ALWAYS = false;
     }
 }

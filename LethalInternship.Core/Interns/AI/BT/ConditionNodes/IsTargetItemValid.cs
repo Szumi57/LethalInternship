@@ -12,7 +12,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
                 return false;
             }
             if (!InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem, forcePickUp: context.InternAI.CurrentCommand == EnumCommandTypes.GoFetchItem
-                                                                                                 || context.InternAI.CurrentCommand == EnumCommandTypes.UnloadCruiser))
+                                                                                                 || context.InternAI.CurrentCommand == EnumCommandTypes.UnloadCruiser
+                                                                                                 || context.InternAI.CurrentCommand == EnumCommandTypes.UnloadGatheringPoint))
             {
                 return false;
             }

@@ -25,6 +25,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static LethalInternship.Core.Managers.TargetingManager;
 using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.Managers
@@ -157,13 +158,19 @@ namespace LethalInternship.Core.Managers
             List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
             WorldIconUI worldIcon;
             // Show other already active icons
-            var pointsOfInterest = internsOwned
+            var pointsOfInterestToShow = internsOwned
                          .Where(y => y.GetPointOfInterest() != null)
                          .Select(x => x.GetPointOfInterest()!)
-                         .Distinct();
-            foreach (IPointOfInterest pointOfInterest in pointsOfInterest)
+                         .Distinct().ToList();
+            if (InternManager.Instance.GatheringPoint != null)
+                pointsOfInterestToShow.Add(InternManager.Instance.GatheringPoint);
+
+            foreach (IPointOfInterest pointOfInterest in pointsOfInterestToShow)
             {
-                //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest}");
+                //Debug.Log($"uimanager pointOfInterest GetUIKey {pointOfInterestRendererService.GetIconUIInfos(pointOfInterest).GetUIKey()}");
+                //foreach (var ip in pointOfInterest.GetListInterestPoints())
+                //    Debug.Log($"uimanager pointOfInterest ip {ip.GetType()}");
+
                 worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
                 worldIcon.SetPositionUI(pointOfInterestRendererService.GetUIIcon(pointOfInterest));
                 worldIcon.SetIconActive(true);
@@ -183,7 +190,7 @@ namespace LethalInternship.Core.Managers
                 }
             }
 
-            pointOfInterestsAlreadyDisplayed = pointsOfInterest.ToList();
+            pointOfInterestsAlreadyDisplayed = pointsOfInterestToShow.ToList();
 
             // Clear remaining icons
             worldIconUIPool.DisableOtherIcons();
@@ -216,6 +223,7 @@ namespace LethalInternship.Core.Managers
             interestPointRendererRegistery.Register(new PositionInterestPointRenderer());
             interestPointRendererRegistery.Register(new VehicleInterestPointRenderer());
             interestPointRendererRegistery.Register(new ShipInterestPointRenderer());
+            interestPointRendererRegistery.Register(new GatheringPointRenderer());
 
             pointOfInterestRendererService = new PointOfInterestRendererService(interestPointRendererRegistery);
 
@@ -314,10 +322,30 @@ namespace LethalInternship.Core.Managers
                 else
                     return EnumIconImagesTypes.CantAttack;
             }
-            else if (target.Value.PointOfInterest != null)
+            else if (TargetingManager.Instance.ActiveSearch.HasFlag(TargetType.GatheringPoint))
             {
-                IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointOfInterest);
+                return EnumIconImagesTypes.GatheringPoint;
+            }
+            else if (target.Value.PointedPointOfInterest != null)
+            {
+                IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointedPointOfInterest);
                 return iconUIInfos.IconImagesTypes;
+            }
+            else
+            {
+                RaycastHit targetHit = target.Value.RaycastHit;
+                if (TargetingManager.Instance.IsColliderFromVehicle(targetHit.collider))
+                {
+                    return EnumIconImagesTypes.Vehicle;
+                }
+                else if (TargetingManager.Instance.IsColliderFromShip(targetHit.collider))
+                {
+                    Transform? shipTransform = TargetingManager.Instance.GetParentShip(targetHit.collider.gameObject.transform);
+                    if (shipTransform != null)
+                        return EnumIconImagesTypes.Ship;
+                }
+                else
+                    return EnumIconImagesTypes.Position;
             }
 
             return EnumIconImagesTypes.None;
@@ -453,7 +481,7 @@ namespace LethalInternship.Core.Managers
                     else
                         tooltipsToAdd.Add(("targetingUnkillableEnemy", UIConst.TOOLTIP_TARGETING_UNKILLABLE_ENEMY));
                 }
-                else if (target.Value.PointOfInterest != null)
+                else if (target.Value.PointedPointOfInterest != null)
                 {
                     tooltipsToAdd.Add(("targetingPosition", UIConst.TOOLTIP_TARGETING_POSITION));
                 }

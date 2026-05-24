@@ -16,7 +16,7 @@ namespace LethalInternship.Core.CommandsSystem.Orders
                 return;
             }
 
-            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(vehicleController);
+            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrNewVehiclePoint(vehicleController);
             // Give order
             intern.SetCommandTo(pointOfInterest);
         }

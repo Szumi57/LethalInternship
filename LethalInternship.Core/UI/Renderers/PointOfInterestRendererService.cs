@@ -18,7 +18,8 @@ namespace LethalInternship.Core.UI.Renderers
         {
             typeof(PositionInterestPoint),
             typeof(VehicleInterestPoint),
-            typeof(ShipInterestPoint)
+            typeof(ShipInterestPoint),
+            typeof(GatheringInterestPoint)
         };
 
         public PointOfInterestRendererService(InterestPointRendererRegistery registery)
@@ -29,7 +30,6 @@ namespace LethalInternship.Core.UI.Renderers
 
         public IIconUIInfos GetIconUIInfos(IPointOfInterest pointOfInterest)
         {
-            var imagesPrefabs = new List<GameObject>();
             EnumIconImagesTypes iconImagesTypes = EnumIconImagesTypes.None;
 
             Dictionary<Type, IInterestPoint> dictTypeInterestPoint = pointOfInterest.GetDictTypeInterestPoints();

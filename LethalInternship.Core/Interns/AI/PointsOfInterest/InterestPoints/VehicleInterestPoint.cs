@@ -11,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
         private VehicleController vehicleController;
 
         public override Vector3 Point => GetVehiclePoint(vehicleController);
-        protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(PositionInterestPoint), typeof(ShipInterestPoint) };
+        protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(PositionInterestPoint), typeof(ShipInterestPoint), typeof(GatheringInterestPoint) };
         public override EnumCommandTypes? CommandType => EnumCommandTypes.GoToVehicle;
         public override bool IsInvalid => vehicleController == null || vehicleController.carDestroyed;
 

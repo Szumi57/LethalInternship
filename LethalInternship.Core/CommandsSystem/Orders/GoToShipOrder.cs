@@ -17,7 +17,7 @@ namespace LethalInternship.Core.CommandsSystem.Orders
                 return;
             }
 
-            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
+            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrNewShipPoint(shipTransform);
             // Give order
             intern.SetCommandTo(pointOfInterest);
         }

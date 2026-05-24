@@ -120,13 +120,14 @@ namespace LethalInternship.Core.UI.CommandsControllers
                         uiElement.SetInteractable(interactable: true);
                     }
 
-                    // Vehicle ?
                     foreach (var uiElement in visibilityUIs)
                     {
+                        // Vehicle ?
                         if (uiElement.GroupUI == EnumUIGroups.VehicleGroupButtons)
-                        {
                             uiElement.SetInteractable(interactable: InternManager.Instance.VehicleController != null, UIConst.TOOLTIPBAR_NO_CRUISER);
-                        }
+                        // Gathering point ?
+                        if (uiElement.GroupUI == EnumUIGroups.GatheringPointGroupButtons)
+                            uiElement.SetInteractable(interactable: InternManager.Instance.GatheringPoint != null, UIConst.TOOLTIPBAR_NO_CRUISER);
                     }
 
                     // In space or on company building moon

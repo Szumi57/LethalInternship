@@ -11,7 +11,7 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
         public override void Activate()
         {
             InternManager.Instance.ExecuteOrder(new GoToInterestPointOrder(
-                                                        InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(
+                                                        InternManager.Instance.GetPointOfInterestOrNewPositionPoint(
                                                               StartOfRound.Instance.localPlayerController.transform.position)));
         }
     }

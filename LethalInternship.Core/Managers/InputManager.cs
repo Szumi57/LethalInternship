@@ -3,6 +3,7 @@ using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.CommandsSystem.Abilities;
 using LethalInternship.Core.UI.CommandsControllers;
 using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
+using LethalInternship.Core.UI.CommandsControllers.GatheringPoint;
 using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.UI.ItemBlocks;
@@ -91,6 +92,8 @@ namespace LethalInternship.Core.Managers
             ButtonDualSwitchParentController.OnDualSwitchSelected += CommandButtonController_OnSelected;
             InternBlockUI.OnSelected += InternBlockUI_OnSelected;
             ItemBlockUI.OnSelected += ItemBlockUI_OnSelected;
+            GatheringPointController.OnSelected += GatheringPoint_OnSelected;
+            RemoveGatheringPointController.OnSelected += RemoveGatheringPoint_OnSelected;
 
             // Suits
             ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
@@ -140,6 +143,8 @@ namespace LethalInternship.Core.Managers
             ButtonDualSwitchParentController.OnDualSwitchSelected -= CommandButtonController_OnSelected;
             InternBlockUI.OnSelected -= InternBlockUI_OnSelected;
             ItemBlockUI.OnSelected -= ItemBlockUI_OnSelected;
+            GatheringPointController.OnSelected -= GatheringPoint_OnSelected;
+            RemoveGatheringPointController.OnSelected -= RemoveGatheringPoint_OnSelected;
 
             ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
             ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
@@ -303,7 +308,6 @@ namespace LethalInternship.Core.Managers
         public void StartTargeting(TargetedAbility ability)
         {
             CurrentTargetedAbility = ability;
-            TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Enemy | TargetingManager.TargetType.Item);
         }
 
         public void CancelTargeting()
@@ -484,6 +488,26 @@ namespace LethalInternship.Core.Managers
 
             // Drop item
             identity.InternAI.DropItem(grabbableObject);
+        }
+
+        private void GatheringPoint_OnSelected(EnumInputAction typeInputAction)
+        {
+            switch (typeInputAction)
+            {
+                case EnumInputAction.SetGatheringPoint:
+                    new SetGatheringPointAbility().Activate();
+                    break;
+                case EnumInputAction.GoToGatheringPoint:
+                    new GoToGatheringPointAbility().Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+            }
+        }
+
+        private void RemoveGatheringPoint_OnSelected()
+        {
+            InternManager.Instance.SetGatheringPoint(null);
         }
 
         #endregion

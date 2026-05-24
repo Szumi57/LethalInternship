@@ -15,13 +15,17 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
         {
             typeof(PositionInterestPoint),
             typeof(VehicleInterestPoint),
-            typeof(ShipInterestPoint)
+            typeof(ShipInterestPoint),
+            typeof(GatheringInterestPoint)
         };
 
         public bool IsInvalid
         {
             get
             {
+                if (interestPoints.Count == 0)
+                    return true;
+
                 foreach (IInterestPoint interestPoint in GetListInterestPoints())
                 {
                     if (interestPoint.IsInvalid)
@@ -52,13 +56,24 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest
                 }
             }
 
-            if (interestPoints.ContainsKey(typeof(T)))
+            // Careful when adding an interface type of concrete class in a key of dictionnary
+            // Always take the real type with .GetType() not typeof()
+            // When an interface is passed in parameter and not a concrete type
+            Type ipType = interestPointToAdd.GetType();
+            if (interestPoints.ContainsKey(ipType))
             {
                 return false;
             }
 
-            interestPoints[typeof(T)] = interestPointToAdd;
+            interestPoints[ipType] = interestPointToAdd;
             return true;
+        }
+
+        public bool TryRemoveInterestPointType(Type interestPointTypeToRemove)
+        {
+            // Always take the real type with .GetType() not typeof()
+            // When an interface is passed in parameter and not a concrete type
+            return interestPoints.Remove(interestPointTypeToRemove);
         }
 
         public IEnumerable<IInterestPoint> GetListInterestPoints()

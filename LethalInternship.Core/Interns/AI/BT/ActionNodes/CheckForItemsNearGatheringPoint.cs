@@ -4,16 +4,19 @@ using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
-    public class CheckForItemsInCruiser : IBTAction
+    public class CheckForItemsNearGatheringPoint : IBTAction
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            context.TargetItem = FirstItemInCruiser();
+            context.TargetItem = FirstItemNearGatheringPoint();
             return BehaviourTreeStatus.Success;
         }
 
-        private GrabbableObject? FirstItemInCruiser()
+        private GrabbableObject? FirstItemNearGatheringPoint()
         {
+            if (InternManager.Instance.GatheringPoint == null)
+                return null;
+
             var grabbableObjectsList = InternManager.Instance.GetGrabbableObjectsList();
             for (int i = 0; i < grabbableObjectsList.Count; i++)
             {
@@ -36,17 +39,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     continue;
                 }
 
-                // Object not in cruiser vehicle
-                if (grabbableObject.transform.parent == null
-                    || !grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
+                // Object not near gathering point
+                Vector3 gatheringPointPos = InternManager.Instance.GatheringPoint.GetPoint();
+                if ((gatheringPointPos - grabbableObject.transform.position).sqrMagnitude > 5f * 5f)
                 {
                     continue; // not in cruiser
-                }
-
-                if (grabbableObject.itemProperties.itemName.StartsWith("clipboard"))
-                {
-                    // black listed for unloading from cruiser
-                    continue;
                 }
 
                 // Grabbable object ?

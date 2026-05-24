@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,13 +8,13 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 {
     public class RemoveGatheringPointController : MonoBehaviour, IVisibilityUI
     {
-        public static System.Action<EnumInputAction> OnSelected = null!;
+        public static System.Action OnSelected = null!;
 
         public GameObject Go { get; private set; } = null!;
         public EnumUIGroups GroupUI = EnumUIGroups.None;
         EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
 
-        public EnumInputAction TypeInputAction;
+        public EnumInputAction TypeInputAction { get; } = EnumInputAction.RemoveGatheringPoint;
         public Image FrameImage = null!;
         public Image IconImage = null!;
 
@@ -80,8 +79,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
             if (isNotInteractable) return;
 
-            OnSelected?.Invoke(TypeInputAction);
-            PluginLoggerHook.LogDebug?.Invoke($"RemoveButtonSelected {TypeInputAction} click !");
+            OnSelected?.Invoke();
         }
 
         public void PointerDown()

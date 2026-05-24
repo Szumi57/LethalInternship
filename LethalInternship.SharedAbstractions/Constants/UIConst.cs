@@ -69,6 +69,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         // TooltipBarUI
         public static string TOOLTIPBAR_ITEM = "{0} ${1}, hold click to drop";
         public static string TOOLTIPBAR_NO_CRUISER = "No cruiser spawned !";
+        public static string TOOLTIPBAR_NO_GATHERINGPOINT = "No gathering point set !";
         public static string TOOLTIPBAR_NO_INTERNS_TO_MANAGE = "Not managing any interns !";
         public static string TOOLTIPBAR_NOT_IN_SPACE = "Not available in space.";
     }

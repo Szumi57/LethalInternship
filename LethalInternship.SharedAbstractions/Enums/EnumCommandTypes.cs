@@ -16,6 +16,6 @@
         DropAllItemsOnGatheringPoint,
         DropAllItemsInCruiser,
         UnloadCruiser,
-        UnloadGatheringPoint
+        UnloadGatheringPoint,
     }
 }

@@ -53,12 +53,6 @@ namespace LethalInternship.Core.Interns.AI
 
             SetCommand(newCommand.Value, playVoice ? EnumVoicesState.OrderedToGoThere : EnumVoicesState.None);
 
-            PluginLoggerHook.LogDebug?.Invoke($"VVV PointOfInterest VVV");
-            foreach (var p in this.PointOfInterest.GetListInterestPoints())
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
-            }
-
             // AI
             BTController.ResetContextNewCommandToInterestPoint(pointOfInterest);
         }
@@ -123,19 +117,47 @@ namespace LethalInternship.Core.Interns.AI
 
         public void SetCommandToDropToShip()
         {
+            Transform? shipTransform = InternManager.Instance.ShipTransform;
+            if (shipTransform == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetCommandToDropToShip shipTransform not found !");
+                return;
+            }
+            if (this.AreHandsFree())
+            {
+                PluginLoggerHook.LogDebug?.Invoke("SetCommandToDropToShip but no items held = SetCommandToFollowPlayer");
+                SetCommandToFollowPlayer(playVoice: false);
+                return;
+            }
+
+            // SetCommand DropAllItemsToShip
             SetCommand(EnumCommandTypes.DropAllItemsToShip, EnumVoicesState.NowScavenging);
             this.PointOfInterest = null;
 
             // AI
-            BTController.ResetContextNewCommandDropTo();
+            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrNewShipPoint(shipTransform);
+            BTController.ResetContextNewCommandDropToPos(pointOfInterest);
         }
         public void SetCommandToDropToGatheringPoint()
         {
+            if (InternManager.Instance.GatheringPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetCommandToDropToGatheringPoint no gathering point set !");
+                return;
+            }
+            if (this.AreHandsFree())
+            {
+                PluginLoggerHook.LogDebug?.Invoke("SetCommandToDropToGatheringPoint but no items held = SetCommandToFollowPlayer");
+                SetCommandToFollowPlayer(playVoice: false);
+                return;
+            }
+
+            // SetCommand DropAllItemsOnGatheringPoint
             SetCommand(EnumCommandTypes.DropAllItemsOnGatheringPoint, EnumVoicesState.NowScavenging);
             this.PointOfInterest = null;
 
             // AI
-            BTController.ResetContextNewCommandDropTo();
+            BTController.ResetContextNewCommandDropToPos(InternManager.Instance.GatheringPoint);
         }
         public void SetCommandToDropToCruiser()
         {
@@ -143,7 +165,7 @@ namespace LethalInternship.Core.Interns.AI
             this.PointOfInterest = null;
 
             // AI
-            BTController.ResetContextNewCommandDropTo();
+            BTController.ResetContextNewCommandDropToCruiser();
         }
 
         public void SetCommandToUnloadFromCruiser()
@@ -152,15 +174,21 @@ namespace LethalInternship.Core.Interns.AI
             this.PointOfInterest = null;
 
             // AI
-            BTController.ResetContextNewCommandUnloadFrom();
+            BTController.ResetContextNewCommandUnloadFromCruiser();
         }
         public void SetCommandToUnloadFromGatheringPoint()
         {
+            if (InternManager.Instance.GatheringPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("SetCommandToUnloadFromGatheringPoint no gathering point set !");
+                return;
+            }
+
             SetCommand(EnumCommandTypes.UnloadGatheringPoint, EnumVoicesState.NowScavenging);
             this.PointOfInterest = null;
 
             // AI
-            BTController.ResetContextNewCommandUnloadFrom();
+            BTController.ResetContextNewCommandUnloadFromPos(InternManager.Instance.GatheringPoint);
         }
 
 
@@ -186,7 +214,7 @@ namespace LethalInternship.Core.Interns.AI
             {
                 pendingCommand = CurrentCommand;
                 CurrentCommand = EnumCommandTypes.WaitForCommand;
-                PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait true");
+                //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait true");
             }
             else
             {
@@ -194,10 +222,10 @@ namespace LethalInternship.Core.Interns.AI
                 if (CurrentCommand == EnumCommandTypes.WaitForCommand
                     || CurrentCommand == EnumCommandTypes.None)
                 {
-                    PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, CurrentCommand {CurrentCommand} set to FollowPlayer");
+                    //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, CurrentCommand {CurrentCommand} set to FollowPlayer");
                     CurrentCommand = EnumCommandTypes.FollowPlayer;
                 }
-                PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, new command {CurrentCommand}");
+                //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, new command {CurrentCommand}");
 
                 // Voice
                 PlayVoiceAfterCommand(voiceToPlay);

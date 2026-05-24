@@ -11,7 +11,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 {
     public class GatheringPointController : MonoBehaviour, IVisibilityUI
     {
-        public System.Action<EnumInputAction> OnSelected = null!;
+        public static System.Action<EnumInputAction> OnSelected = null!;
 
         public GameObject Go { get; private set; } = null!;
         public EnumUIGroups GroupUI = EnumUIGroups.None;
@@ -27,10 +27,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         public RemoveGatheringPointController removeGatheringPointController = null!;
 
+        public bool CanSetUpGatheringPoint;
+
         float transparency = 1f;
 
-        // ?
-        bool gatheringPointSet = false;
+        // isGatheringPointSet
+        private bool isGatheringPointSet => InternManager.Instance.GatheringPoint != null;
 
         // Typing animation
         private string fullText = string.Empty;
@@ -50,6 +52,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             SetAlpha(SetImage, 1f);
             SetAlpha(GoToImage, 0f);
             Go = this.gameObject;
+            RemoveGatheringPointController.OnSelected += RemoveGatheringPoint_OnSelected;
         }
 
         void OnEnable()
@@ -58,10 +61,13 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             SetTMPDescriptionFont(UIManager.Instance.FontToUse);
 
             UpdateStateRemoveButton();
+            UpdateIconAndDesc();
         }
 
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
+            interactable = isGatheringPointSet || CanSetUpGatheringPoint;
+
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
             isNotInteractable = !interactable;
             if (isNotInteractable)
@@ -72,7 +78,10 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private Image GetCurrentImage()
         {
-            return gatheringPointSet ? GoToImage : SetImage;
+            if (CanSetUpGatheringPoint)
+                return isGatheringPointSet ? GoToImage : SetImage;
+            else
+                return GoToImage;
         }
 
         private void SetAlpha(Image image, float transparency)
@@ -88,7 +97,10 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private EnumInputAction GetCurrentInputAction()
         {
-            return gatheringPointSet ? EnumInputAction.GoToGatheringPoint : EnumInputAction.SetGatheringPoint;
+            if (CanSetUpGatheringPoint)
+                return isGatheringPointSet ? EnumInputAction.GoToGatheringPoint : EnumInputAction.SetGatheringPoint;
+            else
+                return EnumInputAction.GoToGatheringPoint;
         }
 
         private void SetTMPDescriptionFont(TMP_FontAsset font)
@@ -103,7 +115,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         {
             SetAlpha(BgImage, 1f);
 
-            if (gatheringPointSet)
+            if (CanSetUpGatheringPoint && isGatheringPointSet)
             {
                 SetAlpha(BgRemoveButtonImage, 1f);
             }
@@ -132,7 +144,14 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private void UpdateIconAndDesc()
         {
-            if (gatheringPointSet)
+            if (!CanSetUpGatheringPoint)
+            {
+                SetAlpha(GoToImage, 1f);
+                SetAlpha(SetImage, 0f);
+                return;
+            }
+
+            if (isGatheringPointSet)
             {
                 SetAlpha(GoToImage, 1f);
                 SetAlpha(SetImage, 0f);
@@ -147,9 +166,17 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         private void UpdateStateRemoveButton()
         {
             if (removeGatheringPointController != null)
-            {
-                removeGatheringPointController.gameObject.SetActive(gatheringPointSet);
-            }
+                removeGatheringPointController.gameObject.SetActive(CanSetUpGatheringPoint && isGatheringPointSet);
+        }
+
+        private void RemoveGatheringPoint_OnSelected()
+        {
+            // Gathering point is removed, does not wait for InternManager.Instance.GatheringPoint != null
+            SetAlpha(GoToImage, 0f);
+            SetAlpha(SetImage, 1f);
+
+            if (removeGatheringPointController != null)
+                removeGatheringPointController.gameObject.SetActive(false);
         }
 
         IEnumerator TypeText()
@@ -185,8 +212,6 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         public void Selected()
         {
             if (isNotInteractable) return;
-
-            gatheringPointSet = !gatheringPointSet;
 
             OnSelected?.Invoke(GetCurrentInputAction());
 

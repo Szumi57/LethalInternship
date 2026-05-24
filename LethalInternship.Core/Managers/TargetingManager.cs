@@ -31,7 +31,8 @@ namespace LethalInternship.Core.Managers
             None = 0,
             Intern = 1 << 0,
             Enemy = 1 << 1,
-            Item = 1 << 2
+            Item = 1 << 2,
+            GatheringPoint = 1 << 3,
         }
         public TargetType ActiveSearch { get; private set; } = TargetType.Intern;
 
@@ -85,7 +86,7 @@ namespace LethalInternship.Core.Managers
             // Check for direct cast
             TargetData? directTarget = FindByRaycast();
             if (directTarget != null
-                && directTarget.Value.IsTargetNotPointOfInterest())
+                && directTarget.Value.IsTargetNotPosition())
             {
                 // Pointed something directly
                 currentTarget = directTarget;
@@ -99,7 +100,7 @@ namespace LethalInternship.Core.Managers
 
             // Check if already scanned something not too far (latching)
             if (currentTarget != null
-                && currentTarget.Value.IsTargetNotPointOfInterest()
+                && currentTarget.Value.IsTargetNotPosition()
                 && IsPointedTargetStillValid(currentTarget.Value))
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"?? IsPointedTargetStillValid target {currentTarget}");
@@ -146,8 +147,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Get back direct target
-            if (directTarget != null
-                && directTarget.Value.IsTargetNotEmpty())
+            if (directTarget != null)
             {
                 // Pointed something directly
                 //PluginLoggerHook.LogDebug?.Invoke($"directTarget 2 !! target intern ? {directTarget.Value.Intern?.Npc.playerUsername} target enemy ? {directTarget.Value.Enemy?.enemyType.enemyName}");
@@ -225,7 +225,7 @@ namespace LethalInternship.Core.Managers
 
         private bool IsPointedTargetStillValid(TargetData target)
         {
-            if (target.Root == null) return false; // quit game while targeting
+            if (target.Root == null) return true; // quit game while targeting
 
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
             Transform transform = target.Root.transform;
@@ -437,41 +437,15 @@ namespace LethalInternship.Core.Managers
 
         private TargetData BuildTarget(RaycastHit hit)
         {
-            return BuildTarget(hit.collider, hit.point, hit.distance, 0f);
-        }
-
-        private TargetData BuildTarget(Collider col, Vector3? hitPoint, float distance, float angle)
-        {
             // BuildTarget
             TargetData targetData = new TargetData();
-            targetData.Distance = distance;
+            targetData.RaycastHit = hit;
 
-            IPointOfInterest? pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
-            // No point of interest pointed
-            if (pointOfInterest == null)
-            {
-                if (IsColliderFromVehicle(col))
-                {
-                    targetData.PointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(col.gameObject.GetComponentInParent<VehicleController>());
-                    targetData.Root = col.gameObject;
-                }
-                else if (IsColliderFromShip(col))
-                {
-                    Transform? shipTransform = GetParentShip(col.gameObject.transform);
-                    if (shipTransform != null)
-                    {
-                        targetData.PointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
-                        targetData.Root = col.gameObject;
-                    }
-                }
-                else if (hitPoint.HasValue)
-                {
-                    targetData.PointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(hitPoint.Value);
-                }
-            }
+            // Point of interest ?
+            targetData.PointedPointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
 
             // Intern
-            IInternAI? internAI = GetInternFromCollider(col);
+            IInternAI? internAI = GetInternFromCollider(hit.collider);
             if (internAI != null
                 && !internAI.IsEnemyDead
                 && internAI.NpcController != null
@@ -481,28 +455,28 @@ namespace LethalInternship.Core.Managers
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target intern ? {internAI.Npc.playerUsername}");
                 targetData.Intern = internAI;
-                targetData.Root = col.gameObject;
+                targetData.Root = hit.collider.gameObject;
                 return targetData;
             }
 
             // Enemy
-            EnemyAI enemyAI = col.gameObject.GetComponentInParent<EnemyAI>();
+            EnemyAI enemyAI = hit.collider.gameObject.GetComponentInParent<EnemyAI>();
             if (enemyAI != null
                 && !enemyAI.isEnemyDead
                 && IsEnemyTargetable(enemyAI))
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target enemy ? {enemyAI?.enemyType.enemyName}");
                 targetData.Enemy = enemyAI;
-                targetData.Root = col.gameObject;
+                targetData.Root = hit.collider.gameObject;
                 return targetData;
             }
 
             // Item
-            GrabbableObject item = col.gameObject.GetComponentInParent<GrabbableObject>();
+            GrabbableObject item = hit.collider.gameObject.GetComponentInParent<GrabbableObject>();
             if (item != null)
             {
                 targetData.Item = item;
-                targetData.Root = col.gameObject;
+                targetData.Root = hit.collider.gameObject;
                 //PluginLoggerHook.LogDebug?.Invoke($"--> directTarget !! target Item ? {targetData.Item.itemProperties.itemName}");
             }
 
@@ -518,46 +492,6 @@ namespace LethalInternship.Core.Managers
             }
 
             return null;
-        }
-
-        private bool IsColliderFromVehicle(Collider? collider)
-        {
-            return collider?.gameObject.GetComponentInParent<VehicleController>();
-        }
-
-        private bool IsColliderFromShip(Collider? collider)
-        {
-            return IsParentShip(collider?.gameObject.transform);
-        }
-
-        private bool IsParentShip(Transform? transform)
-        {
-            if (transform == null)
-            {
-                return false;
-            }
-
-            if (transform.name == "HangarShip")
-            {
-                return true;
-            }
-
-            return IsParentShip(transform.parent);
-        }
-
-        private Transform? GetParentShip(Transform? transform)
-        {
-            if (transform == null)
-            {
-                return null;
-            }
-
-            if (transform.name == "HangarShip")
-            {
-                return transform;
-            }
-
-            return GetParentShip(transform.parent);
         }
 
         private bool IsEnemyTargetable(EnemyAI enemy)
@@ -600,6 +534,46 @@ namespace LethalInternship.Core.Managers
                     // "Girl":
                     return false;
             }
+        }
+
+        public bool IsColliderFromVehicle(Collider? collider)
+        {
+            return collider?.gameObject.GetComponentInParent<VehicleController>();
+        }
+
+        public bool IsColliderFromShip(Collider? collider)
+        {
+            return IsParentShip(collider?.gameObject.transform);
+        }
+
+        private bool IsParentShip(Transform? transform)
+        {
+            if (transform == null)
+            {
+                return false;
+            }
+
+            if (transform.name == "HangarShip")
+            {
+                return true;
+            }
+
+            return IsParentShip(transform.parent);
+        }
+
+        public Transform? GetParentShip(Transform? transform)
+        {
+            if (transform == null)
+            {
+                return null;
+            }
+
+            if (transform.name == "HangarShip")
+            {
+                return transform;
+            }
+
+            return GetParentShip(transform.parent);
         }
     }
 }

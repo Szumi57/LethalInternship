@@ -11,6 +11,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         IInterestPoint? GetInterestPoint();
         Vector3 GetPoint();
         bool TryAddInterestPoint<T>(T interestPointToAdd) where T : IInterestPoint;
+        bool TryRemoveInterestPointType(Type interestPointTypeToRemove);
         IEnumerable<IInterestPoint> GetListInterestPoints();
         Dictionary<Type, IInterestPoint> GetDictTypeInterestPoints();
         EnumCommandTypes? GetCommand();

@@ -11,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints
 
         public Transform HangarShipTransform => hangarShipTransform;
         private Transform hangarShipTransform;
-        protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(PositionInterestPoint), typeof(VehicleInterestPoint) };
+        protected override IEnumerable<Type> IncompatibleTypes => new[] { typeof(PositionInterestPoint), typeof(VehicleInterestPoint), typeof(GatheringInterestPoint) };
         public override EnumCommandTypes? CommandType => EnumCommandTypes.GoToPosition;
         public override bool IsInvalid => hangarShipTransform == null;
 
