@@ -81,7 +81,13 @@ namespace LethalInternship.Core.Managers
         private PointOfInterestRendererService pointOfInterestRendererService = null!;
 
         private IPointOfInterest? PointOfInterestInCenter = null;
-        private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
+
+        // Allocation optimizations
+        private readonly List<IInternAI> _internsOwned = new List<IInternAI>();
+        private readonly List<IPointOfInterest> _poiToShow = new List<IPointOfInterest>();
+        private readonly HashSet<IPointOfInterest> _poiSet = new HashSet<IPointOfInterest>();
+        private readonly List<WorldIconUI> _worldIconsToReturn = new List<WorldIconUI>();
+        private readonly HashSet<IPointOfInterest> _poiDisplayedLastFrameSet = new HashSet<IPointOfInterest>();
 
         // Outlines
         private bool allowMultipleInternOutline = false;
@@ -154,18 +160,24 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
-            List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
-            WorldIconUI worldIcon;
-            // Show other already active icons
-            var pointsOfInterestToShow = internsOwned
-                         .Where(y => y.GetPointOfInterest() != null)
-                         .Select(x => x.GetPointOfInterest()!)
-                         .Distinct().ToList();
-            if (InternManager.Instance.GatheringPoint != null)
-                pointsOfInterestToShow.Add(InternManager.Instance.GatheringPoint);
+            InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(_internsOwned);
 
-            foreach (IPointOfInterest pointOfInterest in pointsOfInterestToShow)
+            _poiToShow.Clear();
+            _poiSet.Clear();
+
+            foreach (var intern in _internsOwned)
+            {
+                var poi = intern.GetPointOfInterest();
+                if (poi == null) continue;
+
+                if (_poiSet.Add(poi))
+                    _poiToShow.Add(poi);
+            }
+            if (InternManager.Instance.GatheringPoint != null)
+                _poiToShow.Add(InternManager.Instance.GatheringPoint);
+
+            WorldIconUI worldIcon;
+            foreach (IPointOfInterest pointOfInterest in _poiToShow)
             {
                 //Debug.Log($"uimanager pointOfInterest GetUIKey {pointOfInterestRendererService.GetIconUIInfos(pointOfInterest).GetUIKey()}");
                 //foreach (var ip in pointOfInterest.GetListInterestPoints())
@@ -175,29 +187,28 @@ namespace LethalInternship.Core.Managers
                 worldIcon.SetPositionUI(pointOfInterestRendererService.GetUIIcon(pointOfInterest));
                 worldIcon.SetIconActive(true);
                 worldIcon.ForceVisible(value: InputManager.Instance.CurrentTargetedAbility != null || isAnyMenuWasClosed);
-                worldIconsToReturn.Add(worldIcon);
+                _worldIconsToReturn.Add(worldIcon);
 
                 // Scan icon in center
                 if (PointOfInterestInCenter == null)
-                {
                     PointOfInterestInCenter = worldIcon.IsIconInCenter ? pointOfInterest : null;
-                }
 
                 // Should use ping animation ?
-                if (!pointOfInterestsAlreadyDisplayed.Contains(pointOfInterest))
-                {
+                if (!_poiDisplayedLastFrameSet.Contains(pointOfInterest))
                     worldIcon.TriggerPingAnimation();
-                }
             }
 
-            pointOfInterestsAlreadyDisplayed = pointsOfInterestToShow.ToList();
+            // Save already displayed icons
+            _poiDisplayedLastFrameSet.Clear();
+            foreach (var poi in _poiToShow)
+                _poiDisplayedLastFrameSet.Add(poi);
 
             // Clear remaining icons
             worldIconUIPool.DisableOtherIcons();
-            foreach (var icon in worldIconsToReturn)
-            {
+            foreach (var icon in _worldIconsToReturn)
                 worldIconUIPool.ReturnIcon(icon);
-            }
+
+            _worldIconsToReturn.Clear();
         }
 
         public void InitUI(Transform HUDContainerParent)
@@ -567,7 +578,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Intern commands 
-            if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length > 0)
+            if (_internsOwned.Count > 0)
             {
                 tooltipsToAdd.Add(("commandsAll", string.Format(UIConst.TOOLTIP_COMMANDS_ALL,
                                                              InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern))));

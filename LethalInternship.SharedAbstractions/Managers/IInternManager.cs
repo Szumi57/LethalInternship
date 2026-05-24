@@ -44,7 +44,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         IInternAI? GetInternAIIfLocalIsOwner(int index);
         IInternAI[] GetAliveAndSpawnInternsAI();
         IInternAI[] GetInternsAIOwnedByLocal();
-        IInternAI[] GetAliveAndSpawnInternsAIOwnedByLocal();
+        void GetAliveAndSpawnInternsAIOwnedByLocal(List<IInternAI> result);
         IInternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject);
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
 
