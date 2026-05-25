@@ -44,6 +44,8 @@ namespace LethalInternship.Core.Managers
         private float angleWeight = 1.0f;
         private float distanceWeight = 0.5f;
 
+        private readonly List<IInternAI> _internsAliveSpawned = new List<IInternAI>();
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -111,7 +113,7 @@ namespace LethalInternship.Core.Managers
             // -----------------------------
 
             // Scan for interns
-            if (ActiveSearch.HasFlag(TargetType.Intern))
+            if ((ActiveSearch & TargetType.Intern) != 0)
             {
                 TargetData? internTarget = FindPointedInternByAngle();
                 if (internTarget != null)
@@ -123,7 +125,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Scan for enemies
-            if (ActiveSearch.HasFlag(TargetType.Enemy))
+            if ((ActiveSearch & TargetType.Enemy) != 0)
             {
                 TargetData? enemyTarget = FindPointedEnemyByAngle();
                 if (enemyTarget != null)
@@ -135,7 +137,7 @@ namespace LethalInternship.Core.Managers
             }
 
             // Scan for items
-            if (ActiveSearch.HasFlag(TargetType.Item))
+            if ((ActiveSearch & TargetType.Item) != 0)
             {
                 TargetData? enemyItem = FindPointedItemByAngle();
                 if (enemyItem != null)
@@ -167,9 +169,9 @@ namespace LethalInternship.Core.Managers
 
             Ray ray = new Ray(origin, forward);
             LayerMask layerMask = StartOfRound.Instance.collidersRoomMaskDefaultAndPlayers;
-            if (ActiveSearch.HasFlag(TargetType.Enemy))
+            if ((ActiveSearch & TargetType.Enemy) != 0)
                 layerMask |= 1 << 19;// "19: Enemies" StartOfRound.allPlayersCollideWithMask
-            if (ActiveSearch.HasFlag(TargetType.Item))
+            if ((ActiveSearch & TargetType.Item) != 0)
                 layerMask |= 64;// "6: Props" PlayerControllerB.grabbableObjectsMask
 
             int count = Physics.RaycastNonAlloc(ray, buffer, maxDistanceRay, layerMask);
@@ -177,6 +179,7 @@ namespace LethalInternship.Core.Managers
             // find the colliders
             int nearestIndex = -1;
             float nearestDist = float.MaxValue;
+            string colliderName = string.Empty;
             for (int i = 0; i < count; i++)
             {
                 if (buffer[i].collider.GetComponentInParent<IIgnoreRaycast>() != null)
@@ -184,8 +187,9 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                if (buffer[i].collider.gameObject.name.StartsWith("LineOfS")
-                    || buffer[i].collider.gameObject.name.StartsWith("Collision"))
+                colliderName = buffer[i].collider.gameObject.name;
+                if (colliderName.StartsWith("LineOfS")
+                    || colliderName.StartsWith("Collision"))
                 {
                     continue;
                 }
@@ -244,8 +248,8 @@ namespace LethalInternship.Core.Managers
             float bestScore = float.MaxValue;
 
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
-            IInternAI[] internAIs = InternManager.Instance.GetAliveAndSpawnInternsAI();
-            foreach (IInternAI internAI in internAIs)
+            InternManager.Instance.GetAliveAndSpawnInternsAI(_internsAliveSpawned);
+            foreach (IInternAI internAI in _internsAliveSpawned)
             {
                 if (StartOfRound.Instance.localPlayerController.isInsideFactory != internAI.Npc.isInsideFactory)
                 {

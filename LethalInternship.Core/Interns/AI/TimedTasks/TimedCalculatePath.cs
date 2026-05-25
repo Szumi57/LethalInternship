@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
@@ -26,8 +25,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
         private Vector3? previousDestination;
         private Vector3? currentDestination;
 
-        private long timer = 1000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 1f;
+        private float nextCheckTime;
 
         public TimedCalculatePathResponse GetPath(InternAI internAI, Vector3 destination, bool force = false)
         {
@@ -42,7 +41,11 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate(Vector3 destination)
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+            if (Time.time >= nextCheckTime)
+            {
+                nextCheckTime = Time.time + timer;
+                return true;
+            }
 
             previousDestination = currentDestination;
             currentDestination = destination;
@@ -51,15 +54,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
                 return true;
             }
 
-            if (elapsedTime > timer)
-            {
-                lastTimeCalculate = DateTime.Now.Ticks;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void CalculatePath(InternAI internAI, Vector3 destination)

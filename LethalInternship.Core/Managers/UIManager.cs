@@ -19,8 +19,6 @@ using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using LethalInternship.SharedAbstractions.UI;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -93,6 +91,9 @@ namespace LethalInternship.Core.Managers
         private bool allowMultipleInternOutline = false;
 
         private float timerUpdateTooltips;
+
+        // Minor optimization
+        private readonly StringBuilder _sb = new StringBuilder(256);
 
         private void Awake()
         {
@@ -333,7 +334,7 @@ namespace LethalInternship.Core.Managers
                 else
                     return EnumIconImagesTypes.CantAttack;
             }
-            else if (TargetingManager.Instance.ActiveSearch.HasFlag(TargetType.GatheringPoint))
+            else if ((TargetingManager.Instance.ActiveSearch & TargetType.GatheringPoint) != 0)
             {
                 return EnumIconImagesTypes.GatheringPoint;
             }
@@ -606,18 +607,23 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            var sb = new StringBuilder(baseText);
+            _sb.Clear();
+            _sb.Append(baseText);
             if (isSeparatorToAdd && !string.IsNullOrWhiteSpace(baseText))
             {
-                sb.Append('\n').Append(SEPARATOR);
+                _sb.Append('\n').Append(SEPARATOR);
             }
 
             foreach (var tt in tooltips)
             {
-                sb.Append(MakeTooltip(tt.id, tt.text));
+                _sb.Append(MakeTooltip(tt.id, tt.text));
             }
 
-            tmp.text = sb.ToString();
+            string newText = _sb.ToString();
+            if (!ReferenceEquals(tmp.text, newText) && tmp.text != newText)
+            {
+                tmp.text = newText;
+            }
         }
 
         private string StripAllTooltips(string src)
@@ -691,8 +697,7 @@ namespace LethalInternship.Core.Managers
                 return;
 
             // Update intern outlines
-            var internsToOuline = IdentityManager.Instance.GetIdentitiesSpawned().Select(x => x.InternAI!);
-            InternOutlineController.UpdateInternsOutlines(internsToOuline,
+            InternOutlineController.UpdateInternsOutlines(IdentityManager.Instance.GetIdentitiesSpawned(),
                                                           target?.Intern?.Npc.playerClientId,
                                                           allowMultipleInternOutline,
                                                           forceNoOutlines: IsAnyMenuOpened);

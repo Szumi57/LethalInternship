@@ -1,8 +1,8 @@
 ﻿using LethalInternship.SharedAbstractions.Interns;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
@@ -11,8 +11,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
         private List<EnemyAI> enemiesInMap = new List<EnemyAI>();
 
         private int lastNbSpawnEnemies;
-        private long timer = 7000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 7f;
+        private float nextCheckTime;
 
         public List<EnemyAI> GetEnemiesList()
         {
@@ -28,7 +28,11 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
+            if (Time.time >= nextCheckTime)
+            {
+                nextCheckTime = Time.time + timer;
+                return true;
+            }
 
             if (lastNbSpawnEnemies != RoundManager.Instance.SpawnedEnemies.Count)
             {
@@ -36,15 +40,7 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
                 return true;
             }
 
-            if (elapsedTime > timer)
-            {
-                lastTimeCalculate = DateTime.Now.Ticks;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void GetList()

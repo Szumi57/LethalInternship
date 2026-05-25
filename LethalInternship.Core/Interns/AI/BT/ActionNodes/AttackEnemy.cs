@@ -1,7 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.Core.Interns.AI.Items;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -9,8 +8,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class AttackEnemy : IBTAction
     {
-        private long? timer = null;
-        private long lastTimeCalculate;
+        private float shootAtTime = -1f;
 
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -64,19 +62,21 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             ShotgunItem? shotgunItem = weaponObject as ShotgunItem;
             if (shotgunItem != null)
             {
-                timer ??= (int)Random.Range(1000f, 2000f) * TimeSpan.TicksPerMillisecond;
-                if (DateTime.Now.Ticks - lastTimeCalculate > timer)
+                if (shootAtTime < 0f)
                 {
-                    lastTimeCalculate = DateTime.Now.Ticks;
+                    shootAtTime = Time.time + Random.Range(1f, 2f);
                 }
-                else
-                {
-                    timer = null;
-                    lastTimeCalculate = 0;
 
-                    shotgunItem.ShootGun(shotgunItem.shotgunRayPoint.position, shotgunItem.shotgunRayPoint.forward);
+                if (Time.time < shootAtTime)
+                {
                     return BehaviourTreeStatus.Success;
                 }
+
+                // Trigger
+                shootAtTime = -1f;
+                shotgunItem.ShootGun(
+                    shotgunItem.shotgunRayPoint.position,
+                    shotgunItem.shotgunRayPoint.forward);
             }
 
             return BehaviourTreeStatus.Success;

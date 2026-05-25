@@ -10,7 +10,6 @@ using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -28,9 +27,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             if (itemsToCheck.Count == 0)
             {
-                itemsToCheck = LookingForItemsToGrabInRange(ai)
-                                .OrderBy(i => (i.transform.position - ai.transform.position).sqrMagnitude)
-                                .ToList();
+                LookingForItemsToGrabInRange(ai);
+                Vector3 aiPos = ai.transform.position;
+                itemsToCheck.Sort((a, b) => // Sort without linq
+                {
+                    float da = (a.transform.position - aiPos).sqrMagnitude;
+                    float db = (b.transform.position - aiPos).sqrMagnitude;
+                    return da.CompareTo(db);
+                });
+
                 if (itemsToCheck.Count == 0)
                 {
                     return BehaviourTreeStatus.Failure;
@@ -75,9 +80,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         /// if intern is close and can see an item to grab.
         /// </summary>
         /// <returns><c>GrabbableObject</c>GrabbableObject to try to grab</returns>
-        private List<GrabbableObject> LookingForItemsToGrabInRange(InternAI ai)
+        private void LookingForItemsToGrabInRange(InternAI ai)
         {
-            var items = new List<GrabbableObject>();
+            itemsToCheck.Clear();
             var grabbableObjectsList = InternManager.Instance.GetGrabbableObjectsList();
             for (int i = 0; i < grabbableObjectsList.Count; i++)
             {
@@ -151,10 +156,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     continue;
                 }
 
-                items.Add(grabbableObject);
+                itemsToCheck.Add(grabbableObject);
             }
-
-            return items;
         }
 
         private void CalculatePathToItem(BTContext context, GrabbableObject grabbableObject)

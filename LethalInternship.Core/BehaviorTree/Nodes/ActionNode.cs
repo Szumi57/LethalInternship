@@ -8,6 +8,9 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// </summary>
     public class ActionNode : IBehaviourTreeNode, IPrintableNode
     {
+        private readonly List<IPrintableNode> printableChildren = new List<IPrintableNode>();
+        public IReadOnlyList<IPrintableNode> PrintableChildren => printableChildren;
+
         /// <summary>
         /// The name of the node.
         /// </summary>
@@ -18,7 +21,6 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private Func<TimeData, BehaviourTreeStatus> fn;
 
-        public List<IPrintableNode> PrintableChildren { get { return new List<IPrintableNode>(); } }
         public string Name { get { return name; } }
         public string NodeType { get { return "action"; } }
         public string NodeTypeSign { get { return string.Empty; } }
@@ -26,8 +28,8 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
 
         public ActionNode(string name, Func<TimeData, BehaviourTreeStatus> fn)
         {
-            this.name=name;
-            this.fn=fn;
+            this.name = name;
+            this.fn = fn;
         }
 
         public BehaviourTreeStatus Tick(TimeData time)

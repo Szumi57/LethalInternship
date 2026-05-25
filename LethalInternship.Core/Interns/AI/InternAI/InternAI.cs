@@ -328,9 +328,13 @@ namespace LethalInternship.Core.Interns.AI
             if (NpcController.IsTouchingGround)
             {
                 RaycastHit groundRaycastHit = IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
-                if (InternManager.Instance.DictTagSurfaceIndex.ContainsKey(groundRaycastHit.collider.tag))
+                foreach (var kvp in InternManager.Instance.DictTagSurfaceIndex)
                 {
-                    NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[groundRaycastHit.collider.tag];
+                    if (groundRaycastHit.collider.CompareTag(kvp.Key))
+                    {
+                        NpcController.Npc.currentFootstepSurfaceIndex = kvp.Value;
+                        break;
+                    }
                 }
             }
         }
@@ -562,16 +566,16 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position))
             {
-                RaycastHit raycastHit = IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
-                if (raycastHit.collider != null
-                    && dictComponentByCollider.TryGetValue(raycastHit.collider.name, out Component component))
+                string groundHitColliderName = IsTouchingGroundTimedCheck.GetGroundHitColliderName(NpcController.Npc.thisPlayerBody.position);
+                if (!string.IsNullOrWhiteSpace(groundHitColliderName)
+                    && dictComponentByCollider.TryGetValue(groundHitColliderName, out Component component))
                 {
                     BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                     if (bridgeTrigger != null
                         && bridgeTrigger.fallenBridgeColliders.Length > 0
                         && bridgeTrigger.fallenBridgeColliders[0].enabled)
                     {
-                        PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} on fallen bridge ! {IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name}");
+                        PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} on fallen bridge ! {groundHitColliderName}");
                         return true;
                     }
                 }

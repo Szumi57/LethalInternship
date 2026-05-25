@@ -22,7 +22,7 @@ namespace LethalInternship.Core.UI.Outlines
         private static readonly Dictionary<EnemyAI, OutlineState> enemiesStates = new Dictionary<EnemyAI, OutlineState>();
         private static readonly Dictionary<GrabbableObject, OutlineState> itemStates = new Dictionary<GrabbableObject, OutlineState>();
 
-        public static void UpdateInternsOutlines(IEnumerable<IInternAI> interns,
+        public static void UpdateInternsOutlines(IEnumerable<IInternIdentity> identities,
                                                   ulong? pointedInternClientId,
                                                   bool allowMultiple,
                                                   bool forceNoOutlines = false)
@@ -33,8 +33,9 @@ namespace LethalInternship.Core.UI.Outlines
 
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
 
-            foreach (IInternAI intern in interns)
+            foreach (IInternIdentity identity in identities)
             {
+                IInternAI? intern = identity.InternAI;
                 if (intern == null) continue;
 
                 bool shouldOutline;

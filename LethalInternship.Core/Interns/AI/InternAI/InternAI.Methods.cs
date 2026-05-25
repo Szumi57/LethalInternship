@@ -18,6 +18,11 @@ namespace LethalInternship.Core.Interns.AI
         private string stateIndicatorServer = string.Empty;
         private float timerCheckDoor;
 
+        // GetSizedBillboardStateIndicator
+        private string cachedIndicator = "";
+        private int lastSize;
+        private string lastIndicator = string.Empty;
+
         public bool IsAgentInValidState()
         {
             if (agent.isActiveAndEnabled
@@ -412,21 +417,19 @@ namespace LethalInternship.Core.Interns.AI
 
         public string GetSizedBillboardStateIndicator()
         {
-            string indicator;
-            int sizePercentage = Math.Clamp((int)(100f + 2.5f * NpcController.GetSqrDistanceWithLocalPlayer()),
-                                 100, 500);
+            int size = Math.Clamp((int)(100f + 2.5f * NpcController.GetSqrDistanceWithLocalPlayer()),
+                                  100, 500);
 
-            if (IsOwner)
-            {
-                //indicator = State == null ? string.Empty : State.GetBillboardStateIndicator();
-                indicator = string.Empty;
-            }
-            else
-            {
-                indicator = stateIndicatorServer;
-            }
+            string indicator = IsOwner ? string.Empty : stateIndicatorServer;
 
-            return $"<size={sizePercentage}%>{indicator}</size>";
+            if (size == lastSize && indicator == lastIndicator)
+                return cachedIndicator;
+
+            lastSize = size;
+            lastIndicator = indicator;
+            cachedIndicator = $"<size={size}%>{indicator}</size>";
+
+            return cachedIndicator;
         }
 
         /// <summary>

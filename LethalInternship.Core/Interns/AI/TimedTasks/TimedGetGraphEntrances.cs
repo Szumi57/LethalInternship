@@ -4,7 +4,6 @@ using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,8 +13,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     {
         private GraphController? graph = null!;
 
-        private long timer = 10000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 10f;
+        private float nextCheckTime;
 
         private bool IsCalculating = false;
 
@@ -48,16 +47,12 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-            if (elapsedTime > timer)
+            if (Time.time >= nextCheckTime)
             {
-                lastTimeCalculate = DateTime.Now.Ticks;
+                nextCheckTime = Time.time + timer;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private GraphController CalculateGraphEntrances(EntranceTeleport[] entrancesTeleportArray)

@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
@@ -7,8 +6,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     {
         private float angle;
 
-        private long timer = 50 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 0.05f;
+        private float nextCheckTime;
 
         public float GetAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)
         {
@@ -23,16 +22,12 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-            if (elapsedTime > timer)
+            if (Time.time >= nextCheckTime)
             {
-                lastTimeCalculate = DateTime.Now.Ticks;
+                nextCheckTime = Time.time + timer;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void CalculateAngleFOVWithLocalPlayer(Transform localPlayerCameraTransform, Vector3 internBodyPos)

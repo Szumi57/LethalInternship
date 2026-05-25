@@ -36,6 +36,7 @@ namespace LethalInternship.Core.Managers
 
         private ConfigIdentity[] configIdentities = null!;
 
+        private readonly List<IInternIdentity> _spawnedBuffer = new List<IInternIdentity>();
 
         private void Awake()
         {
@@ -259,16 +260,21 @@ namespace LethalInternship.Core.Managers
                         .ToArray();
         }
 
-        public IInternIdentity[] GetIdentitiesSpawned()
+        public List<IInternIdentity> GetIdentitiesSpawned()
         {
+            _spawnedBuffer.Clear();
+
             if (InternIdentities == null)
+                return _spawnedBuffer;
+
+            foreach (var identity in InternIdentities)
             {
-                return new IInternIdentity[0];
+                if (identity != null
+                    && identity.Status == EnumStatusIdentity.Spawned)
+                    _spawnedBuffer.Add(identity);
             }
 
-            return InternIdentities
-                        .FilterSpawned()
-                        .ToArray();
+            return _spawnedBuffer;
         }
 
         public bool IsAnIdentityToDrop()
@@ -279,15 +285,6 @@ namespace LethalInternship.Core.Managers
         public int GetNbIdentitiesSpawned()
         {
             return InternIdentities.FilterSpawnedAlive().Count();
-        }
-
-        public IInternIdentity[] GetIdentitiesOwnedByLocal()
-        {
-            ulong actualClientId = GameNetworkManager.Instance.localPlayerController.actualClientId;
-            return InternIdentities.FilterSpawned()
-                                   .Where(x => x.InternAI != null
-                                            && x.InternAI.OwnerClientId == actualClientId)
-                                   .ToArray();
         }
 
         public bool IsIdentityValidToCommand(IInternIdentity identity)

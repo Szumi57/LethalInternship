@@ -1,15 +1,14 @@
 ﻿using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class IsStillInCombat : IBTCondition
     {
-        private EnemyAI lastEnemyToAttack = null!;
-        private long combatTimer = 10000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeTick;
-        private long combatDuration;
+        private EnemyAI? lastEnemyToAttack = null;
+        private float combatStartTime = -1f;
+        private const float MaxCombatDuration = 10f; // seconds
 
         public bool Condition(BTContext context)
         {
@@ -18,25 +17,23 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             if (context.CurrentEnemy == null)
             {
                 PluginLoggerHook.LogError?.Invoke("IsStillInCombat Condition, CurrentEnemy is null");
+                combatStartTime = -1f;
+                lastEnemyToAttack = null;
                 return false;
             }
 
-            // Combat duration ?
-            if (lastEnemyToAttack == context.CurrentEnemy)
-            {
-                combatDuration += DateTime.Now.Ticks - lastTimeTick;
-                if (combatDuration > combatTimer)
-                {
-                    ai.SetCommandFeedback(EnumTempCommandFeedback.CombatTooLong);
-                    return false;
-                }
-            }
-            else
+            if (context.CurrentEnemy != lastEnemyToAttack)
             {
                 lastEnemyToAttack = context.CurrentEnemy;
-                combatDuration = 0;
+                combatStartTime = Time.time;
+                return true;
             }
-            lastTimeTick = DateTime.Now.Ticks;
+
+            if (Time.time - combatStartTime > MaxCombatDuration)
+            {
+                ai.SetCommandFeedback(EnumTempCommandFeedback.CombatTooLong);
+                return false;
+            }
 
             return true;
         }

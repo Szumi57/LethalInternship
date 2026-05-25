@@ -413,17 +413,29 @@ namespace LethalInternship.Core.Managers
             return true;
         }
 
-        public IInternAI[] GetAliveAndSpawnInternsAI()
+        public void GetAliveAndSpawnInternsAI(List<IInternAI> result)
         {
-            return AllInternAIs.Where(x => x != null
-                                        && !x.IsEnemyDead
-                                        && x.NpcController != null
-                                        && x.NpcController.Npc != null
-                                        && !x.NpcController.Npc.isPlayerDead
-                                        && x.NpcController.Npc.isPlayerControlled
-                                        && x.InternIdentity != null
-                                        && x.InternIdentity.Status == EnumStatusIdentity.Spawned)
-                               .ToArray();
+            result.Clear();
+
+            foreach (var x in AllInternAIs)
+            {
+                if (x == null) continue;
+                if (x.IsEnemyDead) continue;
+
+                var npcController = x.NpcController;
+                if (npcController == null) continue;
+
+                var npc = npcController.Npc;
+                if (npc == null) continue;
+                if (npc.isPlayerDead) continue;
+                if (!npc.isPlayerControlled) continue;
+
+                var identity = x.InternIdentity;
+                if (identity == null) continue;
+                if (identity.Status != EnumStatusIdentity.Spawned) continue;
+
+                result.Add(x);
+            }
         }
 
         public IInternAI[] GetInternsAIOwnedByLocal()

@@ -5,6 +5,8 @@ namespace LethalInternship.Core.UI.Outlines
 {
     public static class SimpleOutline
     {
+        private static readonly Dictionary<GameObject, Renderer[]> _rendererCache = new Dictionary<GameObject, Renderer[]>();
+
         private class OutlineInstance
         {
             public GameObject go = null!;
@@ -25,8 +27,11 @@ namespace LethalInternship.Core.UI.Outlines
             if (!target) return;
             if (!OutlineResources.SilhouetteMaterial) return;
 
-            foreach (var r in target.GetComponentsInChildren<Renderer>(true))
+            var renderers = GetRenderersCached(target);
+            for (int i = 0; i < renderers.Length; i++)
             {
+                var r = renderers[i];
+                if (r == null) continue;
                 if (!r.enabled) continue;
                 if (active.ContainsKey(r)) continue;
 
@@ -45,8 +50,11 @@ namespace LethalInternship.Core.UI.Outlines
         {
             if (!target) return;
 
-            foreach (var r in target.GetComponentsInChildren<Renderer>(true))
+            var renderers = GetRenderersCached(target);
+            for (int i = 0; i < renderers.Length; i++)
             {
+                var r = renderers[i];
+                if (r == null) continue;
                 if (!active.TryGetValue(r, out var inst)) continue;
 
                 Object.Destroy(inst.go);
@@ -59,8 +67,11 @@ namespace LethalInternship.Core.UI.Outlines
                                         float rimPower,
                                         Color color)
         {
-            foreach (var r in target.GetComponentsInChildren<Renderer>(true))
+            var renderers = GetRenderersCached(target);
+            for (int i = 0; i < renderers.Length; i++)
             {
+                var r = renderers[i];
+                if (r == null) continue;
                 if (!active.TryGetValue(r, out var inst)) continue;
 
                 inst.mpb.SetFloat("_Intensity", intensity);
@@ -140,6 +151,16 @@ namespace LethalInternship.Core.UI.Outlines
             mpb.SetFloat("_RimPower", rimPower);
             mpb.SetFloat("_Intensity", intensity);
             return mpb;
+        }
+
+        private static Renderer[] GetRenderersCached(GameObject target)
+        {
+            if (!_rendererCache.TryGetValue(target, out var renderers))
+            {
+                renderers = target.GetComponentsInChildren<Renderer>(true);
+                _rendererCache[target] = renderers;
+            }
+            return renderers;
         }
     }
 }

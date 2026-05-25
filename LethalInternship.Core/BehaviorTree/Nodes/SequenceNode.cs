@@ -7,6 +7,9 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// </summary>
     public class SequenceNode : IParentBehaviourTreeNode, IPrintableNode
     {
+        private readonly List<IPrintableNode> printableChildren = new List<IPrintableNode>();
+        public IReadOnlyList<IPrintableNode> PrintableChildren => printableChildren;
+
         /// <summary>
         /// Name of the node.
         /// </summary>
@@ -17,22 +20,6 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private List<IBehaviourTreeNode> children = new List<IBehaviourTreeNode>();
 
-        public List<IPrintableNode> PrintableChildren
-        {
-            get
-            {
-                var list = new List<IPrintableNode>();
-                foreach (var child in children)
-                {
-                    if (child is IPrintableNode)
-                    {
-                        list.Add((IPrintableNode)child);
-                    }
-                }
-
-                return list;
-            }
-        }
         public string Name { get { return name; } }
         public string NodeType { get { return "sequence"; } }
         public string NodeTypeSign { get { return "->"; } }
@@ -62,6 +49,8 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         public void AddChild(IBehaviourTreeNode child)
         {
             children.Add(child);
+            if (child is IPrintableNode printable)
+                printableChildren.Add(printable);
         }
     }
 }

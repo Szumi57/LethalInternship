@@ -1,4 +1,5 @@
 ﻿using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.SharedAbstractions.Managers
 {
@@ -7,11 +8,9 @@ namespace LethalInternship.SharedAbstractions.Managers
         int GetNewIdentityToSpawn();
 
         int[] GetIdentitiesIDsSpawned();
-        IInternIdentity[] GetIdentitiesSpawned();
+        List<IInternIdentity> GetIdentitiesSpawned();
 
         int[] GetIdentitiesToDrop();
-
-        IInternIdentity[] GetIdentitiesOwnedByLocal();
 
         IInternIdentity? FindIdentityFromBodyName(string bodyName);
 

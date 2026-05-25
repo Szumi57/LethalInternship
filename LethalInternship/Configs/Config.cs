@@ -318,10 +318,7 @@ namespace LethalInternship.Configs
         public float GetVolumeVoicesMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
-            NumberFormatInfo nfi = new NumberFormatInfo();
-            nfi.NumberDecimalSeparator = ",";
-
-            if (float.TryParse(volumeVoicesMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(volumeVoicesMultiplierInterns.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }
@@ -331,10 +328,7 @@ namespace LethalInternship.Configs
         public float GetVolumeFootstepMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
-            NumberFormatInfo nfi = new NumberFormatInfo();
-            nfi.NumberDecimalSeparator = ",";
-
-            if (float.TryParse(volumeFootstepMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(volumeFootstepMultiplierInterns.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }

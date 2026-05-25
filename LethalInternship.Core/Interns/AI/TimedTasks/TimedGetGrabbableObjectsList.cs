@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
@@ -8,8 +7,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     {
         private List<GameObject> grabbableObjectsInMap = new List<GameObject>();
 
-        private long timer = 10000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 10f;
+        private float nextCheckTime;
 
         public List<GameObject> GetGrabbableObjectsList()
         {
@@ -25,16 +24,12 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-            if (elapsedTime > timer)
+            if (Time.time >= nextCheckTime)
             {
-                lastTimeCalculate = DateTime.Now.Ticks;
+                nextCheckTime = Time.time + timer;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void GetList()

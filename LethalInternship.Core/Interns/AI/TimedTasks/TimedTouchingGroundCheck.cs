@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
@@ -7,9 +6,10 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     {
         private bool isTouchingGround = true;
         private RaycastHit groundHit;
+        private string groundHitColliderName = string.Empty;
 
-        private long timer = 200 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 0.2f;
+        private float nextCheckTime;
 
         public bool IsTouchingGround(Vector3 internPosition, bool forceCalculation = false)
         {
@@ -34,26 +34,42 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
             return groundHit;
         }
 
+        public string GetGroundHitColliderName(Vector3 internPosition)
+        {
+            if (!NeedToRecalculate())
+            {
+                return groundHitColliderName;
+            }
+
+            CalculateTouchingGround(internPosition);
+            return groundHitColliderName;
+        }
+
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-            if (elapsedTime > timer)
+            if (Time.time >= nextCheckTime)
             {
-                lastTimeCalculate = DateTime.Now.Ticks;
+                nextCheckTime = Time.time + timer;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void CalculateTouchingGround(Vector3 internPosition)
         {
-            isTouchingGround = Physics.Raycast(new Ray(internPosition + Vector3.up, -Vector3.up),
+            if (Physics.Raycast(new Ray(internPosition + Vector3.up, -Vector3.up),
                                                out groundHit,
                                                2.5f,
-                                               StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore);
+                                               StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore))
+            {
+                isTouchingGround = true;
+                groundHitColliderName = groundHit.collider.name;
+            }
+            else
+            {
+                isTouchingGround = false;
+                groundHitColliderName = string.Empty;
+            }
         }
     }
 }

@@ -14,6 +14,8 @@ namespace LethalInternship.Core.Managers
 {
     public partial class InternManager
     {
+        private readonly List<GrabbableObject> _itemsBuffer = new List<GrabbableObject>();
+
         #region Items global
 
         private TimedGetGrabbableObjectsList getGrabbableObjectsListTimed = null!;
@@ -72,7 +74,7 @@ namespace LethalInternship.Core.Managers
 
         public List<GrabbableObject> LookingForItemsToGrabInMap(bool forcePickUp = false)
         {
-            var items = new List<GrabbableObject>();
+            _itemsBuffer.Clear();
             var grabbableObjectsList = GetGrabbableObjectsList();
             for (int i = 0; i < grabbableObjectsList.Count; i++)
             {
@@ -101,10 +103,10 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                items.Add(grabbableObject);
+                _itemsBuffer.Add(grabbableObject);
             }
 
-            return items;
+            return _itemsBuffer;
         }
 
         /// <summary>
