@@ -65,6 +65,7 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            //Debug.Log($"{Npc.playerUsername} SetCommandToFollowPlayer {Environment.StackTrace}");
             SetCommand(EnumCommandTypes.FollowPlayer, playVoice ? EnumVoicesState.OrderedToFollow : EnumVoicesState.None);
             this.PointOfInterest = null;
 
@@ -120,12 +121,12 @@ namespace LethalInternship.Core.Interns.AI
             Transform? shipTransform = InternManager.Instance.ShipTransform;
             if (shipTransform == null)
             {
-                PluginLoggerHook.LogError?.Invoke("SetCommandToDropToShip shipTransform not found !");
+                PluginLoggerHook.LogError?.Invoke($"{Npc.playerUsername} SetCommandToDropToShip shipTransform not found !");
                 return;
             }
             if (this.AreHandsFree())
             {
-                PluginLoggerHook.LogDebug?.Invoke("SetCommandToDropToShip but no items held = SetCommandToFollowPlayer");
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToDropToShip but no items held = SetCommandToFollowPlayer");
                 SetCommandToFollowPlayer(playVoice: false);
                 return;
             }
@@ -142,12 +143,12 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (InternManager.Instance.GatheringPoint == null)
             {
-                PluginLoggerHook.LogError?.Invoke("SetCommandToDropToGatheringPoint no gathering point set !");
+                PluginLoggerHook.LogError?.Invoke($"{Npc.playerUsername} SetCommandToDropToGatheringPoint no gathering point set !");
                 return;
             }
             if (this.AreHandsFree())
             {
-                PluginLoggerHook.LogDebug?.Invoke("SetCommandToDropToGatheringPoint but no items held = SetCommandToFollowPlayer");
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToDropToGatheringPoint but no items held = SetCommandToFollowPlayer");
                 SetCommandToFollowPlayer(playVoice: false);
                 return;
             }
@@ -180,7 +181,7 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (InternManager.Instance.GatheringPoint == null)
             {
-                PluginLoggerHook.LogError?.Invoke("SetCommandToUnloadFromGatheringPoint no gathering point set !");
+                PluginLoggerHook.LogError?.Invoke($"{Npc.playerUsername} SetCommandToUnloadFromGatheringPoint no gathering point set !");
                 return;
             }
 
@@ -196,13 +197,13 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (CurrentCommand == EnumCommandTypes.WaitForCommand)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"SetPendingCommand {command}");
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetPendingCommand {command}");
                 pendingCommand = command;
                 voiceToPlay = voiceCommand;
             }
             else
             {
-                PluginLoggerHook.LogDebug?.Invoke($"SetCurrentCommand {command}");
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCurrentCommand {command}");
                 CurrentCommand = command;
                 PlayVoiceAfterCommand(voiceCommand);
             }

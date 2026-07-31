@@ -11,6 +11,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class UpdateDestPos : IBTAction
     {
+        private DJKStaticPoint _shipStaticPoint = new DJKStaticPoint("Ship drop location");
+        private DJKStaticPoint _gatheringPointStaticPoint = new DJKStaticPoint("GatheringPoint");
+
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
@@ -27,7 +30,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                         PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation shipTransform not found !");
                         return BehaviourTreeStatus.Failure;
                     }
-                    context.PathController.SetNewDestination(new DJKStaticPoint(ShipInterestPoint.GetShipPoint(shipTransform), $"Ship drop location"));
+                    _shipStaticPoint.Position = ShipInterestPoint.GetShipPoint(shipTransform);
+                    context.FinalDestination = _shipStaticPoint;
 
                     break;
                 case EnumCommandTypes.ScavengingToGatheringPoint:
@@ -43,7 +47,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                         return BehaviourTreeStatus.Failure;
                     }
 
-                    context.PathController.SetNewDestination(context.DJKPointMapper.Map(gatheringIP));
+                    _gatheringPointStaticPoint.Position = gatheringIP.Point;
+                    context.FinalDestination = _gatheringPointStaticPoint;
                     break;
                 case EnumCommandTypes.UnloadGatheringPoint:
                     if (ai.AreFreeSlotsAvailable())
@@ -60,7 +65,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                             PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation UnloadGatheringPoint gatheringIP not found !");
                             return BehaviourTreeStatus.Failure;
                         }
-                        context.PathController.SetNewDestination(context.DJKPointMapper.Map(gatheringIP));
+                        _gatheringPointStaticPoint.Position = gatheringIP.Point;
+                        context.FinalDestination = _gatheringPointStaticPoint;
                     }
                     else
                     {
@@ -70,12 +76,14 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                             PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation shipTransform not found !");
                             return BehaviourTreeStatus.Failure;
                         }
-                        context.PathController.SetNewDestination(new DJKStaticPoint(ShipInterestPoint.GetShipPoint(shipTransform), $"Ship drop location"));
+                        _shipStaticPoint.Position = ShipInterestPoint.GetShipPoint(shipTransform);
+                        context.FinalDestination = _shipStaticPoint;
                     }
 
                     break;
             }
 
+            context.PathfindingContext.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
             return BehaviourTreeStatus.Success;
         }
     }

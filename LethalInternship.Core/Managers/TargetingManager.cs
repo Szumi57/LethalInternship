@@ -45,6 +45,7 @@ namespace LethalInternship.Core.Managers
         private float distanceWeight = 0.5f;
 
         private readonly List<IInternAI> _internsAliveSpawned = new List<IInternAI>();
+        private List<GrabbableObject> _items = new List<GrabbableObject>();
 
         private void Awake()
         {
@@ -353,8 +354,8 @@ namespace LethalInternship.Core.Managers
 
             Camera localPlayerCamera = StartOfRound.Instance.localPlayerController.gameplayCamera;
             bool isPlayerInside = StartOfRound.Instance.localPlayerController.isInsideFactory;
-            List<GrabbableObject> items = InternManager.Instance.LookingForItemsToGrabInMap(forcePickUp: true);
-            foreach (GrabbableObject item in items)
+            InternManager.Instance.LookingForItemsToGrabInMap(_items, forcePickUp: true);
+            foreach (GrabbableObject item in _items)
             {
                 if (item == null)
                 {

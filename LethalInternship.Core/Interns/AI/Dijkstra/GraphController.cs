@@ -1,53 +1,77 @@
 ﻿using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
     public class GraphController
     {
-        public List<IDJKPoint> DJKPoints { get; set; }
+        private const int NB_POINTS_BEFORE_GRAPH = 1;
 
-        public GraphController()
+        private static readonly StringBuilder _sb = new StringBuilder(512);
+
+        public List<IDJKPoint> Points { get; } = new List<IDJKPoint>();
+
+        public List<DJKNeighbor>[] Neighbors { get; }
+
+        public GraphController(int capacity)
         {
-            DJKPoints = new List<IDJKPoint>();
+            Neighbors = new List<DJKNeighbor>[capacity];
+
+            for (int i = 0; i < capacity; i++)
+                Neighbors[i] = new List<DJKNeighbor>(8);
         }
 
-        public GraphController(GraphController graph)
+        public void Clear()
         {
-            DJKPoints = graph.DJKPoints.Select(p => (IDJKPoint)p.Clone()).ToList();
+            Points.Clear();
+
+            foreach (var list in Neighbors)
+            {
+                list.Clear();
+            }
         }
 
         public void AddPoint(IDJKPoint point)
         {
-            point.Id = DJKPoints.Count == 0 ? 0 : DJKPoints.Max(x => x.Id) + 1;
-            DJKPoints.Add(point);
-        }
-
-        public void CleanNeighbors()
-        {
-            List<int> neighborsPresent = DJKPoints.Select(x => x.Id).ToList();
-            foreach (var point in DJKPoints)
-            {
-                point.Neighbors.RemoveAll(n => !neighborsPresent.Contains(n.idNeighbor));
-            }
+            point.Id = Points.Count + NB_POINTS_BEFORE_GRAPH;
+            Points.Add(point);
         }
 
         public override string ToString()
         {
-            string pathString = $"Graph({(DJKPoints == null ? 0 : DJKPoints.Count)})\r\n                                                               ";
-            if (DJKPoints == null)
+            _sb.Clear();
+
+            _sb.Append("Graph(");
+            _sb.Append(Points.Count);
+            _sb.AppendLine(")");
+
+            for (int i = 0; i < Points.Count; i++)
             {
-                return string.Concat(pathString, " null");
+                _sb.Append("  ");
+                _sb.Append(Points[i]);
+
+                var neighbors = Neighbors[i + NB_POINTS_BEFORE_GRAPH];
+                if (neighbors.Count > 0)
+                {
+                    _sb.Append(" -> [");
+                    for (int n = 0; n < neighbors.Count; n++)
+                    {
+                        var neigh = neighbors[n];
+                        _sb.Append(neigh.ToId);
+                        _sb.Append('(');
+                        _sb.Append((int)Mathf.Sqrt(neigh.Cost));
+                        _sb.Append(')');
+                        if (n < neighbors.Count - 1) _sb.Append(", ");
+                    }
+                    _sb.Append(']');
+                }
+
+                _sb.AppendLine();
             }
-            else if (DJKPoints.Count == 0)
-            {
-                return string.Concat(pathString, " empty");
-            }
-            else
-            {
-                return string.Concat(pathString, string.Join("\r\n                                                               ", DJKPoints));
-            }
+
+            return _sb.ToString();
         }
     }
 }

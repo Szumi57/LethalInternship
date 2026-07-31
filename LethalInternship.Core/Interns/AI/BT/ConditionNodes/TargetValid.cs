@@ -4,6 +4,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class TargetValid : IBTCondition
     {
+        private DJKMovingPoint _targetMovingPoint = new DJKMovingPoint();
+
         public bool Condition(BTContext context)
         {
             InternAI ai = context.InternAI;
@@ -20,7 +22,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             }
 
             // Target valid
-            context.PathController.SetNewDestination(new DJKMovingPoint(ai.targetPlayer.transform, $"targetPlayer {ai.targetPlayer.playerUsername}"));
+            _targetMovingPoint.Transform = ai.targetPlayer.transform;
+            _targetMovingPoint.Name = $"targetPlayer {ai.targetPlayer.playerUsername}";
+            context.FinalDestination = _targetMovingPoint;
             return true;
         }
     }

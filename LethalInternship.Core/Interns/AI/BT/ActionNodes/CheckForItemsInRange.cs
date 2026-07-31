@@ -18,15 +18,32 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         private int itemIndex = 0;
         private List<GrabbableObject> itemsToCheck = new List<GrabbableObject>();
-        private GraphController[] tempGraphs = null!;
-        private PathController[] tempPaths = null!;
+        private GrabbableObject? itemToGrabInRange = null;
+
+        private List<PathController> tempPaths = new List<PathController>();
+        private List<PathfindingContext> tempPfs = new List<PathfindingContext>();
+        private List<int> pathIds = new List<int>();
+
+        private readonly List<IInstruction> instructionsToProcess = new List<IInstruction>(1024);
 
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
 
+            if (itemToGrabInRange != null)
+            {
+                if (InternManager.Instance.IsGrabbableObjectGrabbable(itemToGrabInRange))
+                    return BehaviourTreeStatus.Success;
+
+                Debug.Log($"--------- {ai.Npc.playerUsername} CheckForItemsInRange itemToGrabInRange {itemToGrabInRange} not grabbable !!!! itemsToCheck.Count {itemsToCheck.Count}");
+                itemsToCheck.Clear();
+            }
+
             if (itemsToCheck.Count == 0)
             {
+                CleanTempLists();
+                itemToGrabInRange = null;
+
                 LookingForItemsToGrabInRange(ai);
                 Vector3 aiPos = ai.transform.position;
                 itemsToCheck.Sort((a, b) => // Sort without linq
@@ -40,20 +57,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 {
                     return BehaviourTreeStatus.Failure;
                 }
-
-                tempGraphs = new GraphController[itemsToCheck.Count];
-                tempPaths = new PathController[itemsToCheck.Count];
             }
 
-            if (itemsToCheck.Count > 0)
+            if (itemToGrabInRange == null
+                && itemsToCheck.Count > 0)
             {
                 int indexItemToGrab = GetIndexMinPath();
                 if (indexItemToGrab >= 0)
                 {
                     // ++ Path to one item found
                     context.TargetItem = itemsToCheck[indexItemToGrab];
-                    context.PathController = tempPaths[indexItemToGrab];
-                    PluginLoggerHook.LogDebug?.Invoke($"++R {ai.Npc.playerUsername} CheckForItemsInRange target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathController}");
+                    itemToGrabInRange = context.TargetItem;
+                    context.PathfindingContext.CopyFrom(tempPfs[indexItemToGrab]);
+                    context.PathController.CopyFrom(tempPaths[indexItemToGrab]);
+                    PluginLoggerHook.LogDebug?.Invoke($"++R {ai.Npc.playerUsername} CheckForItemsInRange target item {context.TargetItem} {context.TargetItem.transform.position}, valid {context.PathController.IsPathValid()} {context.PathfindingContext.GetFullPathString(context.PathController.PathIds)} {context.PathfindingContext.Destination}");
                     TryPlayFoundLootVoiceAudio(ai);
 
                     itemIndex = 0;
@@ -164,45 +181,56 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            // Get entrances graph
-            GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
-            if (GraphEntrances == null)
+            PathfindingContext pf = GetNewPathfindingContext(itemIndex);
+            pf.Clear();
+            pf.SharedGraph = InternManager.Instance.GetGraphEntrances();
+
+            // Add start
+            DJKStaticPoint dJKPointStart = InternManager.Instance.Pools.Get<DJKStaticPoint>();
+            dJKPointStart.Position = Dijkstra.Dijkstra.GetSampledPos(ai.transform.position);
+            dJKPointStart.Name = $"{ai.Npc.playerUsername} pos";
+            pf.SetStart(dJKPointStart);
+            // Destination
+            DJKItemPoint dJKPointDest = InternManager.Instance.Pools.Get<DJKItemPoint>();
+            dJKPointDest.Transform = grabbableObject.transform;
+            dJKPointDest.GrabDistance = ai.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale;
+            dJKPointDest.SetName(grabbableObject);
+            pf.SetDestination(dJKPointDest);
+
+            NeighborResult startWriter = (from, to, startPos, targetPos, dist) =>
             {
-                PluginLoggerHook.LogDebug?.Invoke($"- CheckForItemsInRange GetGraphEntrances not available yet");
-                return;
-            }
-
-            GraphController tempGraph = new GraphController(GraphEntrances);
-
-            // Add source and dest
-            tempGraph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), $"{ai.Npc.playerUsername} pos"));
-            tempGraph.AddPoint(new DJKItemPoint(grabbableObject.transform, ai.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale, grabbableObject.name));
+                pf.StartNeighbors.Add(new DJKNeighbor(to, targetPos, dist));
+            };
+            NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
+            {
+                pf.DestinationNeighbors.Add(new DJKNeighbor(from, targetPos, dist));
+            };
 
             // Calculate Neighbors
             int idBatch = (int)ai.Npc.playerClientId;
-            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(tempGraph.DJKPoints);
-            List<IInstruction> instructionsToProcess = new List<IInstruction>();
-            foreach (var instrParams in instructions)
-            {
-                instructionsToProcess.Add(instrParams.targetDJKPoint.GenerateInstruction(idBatch, instrParams));
-            }
-
-            tempGraphs[itemIndex] = tempGraph;
+            Dijkstra.Dijkstra.GenerateNeighborInstructions(pf, idBatch, startWriter, destinationWriter, instructionsToProcess);
             InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchCompleted);
         }
 
         private void OnBatchCompleted()
         {
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrab itemIndex {itemIndex} ------- {tempGraphs[itemIndex]}");
+            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ------- {tempPfs[itemIndex].SharedGraph}");
 
             // Get full path
-            PathController pathCalculated = new PathController();
-            pathCalculated.SetNewPath(Dijkstra.Dijkstra.CalculatePath(tempGraphs[itemIndex].DJKPoints));
-            tempPaths[itemIndex] = pathCalculated;
+            PathController pathCalculated = GetNewPathController(itemIndex);
+            pathCalculated.Reset();
+
+            PathfindingContext pf = tempPfs[itemIndex];
+            Dijkstra.Dijkstra.CalculatePath(pf,
+                                            pf.Start.Id,
+                                            pf.Destination.Id,
+                                            pathIds);
+            pathCalculated.SetNewPath(pathIds);
 
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ======= {tempPaths[itemIndex].GetFullPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ======= {tempPfs[itemIndex].GetFullPathString(pathCalculated.PathIds)} {tempPfs[itemIndex].Destination}");
+
 
             itemIndex++;
         }
@@ -211,15 +239,20 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             int indexBestPath = -1;
             float minDist = float.MaxValue;
-            for (int i = 0; i < tempPaths.Length; i++)
+            for (int i = 0; i < itemsToCheck.Count; i++)
             {
+                if (i >= tempPaths.Count)
+                {
+                    break;
+                }
+
                 PathController tempPath = tempPaths[i];
                 if (tempPath == null || !tempPath.IsPathValid())
                 {
                     continue;
                 }
 
-                float dist = tempPath.GetFullPathDistance();
+                float dist = tempPfs[i].GetFullPathDistance(tempPath.PathIds);
                 if (dist < minDist)
                 {
                     minDist = dist;
@@ -227,6 +260,51 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 }
             }
             return indexBestPath;
+        }
+
+        private PathfindingContext GetNewPathfindingContext(int index)
+        {
+            // Resize until ok
+            while (tempPfs.Count <= index)
+                tempPfs.Add(null!);
+
+            PathfindingContext pf = tempPfs[index];
+            if (pf == null)
+            {
+                pf = new PathfindingContext();
+                tempPfs[index] = pf;
+            }
+            return pf;
+        }
+
+        private PathController GetNewPathController(int index)
+        {
+            // Resize until ok
+            while (tempPaths.Count <= index)
+                tempPaths.Add(null!);
+
+            PathController pc = tempPaths[index];
+            if (pc == null)
+            {
+                pc = new PathController();
+                tempPaths[index] = pc;
+            }
+            return pc;
+        }
+
+        private void CleanTempLists()
+        {
+            foreach (var path in tempPaths)
+            {
+                if (path != null)
+                    path.Reset();
+            }
+
+            foreach (var pf in tempPfs)
+            {
+                if (pf != null)
+                    pf.Clear();
+            }
         }
 
         private void TryPlayFoundLootVoiceAudio(InternAI ai)

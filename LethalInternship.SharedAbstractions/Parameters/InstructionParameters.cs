@@ -3,23 +3,27 @@ using UnityEngine;
 
 namespace LethalInternship.SharedAbstractions.Parameters
 {
-    public struct InstructionParameters
+    public readonly struct InstructionParameters
     {
-        public int groupId;
+        public readonly int groupId;
 
-        public Vector3 start;
-        public Vector3 target;
+        public readonly Vector3 start;
+        public readonly Vector3 target;
 
-        public IDJKPoint startDJKPoint;
-        public IDJKPoint targetDJKPoint;
+        public readonly IDJKPoint startDJKPoint;
+        public readonly IDJKPoint targetDJKPoint;
 
-        public InstructionParameters(int groupId, Vector3 start, Vector3 target, IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint)
+        public readonly NeighborResult resultCallback;
+
+        public InstructionParameters(int groupId, Vector3 start, Vector3 target, IDJKPoint startDJKPoint, IDJKPoint targetDJKPoint,
+                                     NeighborResult resultCallback)
         {
             this.groupId = groupId;
             this.start = start;
             this.target = target;
             this.startDJKPoint = startDJKPoint;
             this.targetDJKPoint = targetDJKPoint;
+            this.resultCallback = resultCallback;
         }
     }
 }

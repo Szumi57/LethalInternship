@@ -2,7 +2,6 @@
 using LethalInternship.Core.Interns.AI.BT.ActionNodes;
 using LethalInternship.Core.Interns.AI.BT.ConditionNodes;
 using LethalInternship.Core.Interns.AI.CoroutineControllers;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Managers;
@@ -30,6 +29,13 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         // Data context
         private BTContext BTContext = null!;
+
+        private DJKMovingPoint _movingPlayerPoint = new DJKMovingPoint();
+        private DJKMovingPoint _movingEnemyPoint = new DJKMovingPoint();
+        private DJKItemPoint _itemPoint = new DJKItemPoint();
+        private DJKStaticPoint _staticInterestPoint = new DJKStaticPoint();
+        private DJKVehiclePoint _vehiclePoint = new DJKVehiclePoint("Cruiser interest point");
+        private IDJKPoint? _tempPoint;
 
         public BTController(InternAI internAI)
         {
@@ -143,18 +149,9 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         private void InitContext(InternAI internAI)
         {
-            DJKPointMapper mapper = new DJKPointMapper();
-            mapper.Register<PositionInterestPoint>(ip => new DJKStaticPoint(ip.Point));
-            mapper.Register<ShipInterestPoint>(ip => new DJKStaticPoint(ip.Point));
-            mapper.Register<VehicleInterestPoint>(ip => new DJKVehiclePoint(ip.VehicleTransform, "Cruiser"));
-            mapper.Register<GatheringInterestPoint>(ip => new DJKStaticPoint(ip.Point, "Gathering point"));
-
             BTContext = new BTContext()
             {
                 InternAI = internAI,
-
-                PathController = new PathController(),
-                DJKPointMapper = mapper,
 
                 searchForPlayers = this.searchForPlayers,
 
@@ -167,8 +164,11 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public void ResetContextNewCommandFollowPlayer()
         {
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(new DJKMovingPoint(BTContext.InternAI.targetPlayer.transform, $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}"));
+            _movingPlayerPoint.Transform = BTContext.InternAI.targetPlayer.transform;
+            _movingPlayerPoint.Name = $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}";
+
+            BTContext.PathController.Reset();
+            BTContext.FinalDestination = _movingPlayerPoint;
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -181,8 +181,36 @@ namespace LethalInternship.Core.Interns.AI.BT
                 return;
             }
 
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
+            switch (interestPoint)
+            {
+                case GatheringInterestPoint gp:
+                    _staticInterestPoint.Position = gp.Point;
+                    _staticInterestPoint.Name = "Gathering point interest point";
+                    _tempPoint = _staticInterestPoint;
+                    break;
+                case PositionInterestPoint pp:
+                    _staticInterestPoint.Position = pp.Point;
+                    _staticInterestPoint.Name = "Position interest point";
+                    _tempPoint = _staticInterestPoint;
+                    break;
+                case ShipInterestPoint sp:
+                    _staticInterestPoint.Position = sp.Point;
+                    _staticInterestPoint.Name = "Ship interest point";
+                    _tempPoint = _staticInterestPoint;
+                    break;
+                case VehicleInterestPoint vp:
+                    _vehiclePoint.Transform = vp.VehicleTransform;
+                    _tempPoint = _vehiclePoint;
+                    break;
+            }
+            if (_tempPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("ResetContextNewCommandToInterestPoint _tempPoint is null");
+                return;
+            }
+
+            BTContext.FinalDestination = _tempPoint;
+            BTContext.PathController.Reset();
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -190,22 +218,26 @@ namespace LethalInternship.Core.Interns.AI.BT
         {
             BTContext.TargetItem = null;
             BTContext.cancelScavenging = false;
-            BTContext.PathController.ResetPathAndIndex();
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
         public void ResetContextNewCommandGoFetchItem(GrabbableObject itemToFetch)
         {
             BTContext.TargetItem = itemToFetch;
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(new DJKItemPoint(itemToFetch.transform,
-                                                                        BTContext.InternAI.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale,
-                                                                        itemToFetch.itemProperties.itemName));
+
+            _itemPoint.Transform = itemToFetch.transform;
+            _itemPoint.GrabDistance = BTContext.InternAI.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale;
+            _itemPoint.SetName(itemToFetch);
+            BTContext.FinalDestination = _itemPoint;
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
         public void ResetContextAttackEnemy(EnemyAI enemy)
         {
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(new DJKMovingPoint(enemy.transform, $"targetEnemy {enemy.enemyType.enemyName}"));
+            _movingEnemyPoint.Transform = enemy.transform;
+            _movingEnemyPoint.Name = $"targetEnemy {enemy.enemyType.enemyName}";
+            BTContext.PathController.Reset();
+            BTContext.FinalDestination = _movingEnemyPoint;
             BTContext.CurrentEnemy = enemy;
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
@@ -220,20 +252,21 @@ namespace LethalInternship.Core.Interns.AI.BT
             }
 
             BTContext.TargetItem = null;
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
+            _staticInterestPoint.Position = interestPoint.Point;
+            BTContext.FinalDestination = _staticInterestPoint;
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
         public void ResetContextNewCommandDropToCruiser()
         {
             BTContext.TargetItem = null;
-            BTContext.PathController.ResetPathAndIndex();
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
         public void ResetContextNewCommandUnloadFromCruiser()
         {
             BTContext.TargetItem = null;
-            BTContext.PathController.ResetPathAndIndex();
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
         public void ResetContextNewCommandUnloadFromPos(IPointOfInterest pointOfInterest)
@@ -246,14 +279,15 @@ namespace LethalInternship.Core.Interns.AI.BT
             }
 
             BTContext.TargetItem = null;
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
+            BTContext.PathController.Reset();
+            _staticInterestPoint.Position = interestPoint.Point;
+            BTContext.FinalDestination = _staticInterestPoint;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 
         public void ResetContext()
         {
-            BTContext.PathController.ResetPathAndIndex();
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 

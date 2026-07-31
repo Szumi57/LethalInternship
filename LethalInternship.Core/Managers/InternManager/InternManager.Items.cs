@@ -72,9 +72,9 @@ namespace LethalInternship.Core.Managers
             return getGrabbableObjectsListTimed.GetGrabbableObjectsList();
         }
 
-        public List<GrabbableObject> LookingForItemsToGrabInMap(bool forcePickUp = false)
+        public List<GrabbableObject> LookingForItemsToGrabInMap(List<GrabbableObject> items, bool forcePickUp = false)
         {
-            _itemsBuffer.Clear();
+            items.Clear();
             var grabbableObjectsList = GetGrabbableObjectsList();
             for (int i = 0; i < grabbableObjectsList.Count; i++)
             {
@@ -103,10 +103,10 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                _itemsBuffer.Add(grabbableObject);
+                items.Add(grabbableObject);
             }
 
-            return _itemsBuffer;
+            return items;
         }
 
         /// <summary>

@@ -7,6 +7,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class ResetDestToCruiser : IBTAction
     {
+        private DJKVehiclePoint _vehiclePoint = new DJKVehiclePoint("Cruiser drop location");
+
         public BehaviourTreeStatus Action(BTContext context)
         {
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
@@ -17,8 +19,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Calculate new destination with updated vehicle location
-            context.PathController.ResetPathAndIndex();
-            context.PathController.SetNewDestination(new DJKVehiclePoint(vehicleController.transform, $"Cruiser drop location"));
+            context.PathController.Reset();
+            _vehiclePoint.Transform = vehicleController.transform;
+            context.FinalDestination = _vehiclePoint;
+            context.PathfindingContext.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
             return BehaviourTreeStatus.Success;
         }
     }

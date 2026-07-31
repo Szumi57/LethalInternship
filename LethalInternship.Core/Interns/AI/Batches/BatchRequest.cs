@@ -7,11 +7,11 @@ namespace LethalInternship.Core.Interns.AI.Batches
     public class BatchRequest
     {
         public int id;
-        public List<IInstruction> instructions;
+        public List<IInstruction> instructions = null!;
         public int currentIndex;
         public Action? onBatchComplete;
 
-        public BatchRequest(int id, List<IInstruction> instructions, Action? onBatchComplete = null)
+        public void Initialize(int id, List<IInstruction> instructions, Action? onBatchComplete = null)
         {
             this.id = id;
             this.instructions = instructions ?? new List<IInstruction>();

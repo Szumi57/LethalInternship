@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Interns.AI.Dijkstra;
+using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,8 +10,9 @@ namespace LethalInternship.Core.Interns.AI.BT
     {
         public InternAI InternAI { get; set; } = null!;
 
-        public PathController PathController { get; set; } = null!;
-        public DJKPointMapper DJKPointMapper { get; set; } = null!;
+        public PathController PathController { get; set; } = new PathController();
+        public PathfindingContext PathfindingContext { get; set; } = new PathfindingContext();
+        public IDJKPoint FinalDestination { get; set; } = null!;
 
         public SearchCoroutineController searchForPlayers { get; set; } = null!;
 
@@ -19,7 +21,12 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         // Items
         public GrabbableObject? TargetItem;
-        public int nbItemsToCheck;
+        public int NbItemsToCheck { get; private set; }
+        public void UpdateNbItemsToCheck(int nbItemsToCheck)
+        {
+            //Debug.Log($"UpdateNbItemsToCheck {NbItemsToCheck} => {nbItemsToCheck} {Environment.StackTrace}");
+            NbItemsToCheck = nbItemsToCheck;
+        }
         public bool cancelScavenging;
 
         // No use for now, target always known

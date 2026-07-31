@@ -7,6 +7,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class UpdateDestCruiser : IBTAction
     {
+        private DJKVehiclePoint _vehiclePoint = new DJKVehiclePoint("Cruiser drop location");
+
         public BehaviourTreeStatus Action(BTContext context)
         {
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
@@ -15,7 +17,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 PluginLoggerHook.LogDebug?.Invoke("SetNextDestToDropLocation vehicleController not found !");
                 return BehaviourTreeStatus.Failure;
             }
-            context.PathController.SetNewDestination(new DJKVehiclePoint(vehicleController.transform, $"Cruiser drop location"));
+            _vehiclePoint.Transform = vehicleController.transform;
+            context.FinalDestination = _vehiclePoint;
+            context.PathfindingContext.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
 
             return BehaviourTreeStatus.Success;
         }

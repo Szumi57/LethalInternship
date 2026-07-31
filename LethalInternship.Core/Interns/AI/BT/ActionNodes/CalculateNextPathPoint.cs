@@ -1,13 +1,12 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -15,10 +14,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     public class CalculateNextPathPoint : IBTAction
     {
         private BTContext currentContext = null!;
-        private GraphController graph = null!;
+
+        private List<int> pathIds = new List<int>();
 
         private TimedCalculatePath calculateDestinationPathTimed = new TimedCalculatePath();
         private TimedCalculatePath calculateNextPointPathTimed = new TimedCalculatePath();
+
+        private readonly List<IInstruction> instructionsToProcess = new List<IInstruction>(1024);
 
         public BehaviourTreeStatus Action(BTContext context)
         {
@@ -30,7 +32,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Check if destination reachable
-            TimedCalculatePathResponse path = calculateDestinationPathTimed.GetPath(ai, context.PathController.GetDestination().GetClosestPointTo(ai.transform.position));
+            if (context.PathfindingContext.Destination == null)
+            {
+                CalculatePath(context);
+                return BehaviourTreeStatus.Success;
+            }
+
+            TimedCalculatePathResponse path;
+            path = calculateDestinationPathTimed.GetPath(ai, context.PathfindingContext.Destination.GetClosestPointTo(ai.transform.position));
+
             if (path.PathStatus == NavMeshPathStatus.PathComplete)
             {
                 DrawUtil.DrawPath(ai.LineRendererUtil, path.Path);
@@ -40,7 +50,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             }
 
             // Check if current PathPoint reachable
-            path = calculateNextPointPathTimed.GetPath(ai, context.PathController.GetCurrentPointPos(ai.transform.position));
+            path = calculateNextPointPathTimed.GetPath(ai, context.PathfindingContext.GetCurrentTargetPos(context.PathController.IndexCurrentPoint,
+                                                                                                          context.PathController.PathIds,
+                                                                                                          ai.transform.position,
+                                                                                                          context.FinalDestination));
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
@@ -66,7 +79,10 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             else if (path.PathStatus == NavMeshPathStatus.PathPartial)
             {
                 // Path calculated partial
-                context.PathController.SetCurrentPoint(new DJKStaticPoint(path.Path.corners[^1], "PartialPoint"));
+                DJKStaticPoint dJKPointPartial = InternManager.Instance.Pools.Get<DJKStaticPoint>();
+                dJKPointPartial.Position = path.Path.corners[^1];
+                dJKPointPartial.Name = "PartialPoint";
+                context.FinalDestination = dJKPointPartial;
 
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
@@ -79,10 +95,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
                 return BehaviourTreeStatus.Success;
             }
-            else if (path.PathStatus == NavMeshPathStatus.PathInvalid && ai.agent.path.status == NavMeshPathStatus.PathPartial)
+            else if (path.PathStatus == NavMeshPathStatus.PathInvalid
+                  && ai.agent.path.status == NavMeshPathStatus.PathPartial
+                  && path.Path.corners.Length > 0)
             {
                 // Path calculated invalid but agent path partial
-                context.PathController.SetCurrentPoint(new DJKStaticPoint(ai.agent.path.corners[^1], "PartialPoint"));
+                DJKStaticPoint dJKPointPartial = InternManager.Instance.Pools.Get<DJKStaticPoint>();
+                dJKPointPartial.Position = path.Path.corners[^1];
+                dJKPointPartial.Name = "PartialPoint";
+                context.FinalDestination = dJKPointPartial;
 
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
@@ -106,42 +127,54 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
-            // Get entrances graph
-            GraphController? GraphEntrances = InternManager.Instance.GetGraphEntrances();
-            if (GraphEntrances == null)
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"- CalculateNextPathPoint GetGraphEntrances not available yet");
-                return;
-            }
-
-            graph = new GraphController(GraphEntrances);
+            var pf = context.PathfindingContext;
+            pf.Clear(clearDest: false);
+            pf.SharedGraph = InternManager.Instance.GetGraphEntrances();
 
             // Add source and dest
-            graph.AddPoint(new DJKStaticPoint(Dijkstra.Dijkstra.GetSampledPos(ai.transform.position), $"{ai.Npc.playerUsername} pos"));
-            graph.AddPoint(context.PathController.GetDestination());
+            DJKStaticPoint dJKPointStart = InternManager.Instance.Pools.Get<DJKStaticPoint>();
+            dJKPointStart.Position = Dijkstra.Dijkstra.GetSampledPos(ai.transform.position);
+            dJKPointStart.Name = $"{ai.Npc.playerUsername} pos";
+            pf.SetStart(dJKPointStart);
+            // Destination 
+            if (context.PathfindingContext.Destination == null)
+            {
+                pf.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
+                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint SetDestination to \r\n FinalDestination {context.FinalDestination}");
+            }
+
+            NeighborResult startWriter = (from, to, startPos, targetPos, dist) =>
+            {
+                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to star : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
+                pf.StartNeighbors.Add(new DJKNeighbor(to, targetPos, dist));
+            };
+            NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
+            {
+                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to dest : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
+                pf.DestinationNeighbors.Add(new DJKNeighbor(from, targetPos, dist));
+            };
 
             // Calculate Neighbors
             int idBatch = (int)ai.Npc.playerClientId;
-            List<InstructionParameters> instructions = Dijkstra.Dijkstra.GenerateWorkCalculateNeighbors(graph.DJKPoints);
-            List<IInstruction> instructionsToProcess = new List<IInstruction>();
-            foreach (var instrParams in instructions)
-            {
-                instructionsToProcess.Add(instrParams.targetDJKPoint.GenerateInstruction(idBatch, instrParams));
-            }
-
+            Dijkstra.Dijkstra.GenerateNeighborInstructions(pf, idBatch, startWriter, destinationWriter, instructionsToProcess);
             InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchCompleted);
+            PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CalculateNextPathPoint begin CalculatePathToDest {pf.Destination}");
         }
 
         private void OnBatchCompleted()
         {
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ------- {graph}");
+            //PluginLoggerHook.LogDebug?.Invoke($"{currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint ------- {currentContext.PathfindingContext.SharedGraph}");
 
             // Get full path
-            currentContext.PathController.SetNewPath(Dijkstra.Dijkstra.CalculatePath(graph.DJKPoints));
+            Dijkstra.Dijkstra.CalculatePath(currentContext.PathfindingContext,
+                                            currentContext.PathfindingContext.Start.Id,
+                                            currentContext.PathfindingContext.Destination.Id,
+                                            pathIds);
+            currentContext.PathController.SetNewPath(pathIds);
 
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"CalculateNextPathPoint ======= {currentContext.PathController.GetFullPathString()}");
+            PluginLoggerHook.LogDebug?.Invoke($"{currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint ======= {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)}  {currentContext.PathfindingContext.Destination}");
         }
     }
 }

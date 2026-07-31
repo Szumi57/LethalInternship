@@ -20,26 +20,35 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             InternAI ai = context.InternAI;
 
             // Check if we should take entrance
-            DJKEntrancePoint? entrancePoint = context.PathController.GetCurrentPoint() as DJKEntrancePoint;
-            if (entrancePoint != null)
+            if (context.PathController.IsPathValid())
             {
-                // Take entrance
-                if (TakeEntrance(ai, entrancePoint))
+                DJKEntrancePoint? entrancePoint = context.PathfindingContext.GetCurrentTargetPoint(context.PathController.GetCurrentIdNodePath()) as DJKEntrancePoint;
+                if (entrancePoint != null)
                 {
-                    context.PathController.SetToNextPoint();
+                    // Take entrance
+                    if (TakeEntrance(ai, entrancePoint))
+                    {
+                        context.PathController.SetToNextPoint();
+                    }
                 }
             }
 
-            Vector3 currentPoint = context.PathController.GetCurrentPointPos(ai.transform.position);
+            Vector3 currentPoint = context.PathfindingContext.GetCurrentTargetPos(context.PathController.IndexCurrentPoint,
+                                                                                  context.PathController.PathIds,
+                                                                                  ai.transform.position,
+                                                                                  context.FinalDestination);
             //SharedAbstractions.Hooks.PluginLoggerHooks.PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
             // Debug
             if (DebugConst.DRAW_LINES)
             {
-                DJKItemPoint? vPoint = context.PathController.GetCurrentPoint() as DJKItemPoint;
-                if (vPoint != null)
+                if (context.PathController.IsPathValid())
                 {
-                    DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), currentPoint, currentPoint + new Vector3(0, 5f, 0), Color.magenta);
+                    DJKItemPoint? vPoint = context.PathfindingContext.GetCurrentTargetPoint(context.PathController.GetCurrentIdNodePath()) as DJKItemPoint;
+                    if (vPoint != null)
+                    {
+                        DrawUtil.DrawLine(ai.LineRendererUtil.GetLineRenderer(), currentPoint, currentPoint + new Vector3(0, 5f, 0), Color.magenta);
+                    }
                 }
             }
 
@@ -49,6 +58,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Check for to distance to current point
             if (CloseEnoughOfCurrentPoint(ai, currentPoint))
             {
+                Debug.Log($"{ai.Npc.playerUsername} context.PathController.SetToNextPoint {context.PathController.IndexCurrentPoint} {context.PathController.PathIds.Count}");
                 context.PathController.SetToNextPoint();
             }
             return BehaviourTreeStatus.Success;

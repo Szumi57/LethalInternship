@@ -4,39 +4,39 @@ using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace LethalInternship.Core.Managers
 {
     public partial class InternManager
     {
-        #region Graph and path calculation
+        #region GraphEntrances
 
-        private TimedGetGraphEntrances getGraphEntrancesTimed = null!;
+        private TimedGetGraphEntrances getGraphEntrancesTimed = new TimedGetGraphEntrances();
+
+        public GraphController GetGraphEntrances()
+        {
+            return getGraphEntrancesTimed.GetGraphEntrances();
+        }
+
+        #endregion
+
+        #region Graph and path calculation
 
         private int nextInstructionGroupId = 1;
         public int GetNewInstructionGroupId() => nextInstructionGroupId++;
-
-        public GraphController? GetGraphEntrances()
-        {
-            if (getGraphEntrancesTimed == null)
-            {
-                getGraphEntrancesTimed = new TimedGetGraphEntrances();
-            }
-
-            return getGraphEntrancesTimed.GetGraphEntrances();
-        }
 
         private int maxBatchesPerFrame = 1;
         private int maxInstructionsPerFrame = 1;
         private int currentBatch = -2;
 
         private Dictionary<int, BatchRequest> activeBatches = new Dictionary<int, BatchRequest>();
+        private readonly List<(BatchRequest batch, float dist)> sortedBatches = new List<(BatchRequest batch, float dist)>();
 
         public void RequestBatch(int idBatch, List<IInstruction> instructions, Action? onBatchComplete = null)
         {
-            var newBatch = new BatchRequest(idBatch, instructions, onBatchComplete);
-            activeBatches[idBatch] = newBatch;
+            BatchRequest batch = Pools.Get<BatchRequest>();
+            batch.Initialize(idBatch, instructions, onBatchComplete);
+            activeBatches[idBatch] = batch;
         }
 
         private void ProcessCalculatePathQueue()
@@ -47,12 +47,14 @@ namespace LethalInternship.Core.Managers
             int processedBatches = 0;
             int processedInstructions = 0;
 
-            var sorted = activeBatches.Values
-                        .OrderBy(b => GetDistanceFromClosestPlayer(b))
-                        .ToList();
+            sortedBatches.Clear();
+            foreach (var batch in activeBatches.Values)
+                sortedBatches.Add((batch, GetDistanceFromClosestPlayer(batch)));
 
-            foreach (var batch in sorted)
+            sortedBatches.Sort((a, b) => a.dist.CompareTo(b.dist));
+            foreach (var item in sortedBatches)
             {
+                var batch = item.batch;
                 if (processedBatches >= maxBatchesPerFrame) break;
                 if (processedInstructions >= maxInstructionsPerFrame) break;
 
@@ -108,7 +110,10 @@ namespace LethalInternship.Core.Managers
 
         public void CancelBatch(int idBatch)
         {
-            activeBatches.Remove(idBatch);
+            if (activeBatches.Remove(idBatch, out BatchRequest batch))
+            {
+                Pools.Return(batch);
+            }
         }
 
         public int GetCurrentBatch()
@@ -119,6 +124,7 @@ namespace LethalInternship.Core.Managers
         private void ExecuteInstruction(IInstruction instr)
         {
             instr.Execute();
+            instr.ReleaseInPool();
         }
 
         private float GetDistanceFromClosestPlayer(BatchRequest batch)

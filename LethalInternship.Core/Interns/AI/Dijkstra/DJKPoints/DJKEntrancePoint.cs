@@ -1,33 +1,34 @@
 ﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.Parameters;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
     public class DJKEntrancePoint : DJKPointBase
     {
+        private readonly StringBuilder _pathSb = new StringBuilder(256);
+
         public EntranceTeleport Entrance1 { get; set; }
         public EntranceTeleport? Entrance2 { get; set; }
+
+        private InstructionCalculatePathNoPartials instruction = null!;
+        private List<Vector3> pointsResults = new List<Vector3>();
+
+        public DJKEntrancePoint()
+        {
+            Entrance1 = null!;
+        }
 
         public DJKEntrancePoint(EntranceTeleport entrance)
             : base()
         {
             Entrance1 = entrance;
-        }
-
-        public override object Clone()
-        {
-            var copy = new DJKEntrancePoint(Entrance1);
-            copy.Entrance2 = Entrance2; 
-            copy.Id = Id;
-            copy.Neighbors = Neighbors
-                .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
-                .ToList();
-            return copy;
         }
 
         public bool TryAddOtherEntrance(EntranceTeleport entrance2)
@@ -78,58 +79,100 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             }
         }
 
-        public override Vector3[] GetAllPoints()
+        public override IEnumerable<Vector3> GetAllPoints()
         {
-            List<Vector3> points = new List<Vector3>
-            {
-                Entrance1.entrancePoint.position
-            };
+            pointsResults.Clear();
+            pointsResults.Add(Entrance1.entrancePoint.position);
             if (Entrance2 != null)
             {
-                points.Add(Entrance2.entrancePoint.position);
+                pointsResults.Add(Entrance2.entrancePoint.position);
             }
 
-            return points.ToArray();
+            return pointsResults;
         }
 
-        public override Vector3[] GetNearbyPoints(Vector3 point)
+        public override IEnumerable<Vector3> GetNearbyPoints(Vector3 point)
         {
-            List<Vector3> points = new List<Vector3>
-            {
-                Entrance1.entrancePoint.position
-            };
+            pointsResults.Clear();
+            pointsResults.Add(Entrance1.entrancePoint.position);
             if (Entrance2 != null)
             {
-                points.Add(Entrance2.entrancePoint.position);
+                pointsResults.Add(Entrance2.entrancePoint.position);
             }
 
-            return points
-                        .Where(p => p.y - point.y <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
-                        .OrderBy(p => (p - point).sqrMagnitude)
-                        .ToArray();
+            // Filter
+            for (int i = pointsResults.Count - 1; i >= 0; i--)
+            {
+                if (Mathf.Abs(pointsResults[i].y - point.y) > Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                    pointsResults.RemoveAt(i);
+            }
+
+            // Sort
+            pointsResults.Sort((a, b) =>
+            {
+                float da = (a - point).sqrMagnitude;
+                float db = (b - point).sqrMagnitude;
+                return da.CompareTo(db);
+            });
+
+            return pointsResults;
         }
 
         public override IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
         {
-            return new InstructionCalculatePathNoPartials(
-                                idBatch,
-                                instructionToProcess.groupId,
-                                start: instructionToProcess.start,
-                                target: instructionToProcess.target,
-                                startDJKPoint: instructionToProcess.startDJKPoint,
-                                targetDJKPoint: instructionToProcess.targetDJKPoint);
+            instruction = InternManager.Instance.Pools.Get<InstructionCalculatePathNoPartials>();
+            instruction.Initialize(idBatch,
+                                   instructionToProcess.groupId,
+                                   start: instructionToProcess.start,
+                                   target: instructionToProcess.target,
+                                   startDJKPoint: instructionToProcess.startDJKPoint,
+                                   targetDJKPoint: instructionToProcess.targetDJKPoint,
+                                   samplePosDist: 0f,
+                                   fromId: instructionToProcess.startDJKPoint.Id,
+                                   toId: instructionToProcess.targetDJKPoint.Id,
+                                   resultCallback: instructionToProcess.resultCallback);
+
+            return instruction;
         }
 
         public override string ToString()
         {
-            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.idNeighbor}({(int)Mathf.Sqrt(x.weight)})"));
-            string entrance2 = "null";
-            if (Entrance2 != null)
+            _pathSb.Clear();
+
+            _pathSb.Append("DJKEntrancePoint id:");
+            _pathSb.Append(Id);
+            _pathSb.Append(", Entrance1:{");
+            _pathSb.Append(Entrance1.entrancePoint.position);
+            _pathSb.Append("}, Entrance2: ");
+            if (Entrance2 == null)
+                _pathSb.Append("null");
+            else
             {
-                entrance2 = $"{{{Entrance2.entrancePoint.position}}}";
+                _pathSb.Append("{");
+                _pathSb.Append(Entrance2.entrancePoint.position);
+                _pathSb.Append("}");
             }
 
-            return $"DJKEntrancePoint id:{Id}, Entrance1:{{{Entrance1.entrancePoint.position}}}, Entrance2: {entrance2}, Neighbors {{{neighborsString}}}";
+            return _pathSb.ToString();
+        }
+
+        public override void ReturnToPool(IPoolManager pool)
+        {
+            pool.Return(this);
+        }
+
+        public void CopyFrom(DJKEntrancePoint other)
+        {
+            Id = other.Id;
+            Entrance1 = other.Entrance1;
+            Entrance2 = other.Entrance2;
+        }
+
+        public override IDJKPoint Clone(IPoolManager pool)
+        {
+            var clone = pool.Get<DJKEntrancePoint>();
+            clone.CopyFrom(this);
+            return clone;
         }
     }
 }

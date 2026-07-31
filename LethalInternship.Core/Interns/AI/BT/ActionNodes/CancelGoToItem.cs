@@ -4,6 +4,7 @@ using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -21,7 +22,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     // Item grabbed and/or null
                     ai.SetCommandToFollowPlayer(playVoice: false);
                 }
-                else if (context.nbItemsToCheck == 0) // while scavenging
+                else if (context.NbItemsToCheck == 0) // while scavenging
                 {
                     ai.SetCommandFeedback(EnumTempCommandFeedback.NoItemsLeftToGrab);
                     if (ai.AreHandsFree())
@@ -31,7 +32,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                     else
                     {
                         // else return scavenged items
-                        PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} context.TargetItem == null, context.nbItemsToCheck == 0, !ai.AreHandsFree()");
+                        Debug.Log($"{ai.Npc.playerUsername} context.TargetItem == null, context.nbItemsToCheck == 0, !ai.AreHandsFree()");
                         return BehaviourTreeStatus.Failure;
                     }
                 }
