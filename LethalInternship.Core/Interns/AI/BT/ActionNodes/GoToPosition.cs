@@ -35,8 +35,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             Vector3 currentPoint = context.PathfindingContext.GetCurrentTargetPos(context.PathController.IndexCurrentPoint,
                                                                                   context.PathController.PathIds,
-                                                                                  ai.transform.position,
-                                                                                  context.FinalDestination);
+                                                                                  ai.transform.position);
             //SharedAbstractions.Hooks.PluginLoggerHooks.PluginLoggerHook.LogDebug?.Invoke($"\"{ai.Npc.playerUsername}\" {ai.Npc.playerClientId} => {context.PathController} {currentPoint}");
 
             // Debug
@@ -58,7 +57,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Check for to distance to current point
             if (CloseEnoughOfCurrentPoint(ai, currentPoint))
             {
-                Debug.Log($"{ai.Npc.playerUsername} context.PathController.SetToNextPoint {context.PathController.IndexCurrentPoint} {context.PathController.PathIds.Count}");
+                //Debug.Log($"{ai.Npc.playerUsername} context.PathController.SetToNextPoint {context.PathController.IndexCurrentPoint} {context.PathController.PathIds.Count}");
                 context.PathController.SetToNextPoint();
             }
             return BehaviourTreeStatus.Success;

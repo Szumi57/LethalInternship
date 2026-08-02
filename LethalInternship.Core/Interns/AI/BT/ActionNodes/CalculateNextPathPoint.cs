@@ -3,6 +3,7 @@ using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
@@ -52,8 +53,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Check if current PathPoint reachable
             path = calculateNextPointPathTimed.GetPath(ai, context.PathfindingContext.GetCurrentTargetPos(context.PathController.IndexCurrentPoint,
                                                                                                           context.PathController.PathIds,
-                                                                                                          ai.transform.position,
-                                                                                                          context.FinalDestination));
+                                                                                                          ai.transform.position));
             if (!path.IsDirectlyReachable)
             {
                 // Need to calculate further
@@ -82,7 +82,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 DJKStaticPoint dJKPointPartial = InternManager.Instance.Pools.Get<DJKStaticPoint>();
                 dJKPointPartial.Position = path.Path.corners[^1];
                 dJKPointPartial.Name = "PartialPoint";
-                context.FinalDestination = dJKPointPartial;
+                context.PathfindingContext.SetDestination(dJKPointPartial.Clone(InternManager.Instance.Pools));
 
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
@@ -103,7 +103,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 DJKStaticPoint dJKPointPartial = InternManager.Instance.Pools.Get<DJKStaticPoint>();
                 dJKPointPartial.Position = path.Path.corners[^1];
                 dJKPointPartial.Name = "PartialPoint";
-                context.FinalDestination = dJKPointPartial;
+                context.PathfindingContext.SetDestination(dJKPointPartial.Clone(InternManager.Instance.Pools));
 
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
@@ -129,7 +129,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             var pf = context.PathfindingContext;
             pf.Clear(clearDest: false);
-            pf.SharedGraph = InternManager.Instance.GetGraphEntrances();
+            pf.SharedGraph.CopyFrom(InternManager.Instance.GetGraphEntrances());
 
             // Add source and dest
             DJKStaticPoint dJKPointStart = InternManager.Instance.Pools.Get<DJKStaticPoint>();
@@ -139,8 +139,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Destination 
             if (context.PathfindingContext.Destination == null)
             {
-                pf.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
-                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint SetDestination to \r\n FinalDestination {context.FinalDestination}");
+                PluginLoggerHook.LogError?.Invoke($"{ai.Npc.playerUsername} CalculateNextPathPoint SetDestination context.PathfindingContext.Destination == null");
             }
 
             NeighborResult startWriter = (from, to, startPos, targetPos, dist) =>
@@ -150,8 +149,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             };
             NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to dest : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
-                pf.DestinationNeighbors.Add(new DJKNeighbor(from, targetPos, dist));
+                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to dest : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist} + {Const.PENALTY_ENTRANCE}");
+                pf.SharedGraph.Neighbors[from].Add(new DJKNeighbor(to, targetPos, dist + Const.PENALTY_ENTRANCE));
             };
 
             // Calculate Neighbors
@@ -164,7 +163,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         private void OnBatchCompleted()
         {
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"{currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint ------- {currentContext.PathfindingContext.SharedGraph}");
+            PluginLoggerHook.LogDebug?.Invoke($"{currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint ------- {currentContext.PathfindingContext.SharedGraph}");
 
             // Get full path
             Dijkstra.Dijkstra.CalculatePath(currentContext.PathfindingContext,

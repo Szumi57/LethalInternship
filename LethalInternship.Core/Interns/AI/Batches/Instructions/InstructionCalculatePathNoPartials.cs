@@ -22,11 +22,16 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
                 InternManager.Instance.CancelGroup(IdBatch, GroupId);
             }
 
-            onNeighborResult(fromId, toId, start, target, distance);
+            onNeighborResult(fromId,
+                             toId,
+                             start,
+                             target,
+                             distance);
         }
 
         public override void ReleaseInPool()
         {
+            Reset();
             InternManager.Instance.Pools.Return(this);
         }
     }

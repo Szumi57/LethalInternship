@@ -118,6 +118,7 @@ namespace LethalInternship.Core.Managers
             RegisterAINoiseListener(Time.fixedDeltaTime);
         }
 
+        private float poolLogTimer;
         private void Update()
         {
             CheckAnimationsCulling();
@@ -125,6 +126,15 @@ namespace LethalInternship.Core.Managers
             CheckIsAnInternScheduledToLand();
 
             ProcessCalculatePathQueue();
+
+            poolLogTimer += Time.deltaTime;
+            if (poolLogTimer >= 2f)
+            {
+                poolLogTimer -= 2f;
+                Debug.Log("Pools.LogStats -------------------");
+                Pools.LogStats();
+                Debug.Log("----------------------------------");
+            }
         }
 
         public void Init()

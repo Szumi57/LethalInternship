@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
+using LethalInternship.Core.Managers;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
@@ -24,7 +25,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             // Target valid
             _targetMovingPoint.Transform = ai.targetPlayer.transform;
             _targetMovingPoint.Name = $"targetPlayer {ai.targetPlayer.playerUsername}";
-            context.FinalDestination = _targetMovingPoint;
+            context.PathfindingContext.SetDestination(_targetMovingPoint.Clone(InternManager.Instance.Pools));
             return true;
         }
     }

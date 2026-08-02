@@ -149,5 +149,11 @@ namespace LethalInternship.SharedAbstractions.Constants
 
         // Panik
         public static readonly float DISTANCE_FLEEING_NO_LOS = 5f;
+
+        public static readonly float DISTANCE_SAME_ENTRANCE = 1f;
+        public static readonly float PENALTY_ENTRANCE = 100f;
+        public static readonly float GATHERING_POINT_RANGE = 5f;
+
+        public static readonly int GRAPH_CAPACITY = 256;
     }
 }

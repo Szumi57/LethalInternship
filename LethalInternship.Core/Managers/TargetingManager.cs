@@ -169,43 +169,16 @@ namespace LethalInternship.Core.Managers
             Vector3 forward = cam.transform.forward;
 
             Ray ray = new Ray(origin, forward);
-            LayerMask layerMask = StartOfRound.Instance.collidersRoomMaskDefaultAndPlayers;
+
+            // All masks infos in LethalInternship.Core.Utils.LayerUtil
+            LayerMask layerMask = StartOfRound.Instance.walkableSurfacesMask;
+            layerMask |= 1 << 9; // adding "9: InteractableObject" ex: EntranceTeleportA(Clone) (factory door)
             if ((ActiveSearch & TargetType.Enemy) != 0)
-                layerMask |= 1 << 19;// "19: Enemies" StartOfRound.allPlayersCollideWithMask
+                layerMask |= 1 << 19; // "19: Enemies" from StartOfRound.allPlayersCollideWithMask
             if ((ActiveSearch & TargetType.Item) != 0)
-                layerMask |= 64;// "6: Props" PlayerControllerB.grabbableObjectsMask
+                layerMask |= 64; // "6: Props" from PlayerControllerB.grabbableObjectsMask
 
-            int count = Physics.RaycastNonAlloc(ray, buffer, maxDistanceRay, layerMask);
-
-            // find the colliders
-            int nearestIndex = -1;
-            float nearestDist = float.MaxValue;
-            string colliderName = string.Empty;
-            for (int i = 0; i < count; i++)
-            {
-                if (buffer[i].collider.GetComponentInParent<IIgnoreRaycast>() != null)
-                {
-                    continue;
-                }
-
-                colliderName = buffer[i].collider.gameObject.name;
-                if (colliderName.StartsWith("LineOfS")
-                    || colliderName.StartsWith("Collision"))
-                {
-                    continue;
-                }
-
-                float d = buffer[i].distance;
-                if (d < nearestDist)
-                {
-                    nearestDist = d;
-                    nearestIndex = i;
-                }
-            }
-            if (nearestIndex < 0)
-            {
-                return null;
-            }
+            int count = Physics.RaycastNonAlloc(ray, buffer, maxDistanceRay, layerMask, QueryTriggerInteraction.Ignore);
 
             //PluginLoggerHook.LogDebug?.Invoke($"??????");
             //for (int i = 0; i < count; i++)
@@ -223,6 +196,36 @@ namespace LethalInternship.Core.Managers
 
             //    PluginLoggerHook.LogDebug?.Invoke($"?? {buffer[i].collider.gameObject.name} \"{buffer[i].collider.gameObject.GetComponent<PlayerControllerB>()?.playerUsername}\" layer:{buffer[i].collider.gameObject.layer} \"{LayerMask.LayerToName(buffer[i].collider.gameObject.layer)}\" | {buffer[i].collider.transform.parent?.name} {buffer[i].collider.transform.parent?.parent?.name} {buffer[i].collider.transform.parent?.parent?.parent?.name} {GetInternFromCollider(buffer[i].collider)?.Npc.playerUsername} {buffer[i].distance}");
             //}
+
+            // find the colliders
+            int nearestIndex = -1;
+            float nearestDist = float.MaxValue;
+            string colliderName = string.Empty;
+            for (int i = 0; i < count; i++)
+            {
+                if (buffer[i].collider.GetComponentInParent<IIgnoreRaycast>() != null)
+                {
+                    continue;
+                }
+
+                colliderName = buffer[i].collider.gameObject.name;
+                if (colliderName.StartsWith("LineOfS")
+                    || (colliderName.StartsWith("Collision") && buffer[i].collider.gameObject.layer != 8))
+                {
+                    continue;
+                }
+
+                float d = buffer[i].distance;
+                if (d < nearestDist)
+                {
+                    nearestDist = d;
+                    nearestIndex = i;
+                }
+            }
+            if (nearestIndex < 0)
+            {
+                return null;
+            }
 
             //PluginLoggerHook.LogDebug?.Invoke($"--> hit {buffer[nearestIndex].collider.gameObject.name} \"{buffer[nearestIndex].collider.gameObject.GetComponent<PlayerControllerB>()?.playerUsername}\" layer:{buffer[nearestIndex].collider.gameObject.layer} \"{LayerMask.LayerToName(buffer[nearestIndex].collider.gameObject.layer)}\" | {buffer[nearestIndex].collider.transform.parent?.name} {buffer[nearestIndex].collider.transform.parent?.parent?.name} {buffer[nearestIndex].collider.transform.parent?.parent?.parent?.name} {GetInternFromCollider(buffer[nearestIndex].collider)?.Npc.playerUsername} {buffer[nearestIndex].distance}");
             return BuildTarget(buffer[nearestIndex]);

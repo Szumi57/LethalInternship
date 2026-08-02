@@ -183,7 +183,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             PathfindingContext pf = GetNewPathfindingContext(itemIndex);
             pf.Clear();
-            pf.SharedGraph = InternManager.Instance.GetGraphEntrances();
+            pf.SharedGraph.CopyFrom(InternManager.Instance.GetGraphEntrances());
 
             // Add start
             DJKStaticPoint dJKPointStart = InternManager.Instance.Pools.Get<DJKStaticPoint>();
@@ -203,7 +203,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             };
             NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
             {
-                pf.DestinationNeighbors.Add(new DJKNeighbor(from, targetPos, dist));
+                pf.SharedGraph.Neighbors[from].Add(new DJKNeighbor(to, targetPos, dist + Const.PENALTY_ENTRANCE));
             };
 
             // Calculate Neighbors

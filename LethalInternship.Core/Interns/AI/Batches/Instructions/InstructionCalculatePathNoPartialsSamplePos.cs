@@ -29,6 +29,9 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             if (navPath.status == NavMeshPathStatus.PathInvalid
                 || navPath.status == NavMeshPathStatus.PathPartial) // no partials
             {
+                if (fromId == 0 && toId == 5)
+                    Debug.Log($"InstructionCalculatePathNoPartialsSamplePos what ? navPath.status={navPath.status}, start={start} target={target}");
+
                 return;
             }
 
@@ -39,11 +42,16 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
                 InternManager.Instance.CancelGroup(IdBatch, GroupId);
             }
 
-            onNeighborResult(fromId, toId, start, target, distance);
+            onNeighborResult(fromId,
+                             toId,
+                             start,
+                             target,
+                             distance);
         }
 
         public override void ReleaseInPool()
         {
+            Reset();
             InternManager.Instance.Pools.Return(this);
         }
     }

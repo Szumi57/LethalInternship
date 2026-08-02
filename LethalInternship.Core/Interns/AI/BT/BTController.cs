@@ -168,7 +168,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             _movingPlayerPoint.Name = $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}";
 
             BTContext.PathController.Reset();
-            BTContext.FinalDestination = _movingPlayerPoint;
+            BTContext.PathfindingContext.SetDestination(_movingPlayerPoint.Clone(InternManager.Instance.Pools));
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -209,7 +209,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 return;
             }
 
-            BTContext.FinalDestination = _tempPoint;
+            BTContext.PathfindingContext.SetDestination(_tempPoint.Clone(InternManager.Instance.Pools));
             BTContext.PathController.Reset();
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
@@ -228,7 +228,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             _itemPoint.Transform = itemToFetch.transform;
             _itemPoint.GrabDistance = BTContext.InternAI.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale;
             _itemPoint.SetName(itemToFetch);
-            BTContext.FinalDestination = _itemPoint;
+            BTContext.PathfindingContext.SetDestination(_itemPoint.Clone(InternManager.Instance.Pools));
             BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -237,7 +237,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             _movingEnemyPoint.Transform = enemy.transform;
             _movingEnemyPoint.Name = $"targetEnemy {enemy.enemyType.enemyName}";
             BTContext.PathController.Reset();
-            BTContext.FinalDestination = _movingEnemyPoint;
+            BTContext.PathfindingContext.SetDestination(_movingEnemyPoint.Clone(InternManager.Instance.Pools));
             BTContext.CurrentEnemy = enemy;
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
@@ -253,7 +253,7 @@ namespace LethalInternship.Core.Interns.AI.BT
 
             BTContext.TargetItem = null;
             _staticInterestPoint.Position = interestPoint.Point;
-            BTContext.FinalDestination = _staticInterestPoint;
+            BTContext.PathfindingContext.SetDestination(_staticInterestPoint.Clone(InternManager.Instance.Pools));
             BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -281,7 +281,7 @@ namespace LethalInternship.Core.Interns.AI.BT
             BTContext.TargetItem = null;
             BTContext.PathController.Reset();
             _staticInterestPoint.Position = interestPoint.Point;
-            BTContext.FinalDestination = _staticInterestPoint;
+            BTContext.PathfindingContext.SetDestination(_staticInterestPoint.Clone(InternManager.Instance.Pools));
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 

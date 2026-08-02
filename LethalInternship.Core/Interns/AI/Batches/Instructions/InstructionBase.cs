@@ -44,6 +44,27 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             onNeighborResult = resultCallback;
         }
 
+        public virtual void Reset()
+        {
+            IdBatch = -2;
+            GroupId = -2;
+
+            start = default;
+            target = default;
+
+            startDJKPoint = null!;
+            targetDJKPoint = null!;
+
+            samplePosDist = 0f;
+
+            onNeighborResult = null!;
+
+            fromId = 0;
+            toId = 0;
+
+            navPath.ClearCorners();
+        }
+
         public abstract void ReleaseInPool();
     }
 }

@@ -50,13 +50,11 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
                 foreach (var neighbor in source.GetNeighbors(u))
                 {
-                    Debug.Log($"Check neighbor of {u} ToId {neighbor.ToId} Cost {neighbor.Cost}");
                     int v = neighbor.ToId;
                     double w = neighbor.Cost;
 
                     if (!used[v] && dist[u] + w < dist[v])
                     {
-                        Debug.Log($"used[v]={used[v]} dist[u]={dist[u]} w={w} dist[v]={dist[v]}");
                         dist[v] = dist[u] + w;
                         prev[v] = u;
                     }
@@ -68,7 +66,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
             for (int at = dest; at != -1; at = prev[at])
             {
-                Debug.Log($"at {at}");
                 resultPath.Add(at);
             }
 
@@ -129,6 +126,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         {
             output.Clear();
 
+            GenerateInstructionsFromStartToDest(
+                pf.Start,
+                pf.Destination,
+                idBatch,
+                startWriter,
+                output);
+
             GenerateInstructionsFromStart(
                 pf.Start,
                 pf.SharedGraph.Points,
@@ -141,13 +145,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 pf.SharedGraph.Points,
                 idBatch,
                 destinationWriter,
-                output);
-
-            GenerateInstructionsFromStartToDest(
-                pf.Start,
-                pf.Destination,
-                idBatch,
-                startWriter,
                 output);
         }
 

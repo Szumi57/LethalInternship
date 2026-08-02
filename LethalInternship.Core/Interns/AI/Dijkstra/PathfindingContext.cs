@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 using System.Text;
@@ -10,7 +11,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
     {
         private readonly StringBuilder _pathSb = new StringBuilder(512);
 
-        public GraphController SharedGraph = null!;
+        public GraphController SharedGraph = new GraphController(Const.GRAPH_CAPACITY);
 
         public IDJKPoint Start { get; private set; } = null!;
         private IDJKPoint destination = null!;
@@ -32,7 +33,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public void CopyFrom(PathfindingContext other)
         {
-            SharedGraph = other.SharedGraph;
+            SharedGraph.Reset();
+            SharedGraph.CopyFrom(other.SharedGraph);
+
             SetStart(other.Start.Clone(InternManager.Instance.Pools));
             SetDestination(other.destination.Clone(InternManager.Instance.Pools));
 
@@ -45,6 +48,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public void Clear(bool clearDest = true)
         {
+            SharedGraph.Reset();
             StartNeighbors.Clear();
             DestinationNeighbors.Clear();
 
@@ -75,8 +79,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public IEnumerable<DJKNeighbor> GetNeighbors(int nodeId)
         {
-            int entranceCount = SharedGraph.Points.Count;
-
             // Start (id 0)
             if (nodeId == 0)
             {
@@ -86,34 +88,25 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             }
 
             // Destination (id N+1)
-            if (nodeId == entranceCount + 1)
+            if (nodeId == destination.Id)
             {
                 foreach (var n in DestinationNeighbors)
                     yield return n;
                 yield break;
             }
 
-            // Entrance (id 1..N)
-            int entranceId = nodeId - 1;
-
-            // neighbors entrance ↔ entrance
-            foreach (var n in SharedGraph.Neighbors[entranceId])
+            // neighbors entrance <> entrance
+            foreach (var n in SharedGraph.Neighbors[nodeId])
             {
-                yield return new DJKNeighbor(
-                    n.ToId + 1,
-                    n.Pos,
-                    n.Cost);
+                yield return n;
             }
 
-            // entrance → destination
+            // entrance > destination
             foreach (var n in DestinationNeighbors)
             {
-                if (n.ToId == entranceId)
+                if (n.ToId == nodeId)
                 {
-                    yield return new DJKNeighbor(
-                        entranceCount + 1,
-                        n.Pos,
-                        n.Cost);
+                    yield return n;
                 }
             }
         }
@@ -129,20 +122,18 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 return Destination;
 
             // Entrance
-            int entranceId = nodeId - 1;
-            return SharedGraph.Points[entranceId];
+            return SharedGraph.GetPoint(nodeId);
         }
 
         public Vector3 GetCurrentTargetPos(int index,
                                            IReadOnlyList<int> pathIds,
-                                           Vector3 actorPos,
-                                           IDJKPoint destination)
+                                           Vector3 actorPos)
         {
             int pathCount = pathIds.Count;
 
             // No path, go directly to destination
             if (pathCount == 0)
-                return destination.GetClosestPointTo(actorPos);
+                return Destination.GetClosestPointTo(actorPos);
 
             // First node
             if (index == 0)
@@ -185,22 +176,21 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 }
             }
             // Destination neighbors are inverted
-            else if (toId == Destination.Id)
-            {
-                foreach (var n in DestinationNeighbors)
-                {
-                    if (n.ToId == fromId)// inverted
-                    {
-                        neighbor = n;
-                        return true;
-                    }
-                }
-            }
+            //else if (toId == Destination.Id)
+            //{
+            //    foreach (var n in DestinationNeighbors)
+            //    {
+            //        if (n.ToId == fromId)// inverted
+            //        {
+            //            neighbor = n;
+            //            return true;
+            //        }
+            //    }
+            //}
             // Entrance
             else
             {
-                int entranceId = fromId;
-                foreach (var n in SharedGraph.Neighbors[entranceId])
+                foreach (var n in SharedGraph.Neighbors[fromId])
                 {
                     if (n.ToId == toId)
                     {
@@ -225,8 +215,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
                 return Destination.GetClosestPointTo(fromPos);
 
             // Entrance
-            int entranceId = nodeId - 1;
-            return SharedGraph.Points[entranceId].GetClosestPointTo(fromPos);
+            return SharedGraph.GetPoint(nodeId).GetClosestPointTo(fromPos);
         }
 
         public float GetFullPathDistance(IReadOnlyList<int> pathIds)

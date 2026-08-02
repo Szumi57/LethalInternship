@@ -36,6 +36,7 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
 
         public override void ReleaseInPool()
         {
+            Reset();
             InternManager.Instance.Pools.Return(this);
         }
     }

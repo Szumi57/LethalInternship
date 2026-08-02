@@ -17,22 +17,15 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             if (IsInternStuck(ai)) // Close enough
                 return false;
 
-            if (ai.CurrentCommand == SharedAbstractions.Enums.EnumCommandTypes.FollowPlayer)
-            {
-                Debug.Log($"{ai.Npc.playerUsername} FollowPlayer ?{context.PathfindingContext.GetFullPathString(context.PathController.PathIds)} {context.PathfindingContext.Destination}");
-            }
-
             if (!context.PathController.IsCurrentPointDestination())
             {
                 // Current point is not destination (here position) so : too far
                 return true;
             }
 
-            Debug.Log($"{ai.Npc.playerUsername} TooFarFromPos {context.FinalDestination}");
             Vector3 currentPoint = context.PathfindingContext.GetCurrentTargetPos(context.PathController.IndexCurrentPoint,
                                                                                   context.PathController.PathIds,
-                                                                                  ai.transform.position,
-                                                                                  context.FinalDestination);
+                                                                                  ai.transform.position);
 
             float sqrHorizontalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
             float sqrVerticalDistance = Vector3.Scale(currentPoint - ai.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
@@ -41,16 +34,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             {
                 // Close enough from position
                 stuckCounter = 0;
-                Debug.Log($"{ai.Npc.playerUsername} currentPoint {currentPoint} HorizontalDistance {Mathf.Sqrt(sqrHorizontalDistance)}");
+                //Debug.Log($"{ai.Npc.playerUsername} TooFarFromPos currentPoint {currentPoint} HorizontalDistance {Mathf.Sqrt(sqrHorizontalDistance)} destination {context.PathfindingContext.Destination}");
                 return false;
             }
 
             //SharedAbstractions.Hooks.PluginLoggerHooks.PluginLoggerHook.LogDebug?.Invoke($"{context.PathController.GetCurrentPoint()} sqrHorizontalDistance {sqrHorizontalDistance}");
-            if (ai.CurrentCommand == SharedAbstractions.Enums.EnumCommandTypes.FollowPlayer)
-            {
-                Debug.Log($"{ai.Npc.playerUsername} FollowPlayer => currentPoint {currentPoint} HorizontalDistance {Mathf.Sqrt(sqrHorizontalDistance)}");
-            }
-
 
             // Too far from position
             return true;

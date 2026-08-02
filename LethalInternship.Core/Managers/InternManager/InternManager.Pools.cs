@@ -1,6 +1,7 @@
-﻿using LethalInternship.SharedAbstractions.Managers;
+﻿using LethalInternship.SharedAbstractions.Pools;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LethalInternship.Core.Managers
 {
@@ -12,7 +13,7 @@ namespace LethalInternship.Core.Managers
 
         public class PoolManager : IPoolManager
         {
-            private readonly Dictionary<Type, object> pools = new Dictionary<Type, object>();
+            private readonly Dictionary<Type, IObjectPool> pools = new Dictionary<Type, IObjectPool>();
 
             public T Get<T>() where T : class, new()
             {
@@ -29,15 +30,39 @@ namespace LethalInternship.Core.Managers
             {
                 ((ObjectPool<T>)pools[typeof(T)]).Return(obj);
             }
+
+            public void LogStats()
+            {
+                foreach (var pool in pools.Values)
+                {
+                    Debug.Log(
+                        $"{pool.ObjectType.Name} : " +
+                        $"Created={pool.Created} " +
+                        $"Available={pool.Available} " +
+                        $"InUse={pool.Created - pool.Available}");
+                }
+            }
         }
 
-        public class ObjectPool<T> where T : class, new()
+        public class ObjectPool<T> : IObjectPool where T : class, new()
         {
             private readonly Stack<T> pool = new Stack<T>();
 
+            public int Created { get; private set; }
+
+            public int Available => pool.Count;
+
+            public Type ObjectType => typeof(T);
+
             public T Get()
             {
-                return pool.Count > 0 ? pool.Pop() : new T();
+                if (pool.Count > 0)
+                {
+                    return pool.Pop();
+                }
+
+                Created++;
+                return new T();
             }
 
             public void Return(T obj)

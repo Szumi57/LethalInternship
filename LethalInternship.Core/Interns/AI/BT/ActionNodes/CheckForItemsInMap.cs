@@ -2,6 +2,7 @@
 using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
@@ -170,7 +171,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             PathfindingContext pf = GetNewPathfindingContext(randomIndex);
             pf.Clear();
-            pf.SharedGraph = InternManager.Instance.GetGraphEntrances();
+            pf.SharedGraph.CopyFrom(InternManager.Instance.GetGraphEntrances());
 
             // Add start
             DJKStaticPoint dJKPointStart = InternManager.Instance.Pools.Get<DJKStaticPoint>();
@@ -186,13 +187,13 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             NeighborResult startWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to start : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
+                Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to start : from {from} to {to} startPos {startPos} targetPos {targetPos} dist {dist}");
                 pf.StartNeighbors.Add(new DJKNeighbor(to, targetPos, dist));
             };
             NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to dest : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
-                pf.DestinationNeighbors.Add(new DJKNeighbor(from, targetPos, dist));
+                Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to dest : from {from} to {to} startPos {startPos} targetPos {targetPos} dist {dist} + {Const.PENALTY_ENTRANCE}");
+                pf.SharedGraph.Neighbors[from].Add(new DJKNeighbor(to, targetPos, dist + Const.PENALTY_ENTRANCE));
             };
 
             // Calculate Neighbors
@@ -209,7 +210,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             pathCalculated.Reset();
 
             PathfindingContext pf = tempPfs[randomIndex];
-            //PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex} , random i {randomIndex} pf.Start {pf.Start.Id} pf.Destination {pf.Destination.Id} {tempPfs[randomIndex].SharedGraph}");
+            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex} , random i {randomIndex} pf.Start {pf.Start.Id} pf.Destination {pf.Destination.Id} {tempPfs[randomIndex].SharedGraph}");
             Dijkstra.Dijkstra.CalculatePath(pf,
                                             pf.Start.Id,
                                             pf.Destination.Id,

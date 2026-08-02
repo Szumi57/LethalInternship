@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra
 {
@@ -39,17 +40,22 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
 
         public void SetToNextPoint()
         {
-            IndexCurrentPoint++;
+            if (PathIds.Count == 0)
+            {
+                IndexCurrentPoint = 0;
+                return;
+            }
+            IndexCurrentPoint = Math.Min(IndexCurrentPoint + 1, PathIds.Count - 1);
         }
 
         public void SetNextPointToDestination()
         {
-            IndexCurrentPoint = PathIds.Count - 1;
+            IndexCurrentPoint = Math.Max(PathIds.Count - 1, 0);
         }
 
         public bool IsCurrentPointDestination()
         {
-            return IndexCurrentPoint == PathIds.Count - 1;// && GetCurrentPoint() == destinationPoint;
+            return PathIds.Count == 0 || IndexCurrentPoint == PathIds.Count - 1;
         }
 
         public bool IsPathValid()

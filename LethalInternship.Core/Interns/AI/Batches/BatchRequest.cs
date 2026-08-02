@@ -1,6 +1,8 @@
-﻿using LethalInternship.SharedAbstractions.Interns;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Batches
 {
@@ -25,21 +27,45 @@ namespace LethalInternship.Core.Interns.AI.Batches
 
         public void CancelInstructionsInGroup(int groupId)
         {
-            var newList = new List<IInstruction>();
-            for (int i = 0; i <= currentIndex; i++)
-            {
-                newList.Add(instructions[i]);
-            }
+            int write = currentIndex + 1;
 
-            for (int i = currentIndex + 1; i < instructions.Count; i++)
+            for (int read = currentIndex + 1; read < instructions.Count; read++)
             {
-                if (instructions[i].GroupId != groupId)
+                IInstruction instruction = instructions[read];
+
+                if (instruction.GroupId == groupId)
                 {
-                    newList.Add(instructions[i]);
+                    instruction.ReleaseInPool();
+                }
+                else
+                {
+                    instructions[write++] = instruction;
                 }
             }
 
-            instructions = newList;
+            instructions.RemoveRange(write, instructions.Count - write);
+        }
+
+        public void Reset()
+        {
+            Debug.Log("Pools.LogStats CancelBatch -------------------");
+            InternManager.Instance.Pools.LogStats();
+            Debug.Log("----------------------------------");
+
+            while (this.HasRemaining)
+            {
+                Debug.Log($"CancelBatch idBatch={this.id} currentIndex={this.currentIndex} Count={this.instructions.Count}");
+                this.CurrentInstruction.ReleaseInPool();
+                this.Advance();
+            }
+            Debug.Log("Pools.LogStats CancelBatch -------------------");
+            InternManager.Instance.Pools.LogStats();
+            Debug.Log("----------------------------------");
+            this.instructions.Clear();
+
+            this.id = -2;
+            currentIndex = 0;
+            this.onBatchComplete = null;
         }
     }
 }

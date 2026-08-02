@@ -17,74 +17,52 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
-            Transform? shipTransform = InternManager.Instance.ShipTransform;
             IPointOfInterest? gatheringPoint = InternManager.Instance.GatheringPoint;
-            IInterestPoint? gatheringIP = null;
+
+            Transform? shipTransform = InternManager.Instance.ShipTransform;
+            if (shipTransform == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("UpdateDestPos shipTransform not found !");
+                return BehaviourTreeStatus.Failure;
+            }
 
             switch (ai.CurrentCommand)
             {
                 case EnumCommandTypes.ScavengingToShip:
                 case EnumCommandTypes.UnloadCruiser:
-                    if (shipTransform == null)
-                    {
-                        PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation shipTransform not found !");
-                        return BehaviourTreeStatus.Failure;
-                    }
-                    _shipStaticPoint.Position = ShipInterestPoint.GetShipPoint(shipTransform);
-                    context.FinalDestination = _shipStaticPoint;
 
+                    SetShipDestination(context, shipTransform);
                     break;
                 case EnumCommandTypes.ScavengingToGatheringPoint:
-                    if (gatheringPoint == null)
+                case EnumCommandTypes.UnloadGatheringPoint:
+
+                    if (ai.CurrentCommand == EnumCommandTypes.UnloadGatheringPoint
+                        && context.TargetItem == null
+                        && !ai.AreHandsFree())
                     {
-                        PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation ScavengingToGatheringPoint gatheringPoint not found !");
-                        return BehaviourTreeStatus.Failure;
+                        SetShipDestination(context, shipTransform);
+                        break;
                     }
-                    gatheringIP = gatheringPoint.GetInterestPoint();
+
+                    var gatheringIP = gatheringPoint?.GetInterestPoint();
                     if (gatheringIP == null)
                     {
-                        PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation ScavengingToGatheringPoint gatheringIP not found !");
-                        return BehaviourTreeStatus.Failure;
+                        SetShipDestination(context, shipTransform);
+                        break;
                     }
 
                     _gatheringPointStaticPoint.Position = gatheringIP.Point;
-                    context.FinalDestination = _gatheringPointStaticPoint;
-                    break;
-                case EnumCommandTypes.UnloadGatheringPoint:
-                    if (ai.AreFreeSlotsAvailable())
-                    {
-                        // Still got space to hold items
-                        if (gatheringPoint == null)
-                        {
-                            PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation UnloadGatheringPoint no gathering point set !");
-                            return BehaviourTreeStatus.Failure;
-                        }
-                        gatheringIP = gatheringPoint.GetInterestPoint();
-                        if (gatheringIP == null)
-                        {
-                            PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation UnloadGatheringPoint gatheringIP not found !");
-                            return BehaviourTreeStatus.Failure;
-                        }
-                        _gatheringPointStaticPoint.Position = gatheringIP.Point;
-                        context.FinalDestination = _gatheringPointStaticPoint;
-                    }
-                    else
-                    {
-                        // UnloadGatheringPoint and hands full
-                        if (shipTransform == null)
-                        {
-                            PluginLoggerHook.LogError?.Invoke("SetNextDestToDropLocation shipTransform not found !");
-                            return BehaviourTreeStatus.Failure;
-                        }
-                        _shipStaticPoint.Position = ShipInterestPoint.GetShipPoint(shipTransform);
-                        context.FinalDestination = _shipStaticPoint;
-                    }
-
+                    context.PathfindingContext.SetDestination(_gatheringPointStaticPoint.Clone(InternManager.Instance.Pools));
                     break;
             }
 
-            context.PathfindingContext.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
             return BehaviourTreeStatus.Success;
+        }
+
+        private void SetShipDestination(BTContext context, Transform shipTransform)
+        {
+            _shipStaticPoint.Position = ShipInterestPoint.GetShipPoint(shipTransform);
+            context.PathfindingContext.SetDestination(_shipStaticPoint.Clone(InternManager.Instance.Pools));
         }
     }
 }

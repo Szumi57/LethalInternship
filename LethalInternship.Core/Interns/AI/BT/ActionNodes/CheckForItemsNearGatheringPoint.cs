@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Constants;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -41,9 +42,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
                 // Object not near gathering point
                 Vector3 gatheringPointPos = InternManager.Instance.GatheringPoint.GetPoint();
-                if ((gatheringPointPos - grabbableObject.transform.position).sqrMagnitude > 5f * 5f)
+                if ((gatheringPointPos - grabbableObject.transform.position).sqrMagnitude >= Const.GATHERING_POINT_RANGE * Const.GATHERING_POINT_RANGE)
                 {
-                    continue; // not in cruiser
+                    continue;
                 }
 
                 // Grabbable object ?

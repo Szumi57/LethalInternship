@@ -14,8 +14,6 @@ namespace LethalInternship.Core.Managers
 {
     public partial class InternManager
     {
-        private readonly List<GrabbableObject> _itemsBuffer = new List<GrabbableObject>();
-
         #region Items global
 
         private TimedGetGrabbableObjectsList getGrabbableObjectsListTimed = null!;
@@ -170,6 +168,15 @@ namespace LethalInternship.Core.Managers
             if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
             {
                 if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            // Object too close to gathering point ?
+            if (GatheringPoint != null)
+            {
+                if ((GatheringPoint.GetPoint() - grabbableObject.transform.position).sqrMagnitude < Const.GATHERING_POINT_RANGE * Const.GATHERING_POINT_RANGE)
                 {
                     return false;
                 }

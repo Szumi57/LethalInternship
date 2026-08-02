@@ -1,4 +1,5 @@
-﻿using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.Managers;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Others
@@ -8,6 +9,7 @@ namespace LethalInternship.Core.UI.Others
         public void MouseClick()
         {
             UIManager.Instance.HideAll();
+            CommandContextService.Instance.ExitCommandMode();
         }
     }
 }

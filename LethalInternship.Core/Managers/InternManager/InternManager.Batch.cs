@@ -4,6 +4,7 @@ using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LethalInternship.Core.Managers
 {
@@ -34,6 +35,7 @@ namespace LethalInternship.Core.Managers
 
         public void RequestBatch(int idBatch, List<IInstruction> instructions, Action? onBatchComplete = null)
         {
+            CancelBatch(idBatch);
             BatchRequest batch = Pools.Get<BatchRequest>();
             batch.Initialize(idBatch, instructions, onBatchComplete);
             activeBatches[idBatch] = batch;
@@ -62,7 +64,6 @@ namespace LethalInternship.Core.Managers
                 if (!batch.HasRemaining)
                 {
                     batch.onBatchComplete?.Invoke();
-                    activeBatches.Remove(batch.id);
                     CancelBatch(batch.id);
                     continue;
                 }
@@ -91,7 +92,7 @@ namespace LethalInternship.Core.Managers
                 batch.CancelInstructionsInGroup(groupId);
 
                 if (!batch.HasRemaining)
-                    activeBatches.Remove(idBatch);
+                    CancelBatch(idBatch);
             }
         }
 
@@ -105,13 +106,14 @@ namespace LethalInternship.Core.Managers
                     toRemove.Add(kvp.Key);
             }
             foreach (var idBatch in toRemove)
-                activeBatches.Remove(idBatch);
+                CancelBatch(idBatch);
         }
 
         public void CancelBatch(int idBatch)
         {
             if (activeBatches.Remove(idBatch, out BatchRequest batch))
             {
+                batch.Reset();
                 Pools.Return(batch);
             }
         }
@@ -124,6 +126,7 @@ namespace LethalInternship.Core.Managers
         private void ExecuteInstruction(IInstruction instr)
         {
             instr.Execute();
+            Debug.Log($"Instruction ReleaseInPool idBatch={instr.IdBatch}");
             instr.ReleaseInPool();
         }
 

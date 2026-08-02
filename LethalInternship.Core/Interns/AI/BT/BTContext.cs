@@ -1,6 +1,5 @@
 ﻿using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Interns.AI.Dijkstra;
-using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +11,6 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         public PathController PathController { get; set; } = new PathController();
         public PathfindingContext PathfindingContext { get; set; } = new PathfindingContext();
-        public IDJKPoint FinalDestination { get; set; } = null!;
 
         public SearchCoroutineController searchForPlayers { get; set; } = null!;
 

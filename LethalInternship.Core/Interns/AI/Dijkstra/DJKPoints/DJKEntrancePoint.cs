@@ -1,9 +1,8 @@
 ﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
 using LethalInternship.Core.Managers;
-using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.Parameters;
+using LethalInternship.SharedAbstractions.Pools;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -14,36 +13,13 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
     {
         private readonly StringBuilder _pathSb = new StringBuilder(256);
 
-        public EntranceTeleport Entrance1 { get; set; }
+        public EntranceTeleport Entrance1 { get; set; } = null!;
         public EntranceTeleport? Entrance2 { get; set; }
 
         private InstructionCalculatePathNoPartials instruction = null!;
         private List<Vector3> pointsResults = new List<Vector3>();
 
-        public DJKEntrancePoint()
-        {
-            Entrance1 = null!;
-        }
-
-        public DJKEntrancePoint(EntranceTeleport entrance)
-            : base()
-        {
-            Entrance1 = entrance;
-        }
-
-        public bool TryAddOtherEntrance(EntranceTeleport entrance2)
-        {
-            //PluginLoggerHook.LogDebug?.Invoke($"id: {Id}, {entrance2.entrancePoint} =? {Entrance1.exitPoint}");
-            if (entrance2 != Entrance1
-                && entrance2.entranceId == Entrance1.entranceId)
-            {
-                //PluginLoggerHook.LogDebug?.Invoke($"new entrance2 !!!");
-                Entrance2 = entrance2;
-                return true;
-            }
-
-            return false;
-        }
+        public DJKEntrancePoint() { }
 
         public Vector3 GetExitPointFrom(Vector3 point)
         {
@@ -64,58 +40,20 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 
         public override Vector3 GetClosestPointTo(Vector3 point)
         {
-            if (Entrance2 == null)
-            {
-                return Entrance1.entrancePoint.position;
-            }
-
-            if ((point - Entrance1.entrancePoint.position).sqrMagnitude < (point - Entrance2.entrancePoint.position).sqrMagnitude)
-            {
-                return Entrance1.entrancePoint.position;
-            }
-            else
-            {
-                return Entrance2.entrancePoint.position;
-            }
+            return Entrance1.entrancePoint.position;
         }
 
         public override IEnumerable<Vector3> GetAllPoints()
         {
             pointsResults.Clear();
             pointsResults.Add(Entrance1.entrancePoint.position);
-            if (Entrance2 != null)
-            {
-                pointsResults.Add(Entrance2.entrancePoint.position);
-            }
-
             return pointsResults;
         }
 
         public override IEnumerable<Vector3> GetNearbyPoints(Vector3 point)
         {
-            pointsResults.Clear();
-            pointsResults.Add(Entrance1.entrancePoint.position);
-            if (Entrance2 != null)
-            {
-                pointsResults.Add(Entrance2.entrancePoint.position);
-            }
-
-            // Filter
-            for (int i = pointsResults.Count - 1; i >= 0; i--)
-            {
-                if (Mathf.Abs(pointsResults[i].y - point.y) > Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
-                    pointsResults.RemoveAt(i);
-            }
-
-            // Sort
-            pointsResults.Sort((a, b) =>
-            {
-                float da = (a - point).sqrMagnitude;
-                float db = (b - point).sqrMagnitude;
-                return da.CompareTo(db);
-            });
-
-            return pointsResults;
+            // only entrance1
+            return GetAllPoints();
         }
 
         public override IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)

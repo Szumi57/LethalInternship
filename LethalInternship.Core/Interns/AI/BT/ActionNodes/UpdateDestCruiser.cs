@@ -18,8 +18,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
             _vehiclePoint.Transform = vehicleController.transform;
-            context.FinalDestination = _vehiclePoint;
-            context.PathfindingContext.SetDestination(context.FinalDestination.Clone(InternManager.Instance.Pools));
+            context.PathfindingContext.SetDestination(_vehiclePoint.Clone(InternManager.Instance.Pools));
 
             return BehaviourTreeStatus.Success;
         }
