@@ -10,6 +10,7 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
     public class PathfindingContext : IDJKNodeSource
     {
         private readonly StringBuilder _pathSb = new StringBuilder(512);
+        private readonly StringBuilder _sb = new StringBuilder(512);
 
         public GraphController SharedGraph = new GraphController(Const.GRAPH_CAPACITY);
 
@@ -256,7 +257,9 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             for (int i = 0; i < pathIds.Count; i++)
             {
                 int fromId = pathIds[i];
+                _pathSb.Append("[");
                 _pathSb.Append(fromId);
+                _pathSb.Append("]");
 
                 if (i < pathIds.Count - 1)
                 {
@@ -277,36 +280,43 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
             return _pathSb.ToString();
         }
 
-        public string ToString(int indexCurrentPoint, IReadOnlyList<int> pathIds)
+        public override string ToString()
         {
-            _pathSb.Clear();
-            _pathSb.Append("Path (");
-            _pathSb.Append((int)Mathf.Sqrt(GetFullPathDistance(pathIds)));
-            _pathSb.Append("m) = ");
+            _sb.Clear();
 
-            if (pathIds == null || pathIds.Count == 0)
+            _sb.AppendLine();
+            _sb.Append("  Start: ");
+            _sb.Append(Start?.ToString() ?? "null");
+            _sb.Append(" -> [");
+            AppendNeighbors(_sb, StartNeighbors);
+            _sb.AppendLine("]");
+
+            _sb.Append(SharedGraph);
+
+            _sb.Append("  Destination: ");
+            _sb.Append(destination?.ToString() ?? "null");
+            _sb.Append(" -> [");
+            AppendNeighbors(_sb, DestinationNeighbors);
+            _sb.AppendLine("]");
+
+            return _sb.ToString();
+        }
+
+        private static void AppendNeighbors(StringBuilder sb,
+                                            IReadOnlyList<DJKNeighbor> neighbors)
+        {
+            for (int i = 0; i < neighbors.Count; i++)
             {
-                _pathSb.Append("Path : empty");
-                return _pathSb.ToString();
-            }
+                var neighbor = neighbors[i];
 
-            for (int i = 0; i < pathIds.Count; i++)
-            {
-                int fromId = pathIds[i];
-                if (i == indexCurrentPoint)
-                {
-                    _pathSb.Append(" >");
-                    _pathSb.Append(fromId);
-                    _pathSb.Append("<");
-                }
-                else
-                {
-                    _pathSb.Append(" ");
-                    _pathSb.Append(fromId);
-                }
-            }
+                sb.Append(neighbor.ToId);
+                sb.Append('(');
+                sb.Append((int)Mathf.Sqrt(neighbor.Cost));
+                sb.Append(')');
 
-            return _pathSb.ToString();
+                if (i < neighbors.Count - 1)
+                    sb.Append(", ");
+            }
         }
     }
 }

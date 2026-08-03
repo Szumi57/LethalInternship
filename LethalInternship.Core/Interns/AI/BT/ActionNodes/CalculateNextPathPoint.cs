@@ -7,7 +7,6 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -144,12 +143,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             NeighborResult startWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to star : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
+                //Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to star : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist}");
                 pf.StartNeighbors.Add(new DJKNeighbor(to, targetPos, dist));
             };
             NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to dest : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist} + {Const.PENALTY_ENTRANCE}");
+                //Debug.Log($"{ai.Npc.playerUsername} CalculateNextPathPoint adding neighbors to dest : from {to} to {from} startPos {startPos} targetPos {targetPos} dist {dist} + {Const.PENALTY_ENTRANCE}");
                 pf.SharedGraph.Neighbors[from].Add(new DJKNeighbor(to, targetPos, dist + Const.PENALTY_ENTRANCE));
             };
 
@@ -162,9 +161,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private void OnBatchCompleted()
         {
-            // log
-            PluginLoggerHook.LogDebug?.Invoke($"{currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint ------- {currentContext.PathfindingContext.SharedGraph}");
-
             // Get full path
             Dijkstra.Dijkstra.CalculatePath(currentContext.PathfindingContext,
                                             currentContext.PathfindingContext.Start.Id,
@@ -173,7 +169,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             currentContext.PathController.SetNewPath(pathIds);
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"{currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint ======= {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)}  {currentContext.PathfindingContext.Destination}");
+            PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted >>> {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)} | Destination {currentContext.PathfindingContext.Destination}");
+            PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted {currentContext.PathfindingContext}");
         }
     }
 }

@@ -214,9 +214,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
         private void OnBatchCompleted()
         {
-            // log
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ------- {tempPfs[itemIndex].SharedGraph}");
-
             // Get full path
             PathController pathCalculated = GetNewPathController(itemIndex);
             pathCalculated.Reset();
@@ -229,8 +226,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             pathCalculated.SetNewPath(pathIds);
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInRange itemIndex {itemIndex} ======= {tempPfs[itemIndex].GetFullPathString(pathCalculated.PathIds)} {tempPfs[itemIndex].Destination}");
-
+            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInRange OnBatchCompleted >>> {tempPfs[itemIndex].GetFullPathString(pathCalculated.PathIds)} | Destination {tempPfs[itemIndex].Destination}");
+            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInRange OnBatchCompleted itemIndex={itemIndex} tempPfs[{itemIndex}] {tempPfs[itemIndex]}");
 
             itemIndex++;
         }

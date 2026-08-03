@@ -79,10 +79,6 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra
         {
             _sb.Clear();
 
-            _sb.Append("Graph(");
-            _sb.Append(Points.Count);
-            _sb.AppendLine(")");
-
             for (int i = 0; i < Points.Count; i++)
             {
                 _sb.Append("  ");

@@ -187,19 +187,19 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 
             NeighborResult startWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to start : from {from} to {to} startPos {startPos} targetPos {targetPos} dist {dist}");
+                //Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to start : from {from} to {to} startPos {startPos} targetPos {targetPos} dist {dist}");
                 pf.StartNeighbors.Add(new DJKNeighbor(to, targetPos, dist));
             };
             NeighborResult destinationWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to dest : from {from} to {to} startPos {startPos} targetPos {targetPos} dist {dist} + {Const.PENALTY_ENTRANCE}");
+                //Debug.Log($"{ai.Npc.playerUsername} CheckForItemsInMap adding neighbors to dest : from {from} to {to} startPos {startPos} targetPos {targetPos} dist {dist} + {Const.PENALTY_ENTRANCE}");
                 pf.SharedGraph.Neighbors[from].Add(new DJKNeighbor(to, targetPos, dist + Const.PENALTY_ENTRANCE));
             };
 
             // Calculate Neighbors
             int idBatch = (int)ai.Npc.playerClientId;
             Dijkstra.Dijkstra.GenerateNeighborInstructions(pf, idBatch, startWriter, destinationWriter, instructionsToProcess);
-            PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CheckForItemsInMap RequestBatch idBatch={idBatch} dest {dJKPointDest} itemIndex={itemIndex} randomIndex={randomIndex}");
+            //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CheckForItemsInMap RequestBatch idBatch={idBatch} dest {dJKPointDest} itemIndex={itemIndex} randomIndex={randomIndex}");
             InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchCompleted);
         }
 
@@ -210,7 +210,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             pathCalculated.Reset();
 
             PathfindingContext pf = tempPfs[randomIndex];
-            PluginLoggerHook.LogDebug?.Invoke($"CheckForItemsToGrabInMap itemIndex {itemIndex} , random i {randomIndex} pf.Start {pf.Start.Id} pf.Destination {pf.Destination.Id} {tempPfs[randomIndex].SharedGraph}");
             Dijkstra.Dijkstra.CalculatePath(pf,
                                             pf.Start.Id,
                                             pf.Destination.Id,
@@ -218,7 +217,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             pathCalculated.SetNewPath(pathIds);
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap itemIndex {itemIndex} => {itemIndex + 1}, random i {randomIndex} valid {pathCalculated.IsPathValid()} ======= {tempPfs[randomIndex].GetFullPathString(pathCalculated.PathIds)} {tempPfs[randomIndex].Destination}");
+            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap OnBatchCompleted >>> {tempPfs[randomIndex].GetFullPathString(pathCalculated.PathIds)} | Destination {tempPfs[randomIndex].Destination}");
+            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap OnBatchCompleted itemIndex={itemIndex} tempPfs[{randomIndex}] {tempPfs[randomIndex]}");
 
             itemIndex++;
         }
