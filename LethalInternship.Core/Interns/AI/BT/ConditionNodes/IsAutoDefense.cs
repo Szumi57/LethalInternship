@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 
 namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
@@ -12,12 +11,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
             if (context.CurrentEnemy == null)
             {
                 PluginLoggerHook.LogError?.Invoke("IsAutoDefense Condition, CurrentEnemy is null");
-                return false;
-            }
-
-            if (!ai.InternIdentity.AutoDefense)
-            {
-                ai.SetCommandFeedback(EnumTempCommandFeedback.NotInAutoDefense);
                 return false;
             }
 

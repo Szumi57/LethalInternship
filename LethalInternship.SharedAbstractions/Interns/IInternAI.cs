@@ -27,6 +27,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool IsSpawned { get; }
         bool IsEnemyDead { get; }
 
+        EnumCommandTypes CurrentCommand { get; }
         IPointOfInterest? GetPointOfInterest();
         void AssignOrder(Order order);
         void SetCommandToFollowPlayer(bool playVoice = true);

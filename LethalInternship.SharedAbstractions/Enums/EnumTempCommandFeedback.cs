@@ -3,6 +3,7 @@
     public enum EnumTempCommandFeedback
     {
         None = 0,
+        ExecutingCommand,
         NoFreeSlotsAvailable,
         CantHoldItem,
         TargetItemNotGrabbable,
@@ -10,7 +11,7 @@
         Thinking,
         NotHoldingWeapon,
         CantKillEnemy,
-        NotInAutoDefense,
+        Fleeing,
         CombatTooLong,
         EnemyNotHere,
         EnemyTooFar,

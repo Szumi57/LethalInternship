@@ -451,6 +451,8 @@ namespace LethalInternship.Core.Managers
 
         #region CursorTooltip
 
+        private readonly List<(string id, string text)> _cursorTooltips = new List<(string id, string text)>(10);
+
         public void ClearCursorTipText()
         {
             if (StartOfRound.Instance == null
@@ -477,25 +479,25 @@ namespace LethalInternship.Core.Managers
             if (target == null)
                 return;
 
-            List<(string id, string text)> tooltipsToAdd = new List<(string id, string text)>();
+            _cursorTooltips.Clear();
 
             // Targeting tooltip
             if (InputManager.Instance.CurrentTargetedAbility != null)
             {
                 if (target.Value.Item != null)
                 {
-                    tooltipsToAdd.Add(("targetingItem", UIConst.TOOLTIP_TARGETING_ITEM));
+                    _cursorTooltips.Add(("targetingItem", UIConst.TOOLTIP_TARGETING_ITEM));
                 }
                 else if (target.Value.Enemy != null)
                 {
                     if (InternManager.Instance.IsEnemyKillable(target.Value.Enemy))
-                        tooltipsToAdd.Add(("targetingKillableEnemy", UIConst.TOOLTIP_TARGETING_ENEMY));
+                        _cursorTooltips.Add(("targetingKillableEnemy", UIConst.TOOLTIP_TARGETING_ENEMY));
                     else
-                        tooltipsToAdd.Add(("targetingUnkillableEnemy", UIConst.TOOLTIP_TARGETING_UNKILLABLE_ENEMY));
+                        _cursorTooltips.Add(("targetingUnkillableEnemy", UIConst.TOOLTIP_TARGETING_UNKILLABLE_ENEMY));
                 }
                 else if (target.Value.PointedPointOfInterest != null)
                 {
-                    tooltipsToAdd.Add(("targetingPosition", UIConst.TOOLTIP_TARGETING_POSITION));
+                    _cursorTooltips.Add(("targetingPosition", UIConst.TOOLTIP_TARGETING_POSITION));
                 }
             }
             else if (target.Value.Intern != null) // Not targeting command
@@ -505,7 +507,7 @@ namespace LethalInternship.Core.Managers
                 // Temp command feedback
                 if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
                 {
-                    tooltipsToAdd.Add(("commandFeedback", intern.TempCommandFeedback.ToString()));
+                    _cursorTooltips.Add(("commandFeedback", GetCommandFeedbackString(intern.TempCommandFeedback, intern.CurrentCommand)));
                 }
 
                 if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance)
@@ -514,7 +516,7 @@ namespace LethalInternship.Core.Managers
                     // Line give item
                     if (localPlayer.currentlyHeldObjectServer != null)
                     {
-                        tooltipsToAdd.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
+                        _cursorTooltips.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
                                                                      InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern))));
                     }
 
@@ -522,12 +524,12 @@ namespace LethalInternship.Core.Managers
                     if (intern.OwnerClientId != localPlayer.actualClientId)
                     {
                         // Line manage
-                        tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_MANAGE,
+                        _cursorTooltips.Add(("manage", string.Format(UIConst.TOOLTIP_MANAGE,
                                                                    InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern))));
                     }
 
                     // Grab intern
-                    tooltipsToAdd.Add(("manage", string.Format(UIConst.TOOLTIP_GRAB_INTERNS,
+                    _cursorTooltips.Add(("manage", string.Format(UIConst.TOOLTIP_GRAB_INTERNS,
                                                                InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern))));
                 }
 
@@ -535,7 +537,7 @@ namespace LethalInternship.Core.Managers
                 if (intern.OwnerClientId == localPlayer.actualClientId)
                 {
                     // Line manage
-                    tooltipsToAdd.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
+                    _cursorTooltips.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
                                                                     InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
                 }
             }
@@ -543,7 +545,19 @@ namespace LethalInternship.Core.Managers
             // Send tooltips
             SetTooltips(localPlayer.cursorTip,
                         isSeparatorToAdd: false,
-                        tooltipsToAdd);
+                        _cursorTooltips);
+        }
+
+        private string GetCommandFeedbackString(EnumTempCommandFeedback enumTempCommandFeedback, EnumCommandTypes enumCommand)
+        {
+            if (enumTempCommandFeedback == EnumTempCommandFeedback.ExecutingCommand)
+            {
+                return UIConst.TOOLTIP_EXECUTING_COMMAND[(int)enumCommand];
+            }
+            else
+            {
+                return UIConst.TOOLTIP_COMMAND_FEEDBACK[(int)enumTempCommandFeedback];
+            }
         }
 
         #endregion
@@ -552,6 +566,8 @@ namespace LethalInternship.Core.Managers
 
         const string SEPARATOR = "--------------";
         const string TT_START = "<tt id=";
+
+        private readonly List<(string id, string text)> _controlTooltips = new List<(string id, string text)>(2);
 
         private void UpdateControlTip(HUDManager hudManager)
         {
@@ -570,29 +586,25 @@ namespace LethalInternship.Core.Managers
                 index = hudManager.controlTipLines.Length - 1;
             }
 
-            List<(string id, string text)> tooltipsToAdd = new List<(string id, string text)>();
+            _controlTooltips.Clear();
+
             // Release grabbed interns
             if (InternManager.Instance.IsLocalPlayerHoldingInterns())
             {
-                tooltipsToAdd.Add(("release", string.Format(UIConst.TOOLTIP_RELEASE_INTERNS,
+                _controlTooltips.Add(("release", string.Format(UIConst.TOOLTIP_RELEASE_INTERNS,
                                                             InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns))));
             }
 
             // Intern commands 
             if (_internsOwned.Count > 0)
             {
-                tooltipsToAdd.Add(("commandsAll", string.Format(UIConst.TOOLTIP_COMMANDS_ALL,
+                _controlTooltips.Add(("commandsAll", string.Format(UIConst.TOOLTIP_COMMANDS_ALL,
                                                              InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern))));
             }
 
             SetTooltips(hudManager.controlTipLines[index],
                         isSeparatorToAdd: index > 0,
-                        tooltipsToAdd);
-        }
-
-        private string MakeTooltip(string id, string text)
-        {
-            return $"\n<size=0>{TT_START}{id}></size>{text}";
+                        _controlTooltips);
         }
 
         private void SetTooltips(TextMeshProUGUI tmp,
@@ -616,11 +628,15 @@ namespace LethalInternship.Core.Managers
 
             foreach (var tt in tooltips)
             {
-                _sb.Append(MakeTooltip(tt.id, tt.text));
+                _sb.Append("\n<size=0>")
+                   .Append(TT_START)
+                   .Append(tt.id)
+                   .Append("></size>")
+                   .Append(tt.text);
             }
 
             string newText = _sb.ToString();
-            if (!ReferenceEquals(tmp.text, newText) && tmp.text != newText)
+            if (tmp.text != newText)
             {
                 tmp.text = newText;
             }
@@ -629,48 +645,33 @@ namespace LethalInternship.Core.Managers
         private string StripAllTooltips(string src)
         {
             // remove all rows with <tt id=...>
-            while (true)
+            _sb.Clear();
+
+            int lineStart = 0;
+
+            while (lineStart < src.Length)
             {
-                int s = src.IndexOf(TT_START);
-                if (s < 0)
-                    break;
-
-                // remonter au début de la ligne
-                int lineStart = s;
-                while (lineStart > 0 && src[lineStart - 1] != '\n')
-                    lineStart--;
-
-                int lineEnd = src.IndexOf('\n', s);
+                int lineEnd = src.IndexOf('\n', lineStart);
                 if (lineEnd < 0)
                     lineEnd = src.Length;
 
-                src = src.Remove(lineStart, lineEnd - lineStart);
+                int length = lineEnd - lineStart;
+
+                bool isTooltip = src.IndexOf(TT_START, lineStart, length) >= 0;
+                bool isSeparator = src.IndexOf(SEPARATOR, lineStart, length) >= 0;
+
+                if (!isTooltip && !isSeparator)
+                {
+                    if (_sb.Length > 0)
+                        _sb.Append('\n');
+
+                    _sb.Append(src, lineStart, length);
+                }
+
+                lineStart = lineEnd + 1;
             }
 
-            // remove separator if present
-            src = RemoveSeparator(src);
-            return src.TrimEnd('\n');
-        }
-
-        private string RemoveSeparator(string src)
-        {
-            int s = src.IndexOf(SEPARATOR);
-            if (s < 0)
-                return src;
-
-            // back to start of row
-            int lineStart = s;
-            while (lineStart > 0 && src[lineStart - 1] != '\n')
-                lineStart--;
-
-            // go to end of row
-            int lineEnd = src.IndexOf('\n', s);
-            if (lineEnd < 0)
-                lineEnd = src.Length;
-            else
-                lineEnd += 1; // include '\n'
-
-            return src.Remove(lineStart, lineEnd - lineStart);
+            return _sb.ToString();
         }
 
         #endregion

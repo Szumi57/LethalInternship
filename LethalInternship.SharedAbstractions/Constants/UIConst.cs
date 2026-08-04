@@ -29,6 +29,40 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly string TOOLTIP_TARGETING_ITEM = "-> Go get this item";
         public static readonly string TOOLTIP_TARGETING_POSITION = "-> Go there";
 
+        public static readonly string[] TOOLTIP_COMMAND_FEEDBACK = {
+        "[...]",// None = 0,
+        "[...]",// ExecutingCommand,
+        "[Hands full]",// NoFreeSlotsAvailable,
+        "[Cannot hold this item]",// CantHoldItem,
+        "[Cannot take this item]",// TargetItemNotGrabbable,
+        "[No more items to grab]",// NoItemsLeftToGrab,
+        "[Thinking]",// Thinking,
+        "[Not holding any weapon]",// NotHoldingWeapon,
+        "[This monster is unkillable]",// CantKillEnemy,
+        "[Fleeing !]",// Fleeing,
+        "[Combat too long, aborting...]",// CombatTooLong,
+        "[The monster is not here]",// EnemyNotHere,
+        "[The monster is too far]",// EnemyTooFar,
+        };
+
+        public static readonly string[] TOOLTIP_EXECUTING_COMMAND = {
+        "[...]",// None = 0,
+        "[Following]",// FollowPlayer,
+        "[Going to the cruiser]",// GoToVehicle,
+        "[Going to the position]",// GoToPosition,
+        "[Waiting for command]",// WaitForCommand,
+        "[Scavenge -> Ship]",// ScavengingToShip,
+        "[Scavenge -> Cruiser]",// ScavengingToCruiser,
+        "[Scavenge -> Gathering point]",// ScavengingToGatheringPoint,
+        "[Grabbing the item]",// GoFetchItem,
+        "[Kill]",// Kill,
+        "[Drop all items -> Ship]",// DropAllItemsToShip,
+        "[Drop all items -> Gathering point]",// DropAllItemsOnGatheringPoint,
+        "[Drop all items -> Cruiser]",// DropAllItemsInCruiser,
+        "[Unloading cruiser]",// UnloadCruiser,
+        "[Unloading gathering point]",// UnloadGatheringPoint,
+        };
+
         public static string[] COMMANDS_BUTTON_STRING = {
             string.Empty,
             "Follow me",// FollowMe

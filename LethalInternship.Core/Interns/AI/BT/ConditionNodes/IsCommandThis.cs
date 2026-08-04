@@ -20,7 +20,11 @@ namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 
         public bool Condition(BTContext context)
         {
-            return commandTypes.Contains(context.InternAI.CurrentCommand);
+            bool isCommandThis = commandTypes.Contains(context.InternAI.CurrentCommand);
+            if (isCommandThis)
+                context.InternAI.SetCommandFeedback(EnumTempCommandFeedback.ExecutingCommand);
+
+            return isCommandThis;
         }
     }
 }
