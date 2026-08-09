@@ -26,7 +26,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
         public string ItemName => itemGrabbableObject.itemProperties.itemName;
         public int ItemValue => itemGrabbableObject.scrapValue;
 
-        private float holdTime = 0.5f;
+        private float holdTime = 0.3f;
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
@@ -81,7 +81,6 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
             // Item Hologram
             itemHologram = Instantiate(grabbableObject.itemProperties.spawnPrefab, Content);
-            hologramRenderers = itemHologram.GetComponentsInChildren<Renderer>(true);
 
             // Position in the container
             itemFrameRect = (RectTransform)Content;
@@ -107,6 +106,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
                     componentsInChildren[i].gameObject.layer = 5;
                 }
             }
+            hologramRenderers = componentsInChildren;
 
             // Clean gameobject just for hologram
             Destroy(itemHologram.GetComponent<NetworkObject>());
@@ -193,7 +193,12 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
             Bounds bounds = renderers[0].bounds;
             for (int i = 1; i < renderers.Length; i++)
+            {
+                if (renderers[i] is ParticleSystemRenderer)
+                    continue;
+
                 bounds.Encapsulate(renderers[i].bounds);
+            }
 
             Vector3 size = bounds.size;
 

@@ -19,6 +19,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         int[] ItemsInInventory { get; }
 
         Action<IInternIdentity>? OnAutoDefenseChanged { get; set; }
+        Action<IInternIdentity>? OnCommandChanged { get; set; }
         bool AutoDefense { get; }
 
         int GetPreviousSuitID();

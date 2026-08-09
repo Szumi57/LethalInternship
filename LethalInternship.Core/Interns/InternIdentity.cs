@@ -24,6 +24,9 @@ namespace LethalInternship.Core.Interns
         public Action<IInternIdentity>? OnAutoDefenseChanged { get { return onAutoDefenseChanged; } set { onAutoDefenseChanged = value!; } }
         public bool AutoDefense { get; private set; }
 
+        private Action<IInternIdentity> onCommandChanged = null!;
+        public Action<IInternIdentity>? OnCommandChanged { get { return onCommandChanged; } set { onCommandChanged = value!; } }
+
         public IInternVoice Voice => voice;
         public object? BodyReplacementBase { get => bodyReplacementBase; set => bodyReplacementBase = value; }
         public bool Alive { get { return Hp > 0; } }

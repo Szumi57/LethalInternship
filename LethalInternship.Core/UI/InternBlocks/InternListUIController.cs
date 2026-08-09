@@ -169,11 +169,13 @@ namespace LethalInternship.Core.UI.InternBlocks
                         intern.OnHeldItemsChanged -= RefreshBlock;
                         intern.OnInternDead -= RefreshList;
                         intern.InternIdentity.OnAutoDefenseChanged -= RefreshBlock;
+                        intern.InternIdentity.OnCommandChanged -= RefreshBlock;
                         intern.OnOwnerChanged -= RefreshList;
 
                         intern.OnHeldItemsChanged += RefreshBlock;
                         intern.OnInternDead += RefreshList;
                         intern.InternIdentity.OnAutoDefenseChanged += RefreshBlock;
+                        intern.InternIdentity.OnCommandChanged += RefreshBlock;
                         intern.OnOwnerChanged += RefreshList;
                     }
                 }

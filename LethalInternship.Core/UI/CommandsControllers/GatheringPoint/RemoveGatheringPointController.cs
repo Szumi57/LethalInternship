@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,11 +21,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private float transparency = 1f;
         private float transparencyNotInteractable = 0.2f;
-        private float holdTime = 0.8f;
+        private float holdTime = 0.5f;
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
-        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "RemoveGatheringPointController";
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : SetTooltipMessage();
 
         void Awake()
         {
@@ -50,6 +51,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
                 SetAlpha(IconImage, transparency);
                 SetAlpha(FrameImage, transparency);
             }
+        }
+
+        private string SetTooltipMessage()
+        {
+            return UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction];
         }
 
         private void SetAlpha(Image image, float transparency)

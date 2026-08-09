@@ -1,5 +1,7 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
+using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -27,7 +29,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
-        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "ButtonSelectSuit";
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : SetTooltipMessage();
 
         void Awake()
         {
@@ -116,6 +118,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
         private void SetButtonNotHovered()
         {
             FrameImage.pixelsPerUnitMultiplier = 20f;
+        }
+
+        private string SetTooltipMessage()
+        {
+            return UIConst.COMMANDS_BUTTON_STRING[(int)EnumInputAction.SelectSuit];
         }
 
         public void Selected()

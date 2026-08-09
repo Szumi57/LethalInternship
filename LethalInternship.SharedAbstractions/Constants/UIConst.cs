@@ -75,11 +75,25 @@ namespace LethalInternship.SharedAbstractions.Constants
             "Go to the ship",// GoToShip
             "Set new gathering point",// SetGatheringPoint
             "Go to the gathering point",// GoToGatheringPoint
-            "Remove the gathering point",// RemoveGatheringPoint
+            "Delete the gathering point",// RemoveGatheringPoint
             "Go to the cruiser",// GoToVehicle
             "Scavenge and return to ship",// ScavengeToShip
             "Scavenge and return to the gathering point", // ScavengeToGatheringPoint
             "Scavenge and return to the cruiser", // ScavengeToCruiser
+            "Previous suit", // PreviousSuit,
+            "Next suit", // NextSuit,
+            "Same suit as player", // SameSuit,
+            "Random suit", // RandomSuit,
+            "Choose suit", // SelectSuit,
+            "Close", // Close,
+            "See all interns", // ReturnToAll,
+            "Previous intern", // PreviousIntern,
+            "Next intern", // NextIntern,
+            "Unload items in cruiser", // UnloadCruiser,
+            "Unload items near the gathering point", // UnloadGatheringPoint,
+            "Drop all items in the ship", // DropAllItemsInShip,
+            "Drop all items on the gathering point", // DropAllItemsOnGatheringPoint,
+            "Drop all items in the cruiser", // DropAllItemsInCruiser,
         };
 
         public static string[] CATEGORIES_STRING = {
@@ -91,6 +105,9 @@ namespace LethalInternship.SharedAbstractions.Constants
             "- Weapon ({0})",// HeldWeapon
             "- {0} Items ${1}",// HeldItem
         };
+
+        public static string TOOLTIP_AUTODEFENSE_BEHAVIOUR = "[Attack enemy if holding weapon]";
+        public static string TOOLTIP_FLEE_BEHAVIOUR = "[Flee if enemy]";
 
         public static float DISTANCE_UI_PROXIMITY = 300f;
 

@@ -15,9 +15,9 @@ namespace LethalInternship.Core.Interns.AI
 
         public IPointOfInterest? PointOfInterest = null!;
         public EnumCommandTypes CurrentCommand { get; private set; }
+        public EnumCommandTypes PendingCommand { get; private set; }
         public EnumTempCommandFeedback TempCommandFeedback { get; private set; }
 
-        private EnumCommandTypes pendingCommand;
         private EnumVoicesState voiceToPlay;
 
         private float tempCommandFeedbackTimer;
@@ -198,7 +198,7 @@ namespace LethalInternship.Core.Interns.AI
             if (CurrentCommand == EnumCommandTypes.WaitForCommand)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetPendingCommand {command}");
-                pendingCommand = command;
+                PendingCommand = command;
                 voiceToPlay = voiceCommand;
             }
             else
@@ -206,6 +206,8 @@ namespace LethalInternship.Core.Interns.AI
                 PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCurrentCommand {command}");
                 CurrentCommand = command;
                 PlayVoiceAfterCommand(voiceCommand);
+
+                internIdentity.OnCommandChanged?.Invoke(internIdentity);
             }
         }
 
@@ -213,13 +215,13 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (wait)
             {
-                pendingCommand = CurrentCommand;
+                PendingCommand = CurrentCommand;
                 CurrentCommand = EnumCommandTypes.WaitForCommand;
                 //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait true");
             }
             else
             {
-                CurrentCommand = pendingCommand;
+                CurrentCommand = PendingCommand;
                 if (CurrentCommand == EnumCommandTypes.WaitForCommand
                     || CurrentCommand == EnumCommandTypes.None)
                 {
@@ -230,6 +232,8 @@ namespace LethalInternship.Core.Interns.AI
 
                 // Voice
                 PlayVoiceAfterCommand(voiceToPlay);
+
+                internIdentity.OnCommandChanged?.Invoke(internIdentity);
             }
         }
 

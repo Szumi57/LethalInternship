@@ -1,10 +1,12 @@
 ﻿using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,16 +15,19 @@ namespace LethalInternship.Core.UI.InternBlocks
 {
     public class InternBlockUI : MonoBehaviour, IRefreshableUI
     {
-        private enum EnumBehaviourIcon
+        private enum EnumObjectiveIcon
         {
             None = 0,
             Follow,
+            Vehicle,
+            ToPosition,
             Scavenge,
-            GoToShip,
-            GoToCruiser,
-            GoToGatheringPoint,
+            FetchItem,
             Fighting,
+            DropItem,
         }
+
+        private readonly StringBuilder _sb = new StringBuilder(128);
 
         public static System.Action OnSelected = null!;
 
@@ -51,9 +56,10 @@ namespace LethalInternship.Core.UI.InternBlocks
         private bool showCursor = true;
         private string currentText = string.Empty;
 
+        private EnumObjectiveIcon currentObjective = EnumObjectiveIcon.Follow;
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
-        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "InternBlockUI";
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : SetTooltipMessage();
 
         private bool isStateValid => !isNotInteractable && IdentityManager.Instance.IsIdentityValidToCommand(identity);
 
@@ -142,23 +148,70 @@ namespace LethalInternship.Core.UI.InternBlocks
 
             ObjectiveIcon.transform.parent.gameObject.SetActive(true);
 
-            //EnumInputAction objective =
-            EnumInputAction objective = EnumInputAction.FollowMe;
             if (ObjectiveSprites == null
-                || ObjectiveSprites.Length == 0)
+                || ObjectiveSprites.Length == 0
+                || identity == null
+                || identity.InternAI == null)
             {
                 PluginLoggerHook.LogWarning?.Invoke($"InternBlockUI no objective sprites available !");
                 return;
             }
 
-            switch (objective)
+            currentObjective = GetObjectiveFromCommand(identity.InternAI.CurrentCommand);
+            ObjectiveIcon.sprite = ObjectiveSprites[(int)currentObjective];
+        }
+
+        private EnumObjectiveIcon GetObjectiveFromCommand(EnumCommandTypes commandType)
+        {
+            switch (commandType)
             {
-                case EnumInputAction.FollowMe:
-                    ObjectiveIcon.sprite = ObjectiveSprites[(int)EnumBehaviourIcon.Follow];
-                    break;
+                case EnumCommandTypes.None:
+                    return EnumObjectiveIcon.None;
+
+                case EnumCommandTypes.FollowPlayer:
+                    return EnumObjectiveIcon.Follow;
+
+                case EnumCommandTypes.GoToVehicle:
+                    return EnumObjectiveIcon.Vehicle;
+
+                case EnumCommandTypes.GoToPosition:
+                    return EnumObjectiveIcon.ToPosition;
+
+                case EnumCommandTypes.WaitForCommand:
+                    return currentObjective;
+
+                case EnumCommandTypes.ScavengingToShip:
+                    return EnumObjectiveIcon.Scavenge;
+
+                case EnumCommandTypes.ScavengingToCruiser:
+                    return EnumObjectiveIcon.Scavenge;
+
+                case EnumCommandTypes.ScavengingToGatheringPoint:
+                    return EnumObjectiveIcon.Scavenge;
+
+                case EnumCommandTypes.GoFetchItem:
+                    return EnumObjectiveIcon.FetchItem;
+
+                case EnumCommandTypes.Kill:
+                    return EnumObjectiveIcon.Fighting;
+
+                case EnumCommandTypes.DropAllItemsToShip:
+                    return EnumObjectiveIcon.DropItem;
+
+                case EnumCommandTypes.DropAllItemsOnGatheringPoint:
+                    return EnumObjectiveIcon.DropItem;
+
+                case EnumCommandTypes.DropAllItemsInCruiser:
+                    return EnumObjectiveIcon.DropItem;
+
+                case EnumCommandTypes.UnloadCruiser:
+                    return EnumObjectiveIcon.DropItem;
+
+                case EnumCommandTypes.UnloadGatheringPoint:
+                    return EnumObjectiveIcon.DropItem;
+
                 default:
-                    ObjectiveIcon.sprite = ObjectiveSprites[(int)EnumBehaviourIcon.None];
-                    break;
+                    return EnumObjectiveIcon.None;
             }
         }
 
@@ -167,7 +220,6 @@ namespace LethalInternship.Core.UI.InternBlocks
             if (!isStateValid) return;
 
             BehaviourIcon.sprite = identity.AutoDefense ? SpriteAutoDefense : SpriteFlee;
-            Debug.Log($"BehaviourIcon.sprite {BehaviourIcon.sprite.name}");
         }
 
         private void SetBackgroundNotHovered()
@@ -212,6 +264,38 @@ namespace LethalInternship.Core.UI.InternBlocks
         private void UpdateText()
         {
             NameText.text = currentText + (showCursor ? cursorChar : " ");
+        }
+
+        private string SetTooltipMessage()
+        {
+            _sb.Clear();
+            if (identity == null || identity.InternAI == null)
+                return _sb.ToString();
+
+            _sb.Append(identity.InternAI.Npc.playerUsername);
+            _sb.Append(" ");
+
+            _sb.Append("[");
+            _sb.Append(identity.InternAI.GetNbHeldItems().ToString());
+            _sb.Append(" items] ");
+
+            if (identity.InternAI.TempCommandFeedback == EnumTempCommandFeedback.ExecutingCommand)
+            {
+                if (identity.InternAI.PendingCommand == EnumCommandTypes.WaitForCommand)
+                    _sb.Append(UIConst.TOOLTIP_EXECUTING_COMMAND[(int)identity.InternAI.CurrentCommand]);
+                else
+                    _sb.Append(UIConst.TOOLTIP_EXECUTING_COMMAND[(int)identity.InternAI.PendingCommand]);
+            }
+            else
+                _sb.Append(UIConst.TOOLTIP_COMMAND_FEEDBACK[(int)identity.InternAI.TempCommandFeedback]);
+
+            _sb.Append(" ");
+            if (identity.AutoDefense)
+                _sb.Append(UIConst.TOOLTIP_AUTODEFENSE_BEHAVIOUR);
+            else
+                _sb.Append(UIConst.TOOLTIP_FLEE_BEHAVIOUR);
+
+            return _sb.ToString();
         }
 
         #region Events

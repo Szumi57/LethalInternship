@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,7 +24,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
-        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "ButtonDualSwitchChildController";
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : SetTooltipMessage();
 
         void Awake()
         {
@@ -71,6 +72,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.DualSwitch
         private void SetButtonNotHovered()
         {
             FrameImage.pixelsPerUnitMultiplier = 15f;
+        }
+
+        private string SetTooltipMessage()
+        {
+            return UIConst.COMMANDS_BUTTON_STRING[side == EnumClickSide.Left ? (int)EnumInputAction.SetToAutoFlee : (int)EnumInputAction.SetToAutoDefense];
         }
 
         #region Events

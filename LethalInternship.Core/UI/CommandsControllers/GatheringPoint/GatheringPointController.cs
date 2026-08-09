@@ -45,7 +45,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
-        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : "GatheringPointController";
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : SetTooltipMessage();
 
         void Awake()
         {
@@ -205,6 +205,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         void UpdateText()
         {
             TMPDescription.text = currentText + (showCursor ? cursorChar : " ");
+        }
+
+        private string SetTooltipMessage()
+        {
+            return UIConst.COMMANDS_BUTTON_STRING[(int)GetCurrentInputAction()];
         }
 
         #region Events

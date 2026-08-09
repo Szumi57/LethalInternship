@@ -133,7 +133,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
                             uiElement.SetInteractable(interactable: InternManager.Instance.VehicleController != null, UIConst.TOOLTIPBAR_NO_CRUISER);
                         // Gathering point ?
                         if (uiElement.GroupUI == EnumUIGroups.GatheringPointGroupButtons)
-                            uiElement.SetInteractable(interactable: InternManager.Instance.GatheringPoint != null, UIConst.TOOLTIPBAR_NO_CRUISER);
+                            uiElement.SetInteractable(interactable: InternManager.Instance.GatheringPoint != null, UIConst.TOOLTIPBAR_NO_GATHERINGPOINT);
                     }
 
                     // In space or on company building moon
