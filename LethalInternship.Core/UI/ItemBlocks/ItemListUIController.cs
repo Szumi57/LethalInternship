@@ -158,6 +158,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
                     blocksByGrabbableObject[itemGrabbableObject] = block;
                 }
 
+                block.IsBlockCurrentWeapon = type == EnumCategoryTypeUI.HeldWeapon;
                 block.gameObject.SetActive(true);
                 block.transform.SetSiblingIndex(startIndex++);
             }

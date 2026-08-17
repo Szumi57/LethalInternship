@@ -295,6 +295,8 @@ namespace LethalInternship.Core.Managers
 
             if (identity.InternAI == null) return false;
 
+            if (identity.InternAI.Npc == null) return false;
+
             if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY) return false;
 
             if (StartOfRound.Instance == null || StartOfRound.Instance.localPlayerController == null) return false;

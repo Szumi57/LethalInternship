@@ -297,6 +297,41 @@ namespace LethalInternship.Core.Managers
             return false;
         }
 
+        public bool IsItemUsableWeapon(GrabbableObject grabbableObject)
+        {
+            if (grabbableObject == null)
+                return false;
+
+            if (grabbableObject.itemProperties.itemName.Contains("Shovel")
+                || grabbableObject.itemProperties.itemName.Contains("Stop")
+                || grabbableObject.itemProperties.itemName.Contains("Yield")
+                || grabbableObject.itemProperties.itemName.Contains("Kitchen")
+                || grabbableObject.itemProperties.itemName.Contains("Shotgun")
+                )
+                return true;
+
+            return false;
+        }
+
+        public bool IsItemUsableItem(GrabbableObject grabbableObject)
+        {
+            if (grabbableObject == null)
+                return false;
+
+            if (grabbableObject.itemProperties.itemName.Contains("Boombox")
+                || grabbableObject.itemProperties.itemName.Contains("Extension")
+                || grabbableObject.itemProperties.itemName.Contains("lashlight")
+                || grabbableObject.itemProperties.itemName.Contains("Booster")
+                || grabbableObject.itemProperties.itemName.Contains("Airhorn")
+                || grabbableObject.itemProperties.itemName.Contains("Clown")
+                || grabbableObject.itemProperties.itemName.Contains("Hairdryer")
+                || grabbableObject.itemProperties.itemName.Contains("Laser")
+                )
+                return true;
+
+            return false;
+        }
+
         #endregion
     }
 }

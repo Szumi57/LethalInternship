@@ -328,16 +328,27 @@ namespace LethalInternship.Core.Interns.AI
 
             NpcController.Npc.isHoldingObject = HeldItems.IsHoldingAnItem();
             NpcController.Npc.currentlyHeldObjectServer = HeldItems.GetCurrentlyHeldItem(ignoreWeapon: true);
-            NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
-            NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
             NpcController.Npc.carryWeight += Mathf.Clamp(grabbableObject.itemProperties.weight - 1f, 0f, 10f);
-            NpcController.GrabbedObjectValidated = true;
-            if (grabbableObject.itemProperties.grabSFX != null)
-            {
-                NpcController.Npc.itemAudio.PlayOneShot(grabbableObject.itemProperties.grabSFX, 1f);
-            }
 
             // animations
+            AnimateGrabItem(grabbableObject);
+
+            // Event
+            OnHeldItemsChanged?.Invoke(this);
+
+            PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} Grabbed item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+        }
+
+        private void AnimateGrabItem(GrabbableObject newHeldItem)
+        {
+            NpcController.Npc.twoHanded = IsHoldingTwoHandedItem();
+            NpcController.Npc.twoHandedAnimation = ShouldUseTwoHandedHoldAnim();
+            NpcController.GrabbedObjectValidated = true;
+            if (newHeldItem.itemProperties.grabSFX != null)
+            {
+                NpcController.Npc.itemAudio.PlayOneShot(newHeldItem.itemProperties.grabSFX, 1f);
+            }
+
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABINVALIDATED, false);
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_GRABVALIDATED, false);
             NpcController.Npc.playerBodyAnimator.SetBool(Const.PLAYER_ANIMATION_BOOL_CANCELHOLDING, false);
@@ -361,12 +372,7 @@ namespace LethalInternship.Core.Interns.AI
             {
                 StopCoroutine(grabObjectCoroutine);
             }
-            grabObjectCoroutine = StartCoroutine(GrabAnimationCoroutine(grabbableObject));
-
-            // Event
-            OnHeldItemsChanged?.Invoke(this);
-
-            PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} Grabbed item {grabbableObject} on client #{NetworkManager.LocalClientId}");
+            grabObjectCoroutine = StartCoroutine(GrabAnimationCoroutine(newHeldItem));
         }
 
         /// <summary>
@@ -1053,6 +1059,94 @@ namespace LethalInternship.Core.Interns.AI
 
             // Event
             OnHeldItemsChanged?.Invoke(this);
+        }
+
+        #endregion
+
+        #region Swap weapon
+
+        public void BeginSwapWeaponWith(GrabbableObject newWeapon)
+        {
+            if (!InternManager.Instance.IsItemUsableWeapon(newWeapon))
+            {
+                PluginLoggerHook.LogWarning?.Invoke($"Item {newWeapon.itemProperties.itemName} is not an usable weapon !");
+                return;
+            }
+
+            SwapWeaponWithServerRpc(newWeapon.NetworkObject);
+        }
+
+        [ServerRpc]
+        public void SwapWeaponWithServerRpc(NetworkObjectReference networkObjectReference)
+        {
+            if (!networkObjectReference.TryGet(out NetworkObject networkObject))
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} SwapWeaponWith for InternAI {InternId} : Failed to get network object from network object reference");
+                return;
+            }
+
+            GrabbableObject grabbableObject = networkObject.GetComponent<GrabbableObject>();
+            if (grabbableObject == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} SwapWeaponWith for InternAI {InternId} : Failed to get GrabbableObject component from network object");
+                return;
+            }
+
+            SwapWeaponWithClientRpc(networkObjectReference);
+        }
+
+        [ClientRpc]
+        private void SwapWeaponWithClientRpc(NetworkObjectReference networkObjectReference)
+        {
+            if (!networkObjectReference.TryGet(out NetworkObject networkObject))
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} SwapWeaponWith for InternAI {InternId} : Failed to get network object from network object reference");
+                return;
+            }
+
+            GrabbableObject newWeapon = networkObject.GetComponent<GrabbableObject>();
+            if (newWeapon == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} SwapWeaponWith for InternAI {InternId} : Failed to get GrabbableObject component from network object");
+                return;
+            }
+
+            SwapWeaponWith(newWeapon);
+        }
+
+        private void SwapWeaponWith(GrabbableObject newWeapon)
+        {
+            GrabbableObject? oldWeapon = HeldItems.GetHeldWeapon();
+
+            if (!HeldItems.SwapWeaponWith(newWeapon))
+                return;
+
+            if (oldWeapon != null)
+            {
+                oldWeapon.parentObject = NpcController.Npc.serverItemHolder;
+            }
+
+            newWeapon.parentObject = WeaponHolderTransform;
+
+            // animations
+            AnimateGrabItem(newWeapon);
+
+            if (HasWeaponAsPrimary)
+            {
+                HasWeaponAsPrimary = false;
+                EquipWeaponAsPrimary();
+            }
+
+            onHeldItemsChanged?.Invoke(this);
+        }
+
+        #endregion
+
+        #region Use item
+
+        public void UseItem(GrabbableObject item)
+        {
+            item.UseItemOnClient(buttonDown: true);
         }
 
         #endregion

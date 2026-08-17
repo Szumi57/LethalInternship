@@ -14,6 +14,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
         public Transform Content = null!;
         public Image FrameImage = null!;
+        public ItemButtonController[] ItemButtons = null!;
 
         private GameObject itemHologram = null!;
         private Quaternion restingRotation = Quaternion.identity;
@@ -26,19 +27,19 @@ namespace LethalInternship.Core.UI.ItemBlocks
         public string ItemName => itemGrabbableObject.itemProperties.itemName;
         public int ItemValue => itemGrabbableObject.scrapValue;
 
-        private float holdTime = 0.3f;
+        public bool IsBlockCurrentWeapon;
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
         private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : UIConst.TOOLTIPBAR_ITEM;
 
         // Rotation animation
-        private enum RotationAxis { X, Y, Z }
-        private RotationAxis mainAxis = RotationAxis.X;
         private float duration = 1.5f;
-        private float rotationSpeed = 360f; // degrees per second
-        private float tiltAngle = 10f;
+        private float rotationSpeed = 180f; // degrees per second
         private Coroutine rotationRoutine = null!;
+
+        private float tiltYAngle = -30f;
+        private float tiltZAngle = 30f;
 
         void Awake()
         {
@@ -62,16 +63,6 @@ namespace LethalInternship.Core.UI.ItemBlocks
         {
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
             isNotInteractable = !interactable;
-        }
-
-        private void SetButtonHovered()
-        {
-            FrameImage.pixelsPerUnitMultiplier = 4f;
-        }
-
-        private void SetButtonNotHovered()
-        {
-            FrameImage.pixelsPerUnitMultiplier = 6f;
         }
 
         public void Setup(GrabbableObject grabbableObject)
@@ -123,6 +114,43 @@ namespace LethalInternship.Core.UI.ItemBlocks
                 StartCoroutine(FitNextFrame());
                 StartCoroutine(CheckVisibilityNextFrame());
             }
+
+            // Init item buttons
+            foreach (ItemButtonController itemButton in ItemButtons)
+            {
+                itemButton.Init(itemGrabbableObject);
+            }
+
+            SetButtonNotHovered();
+        }
+
+        private void SetButtonHovered()
+        {
+            FrameImage.pixelsPerUnitMultiplier = 4f;
+            SetAlpha(FrameImage, 1f);
+
+            foreach (ItemButtonController itemButton in ItemButtons)
+                itemButton.gameObject.SetActive(itemButton.StayActive(IsBlockCurrentWeapon));
+        }
+
+        private void SetButtonNotHovered()
+        {
+            FrameImage.pixelsPerUnitMultiplier = 6f;
+            SetAlpha(FrameImage, 0.39f);
+
+            foreach (ItemButtonController itemButton in ItemButtons)
+                itemButton.gameObject.SetActive(false);
+        }
+
+        private void SetAlpha(Image image, float transparency)
+        {
+            if (image != null
+                && image.color.a != transparency)
+            {
+                Color alpha = image.color;
+                alpha.a = transparency;
+                image.color = alpha;
+            }
         }
 
         #region Animation
@@ -138,44 +166,24 @@ namespace LethalInternship.Core.UI.ItemBlocks
         IEnumerator RotateRoutine()
         {
             float elapsed = 0f;
-            Quaternion startRotation = itemHologram.transform.localRotation;
+            Quaternion startRotation = restingRotation;
+            Quaternion tiltRotation = Quaternion.Euler(0f, tiltYAngle, tiltZAngle);
 
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                float t = elapsed / duration;
 
-                // Rotation
+                // X Rotation
                 float main = rotationSpeed * elapsed;
+                Quaternion mainRotation = Quaternion.Euler(main, 0f, 0f);
 
-                // Animated tilt
-                float tilt = Mathf.Sin(t * Mathf.PI) * tiltAngle;
-
-                Vector3 euler = GetEuler(main, tilt);
-                itemHologram.transform.localRotation = startRotation * Quaternion.Euler(euler);
+                // Final Rotation
+                itemHologram.transform.localRotation = startRotation * mainRotation * tiltRotation;
 
                 yield return null;
             }
 
-            // Snap final propre
-            itemHologram.transform.localRotation = restingRotation;
             rotationRoutine = null!;
-        }
-
-        private Vector3 GetEuler(float main, float tilt)
-        {
-            switch (mainAxis)
-            {
-                case RotationAxis.X:
-                    return new Vector3(main, tilt, tilt * 0.5f);
-
-                case RotationAxis.Z:
-                    return new Vector3(tilt, tilt * 0.5f, main);
-
-                case RotationAxis.Y:
-                default:
-                    return new Vector3(tilt, main, tilt * 0.5f);
-            }
         }
 
         #endregion
@@ -214,7 +222,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
         {
             yield return null;
 
-            itemHologram.transform.localScale *= GetScaleFittingToFrame(itemHologram.transform, targetSize: 0.38f, margin: 0.9f);
+            itemHologram.transform.localScale *= GetScaleFittingToFrame(itemHologram.transform, targetSize: 0.38f, margin: 0.8f);
         }
 
         #endregion
@@ -301,28 +309,11 @@ namespace LethalInternship.Core.UI.ItemBlocks
             UpdateVisibility();
         }
 
-        private void ActionValidated()
-        {
-            UIManager.Instance.ToolTipBarUI.Hide();
-            if (isNotInteractable) return;
-            OnSelected?.Invoke(itemGrabbableObject);
-        }
-
-        public void PointerDown()
-        {
-            if (isNotInteractable) return;
-            UIManager.Instance.ToolTipBarUI.StartHold(holdTime, ActionValidated);
-        }
-
-        public void PointerUp()
-        {
-            UIManager.Instance.ToolTipBarUI.StopHold();
-        }
-
         public void MouseOver()
         {
             UIManager.Instance.ToolTipBarUI.ShowImmediate(string.Format(tooltipMessage, ItemName, ItemValue));
             if (isNotInteractable) return;
+
             SetButtonHovered();
         }
 

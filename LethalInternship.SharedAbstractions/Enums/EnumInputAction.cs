@@ -32,5 +32,7 @@
         DropAllItemsInShip,
         DropAllItemsOnGatheringPoint,
         DropAllItemsInCruiser,
+        SwapWeapon,
+        ActivateItem,
     }
 }

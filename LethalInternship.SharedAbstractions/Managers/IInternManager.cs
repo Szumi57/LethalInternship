@@ -88,6 +88,10 @@ namespace LethalInternship.SharedAbstractions.Managers
         bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject, bool forcePickUp = false);
         bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate);
 
+        bool IsItemUsableWeapon(GrabbableObject grabbableObject);
+
+        bool IsItemUsableItem(GrabbableObject grabbableObject);
+
         List<EnemyAI> GetEnemiesList();
         bool IsEnemyKillable(EnemyAI enemy);
 

@@ -70,7 +70,7 @@ namespace LethalInternship.SharedAbstractions.Constants
             "Point to action",// PointToAction
             "Flee when an enemy is near ",// SetToAutoFlee
             "Try to attack when an enemy is near",// SetToAutoDefense
-            "Drop held item",// DropItem
+            "Drop item",// DropItem
             "Drop all items",// DropAllItems
             "Go to the ship",// GoToShip
             "Set new gathering point",// SetGatheringPoint
@@ -94,6 +94,8 @@ namespace LethalInternship.SharedAbstractions.Constants
             "Drop all items in the ship", // DropAllItemsInShip,
             "Drop all items on the gathering point", // DropAllItemsOnGatheringPoint,
             "Drop all items in the cruiser", // DropAllItemsInCruiser,
+            "Swap weapon", // SwapWeapon,
+            "Use", // ActivateItem,
         };
 
         public static string[] CATEGORIES_STRING = {
@@ -118,7 +120,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static float OUTLINE_INTENSITY_DEFAULT = 0.7f;
 
         // TooltipBarUI
-        public static string TOOLTIPBAR_ITEM = "{0} ${1}, hold click to drop";
+        public static string TOOLTIPBAR_ITEM = "{0} ${1}";
         public static string TOOLTIPBAR_NO_CRUISER = "No cruiser spawned !";
         public static string TOOLTIPBAR_NO_GATHERINGPOINT = "No gathering point set !";
         public static string TOOLTIPBAR_NO_INTERNS_TO_MANAGE = "Not managing any interns !";

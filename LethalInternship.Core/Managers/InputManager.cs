@@ -91,7 +91,7 @@ namespace LethalInternship.Core.Managers
             CommandButtonController.OnSelected += CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected += CommandButtonController_OnSelected;
             InternBlockUI.OnSelected += InternBlockUI_OnSelected;
-            ItemBlockUI.OnSelected += ItemBlockUI_OnSelected;
+            ItemButtonController.OnSelected += ItemButtonController_OnSelected;
             GatheringPointController.OnSelected += GatheringPoint_OnSelected;
             RemoveGatheringPointController.OnSelected += RemoveGatheringPoint_OnSelected;
 
@@ -142,7 +142,7 @@ namespace LethalInternship.Core.Managers
             CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
             ButtonDualSwitchParentController.OnDualSwitchSelected -= CommandButtonController_OnSelected;
             InternBlockUI.OnSelected -= InternBlockUI_OnSelected;
-            ItemBlockUI.OnSelected -= ItemBlockUI_OnSelected;
+            ItemButtonController.OnSelected -= ItemButtonController_OnSelected;
             GatheringPointController.OnSelected -= GatheringPoint_OnSelected;
             RemoveGatheringPointController.OnSelected -= RemoveGatheringPoint_OnSelected;
 
@@ -476,7 +476,7 @@ namespace LethalInternship.Core.Managers
             UIManager.Instance.ShowCommandsOne();
         }
 
-        private void ItemBlockUI_OnSelected(GrabbableObject grabbableObject)
+        private void ItemButtonController_OnSelected(GrabbableObject grabbableObject, EnumInputAction typeInputAction)
         {
             IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
             if (identity == null
@@ -486,8 +486,20 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Drop item
-            identity.InternAI.DropItem(grabbableObject);
+            switch (typeInputAction)
+            {
+                case EnumInputAction.SwapWeapon:
+                    identity.InternAI.BeginSwapWeaponWith(grabbableObject);
+                    break;
+
+                case EnumInputAction.ActivateItem:
+                    identity.InternAI.UseItem(grabbableObject);
+                    break;
+
+                case EnumInputAction.DropItem:
+                    identity.InternAI.DropItem(grabbableObject);
+                    break;
+            }
         }
 
         private void GatheringPoint_OnSelected(EnumInputAction typeInputAction)

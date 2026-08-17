@@ -75,6 +75,11 @@ namespace LethalInternship.Core.Interns.AI.Items
             return HeldWeapon != null;
         }
 
+        public HeldItem? GetHeldItem(GrabbableObject grabbableObject)
+        {
+            return Items.FirstOrDefault(x => x.GrabbableObject == grabbableObject);
+        }
+
         public GrabbableObject? GetCurrentlyHeldItem(bool ignoreWeapon)
         {
             for (int i = Items.Count - 1; i >= 0; i--)
@@ -126,11 +131,17 @@ namespace LethalInternship.Core.Interns.AI.Items
 
         public void HoldItem(GrabbableObject grabbableObject)
         {
+            if (IsHoldingItem(grabbableObject))
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"Item {grabbableObject.itemProperties.itemName} already held !");
+                return;
+            }
+
             HeldItem newItem = new HeldItem(grabbableObject);
             Items.Add(newItem);
             foreach (var item in Items)
             {
-                PluginLoggerHook.LogDebug?.Invoke($"item: {item}");
+                PluginLoggerHook.LogDebug?.Invoke($"item: {item}, total={Items.Count}");
             }
 
             if (newItem.IsWeapon
@@ -153,6 +164,25 @@ namespace LethalInternship.Core.Interns.AI.Items
             {
                 HeldWeapon = null;
             }
+        }
+
+        public bool SwapWeaponWith(GrabbableObject newWeapon)
+        {
+            HeldItem? newHeldWeapon = GetHeldItem(newWeapon);
+            if (newHeldWeapon == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"Cannot swap weapon with {newWeapon.itemProperties.itemName}, currently not holding it !");
+                return false;
+            }
+
+            if (!newHeldWeapon.IsWeapon)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"Cannot swap weapon with {newWeapon.itemProperties.itemName}, not a weapon !");
+                return false;
+            }
+
+            HeldWeapon = newHeldWeapon;
+            return true;
         }
 
         public void ShowHideAllItemsMeshes(bool show, bool includeHeldWeapon = true)
