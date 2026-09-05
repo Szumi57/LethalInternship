@@ -4,11 +4,14 @@ using System.Collections;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.ItemBlocks
 {
-    public class ItemBlockUI : MonoBehaviour
+    public class ItemBlockUI : MonoBehaviour,
+        IPointerEnterHandler,
+        IPointerExitHandler
     {
         public static System.Action<GrabbableObject> OnSelected = null!;
 
@@ -31,6 +34,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
+
         private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : UIConst.TOOLTIPBAR_ITEM;
 
         // Rotation animation
@@ -49,6 +53,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
         void OnEnable()
         {
+            StopHover();
             if (itemHologram == null)
             {
                 return;
@@ -121,10 +126,10 @@ namespace LethalInternship.Core.UI.ItemBlocks
                 itemButton.Init(itemGrabbableObject);
             }
 
-            SetButtonNotHovered();
+            StopHover();
         }
 
-        private void SetButtonHovered()
+        private void StartHover()
         {
             FrameImage.pixelsPerUnitMultiplier = 4f;
             SetAlpha(FrameImage, 1f);
@@ -133,13 +138,21 @@ namespace LethalInternship.Core.UI.ItemBlocks
                 itemButton.gameObject.SetActive(itemButton.StayActive(IsBlockCurrentWeapon));
         }
 
-        private void SetButtonNotHovered()
+        private void StopHover()
         {
             FrameImage.pixelsPerUnitMultiplier = 6f;
             SetAlpha(FrameImage, 0.39f);
 
-            foreach (ItemButtonController itemButton in ItemButtons)
-                itemButton.gameObject.SetActive(false);
+            if (InputManager.Instance.IsUsingController)
+            {
+                foreach (ItemButtonController itemButton in ItemButtons)
+                    itemButton.gameObject.SetActive(itemButton.StayActive(IsBlockCurrentWeapon));
+            }
+            else
+            {
+                foreach (ItemButtonController itemButton in ItemButtons)
+                    itemButton.gameObject.SetActive(false);
+            }
         }
 
         private void SetAlpha(Image image, float transparency)
@@ -302,25 +315,25 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
         #endregion
 
-        #region Events
+        #region Mouse events
 
         private void OnScroll(Vector2 v)
         {
             UpdateVisibility();
         }
 
-        public void MouseOver()
+        public void OnPointerEnter(PointerEventData eventData)
         {
             UIManager.Instance.ToolTipBarUI.ShowImmediate(string.Format(tooltipMessage, ItemName, ItemValue));
             if (isNotInteractable) return;
 
-            SetButtonHovered();
+            StartHover();
         }
 
-        public void MouseLeave()
+        public void OnPointerExit(PointerEventData eventData)
         {
             UIManager.Instance.ToolTipBarUI.Hide();
-            SetButtonNotHovered();
+            StopHover();
         }
 
         #endregion

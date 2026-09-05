@@ -14,8 +14,8 @@ namespace LethalInternship.Core.UI.InternBlocks
     public class InternListUIController : MonoBehaviour, IVisibilityUI
     {
         public GameObject Go { get; private set; } = null!;
-        public EnumUIGroups GroupUI = EnumUIGroups.None;
-        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+        public EnumUIGroups GroupUI = EnumUIGroups.InternsList;
+        EnumUIGroups IGroupUI.GroupUI => this.GroupUI;
 
         public Transform Content = null!;
         public InternBlockUI PrefabInternBlockUI = null!;

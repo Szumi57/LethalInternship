@@ -2,6 +2,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -39,7 +40,7 @@ namespace LethalInternship.Core.UI.TooltipBar
                 return;
 
             // Follow the mouse
-            Vector2 mousePos = Mouse.current.position.ReadValue();
+            Vector2 mousePos = GetTooltipScreenPosition();
 
             RectTransform? canvasRect = canvas.transform as RectTransform;
             if (canvasRect == null)
@@ -72,6 +73,31 @@ namespace LethalInternship.Core.UI.TooltipBar
             pos.y = Mathf.Max(pos.y, minY);
 
             root.anchoredPosition = pos;
+        }
+
+        private Vector2 GetTooltipScreenPosition()
+        {
+            if (InputManager.Instance.IsUsingController)
+            {
+                GameObject? selected = EventSystem.current.currentSelectedGameObject;
+
+                if (selected != null)
+                {
+                    RectTransform? selectedRect = selected.transform as RectTransform;
+
+                    if (selectedRect != null)
+                    {
+                        Vector3[] corners = new Vector3[4];
+                        selectedRect.GetWorldCorners(corners);
+                        Vector3 center = (corners[0] + corners[2]) * 0.5f;
+
+                        return RectTransformUtility.WorldToScreenPoint(canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
+                                                                       center);
+                    }
+                }
+            }
+
+            return Mouse.current.position.ReadValue();
         }
 
         public void ShowImmediate(string message, Sprite iconSprite = null!)
@@ -162,8 +188,11 @@ namespace LethalInternship.Core.UI.TooltipBar
 
         void CancelAll()
         {
-            if (showRoutine != null) StopCoroutine(showRoutine);
-            if (holdRoutine != null) StopCoroutine(holdRoutine);
+            if (showRoutine != null) { StopCoroutine(showRoutine); }
+            if (holdRoutine != null)
+            {
+                StopCoroutine(holdRoutine);
+            }
         }
     }
 }

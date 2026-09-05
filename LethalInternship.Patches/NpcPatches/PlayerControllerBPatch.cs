@@ -834,6 +834,148 @@ namespace LethalInternship.Patches.NpcPatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("Interact_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Interact_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - 28; i++)
+            {
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL")
+                    && codes[i + 1].ToString() == "call bool Unity.Netcode.NetworkBehaviour::get_IsOwner()"
+                    && codes[i + 28].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + 28].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.Interact_performed_Transpiler could not ignore intract input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        // [HarmonyPatch("Jump_performed")] cannot patch this one, why ?
+        [HarmonyPatch("ItemSecondaryUse_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ItemSecondaryUse_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 71;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ItemSecondaryUse_performed could not ignore ItemSecondaryUse_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("ItemTertiaryUse_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ItemTertiaryUse_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 57;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ItemTertiaryUse_performed could not ignore ItemSecondaryUse_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("QEItemInteract_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> QEItemInteract_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 68;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.QEItemInteract_performed could not ignore ItemSecondaryUse_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
         #endregion
 
         #region Postfixes

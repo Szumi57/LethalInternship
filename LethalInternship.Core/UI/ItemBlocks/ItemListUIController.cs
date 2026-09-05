@@ -13,8 +13,8 @@ namespace LethalInternship.Core.UI.ItemBlocks
     public class ItemListUIController : MonoBehaviour, IRefreshableUI, IVisibilityUI
     {
         public GameObject Go { get; private set; } = null!;
-        public EnumUIGroups GroupUI = EnumUIGroups.None;
-        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+        public EnumUIGroups GroupUI = EnumUIGroups.InternsList;
+        EnumUIGroups IGroupUI.GroupUI => this.GroupUI;
 
         public Transform Content = null!;
         public ItemBlockUI PrefabItemBlockUI = null!;

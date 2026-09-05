@@ -5,6 +5,13 @@ namespace LethalInternship.SharedAbstractions.Managers
 {
     public interface IUIManager
     {
+        bool IsCommandsAllOpened { get; }
+        bool IsCommandsOneOpened { get; }
+        bool IsAnyMenuOpened { get; }
+        bool IsAnyCommandsMenuOpenedOrWasOpened { get; }
+
+        GameObject? LastSelectedUI { get; }
+
         TMP_FontAsset FontToUse { get; }
 
         void ShowCommandsAll();
@@ -13,5 +20,6 @@ namespace LethalInternship.SharedAbstractions.Managers
         void HideAll();
 
         void InitUI(Transform HUDContainerParent);
+        void UpdateLastSelectedUI(GameObject? gameObject);
     }
 }

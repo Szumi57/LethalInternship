@@ -56,7 +56,10 @@ namespace LethalInternship.Core.Managers
         public bool IsCommandsOneOpened { get { return commandsOneGo != null && commandsOneGo.activeSelf; } }
 
         public bool IsAnyMenuOpened { get { return IsCommandsAllOpened || IsCommandsOneOpened || (GameNetworkManager.Instance?.localPlayerController?.quickMenuManager.isMenuOpen ?? false); } }
+        public bool IsAnyCommandsMenuOpenedOrWasOpened { get { return IsCommandsAllOpened || IsCommandsOneOpened || wasAnyMenuOpened; } }
         private bool wasAnyMenuOpened;
+
+        public GameObject? LastSelectedUI { get; private set; }
 
         // TooltipBar
         private GameObject toolTipBarUIGo = null!;
@@ -132,6 +135,8 @@ namespace LethalInternship.Core.Managers
                 timerUpdateTooltips = 0f;
                 UpdateControlTip(HUDManager.Instance);
             }
+
+            wasAnyMenuOpened = IsAnyMenuOpened;
         }
 
         private void LateUpdate()
@@ -151,7 +156,6 @@ namespace LethalInternship.Core.Managers
             PointOfInterestInCenter = null;
 
             bool isAnyMenuWasClosed = wasAnyMenuOpened && !IsAnyMenuOpened;
-            wasAnyMenuOpened = IsAnyMenuOpened;
 
             // Check if nothing to show
             if (IsAnyMenuOpened)
@@ -368,6 +372,11 @@ namespace LethalInternship.Core.Managers
             return PointOfInterestInCenter;
         }
 
+        public void UpdateLastSelectedUI(GameObject? gameObject)
+        {
+            LastSelectedUI = gameObject;
+        }
+
         #region Show/Hide commands
 
         public void ShowCommandsAll()
@@ -379,7 +388,10 @@ namespace LethalInternship.Core.Managers
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            if (!InputManager.Instance.IsUsingController)
+            {
+                Cursor.visible = true;
+            }
 
             commandsAllGo.SetActive(true);
         }
@@ -393,7 +405,10 @@ namespace LethalInternship.Core.Managers
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            if (!InputManager.Instance.IsUsingController)
+            {
+                Cursor.visible = true;
+            }
 
             commandsOneGo.SetActive(true);
         }

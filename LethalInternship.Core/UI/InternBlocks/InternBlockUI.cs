@@ -9,11 +9,20 @@ using System.Collections;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.InternBlocks
 {
-    public class InternBlockUI : MonoBehaviour, IRefreshableUI
+    public class InternBlockUI : MonoBehaviour,
+        IRefreshableUI,
+        IGroupUI,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        IPointerClickHandler,
+        ISelectHandler,
+        IDeselectHandler,
+        ISubmitHandler
     {
         private enum EnumObjectiveIcon
         {
@@ -56,6 +65,10 @@ namespace LethalInternship.Core.UI.InternBlocks
         private bool showCursor = true;
         private string currentText = string.Empty;
 
+        private bool isHovered;
+        private bool isPointerOver;
+        private bool isSelected;
+
         private EnumObjectiveIcon currentObjective = EnumObjectiveIcon.Follow;
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
@@ -63,13 +76,18 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         private bool isStateValid => !isNotInteractable && IdentityManager.Instance.IsIdentityValidToCommand(identity);
 
+        public EnumUIGroups GroupUI => EnumUIGroups.InternsList;
+
         void OnEnable()
         {
             TMP_FontAsset fontToUse = UIManager.Instance.FontToUse;
             NameText.font = fontToUse;
             ItemCountText.font = fontToUse;
 
-            SetBackgroundNotHovered();
+            isPointerOver = false;
+            isSelected = false;
+            isHovered = false;
+            StopHover();
 
             if (!string.IsNullOrWhiteSpace(fullText))
             {
@@ -89,6 +107,8 @@ namespace LethalInternship.Core.UI.InternBlocks
                 isNotInteractable = !interactable;
                 Refresh();
             }
+
+            UpdateHighlight(forceUpdate: true);
         }
 
         public void Setup(IInternIdentity i)
@@ -122,11 +142,11 @@ namespace LethalInternship.Core.UI.InternBlocks
                 // Dead
                 ObjectiveIcon.transform.parent.gameObject.SetActive(true);
                 BehaviourIcon.sprite = SpriteDead;
-                SetBackgroundNotHovered();
+                StopHover();
             }
             else
             {
-                SetBackgroundNotHovered();
+                StopHover();
             }
         }
 
@@ -222,7 +242,12 @@ namespace LethalInternship.Core.UI.InternBlocks
             BehaviourIcon.sprite = identity.AutoDefense ? SpriteAutoDefense : SpriteFlee;
         }
 
-        private void SetBackgroundNotHovered()
+        private void StartHover()
+        {
+            SetAlpha(BackgroundImage, 1f);
+        }
+
+        private void StopHover()
         {
             SetAlpha(BackgroundImage, 100f / 255f);
         }
@@ -298,9 +323,48 @@ namespace LethalInternship.Core.UI.InternBlocks
             return _sb.ToString();
         }
 
-        #region Events
+        private void UpdateHighlight(bool forceUpdate = false)
+        {
+            bool highlighted = isPointerOver || isSelected;
 
-        public void Selected()
+            if (highlighted == isHovered
+                && !forceUpdate)
+                return;
+
+            isHovered = highlighted;
+
+            if (isHovered)
+                StartHover();
+            else
+                StopHover();
+        }
+
+        #region Mouse events
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (!isStateValid) return;
+
+            if (identity.InternAI != null)
+                CameraFocusUI.Instance.FocusOnIntern(identity.InternAI.Npc.transform);
+
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = true;
+            isSelected = false;
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
         {
             if (!isStateValid) return;
 
@@ -308,22 +372,39 @@ namespace LethalInternship.Core.UI.InternBlocks
             OnSelected?.Invoke();
         }
 
-        public void MouseOver()
-        {
-            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+        #endregion
 
+        #region Controller events
+
+        public void OnSelect(BaseEventData eventData)
+        {
             if (!isStateValid) return;
 
             if (identity.InternAI != null)
                 CameraFocusUI.Instance.FocusOnIntern(identity.InternAI.Npc.transform);
 
-            SetAlpha(BackgroundImage, 1f);
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = false;
+            isSelected = true;
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
         }
 
-        public void MouseLeave()
+        public void OnDeselect(BaseEventData eventData)
         {
+            isPointerOver = false;
+            isSelected = false;
+
             UIManager.Instance.ToolTipBarUI.Hide();
-            SetBackgroundNotHovered();
+            UpdateHighlight();
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            if (!isStateValid) return;
+
+            IdentitySelectionService.Instance.SelectSingle(identity);
+            OnSelected?.Invoke();
         }
 
         #endregion

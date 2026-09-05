@@ -3,17 +3,26 @@ using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 {
-    public class RemoveGatheringPointController : MonoBehaviour, IVisibilityUI
+    public class RemoveGatheringPointController : MonoBehaviour,
+        IVisibilityUI,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        IPointerDownHandler,
+        IPointerUpHandler,
+        ISelectHandler,
+        IDeselectHandler,
+        IHoldHandler
     {
         public static System.Action OnSelected = null!;
 
         public GameObject Go { get; private set; } = null!;
-        public EnumUIGroups GroupUI = EnumUIGroups.None;
-        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+        public EnumUIGroups GroupUI = EnumUIGroups.GatheringPointGroupButtons;
+        EnumUIGroups IGroupUI.GroupUI => this.GroupUI;
 
         public EnumInputAction TypeInputAction { get; } = EnumInputAction.RemoveGatheringPoint;
         public Image FrameImage = null!;
@@ -21,6 +30,9 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private float transparency = 1f;
         private float transparencyNotInteractable = 0.2f;
+        private bool isHovered;
+        private bool isPointerOver;
+        private bool isSelected;
         private float holdTime = 0.5f;
 
         private bool isNotInteractable;
@@ -34,7 +46,10 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         void OnEnable()
         {
-            SetButtonNotHovered();
+            isPointerOver = false;
+            isSelected = false;
+            isHovered = false;
+            StopHover();
         }
 
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
@@ -51,6 +66,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
                 SetAlpha(IconImage, transparency);
                 SetAlpha(FrameImage, transparency);
             }
+            UpdateHighlight(forceUpdate: true);
         }
 
         private string SetTooltipMessage()
@@ -69,14 +85,40 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             }
         }
 
-        private void SetButtonHovered()
+        private void StartHover()
         {
             FrameImage.pixelsPerUnitMultiplier = 10f;
         }
 
-        private void SetButtonNotHovered()
+        private void StopHover()
         {
             FrameImage.pixelsPerUnitMultiplier = 25f;
+        }
+
+        private void UpdateHighlight(bool forceUpdate = false)
+        {
+            bool highlighted = isPointerOver || isSelected;
+
+            if (highlighted == isHovered
+                && !forceUpdate)
+                return;
+
+            isHovered = highlighted;
+
+            if (isHovered)
+                StartHover();
+            else
+                StopHover();
+        }
+
+        public void OnHoldStart()
+        {
+            UIManager.Instance.ToolTipBarUI.StartHold(holdTime, ActionValidated);
+        }
+
+        public void OnHoldEnd()
+        {
+            UIManager.Instance.ToolTipBarUI.StopHold();
         }
 
         private void ActionValidated()
@@ -88,30 +130,68 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             OnSelected?.Invoke();
         }
 
-        public void PointerDown()
-        {
-            if (isNotInteractable) return;
-            UIManager.Instance.ToolTipBarUI.StartHold(holdTime, ActionValidated);
-        }
+        #region Mouse events
 
-        public void PointerUp()
+        public void OnPointerEnter(PointerEventData eventData)
         {
-            if (isNotInteractable) return;
-            UIManager.Instance.ToolTipBarUI.StopHold();
-            SetButtonNotHovered();
-        }
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = true;
+            isSelected = false;
 
-        public void MouseOver()
-        {
             UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
-            if (isNotInteractable) return;
-            SetButtonHovered();
+            UpdateHighlight();
         }
 
-        public void MouseLeave()
+        public void OnPointerExit(PointerEventData eventData)
         {
+            isPointerOver = false;
+            isSelected = false;
+
             UIManager.Instance.ToolTipBarUI.Hide();
-            SetButtonNotHovered();
+            UpdateHighlight();
         }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (isNotInteractable)
+                return;
+
+            OnHoldStart();
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (isNotInteractable)
+                return;
+
+            OnHoldEnd();
+        }
+
+        #endregion
+
+        #region Controller events
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            if (!InputManager.Instance.IsUsingController)
+                return;
+
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = false;
+            isSelected = true;
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
+        }
+
+        #endregion
     }
 }

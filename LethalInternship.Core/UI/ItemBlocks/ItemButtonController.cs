@@ -1,12 +1,21 @@
 ﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.ItemBlocks
 {
-    public class ItemButtonController : MonoBehaviour
+    public class ItemButtonController : MonoBehaviour,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        IPointerDownHandler,
+        IPointerUpHandler,
+        ISelectHandler,
+        IDeselectHandler,
+        IHoldHandler
     {
         public static System.Action<GrabbableObject, EnumInputAction> OnSelected = null!;
 
@@ -15,11 +24,17 @@ namespace LethalInternship.Core.UI.ItemBlocks
         public EnumInputAction TypeInputAction;
 
         private GrabbableObject itemGrabbableObject = null!;
+        private bool isHovered;
+        private bool isPointerOver;
+        private bool isSelected;
         private float holdTime = 0.3f;
 
         void OnEnable()
         {
-            SetButtonNotHovered();
+            isPointerOver = false;
+            isSelected = false;
+            isHovered = false;
+            StopHover();
         }
 
         public void Init(GrabbableObject itemGrabbableObject)
@@ -27,13 +42,13 @@ namespace LethalInternship.Core.UI.ItemBlocks
             this.itemGrabbableObject = itemGrabbableObject;
         }
 
-        private void SetButtonHovered()
+        private void StartHover()
         {
             SetAlpha(BGImage, 1f);
             SetAlpha(ButtonImage, 1f);
         }
 
-        private void SetButtonNotHovered()
+        private void StopHover()
         {
             SetAlpha(BGImage, 0.39f);
             SetAlpha(ButtonImage, 0.39f);
@@ -67,7 +82,30 @@ namespace LethalInternship.Core.UI.ItemBlocks
             return true;
         }
 
-        #region Events
+        private void UpdateHighlight()
+        {
+            bool highlighted = isPointerOver || isSelected;
+
+            if (highlighted == isHovered)
+                return;
+
+            isHovered = highlighted;
+
+            if (isHovered)
+                StartHover();
+            else
+                StopHover();
+        }
+
+        public void OnHoldStart()
+        {
+            UIManager.Instance.ToolTipBarUI.StartHold(holdTime, ActionValidated);
+        }
+
+        public void OnHoldEnd()
+        {
+            UIManager.Instance.ToolTipBarUI.StopHold();
+        }
 
         private void ActionValidated()
         {
@@ -75,26 +113,59 @@ namespace LethalInternship.Core.UI.ItemBlocks
             OnSelected?.Invoke(itemGrabbableObject, TypeInputAction);
         }
 
-        public void PointerDown()
-        {
-            UIManager.Instance.ToolTipBarUI.StartHold(holdTime, ActionValidated);
-        }
+        #region Mouse events
 
-        public void PointerUp()
+        public void OnPointerEnter(PointerEventData eventData)
         {
-            UIManager.Instance.ToolTipBarUI.StopHold();
-        }
+            if (InputManager.Instance.IsUsingController)
+                return;
 
-        public void MouseOver()
-        {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = true;
+            isSelected = false;
             UIManager.Instance.ToolTipBarUI.ShowImmediate($"{UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction]}");
-            SetButtonHovered();
+            UpdateHighlight();
         }
 
-        public void MouseLeave()
+        public void OnPointerExit(PointerEventData eventData)
         {
+            isPointerOver = false;
+            isSelected = false;
+
             UIManager.Instance.ToolTipBarUI.Hide();
-            SetButtonNotHovered();
+            UpdateHighlight();
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            OnHoldStart();
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            OnHoldEnd();
+        }
+
+        #endregion
+
+        #region Controller events
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = false;
+            isSelected = true;
+            UIManager.Instance.ToolTipBarUI.ShowImmediate($"{UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction]}");
+            UpdateHighlight();
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
         }
 
         #endregion

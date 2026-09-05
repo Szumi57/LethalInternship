@@ -2,18 +2,19 @@
 {
     public enum GameAction
     {
+        Unknown = 0,
         Look,
         Move,
         Jump,
         Sprint,
         //OpenMenu,
-        //Interact,
+        Interact,
         Crouch,
         Use,
         ActivateItem,
         //Discard,
         SwitchItem,
-        //QEItemInteract,
+        QEItemInteract,
         //EnableChat,
         //SubmitChat,
         //ReloadBatteries,
@@ -28,6 +29,6 @@
         //ConfirmBuildMode,
         //Delete,
         //ItemSecondaryUse,
-        //ItemTertiaryUse
+        ItemTertiaryUse
     }
 }

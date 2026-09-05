@@ -19,14 +19,14 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
                                                     {
                                                         GameAction.Look,
                                                         GameAction.Move,
-                                                        GameAction.Jump,
                                                         GameAction.Sprint,
                                                         GameAction.Crouch
                                                     };
         static readonly HashSet<GameAction> submitActions = new HashSet<GameAction>()
                                                     {
                                                         GameAction.Use,
-                                                        GameAction.ActivateItem
+                                                        GameAction.ActivateItem,
+                                                        GameAction.Interact,
                                                     };
 
         protected override void BeginTargeting()

@@ -97,7 +97,7 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         bool ShouldIgnoreInternsEndScreen(PlayerControllerB player);
 
-        List<int> GetListOfAvailableSuitIDs();
+        void GetListOfAvailableSuitIDs(List<int> indexesSpawnedSuits);
 
         bool IsCurrentMoonCompanyMoon();
     }

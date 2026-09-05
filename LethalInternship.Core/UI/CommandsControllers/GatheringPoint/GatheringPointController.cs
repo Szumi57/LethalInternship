@@ -1,24 +1,34 @@
-﻿using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using System.Collections;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 {
-    public class GatheringPointController : MonoBehaviour, IVisibilityUI
+    public class GatheringPointController : MonoBehaviour,
+        IVisibilityUI,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        IPointerClickHandler,
+        ISelectHandler,
+        IDeselectHandler,
+        ISubmitHandler
     {
         public static System.Action<EnumInputAction> OnSelected = null!;
 
         public GameObject Go { get; private set; } = null!;
-        public EnumUIGroups GroupUI = EnumUIGroups.None;
-        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+        public EnumUIGroups GroupUI = EnumUIGroups.GatheringPointGroupButtons;
+        EnumUIGroups IGroupUI.GroupUI => this.GroupUI;
 
         public Image BgImage = null!;
-        public Image BgRemoveButtonImage = null!;
 
         public Image SetImage = null!;
         public Image GoToImage = null!;
@@ -29,7 +39,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         public bool CanSetUpGatheringPoint;
 
-        float transparency = 1f;
+        private float transparency = 1f;
+        private float transparencyNotInteractable = 0.2f;
+        private bool isHovered;
+        private bool isPointerOver;
+        private bool isSelected;
 
         // isGatheringPointSet
         private bool isGatheringPointSet => InternManager.Instance.GatheringPoint != null;
@@ -52,12 +66,17 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             SetAlpha(SetImage, 1f);
             SetAlpha(GoToImage, 0f);
             Go = this.gameObject;
-            RemoveGatheringPointController.OnSelected += RemoveGatheringPoint_OnSelected;
+
+            if (CanSetUpGatheringPoint)
+                RemoveGatheringPointController.OnSelected += RemoveGatheringPoint_OnSelected;
         }
 
         void OnEnable()
         {
-            SetButtonNotHovered();
+            isPointerOver = false;
+            isSelected = false;
+            isHovered = false;
+            StopHover();
             SetTMPDescriptionFont(UIManager.Instance.FontToUse);
 
             UpdateStateRemoveButton();
@@ -66,22 +85,17 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
-            interactable = isGatheringPointSet || CanSetUpGatheringPoint;
+            bool managingInterns = IdentitySelectionService.Instance.GetSelected()
+                                        .Any(x => IdentityManager.Instance.IsIdentityValidToCommand(x));
+            bool restrictedLocation = StartOfRound.Instance != null && (StartOfRound.Instance.inShipPhase
+                                                                    || StartOfRound.Instance.shipIsLeaving
+                                                                    || InternManager.Instance.IsCurrentMoonCompanyMoon());
 
-            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            interactable = managingInterns && !restrictedLocation;
             isNotInteractable = !interactable;
-            if (isNotInteractable)
-                SetAlpha(GetCurrentImage(), 0.2f);
-            else
-                SetAlpha(GetCurrentImage(), transparency);
-        }
-
-        private Image GetCurrentImage()
-        {
-            if (CanSetUpGatheringPoint)
-                return isGatheringPointSet ? GoToImage : SetImage;
-            else
-                return GoToImage;
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            UpdateIconAndDesc();
+            UpdateHighlight(forceUpdate: true);
         }
 
         private void SetAlpha(Image image, float transparency)
@@ -111,14 +125,10 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             }
         }
 
-        private void SetButtonHovered()
+        private void StartHover()
         {
-            SetAlpha(BgImage, 1f);
-
-            if (CanSetUpGatheringPoint && isGatheringPointSet)
-            {
-                SetAlpha(BgRemoveButtonImage, 1f);
-            }
+            SetAlpha(BgImage, isNotInteractable ? transparencyNotInteractable : transparency);
+            BgImage.pixelsPerUnitMultiplier = 7;
 
             fullText = UIConst.COMMANDS_BUTTON_STRING[(int)GetCurrentInputAction()];
             if (TMPDescription != null)
@@ -129,9 +139,15 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             }
         }
 
-        private void SetButtonNotHovered()
+        private void StopHover()
         {
-            SetAlpha(BgImage, 0f);
+            if (isGatheringPointSet)
+            {
+                SetAlpha(BgImage, isNotInteractable ? transparencyNotInteractable : transparency);
+                BgImage.pixelsPerUnitMultiplier = 25;
+            }
+            else
+                SetAlpha(BgImage, 0f);
 
             // Typing animation
             StopAllCoroutines();
@@ -146,34 +162,46 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         {
             if (!CanSetUpGatheringPoint)
             {
-                SetAlpha(GoToImage, 1f);
+                SetAlpha(GoToImage, isNotInteractable ? transparencyNotInteractable : transparency);
                 SetAlpha(SetImage, 0f);
                 return;
             }
 
             if (isGatheringPointSet)
             {
-                SetAlpha(GoToImage, 1f);
+                SetAlpha(GoToImage, isNotInteractable ? transparencyNotInteractable : transparency);
                 SetAlpha(SetImage, 0f);
             }
             else
             {
                 SetAlpha(GoToImage, 0f);
-                SetAlpha(SetImage, 1f);
+                SetAlpha(SetImage, isNotInteractable ? transparencyNotInteractable : transparency);
             }
         }
 
         private void UpdateStateRemoveButton()
         {
-            if (removeGatheringPointController != null)
-                removeGatheringPointController.gameObject.SetActive(CanSetUpGatheringPoint && isGatheringPointSet);
+            StartCoroutine(CoroutineUpdateStateRemoveButton());
+        }
+
+        private IEnumerator CoroutineUpdateStateRemoveButton()
+        {
+            removeGatheringPointController.gameObject.SetActive(CanSetUpGatheringPoint && isGatheringPointSet);
+            yield return null;
+            removeGatheringPointController.gameObject.SetActive(CanSetUpGatheringPoint && isGatheringPointSet);
         }
 
         private void RemoveGatheringPoint_OnSelected()
         {
+            if (!this.isActiveAndEnabled)
+                return;
+
             // Gathering point is removed, does not wait for InternManager.Instance.GatheringPoint != null
             SetAlpha(GoToImage, 0f);
             SetAlpha(SetImage, 1f);
+
+            if (InputManager.Instance.IsUsingController)
+                EventSystem.current.SetSelectedGameObject(this.gameObject);
 
             if (removeGatheringPointController != null)
                 removeGatheringPointController.gameObject.SetActive(false);
@@ -212,10 +240,49 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             return UIConst.COMMANDS_BUTTON_STRING[(int)GetCurrentInputAction()];
         }
 
-        #region Events
-
-        public void Selected()
+        private void UpdateHighlight(bool forceUpdate = false)
         {
+            bool highlighted = isPointerOver || isSelected;
+
+            if (highlighted == isHovered
+                && !forceUpdate)
+                return;
+
+            isHovered = highlighted;
+
+            if (isHovered)
+                StartHover();
+            else
+                StopHover();
+        }
+
+        #region Mouse events
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = true;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.pointerPress == removeGatheringPointController.gameObject
+                || eventData.pointerPress.transform.IsChildOf(removeGatheringPointController.gameObject.transform))
+                return;
+
             if (isNotInteractable) return;
 
             OnSelected?.Invoke(GetCurrentInputAction());
@@ -224,19 +291,39 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             UpdateStateRemoveButton();
         }
 
-        public void MouseOver()
+        #endregion
+
+        #region Controller events
+
+        public void OnSelect(BaseEventData eventData)
         {
+            if (!InputManager.Instance.IsUsingController)
+                return;
+
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = false;
+            isSelected = true;
             UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
-
-            if (isNotInteractable) return;
-
-            SetButtonHovered();
+            UpdateHighlight();
         }
 
-        public void MouseLeave()
+        public void OnDeselect(BaseEventData eventData)
         {
+            isPointerOver = false;
+            isSelected = false;
+
             UIManager.Instance.ToolTipBarUI.Hide();
-            SetButtonNotHovered();
+            UpdateHighlight();
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            if (isNotInteractable) return;
+
+            OnSelected?.Invoke(GetCurrentInputAction());
+
+            UpdateIconAndDesc();
+            UpdateStateRemoveButton();
         }
 
         #endregion

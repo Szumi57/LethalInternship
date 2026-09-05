@@ -7,6 +7,7 @@ using LethalInternship.Core.UI.CommandsControllers.GatheringPoint;
 using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.InternBlocks;
 using LethalInternship.Core.UI.ItemBlocks;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
@@ -20,6 +21,7 @@ using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace LethalInternship.Core.Managers
@@ -44,6 +46,8 @@ namespace LethalInternship.Core.Managers
         public TargetedAbility? CurrentTargetedAbility { get; private set; }
         public TargetedAbility? PreviousTargetedAbility { get; private set; }
 
+        public bool IsUsingController { get; private set; }
+
         private InputActionAsset inputActionAsset = null!;
         private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
 
@@ -63,18 +67,30 @@ namespace LethalInternship.Core.Managers
 
         public string GetKeyAction(InputAction inputAction)
         {
-            int bindingIndex;
-            if (StartOfRound.Instance.localPlayerUsingController)
+            for (int i = 0; i < inputAction.bindings.Count; i++)
             {
-                // Gamepad
-                bindingIndex = inputAction.GetBindingIndex(InputBinding.MaskByGroup("Gamepad"));
+                string path = inputAction.bindings[i].effectivePath;
+
+                if (IsUsingController)
+                {
+                    if (path.Contains("Gamepad") ||
+                        path.Contains("XInputController"))
+                    {
+                        return inputAction.GetBindingDisplayString(i);
+                    }
+                }
+                else
+                {
+                    if (path.Contains("Keyboard") ||
+                        path.Contains("Mouse"))
+                    {
+                        return inputAction.GetBindingDisplayString(i);
+                    }
+                }
             }
-            else
-            {
-                // kbm
-                bindingIndex = inputAction.GetBindingIndex(InputBinding.MaskByGroup("KeyboardAndMouse"));
-            }
-            return inputAction.GetBindingDisplayString(bindingIndex);
+
+            // Fallback
+            return inputAction.GetBindingDisplayString();
         }
 
         private void OnEnable()
@@ -111,10 +127,13 @@ namespace LethalInternship.Core.Managers
                         case "Move": actionMap[action] = GameAction.Move; break;
                         case "Jump": actionMap[action] = GameAction.Jump; break;
                         case "Sprint": actionMap[action] = GameAction.Sprint; break;
+                        case "Interact": actionMap[action] = GameAction.Interact; break;
                         case "Crouch": actionMap[action] = GameAction.Crouch; break;
                         case "Use": actionMap[action] = GameAction.Use; break;
                         case "ActivateItem": actionMap[action] = GameAction.ActivateItem; break;
                         case "SwitchItem": actionMap[action] = GameAction.SwitchItem; break;
+                        case "QEItemInteract": actionMap[action] = GameAction.QEItemInteract; break;
+                        case "ItemTertiaryUse": actionMap[action] = GameAction.ItemTertiaryUse; break;
                     }
                 }
             }
@@ -125,6 +144,8 @@ namespace LethalInternship.Core.Managers
                 foreach (InputAction? action in map.actions)
                 {
                     action.started += OnAnyAction;
+                    action.performed += OnAnyAction;
+                    action.canceled += OnAnyAction;
                 }
             }
         }
@@ -152,8 +173,15 @@ namespace LethalInternship.Core.Managers
 
             // UnsubscribeAllActions
             foreach (var map in inputActionAsset.actionMaps)
+            {
                 foreach (var action in map.actions)
+
+                {
                     action.started -= OnAnyAction;
+                    action.performed -= OnAnyAction;
+                    action.canceled -= OnAnyAction;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -250,25 +278,51 @@ namespace LethalInternship.Core.Managers
 
         private void OnAnyAction(InputAction.CallbackContext ctx)
         {
+            UpdateInputDevice(ctx);
+
+            // Any action
+            actionMap.TryGetValue(ctx.action, out GameAction gameAction);
+
+            if (gameAction == GameAction.Interact
+                && UIManager.Instance.IsAnyMenuOpened
+                && (ctx.started || ctx.canceled))
+            {
+                if (HoldAction(ctx))
+                    return;
+            }
+
             if (!InputLock.CanProcessWorldInput)
                 return;
 
-            // Any action
+            if (!ctx.performed)
+                return;
+            // Only performed
 
             // Unknown action
-            if (!actionMap.TryGetValue(ctx.action, out var gameAction))
+            if (gameAction == GameAction.Unknown)
             {
+                Debug.Log($"Unknown action {ctx.action.name}");
                 UIManager.Instance.HideAll();
                 CancelTargeting();
                 return;
+            }
+
+            if (gameAction == GameAction.Interact
+                && UIManager.Instance.IsAnyMenuOpened)
+            {
+                if (SubmitSelected())
+                    return;
             }
 
             // Anything but
             if (gameAction != GameAction.Use
                 && gameAction != GameAction.ActivateItem // Click
                 && gameAction != GameAction.Look // Move mouse
+                && gameAction != GameAction.Interact // Interact
+                && (IsUsingController && gameAction != GameAction.Move) // Move is used for selecting UI with controller
                 && gameAction != GameAction.SwitchItem) // Scroll
             {
+                Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
                 UIManager.Instance.HideAll();
             }
 
@@ -280,8 +334,9 @@ namespace LethalInternship.Core.Managers
             // Submitting action
             if (CurrentTargetedAbility.SubmitActions.Contains(gameAction))
             {
+                bool actionPerformed = IsUsingController ? true : Mouse.current.leftButton.wasPressedThisFrame;
                 TargetData? target = TargetingManager.Instance.GetCurrentTarget();
-                if (Mouse.current.leftButton.wasPressedThisFrame
+                if (actionPerformed
                     && target != null)
                 {
                     Order? order = CurrentTargetedAbility.ResolveTarget(target.Value);
@@ -301,6 +356,59 @@ namespace LethalInternship.Core.Managers
             }
             // Not interrupting action
             // Do nothing
+        }
+
+        public bool HoldAction(InputAction.CallbackContext ctx)
+        {
+            var selected = EventSystem.current.currentSelectedGameObject;
+
+            if (selected == null)
+                return false;
+
+            if (!selected.TryGetComponent<IHoldHandler>(out var handler))
+                return false;
+
+            if (ctx.started)
+            {
+                handler.OnHoldStart();
+            }
+            else if (ctx.canceled)
+            {
+                handler.OnHoldEnd();
+            }
+
+            return true;
+        }
+
+        public bool SubmitSelected()
+        {
+            GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+            if (selected == null)
+                return false;
+
+            ExecuteEvents.Execute(selected,
+                                  new BaseEventData(EventSystem.current),
+                                  ExecuteEvents.submitHandler);
+
+            return true;
+        }
+
+        private void UpdateInputDevice(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Gamepad)
+            {
+                if (ctx.action.activeValueType == typeof(Vector2)
+                    && ctx.ReadValue<Vector2>().sqrMagnitude < 0.001f)
+                    return;
+
+                IsUsingController = true;
+            }
+            else if (ctx.control.device is Keyboard ||
+                     ctx.control.device is Mouse)
+            {
+                IsUsingController = false;
+            }
         }
 
         #region Commands System
@@ -580,6 +688,9 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
+            if (UIManager.Instance.IsAnyMenuOpened)
+                return;
+
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null
                 || target.Value.Intern == null)
@@ -607,6 +718,9 @@ namespace LethalInternship.Core.Managers
             {
                 return;
             }
+
+            if (UIManager.Instance.IsAnyMenuOpened)
+                return;
 
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null
@@ -653,6 +767,9 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
+            if (UIManager.Instance.IsAnyMenuOpened)
+                return;
+
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null
                 || target.Value.Intern == null)
@@ -681,6 +798,9 @@ namespace LethalInternship.Core.Managers
             {
                 return;
             }
+
+            if (UIManager.Instance.IsAnyMenuOpened)
+                return;
 
             // No intern in interact range
             // Check if we hold interns

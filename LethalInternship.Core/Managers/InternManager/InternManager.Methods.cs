@@ -606,11 +606,11 @@ namespace LethalInternship.Core.Managers
             return IsPlayerIntern(player);
         }
 
-        public List<int> GetListOfAvailableSuitIDs()
+        public void GetListOfAvailableSuitIDs(List<int> indexesSpawnedSuits)
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
             UnlockableItem unlockableItem;
-            List<int> indexesSpawnedSuits = new List<int>();
+            indexesSpawnedSuits.Clear();
             foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
             {
                 if (unlockable.Value == null)
@@ -627,7 +627,6 @@ namespace LethalInternship.Core.Managers
                     //PluginLoggerHook.LogDebug?.Invoke($"unlockable index {unlockable.Key}");
                 }
             }
-            return indexesSpawnedSuits;
         }
 
         public bool IsCurrentMoonCompanyMoon()

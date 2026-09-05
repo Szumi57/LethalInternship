@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers
@@ -24,12 +26,18 @@ namespace LethalInternship.Core.UI.CommandsControllers
         public GameObject GotoCommandsPanelUI = null!;
         public GameObject ScavengeCommandsPanelUI = null!;
 
+        public GameObject ControllerFirstElement = null!;
+
         public TextMeshProUGUI TitleUI = null!;
+        public TextMeshProUGUI UIInputDescription = null!;
         public TextMeshProUGUI ModNamePanelDescription = null!;
 
         private Coroutine CoroutineUpdateCommandsUI = null!;
 
         private IVisibilityUI[] visibilityUIs = null!;
+
+        private InputAction inputActionInteract = null!;
+        private InputAction inputActionDiscard = null!;
 
         void Awake()
         {
@@ -43,6 +51,24 @@ namespace LethalInternship.Core.UI.CommandsControllers
                 PluginLoggerHook.LogWarning?.Invoke("No TextMeshProUGUI ModNamePanelDescription found while loading CommandsAllController !");
             }
             visibilityUIs = GetComponentsInChildren<IVisibilityUI>(includeInactive: true);
+
+            // Get interact inputAction
+            InputActionAsset inputActionAsset = IngamePlayerSettings.Instance.playerInput.actions;
+            foreach (var map in inputActionAsset.actionMaps)
+            {
+                foreach (InputAction? action in map.actions)
+                {
+                    switch (action.name)
+                    {
+                        case "Interact":
+                            inputActionInteract = action;
+                            break;
+                        case "Discard":
+                            inputActionDiscard = action;
+                            break;
+                    }
+                }
+            }
         }
 
         void OnEnable()
@@ -52,6 +78,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
             SetTitleUIFont(fontToUse);
             SetTitleUIText(UIConst.UI_TITLE_COMMANDS_ALL);
 
+            SetUIInputDescriptionFont(fontToUse);
+
             SetModNamePanelDescriptionFont(fontToUse);
             SetModDescriptionText($"{PluginRuntimeProvider.Context.Plugin_Name} v{PluginRuntimeProvider.Context.Plugin_Version}");
 
@@ -60,6 +88,9 @@ namespace LethalInternship.Core.UI.CommandsControllers
             {
                 StopCoroutine(CoroutineUpdateCommandsUI);
             }
+            UIManager.Instance.UpdateLastSelectedUI(null);
+            EventSystem.current.SetSelectedGameObject(null);
+
             CoroutineUpdateCommandsUI = StartCoroutine(UpdateCommandsUI());
 
             SetAllVisible();
@@ -77,6 +108,13 @@ namespace LethalInternship.Core.UI.CommandsControllers
             if (TitleUI != null)
             {
                 TitleUI.font = font;
+            }
+        }
+        private void SetUIInputDescriptionFont(TMP_FontAsset font)
+        {
+            if (UIInputDescription != null)
+            {
+                UIInputDescription.font = font;
             }
         }
 
@@ -100,70 +138,202 @@ namespace LethalInternship.Core.UI.CommandsControllers
             if (StartOfRound.Instance == null)
                 yield break;
 
-            StartOfRound instanceSOR = StartOfRound.Instance;
+            yield return null;
 
-            while (this.enabled)
+            StartOfRound sor = StartOfRound.Instance;
+
+            bool? previousManagingInterns = null;
+            bool? previousVehicleAvailable = null;
+            bool? previousGatheringPointSet = null;
+            bool? previousRestrictedLocation = null;
+            bool? previousController = null;
+
+            GameObject? previousSelected = null;
+            bool wasOnSuitMenu = false;
+
+            while (enabled)
             {
-                if (DebugConst.ALLOW_COMMANDS_ALWAYS)
-                {
-                    foreach (var uiElement in visibilityUIs)
-                    {
-                        uiElement.SetInteractable(interactable: true);
-                    }
-                    yield return null;
-                    continue;
-                }
-
-                // Managing interns ?
                 bool managingInterns = IdentitySelectionService.Instance.GetSelected()
-                                            .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
-                                            .Any();
-                if (managingInterns)
+                                        .Any(x => IdentityManager.Instance.IsIdentityValidToCommand(x));
+
+                bool vehicleAvailable = InternManager.Instance.VehicleController != null;
+                bool gatheringPointSet = InternManager.Instance.GatheringPoint != null;
+
+                bool restrictedLocation = sor.inShipPhase
+                                            || sor.shipIsLeaving
+                                            || InternManager.Instance.IsCurrentMoonCompanyMoon();
+
+                bool usingController = InputManager.Instance.IsUsingController;
+                CheckActiveSelectedUI(usingController);
+
+                bool stateChanged = managingInterns != previousManagingInterns
+                                || vehicleAvailable != previousVehicleAvailable
+                                || gatheringPointSet != previousGatheringPointSet
+                                || restrictedLocation != previousRestrictedLocation
+                                || usingController != previousController;
+
+                if (stateChanged)
                 {
-                    // Clean all
-                    foreach (var uiElement in visibilityUIs)
-                    {
-                        uiElement.SetInteractable(interactable: true);
-                    }
+                    previousManagingInterns = managingInterns;
+                    previousVehicleAvailable = vehicleAvailable;
+                    previousGatheringPointSet = gatheringPointSet;
+                    previousRestrictedLocation = restrictedLocation;
+                    previousController = usingController;
 
-                    foreach (var uiElement in visibilityUIs)
-                    {
-                        // Vehicle ?
-                        if (uiElement.GroupUI == EnumUIGroups.VehicleGroupButtons)
-                            uiElement.SetInteractable(interactable: InternManager.Instance.VehicleController != null, UIConst.TOOLTIPBAR_NO_CRUISER);
-                        // Gathering point ?
-                        if (uiElement.GroupUI == EnumUIGroups.GatheringPointGroupButtons)
-                            uiElement.SetInteractable(interactable: InternManager.Instance.GatheringPoint != null, UIConst.TOOLTIPBAR_NO_GATHERINGPOINT);
-                    }
+                    UpdateInteractability(
+                        managingInterns,
+                        vehicleAvailable,
+                        gatheringPointSet,
+                        restrictedLocation
+                    );
 
-                    // In space or on company building moon
-                    if (instanceSOR.inShipPhase
-                        || instanceSOR.shipIsLeaving
-                        || InternManager.Instance.IsCurrentMoonCompanyMoon())
-                    {
-                        // Disable all but
-                        foreach (var uiElement in visibilityUIs.Where(x => x.GroupUI != EnumUIGroups.InternsList
-                                                                        && x.GroupUI != EnumUIGroups.SuitMenu
-                                                                        && x.GroupUI != EnumUIGroups.AutoDefenseButton
-                                                                        && x.GroupUI != EnumUIGroups.NavigationGroupButtons
-                                                                        && x.GroupUI != EnumUIGroups.Other
-                                                                        && x.GroupUI != EnumUIGroups.CarryItemBehaviourButton))
-                        {
-                            uiElement.SetInteractable(interactable: false, UIConst.TOOLTIPBAR_NOT_IN_SPACE);
-                        }
-                    }
+                    UpdateUIMessage(usingController);
+                    UpdateActiveSelectedUI(usingController);
                 }
-                else // Not managing interns
+
+                if (usingController)
                 {
-                    // Disable all
-                    foreach (var uiElement in visibilityUIs.Where(x => x.GroupUI != EnumUIGroups.Other))
+                    GameObject selected = EventSystem.current.currentSelectedGameObject;
+                    if (selected != previousSelected)
                     {
-                        uiElement.SetInteractable(interactable: false, UIConst.TOOLTIPBAR_NO_INTERNS_TO_MANAGE);
+                        previousSelected = selected;
+
+                        if (selected != null)
+                        {
+                            IGroupUI? groupUI = selected.GetComponent<IGroupUI>();
+                            bool isOnSuitMenu = groupUI?.GroupUI == EnumUIGroups.SuitMenu
+                                                || groupUI?.GroupUI == EnumUIGroups.InternsList;
+
+                            if (isOnSuitMenu != wasOnSuitMenu)
+                            {
+                                wasOnSuitMenu = isOnSuitMenu;
+                                if (isOnSuitMenu)
+                                {
+                                    UIManager.Instance.CommandsAllController.SetOnlyListInternsAndSuitCommandsVisible();
+                                }
+                                else
+                                {
+                                    UIManager.Instance.CommandsAllController.SetAllVisible();
+                                    if (groupUI?.GroupUI != EnumUIGroups.AutoDefenseButton // Moving to AutoDefenseButton ok
+                                        && ControllerFirstElement != null)
+                                    {
+                                        EventSystem.current.SetSelectedGameObject(ControllerFirstElement);
+                                    }
+
+                                    previousSelected = EventSystem.current.currentSelectedGameObject;
+                                }
+                            }
+                        }
                     }
                 }
 
                 yield return null;
             }
+        }
+
+        private void UpdateInteractability(bool managingInterns,
+                                           bool vehicleAvailable,
+                                           bool gatheringPointSet,
+                                           bool restrictedLocation)
+        {
+            if (DebugConst.ALLOW_COMMANDS_ALWAYS)
+            {
+                foreach (var ui in visibilityUIs)
+                    ui.SetInteractable(true);
+
+                return;
+            }
+
+            if (!managingInterns)
+            {
+                foreach (var ui in visibilityUIs)
+                {
+                    if (ui.GroupUI != EnumUIGroups.Other
+                        && ui.GroupUI != EnumUIGroups.Close)
+                        ui.SetInteractable(false, tooltipMessageNotInteractable: UIConst.TOOLTIPBAR_NO_INTERNS_TO_MANAGE);
+                }
+
+                return;
+            }
+
+            foreach (var ui in visibilityUIs)
+            {
+                ui.SetInteractable(true);
+
+                switch (ui.GroupUI)
+                {
+                    case EnumUIGroups.VehicleGroupButtons:
+                        ui.SetInteractable(vehicleAvailable, tooltipMessageNotInteractable: UIConst.TOOLTIPBAR_NO_CRUISER);
+                        break;
+                    case EnumUIGroups.GatheringPointGroupButtons:
+                        ui.SetInteractable(gatheringPointSet, tooltipMessageNotInteractable: UIConst.TOOLTIPBAR_NO_GATHERINGPOINT);
+                        break;
+                }
+
+                if (restrictedLocation && !CanUseInRestrictedLocation(ui.GroupUI))
+                {
+                    ui.SetInteractable(false, tooltipMessageNotInteractable: UIConst.TOOLTIPBAR_NOT_IN_SPACE);
+                }
+            }
+        }
+
+        private void UpdateUIMessage(bool usingController)
+        {
+            if (UIInputDescription == null)
+                return;
+
+            UIInputDescription.text = usingController ? string.Format(UIConst.UI_INPUT_MESSAGE_CONTROLLER,
+                                                                      InputManager.Instance.GetKeyAction(inputActionInteract),
+                                                                      InputManager.Instance.GetKeyAction(inputActionDiscard))
+                                                      : UIConst.UI_INPUT_MESSAGE_KEYBOARD;
+        }
+
+        private void CheckActiveSelectedUI(bool usingController)
+        {
+            if (usingController)
+            {
+                GameObject selected = EventSystem.current.currentSelectedGameObject;
+                if (selected == null)
+                    return;
+
+                if (!selected.transform.IsChildOf(this.gameObject.transform))
+                {
+                    // If we go out of the panel to the base game panel
+                    // return to ScavengeToCruiser button
+                    foreach (var commandButtonController in GetComponentsInChildren<CommandButtonController>())
+                    {
+                        if (commandButtonController != null
+                            && commandButtonController.TypeInputAction == SharedAbstractions.Enums.EnumInputAction.ScavengeToCruiser)
+                        {
+                            EventSystem.current.SetSelectedGameObject(commandButtonController.gameObject);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void UpdateActiveSelectedUI(bool usingController)
+        {
+            if (usingController)
+            {
+                if (UIManager.Instance.LastSelectedUI != null
+                    && UIManager.Instance.LastSelectedUI.activeInHierarchy
+                    && UIManager.Instance.LastSelectedUI.transform.IsChildOf(this.gameObject.transform))
+                    EventSystem.current.SetSelectedGameObject(UIManager.Instance.LastSelectedUI);
+                else if (ControllerFirstElement != null)
+                    EventSystem.current.SetSelectedGameObject(ControllerFirstElement);
+            }
+        }
+
+        private static bool CanUseInRestrictedLocation(EnumUIGroups group)
+        {
+            return group == EnumUIGroups.InternsList
+                || group == EnumUIGroups.SuitMenu
+                || group == EnumUIGroups.AutoDefenseButton
+                || group == EnumUIGroups.NavigationGroupButtons
+                || group == EnumUIGroups.Other
+                || group == EnumUIGroups.Close
+                || group == EnumUIGroups.CarryItemBehaviourButton;
         }
 
         public void SetAllVisible()
@@ -180,14 +350,23 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         public void SetOnlyListInternsAndSuitCommandsVisible()
         {
-            SetUIElementVisible(visibilityUIs.Where(x => x.GroupUI == EnumUIGroups.SuitMenu).Select(x => x.Go), visible: true);
+            foreach (var ui in visibilityUIs)
+            {
+                if (ui.GroupUI == EnumUIGroups.SuitMenu
+                    || ui.GroupUI == EnumUIGroups.AutoDefenseButton)
+                {
+                    SetUIElementVisible(ui.Go, visible: true);
+                }
+                else if (ui.GroupUI != EnumUIGroups.InternsList)
+                {
+                    SetUIElementVisible(ui.Go, visible: false);
+                }
+            }
 
-            SetUIElementVisible(visibilityUIs.Where(x => x.GroupUI != EnumUIGroups.InternsList
-                                                      && x.GroupUI != EnumUIGroups.SuitMenu).Select(x => x.Go), visible: false);
             SetUIElementVisible(BGPanelUI, visible: false);
             SetUIElementVisible(QuickCommandsPanelUI, visible: false);
             SetUIElementVisible(PointerCommandsPanelUI, visible: false);
-            SetUIElementVisible(AutoDefenseCommandsPanelUI, visible: false);
+            SetUIElementVisible(AutoDefenseCommandsPanelUI, visible: true);
             SetUIElementVisible(CarryBehaviourCommandsPanelUI, visible: false);
             SetUIElementVisible(GotoCommandsPanelUI, visible: false);
             SetUIElementVisible(ScavengeCommandsPanelUI, visible: false);

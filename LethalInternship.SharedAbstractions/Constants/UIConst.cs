@@ -8,6 +8,9 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static Color UI_COLOR_ORANGE = new Color(255 / 255f, 111 / 255f, 1 / 255f); // 255 111 1 orange
         public static Color UI_COLOR_BLACK = new Color(0f, 0f, 0f); // black
 
+        public static string UI_INPUT_MESSAGE_KEYBOARD = "Press : [Mouse click] to confirm";
+        public static string UI_INPUT_MESSAGE_CONTROLLER = "Press : [{0}] to confirm | [{1}] to close";
+
         public static string UI_CHOOSE_LOCATION = "Choose this location";
 
         public static string UI_TITLE_COMMANDS_ALL = "Commands :";
@@ -15,12 +18,10 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static string UI_TITLE_LIST_SINGLE_INTERN = "Managing intern :";
 
         // Cursor tooltips
-        public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
         public static readonly string TOOLTIP_GIVE_ITEM = "Give item : [{0}]";
         public static readonly string TOOLTIP_MANAGE = "Manage : [{0}]";
         public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
         public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
-        public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
         public static readonly string TOOLTIP_COMMANDS_ALL = "Commands for all interns : [{0}]";
         public static readonly string TOOLTIP_COMMANDS_ONE = "Commands : [{0}]";
         public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";

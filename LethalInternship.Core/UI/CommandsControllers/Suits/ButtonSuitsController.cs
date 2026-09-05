@@ -3,23 +3,35 @@ using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LethalInternship.Core.UI.CommandsControllers.Suits
 {
-    public class ButtonSuitsController : MonoBehaviour, IVisibilityUI
+    public class ButtonSuitsController : MonoBehaviour,
+        IVisibilityUI,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        IPointerClickHandler,
+        ISelectHandler,
+        IDeselectHandler,
+        ISubmitHandler
     {
         public static System.Action<EnumInputAction> OnSelected = null!;
 
         public GameObject Go { get; private set; } = null!;
-        public EnumUIGroups GroupUI = EnumUIGroups.None;
-        EnumUIGroups IVisibilityUI.GroupUI => this.GroupUI;
+        public EnumUIGroups GroupUI = EnumUIGroups.SuitMenu;
+        EnumUIGroups IGroupUI.GroupUI => this.GroupUI;
 
         public EnumInputAction TypeInputAction;
         public Image FrameImage = null!;
         public Image IconImage = null!;
 
         private float transparencyFull = 1f;
+
+        private bool isHovered;
+        private bool isPointerOver;
+        private bool isSelected;
 
         private bool isNotInteractable;
         private string tooltipMessageNotInteractable = string.Empty;
@@ -30,6 +42,14 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
             Go = this.gameObject;
         }
 
+        void OnEnable()
+        {
+            isPointerOver = false;
+            isSelected = false;
+            isHovered = false;
+            StopHover();
+        }
+
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
@@ -38,6 +58,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
                 SetAlpha(IconImage, 0.2f);
             else
                 SetAlpha(IconImage, transparencyFull);
+
+            UpdateHighlight(forceUpdate: true);
         }
 
         private void SetAlpha(Image image, float transparency)
@@ -51,12 +73,12 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
             }
         }
 
-        private void SetButtonHovered()
+        private void StartHover()
         {
             FrameImage.pixelsPerUnitMultiplier = 10f;
         }
 
-        private void SetButtonNotHovered()
+        private void StopHover()
         {
             FrameImage.pixelsPerUnitMultiplier = 20f;
         }
@@ -66,24 +88,77 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
             return UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction];
         }
 
-        public void Selected()
+        private void UpdateHighlight(bool forceUpdate = false)
         {
+            bool highlighted = isPointerOver || isSelected;
+
+            if (highlighted == isHovered
+                && !forceUpdate)
+                return;
+
+            isHovered = highlighted;
+
+            if (isHovered)
+                StartHover();
+            else
+                StopHover();
+        }
+
+        #region Mouse events
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = true;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (isNotInteractable) return;
             OnSelected?.Invoke(TypeInputAction);
         }
 
-        public void MouseOver()
+        #endregion
+
+        #region Controller events
+
+        public void OnSelect(BaseEventData eventData)
         {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = false;
+            isSelected = true;
             UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
-
-            if (isNotInteractable) return;
-
-            SetButtonHovered();
+            UpdateHighlight();
         }
 
-        public void MouseLeave()
+        public void OnDeselect(BaseEventData eventData)
         {
+            isPointerOver = false;
+            isSelected = false;
+
             UIManager.Instance.ToolTipBarUI.Hide();
-            SetButtonNotHovered();
+            UpdateHighlight();
         }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            if (isNotInteractable) return;
+            OnSelected?.Invoke(TypeInputAction);
+        }
+
+        #endregion
     }
 }

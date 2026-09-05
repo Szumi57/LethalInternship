@@ -106,7 +106,7 @@ namespace LethalInternship.Core.Interns
 
         private void RefreshListSuits()
         {
-            _indexesSpawnedSuits = InternManager.Instance.GetListOfAvailableSuitIDs();
+            InternManager.Instance.GetListOfAvailableSuitIDs(_indexesSpawnedSuits);
         }
 
         public int GetPreviousSuitID()

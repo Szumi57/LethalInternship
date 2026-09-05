@@ -2,10 +2,9 @@
 
 namespace LethalInternship.Core.UI.Others
 {
-    public interface IVisibilityUI
+    public interface IVisibilityUI : IGroupUI
     {
         GameObject Go { get; }
-        EnumUIGroups GroupUI { get; }
 
         void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!);
     }

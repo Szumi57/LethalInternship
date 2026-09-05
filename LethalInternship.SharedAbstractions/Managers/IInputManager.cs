@@ -8,6 +8,8 @@ namespace LethalInternship.SharedAbstractions.Managers
         TargetedAbility? CurrentTargetedAbility { get; }
         TargetedAbility? PreviousTargetedAbility { get; }
 
+        bool IsUsingController { get; }
+
         string GetKeyAction(InputAction inputAction);
     }
 }

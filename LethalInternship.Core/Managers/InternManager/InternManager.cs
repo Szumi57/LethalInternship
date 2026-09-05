@@ -127,14 +127,14 @@ namespace LethalInternship.Core.Managers
 
             ProcessCalculatePathQueue();
 
-            poolLogTimer += Time.deltaTime;
-            if (poolLogTimer >= 2f)
-            {
-                poolLogTimer -= 2f;
-                Debug.Log("Pools.LogStats -------------------");
-                Pools.LogStats();
-                Debug.Log("----------------------------------");
-            }
+            //poolLogTimer += Time.deltaTime;
+            //if (poolLogTimer >= 2f)
+            //{
+            //    poolLogTimer -= 2f;
+            //    Debug.Log("Pools.LogStats -------------------");
+            //    Pools.LogStats();
+            //    Debug.Log("----------------------------------");
+            //}
         }
 
         public void Init()

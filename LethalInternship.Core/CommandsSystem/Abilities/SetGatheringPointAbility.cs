@@ -27,7 +27,8 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
         static readonly HashSet<GameAction> submitActions = new HashSet<GameAction>()
                                                     {
                                                         GameAction.Use,
-                                                        GameAction.ActivateItem
+                                                        GameAction.ActivateItem,
+                                                        GameAction.Interact,
                                                     };
 
         protected override void BeginTargeting()

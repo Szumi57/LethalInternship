@@ -39,6 +39,7 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo ShouldIgnoreHitShovelIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new Shovel()));
         public static readonly MethodInfo ShouldIgnoreHitKnifeIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new KnifeItem()));
         public static readonly MethodInfo ShouldIgnoreInternsEndScreenMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreInternsEndScreen(new PlayerControllerB()));
+        public static readonly MethodInfo IsAnyMenuOpenedMethod = SymbolExtensions.GetMethodInfo(() => IsAnyMenuOpened());
 
         public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");
 
@@ -279,6 +280,11 @@ namespace LethalInternship.Patches.Utils
         private static bool ShouldIgnoreInternsEndScreen(PlayerControllerB player)
         {
             return InternManagerProvider.Instance.ShouldIgnoreInternsEndScreen(player);
+        }
+
+        private static bool IsAnyMenuOpened()
+        {
+            return UIManagerProvider.Instance.IsAnyCommandsMenuOpenedOrWasOpened;
         }
     }
 }
