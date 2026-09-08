@@ -8,8 +8,8 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static Color UI_COLOR_ORANGE = new Color(255 / 255f, 111 / 255f, 1 / 255f); // 255 111 1 orange
         public static Color UI_COLOR_BLACK = new Color(0f, 0f, 0f); // black
 
-        public static string UI_INPUT_MESSAGE_KEYBOARD = "Press : [Mouse click] to confirm";
-        public static string UI_INPUT_MESSAGE_CONTROLLER = "Press : [{0}] to confirm | [{1}] to close";
+        public static string UI_INPUT_MESSAGE_KEYBOARD = "[Mouse click] confirm";
+        public static string UI_INPUT_MESSAGE_CONTROLLER = "[{0}] confirm | [{1}] [{2}] change| [{3}] close";
 
         public static string UI_CHOOSE_LOCATION = "Choose this location";
 

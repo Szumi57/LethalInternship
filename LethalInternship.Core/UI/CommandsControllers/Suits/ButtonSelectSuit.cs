@@ -58,7 +58,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
             isSelected = false;
             isHovered = false;
             StopHover();
-            Close();
+            CloseSuitPanel();
         }
 
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
@@ -98,13 +98,20 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
             }
             else
             {
-                Close();
+                CloseSuitPanel();
             }
         }
 
-        private void Close()
+        public bool CloseSuitPanel()
         {
+            if (!SuitListPanel.gameObject.activeSelf)
+                return false;
+
             SuitListPanel.gameObject.SetActive(false);
+            if (InputManager.Instance.IsUsingController)
+                EventSystem.current.SetSelectedGameObject(this.gameObject);
+
+            return true;
         }
 
         private void Populate(List<int> suits)

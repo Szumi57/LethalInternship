@@ -89,11 +89,10 @@ namespace LethalInternship.Core.UI.InternBlocks
             isHovered = false;
             StopHover();
 
+            StopTypeTextCoroutine();
             if (!string.IsNullOrWhiteSpace(fullText))
             {
                 // Typing animation
-                NameText.text = string.Empty;
-                currentText = string.Empty;
                 typingCoroutine = StartCoroutine(TypeText());
                 cursorCoroutine = StartCoroutine(CursorBlink());
             }
@@ -261,6 +260,13 @@ namespace LethalInternship.Core.UI.InternBlocks
                 alpha.a = transparency;
                 image.color = alpha;
             }
+        }
+
+        private void StopTypeTextCoroutine()
+        {
+            StopAllCoroutines();
+            NameText.text = string.Empty;
+            currentText = string.Empty;
         }
 
         private IEnumerator TypeText()

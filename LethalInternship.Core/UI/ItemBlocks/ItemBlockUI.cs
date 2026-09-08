@@ -45,6 +45,8 @@ namespace LethalInternship.Core.UI.ItemBlocks
         private float tiltYAngle = -30f;
         private float tiltZAngle = 30f;
 
+        private bool? previousController = null;
+
         void Awake()
         {
             viewport = transform.parent.parent.GetComponent<RectTransform>();
@@ -62,6 +64,16 @@ namespace LethalInternship.Core.UI.ItemBlocks
             PlayAnimationRotation();
             StartCoroutine(FitNextFrame());
             StartCoroutine(CheckVisibilityNextFrame());
+            previousController = null;
+        }
+
+        void Update()
+        {
+            if (InputManager.Instance.IsUsingController != previousController)
+            {
+                previousController = InputManager.Instance.IsUsingController;
+                UpdateActive();
+            }
         }
 
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
@@ -142,7 +154,11 @@ namespace LethalInternship.Core.UI.ItemBlocks
         {
             FrameImage.pixelsPerUnitMultiplier = 6f;
             SetAlpha(FrameImage, 0.39f);
+            UpdateActive();
+        }
 
+        private void UpdateActive()
+        {
             if (InputManager.Instance.IsUsingController)
             {
                 foreach (ItemButtonController itemButton in ItemButtons)

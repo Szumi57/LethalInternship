@@ -131,8 +131,12 @@ namespace LethalInternship.Core.Managers
                         case "Crouch": actionMap[action] = GameAction.Crouch; break;
                         case "Use": actionMap[action] = GameAction.Use; break;
                         case "ActivateItem": actionMap[action] = GameAction.ActivateItem; break;
+                        case "Discard": actionMap[action] = GameAction.Discard; break;
                         case "SwitchItem": actionMap[action] = GameAction.SwitchItem; break;
                         case "QEItemInteract": actionMap[action] = GameAction.QEItemInteract; break;
+                        case "InspectItem": actionMap[action] = GameAction.InspectItem; break;
+                        case "PingScan": actionMap[action] = GameAction.PingScan; break;
+                        case "ItemSecondaryUse": actionMap[action] = GameAction.ItemSecondaryUse; break;
                         case "ItemTertiaryUse": actionMap[action] = GameAction.ItemTertiaryUse; break;
                     }
                 }
@@ -284,7 +288,7 @@ namespace LethalInternship.Core.Managers
             actionMap.TryGetValue(ctx.action, out GameAction gameAction);
 
             if (gameAction == GameAction.Interact
-                && UIManager.Instance.IsAnyMenuOpened
+                && UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
                 && (ctx.started || ctx.canceled))
             {
                 if (HoldAction(ctx))
@@ -307,25 +311,67 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
+            // Submitting
             if (gameAction == GameAction.Interact
-                && UIManager.Instance.IsAnyMenuOpened)
+                && UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened)
             {
                 if (SubmitSelected())
                     return;
             }
 
-            // Anything but
+            // LMB RMB
+            // Directionnal pad
+            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+                && IsUsingController)
+            {
+                if (gameAction == GameAction.InspectItem)
+                {
+                    InputAction_PreviousIntern();
+                    return;
+                }
+                if (gameAction == GameAction.PingScan)
+                {
+                    InputAction_NextIntern();
+                    return;
+                }
+
+                if (gameAction == GameAction.QEItemInteract // Default: dpad down -> Do Nothing 
+                    || gameAction == GameAction.ItemSecondaryUse // Default: dpad down -> Do Nothing 
+                    || gameAction == GameAction.ItemTertiaryUse) // Default: dpad up -> Do Nothing 
+                { return; }
+            }
+
+            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+                && gameAction == GameAction.Discard) // Try to close
+            {
+                if (UIManager.Instance.CloseSuitPanel())
+                {
+                    return; // Close only suit panel
+                }
+                else if (UIManager.Instance.IsCommandsOneOpened)
+                {
+                    // Return to all command
+                    InputAction_ShowCommandsAll(forceShow: true);
+                    return;
+                }
+            }
+
+            // Only allowed to
             if (gameAction != GameAction.Use
                 && gameAction != GameAction.ActivateItem // Click
                 && gameAction != GameAction.Look // Move mouse
                 && gameAction != GameAction.Interact // Interact
-                && (IsUsingController && gameAction != GameAction.Move) // Move is used for selecting UI with controller
+                && (IsUsingController && gameAction != GameAction.Move) // Move & D-Pad used for selecting UI with controller 
                 && gameAction != GameAction.SwitchItem) // Scroll
             {
+                // Not allowed
                 Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
                 UIManager.Instance.HideAll();
             }
 
+
+
+            // ---------------------------------
             // If waiting for a targeted ability
             // ---------------------------------
             if (CurrentTargetedAbility == null)
@@ -535,7 +581,7 @@ namespace LethalInternship.Core.Managers
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ReturnToAll:
-                    InputAction_ShowCommandsAll();
+                    InputAction_ShowCommandsAll(forceShow: true);
                     break;
                 case EnumInputAction.NextIntern:
                     InputAction_NextIntern();
@@ -634,24 +680,20 @@ namespace LethalInternship.Core.Managers
 
         #region Input action
 
-        private void InputAction_ShowCommandsAll()
+        private void InputAction_ShowCommandsAll(bool forceShow = false)
         {
+            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+                && !forceShow)
+                return;
+
             CancelTargeting();
             UIManager.Instance.HideCommandsOne();
 
             IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectAll();
 
-            if (UIManager.Instance.IsCommandsAllOpened)
-            {
-                CommandContextService.Instance.ExitCommandMode();
-                UIManager.Instance.HideCommandsAll();
-            }
-            else
-            {
-                CommandContextService.Instance.EnterCommandMode();
-                UIManager.Instance.ShowCommandsAll();
-            }
+            CommandContextService.Instance.EnterCommandMode();
+            UIManager.Instance.ShowCommandsAll();
         }
 
         private void InputAction_NextIntern()
@@ -661,7 +703,10 @@ namespace LethalInternship.Core.Managers
             if (next != null)
             {
                 IdentitySelectionService.Instance.SelectSingle(next);
-                UIManager.Instance.RefreshCommandsOne();
+                if (UIManager.Instance.IsCommandsAllOpened)
+                    InternBlockUI_OnSelected();
+                else
+                    UIManager.Instance.RefreshCommandsOne();
             }
         }
 
@@ -672,7 +717,10 @@ namespace LethalInternship.Core.Managers
             if (previous != null)
             {
                 IdentitySelectionService.Instance.SelectSingle(previous);
-                UIManager.Instance.RefreshCommandsOne();
+                if (UIManager.Instance.IsCommandsAllOpened)
+                    InternBlockUI_OnSelected();
+                else
+                    UIManager.Instance.RefreshCommandsOne();
             }
         }
 
@@ -830,22 +878,17 @@ namespace LethalInternship.Core.Managers
 
             InputLock.BlockThisFrame();
 
+            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened)
+                return;
+
             CancelTargeting();
             UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
 
             IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
 
-            if (UIManager.Instance.IsCommandsOneOpened)
-            {
-                CommandContextService.Instance.ExitCommandMode();
-                UIManager.Instance.HideCommandsOne();
-            }
-            else
-            {
-                CommandContextService.Instance.EnterCommandMode();
-                UIManager.Instance.ShowCommandsOne();
-            }
+            CommandContextService.Instance.EnterCommandMode();
+            UIManager.Instance.ShowCommandsOne();
         }
 
         #endregion

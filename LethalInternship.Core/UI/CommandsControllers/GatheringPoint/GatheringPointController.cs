@@ -131,9 +131,9 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
             BgImage.pixelsPerUnitMultiplier = 7;
 
             fullText = UIConst.COMMANDS_BUTTON_STRING[(int)GetCurrentInputAction()];
+            StopTypeTextCoroutine();
             if (TMPDescription != null)
             {
-                TMPDescription.text = "";
                 typingCoroutine = StartCoroutine(TypeText());
                 cursorCoroutine = StartCoroutine(CursorBlink());
             }
@@ -150,12 +150,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
                 SetAlpha(BgImage, 0f);
 
             // Typing animation
-            StopAllCoroutines();
-            if (TMPDescription != null)
-            {
-                TMPDescription.text = string.Empty;
-                currentText = string.Empty;
-            }
+            StopTypeTextCoroutine();
         }
 
         private void UpdateIconAndDesc()
@@ -205,6 +200,16 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
             if (removeGatheringPointController != null)
                 removeGatheringPointController.gameObject.SetActive(false);
+        }
+
+        private void StopTypeTextCoroutine()
+        {
+            StopAllCoroutines();
+            if (TMPDescription != null)
+            {
+                TMPDescription.text = string.Empty;
+                currentText = string.Empty;
+            }
         }
 
         IEnumerator TypeText()

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using LethalInternship.Core.Managers;
+using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace LethalInternship.Core.UI.CommandsControllers.Suits
@@ -7,10 +8,11 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
         IPointerEnterHandler,
         IPointerExitHandler
     {
-        public bool Focusing;
+        public bool Focusing { get; private set; }
 
         private float openGraceTime = 1.5f;   // first show
         private float exitDelayTime = 0.25f;  // after exiting
+        private float exitControllerDelayTime = 0.01f;  // after exiting
         private float timer;
 
         void OnEnable()
@@ -39,6 +41,9 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
         public void SetFocus(bool focus)
         {
             Focusing = focus;
+
+            if (!focus)
+                timer = InputManager.Instance.IsUsingController ? exitControllerDelayTime : exitDelayTime;
         }
 
         #region Mouse events
@@ -51,7 +56,6 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
         public void OnPointerExit(PointerEventData eventData)
         {
             SetFocus(false);
-            timer = exitDelayTime;
         }
 
         #endregion

@@ -935,7 +935,7 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else
             {
-                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ItemTertiaryUse_performed could not ignore ItemSecondaryUse_performed input when commands opened");
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ItemTertiaryUse_performed could not ignore ItemTertiaryUse_performed input when commands opened");
             }
 
             return codes.AsEnumerable();
@@ -970,7 +970,77 @@ namespace LethalInternship.Patches.NpcPatches
             }
             else
             {
-                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.QEItemInteract_performed could not ignore ItemSecondaryUse_performed input when commands opened");
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.QEItemInteract_performed could not ignore QEItemInteract_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("InspectItem_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> InspectItem_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 52;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.InspectItem_performed could not ignore InspectItem_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("ScrollMouse_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> ScrollMouse_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 59;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ScrollMouse_performed could not ignore ScrollMouse_performed input when commands opened");
             }
 
             return codes.AsEnumerable();

@@ -1,4 +1,5 @@
 ﻿using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.Managers;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
@@ -6,6 +7,7 @@ using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.UI.ItemBlocks
@@ -83,7 +85,67 @@ namespace LethalInternship.Core.UI.ItemBlocks
 
         private void UpdateItems(IInternAI intern)
         {
-            SyncList(currentInternAI.GetHeldGrabbableObjects());
+            int selectedIndex = -1;
+            bool usingController = InputManager.Instance.IsUsingController;
+
+            if (usingController)
+            {
+                GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+                if (selected != null)
+                {
+                    int index = 0;
+
+                    foreach (var block in blocksByGrabbableObject)
+                    {
+                        if (selected.transform.IsChildOf(block.Value.transform))
+                        {
+                            selectedIndex = index;
+                            break;
+                        }
+
+                        index++;
+                    }
+                }
+            }
+
+            SyncList(intern.GetHeldGrabbableObjects());
+
+            if (usingController && selectedIndex >= 0)
+            {
+                int index = 0;
+                ItemBlockUI? lastBlock = null;
+
+                foreach (var block in blocksByGrabbableObject)
+                {
+                    if (!block.Value.isActiveAndEnabled)
+                        continue;
+
+                    lastBlock = block.Value;
+                    if (index++ == selectedIndex)
+                    {
+                        EventSystem.current.SetSelectedGameObject(GetItemButtonControllerDropFromBlockUI(block.Value)?.gameObject);
+                        return;
+                    }
+                }
+
+                if (lastBlock == null)
+                    EventSystem.current.SetSelectedGameObject(null);
+                else
+                    EventSystem.current.SetSelectedGameObject(GetItemButtonControllerDropFromBlockUI(lastBlock)?.gameObject);
+            }
+        }
+
+        private ItemButtonController? GetItemButtonControllerDropFromBlockUI(ItemBlockUI block)
+        {
+            for (int i = 0; i < block.ItemButtons.Length; i++)
+            {
+                if (block.ItemButtons[i].TypeInputAction == EnumInputAction.DropItem)
+                {
+                    return block.ItemButtons[i];
+                }
+            }
+            return null;
         }
 
         public void SyncList(IEnumerable<GrabbableObject> items)

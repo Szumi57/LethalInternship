@@ -377,6 +377,27 @@ namespace LethalInternship.Core.Managers
             LastSelectedUI = gameObject;
         }
 
+        public bool CloseSuitPanel()
+        {
+            if (IsCommandsOneOpened)
+            {
+                if (CommandsOneController.ButtonSelectSuit == null
+                    || CommandsOneController.ButtonSelectSuit.SuitListPanel == null)
+                    return false;
+
+                return CommandsOneController.ButtonSelectSuit.CloseSuitPanel();
+            }
+            else if (IsCommandsAllOpened)
+            {
+                if (CommandsAllController.ButtonSelectSuit == null
+                    || CommandsAllController.ButtonSelectSuit.SuitListPanel == null)
+                    return false;
+
+                return CommandsAllController.ButtonSelectSuit.CloseSuitPanel();
+            }
+            return false;
+        }
+
         #region Show/Hide commands
 
         public void ShowCommandsAll()

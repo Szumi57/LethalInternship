@@ -119,9 +119,9 @@ namespace LethalInternship.Core.UI.CommandsControllers
         private void StartHover()
         {
             SetAlpha(BgImage, isNotInteractable ? transparencyNotInteractable : transparencyFull);
+            StopTypeTextCoroutine();
             if (TMPDescription != null)
             {
-                TMPDescription.text = "";
                 typingCoroutine = StartCoroutine(TypeText());
                 cursorCoroutine = StartCoroutine(CursorBlink());
             }
@@ -130,6 +130,11 @@ namespace LethalInternship.Core.UI.CommandsControllers
         private void StopHover()
         {
             SetAlpha(BgImage, 0f);
+            StopTypeTextCoroutine();
+        }
+
+        private void StopTypeTextCoroutine()
+        {
             StopAllCoroutines();
             if (TMPDescription != null)
             {

@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.CommandsControllers.Suits;
 using LethalInternship.Core.UI.Others;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -29,6 +30,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         public GameObject ControllerFirstElement = null!;
 
+        public ButtonSelectSuit ButtonSelectSuit = null!;
+
         private Coroutine CoroutineUpdateCommandsUI = null!;
 
         private IInternIdentity currentIdentity = null!;
@@ -38,6 +41,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
         private InputAction inputActionInteract = null!;
         private InputAction inputActionDiscard = null!;
+        private InputAction inputActionInspectItem = null!;
+        private InputAction inputActionPingScan = null!;
 
         void Awake()
         {
@@ -67,6 +72,12 @@ namespace LethalInternship.Core.UI.CommandsControllers
                             break;
                         case "Discard":
                             inputActionDiscard = action;
+                            break;
+                        case "InspectItem":
+                            inputActionInspectItem = action;
+                            break;
+                        case "PingScan":
+                            inputActionPingScan = action;
                             break;
                     }
                 }
@@ -153,7 +164,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
                                     || vehicleAvailable != previousVehicleAvailable
                                     || gatheringPointSet != previousGatheringPointSet
                                     || restrictedLocation != previousRestrictedLocation
-                                    || usingController != previousController;
+                                    || usingController != previousController
+                                    || EventSystem.current.currentSelectedGameObject == null;
 
                 if (stateChanged)
                 {
@@ -239,6 +251,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
             UIInputDescription.text = usingController ? string.Format(UIConst.UI_INPUT_MESSAGE_CONTROLLER,
                                                                       InputManager.Instance.GetKeyAction(inputActionInteract),
+                                                                      InputManager.Instance.GetKeyAction(inputActionInspectItem),
+                                                                      InputManager.Instance.GetKeyAction(inputActionPingScan),
                                                                       InputManager.Instance.GetKeyAction(inputActionDiscard))
                                                       : UIConst.UI_INPUT_MESSAGE_KEYBOARD;
         }
