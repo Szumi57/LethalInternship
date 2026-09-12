@@ -112,8 +112,6 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static string TOOLTIP_AUTODEFENSE_BEHAVIOUR = "[Attack enemy if holding weapon]";
         public static string TOOLTIP_FLEE_BEHAVIOUR = "[Flee if enemy]";
 
-        public static float DISTANCE_UI_PROXIMITY = 300f;
-
         // Outlines
         public static float OUTLINE_RIM_DEFAULT = 5f;
         public static float OUTLINE_RIM_SOLID = 0.1f;

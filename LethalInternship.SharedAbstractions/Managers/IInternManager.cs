@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
 using LethalInternship.SharedAbstractions.CommandsSystem;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using System.Collections.Generic;
@@ -49,6 +50,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
 
         void ExecuteOrder(Order order);
+        void GlobalCommandServerRpc(EnumInputAction enumInputAction);
 
         void SyncLoadedJsonIdentitiesServerRpc(ulong clientId);
         void SetInternsInElevatorLateUpdate(float deltaTime);

@@ -51,6 +51,13 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             foreach (var (identity, block) in identityMap)
             {
+                if (interactable)
+                {
+                    if (GetCategory(identity) != EnumCategoryTypeUI.InternClose)
+                    {
+                        interactable = false;
+                    }
+                }
                 block.SetInteractable(interactable, tooltipMessageNotInteractable);
             }
         }
@@ -131,7 +138,7 @@ namespace LethalInternship.Core.UI.InternBlocks
                 return EnumCategoryTypeUI.InternNotOwned;
             }
 
-            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY)
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < Const.DISTANCE_COMMAND_PROXIMITY * Const.DISTANCE_COMMAND_PROXIMITY)
             {
                 return EnumCategoryTypeUI.InternClose;
             }

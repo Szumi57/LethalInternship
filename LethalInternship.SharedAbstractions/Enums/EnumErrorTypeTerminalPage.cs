@@ -5,11 +5,13 @@
     /// </summary>
     public enum EnumErrorTypeTerminalPage
     {
+        NoError,
         Default,
         NotEnoughCredits,
         NoMoreInterns,
         ShipLeavingMoon,
         InternDead,
         InternAlreadySelected,
+        NoSignalTranslator
     }
 }

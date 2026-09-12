@@ -221,19 +221,22 @@ namespace LethalInternship.Core.Interns.AI
             }
             else
             {
-                CurrentCommand = PendingCommand;
-                if (CurrentCommand == EnumCommandTypes.WaitForCommand
-                    || CurrentCommand == EnumCommandTypes.None)
+                if (CurrentCommand == EnumCommandTypes.WaitForCommand)
                 {
-                    //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, CurrentCommand {CurrentCommand} set to FollowPlayer");
-                    CurrentCommand = EnumCommandTypes.FollowPlayer;
+                    CurrentCommand = PendingCommand;
+                    if (CurrentCommand == EnumCommandTypes.WaitForCommand
+                        || CurrentCommand == EnumCommandTypes.None)
+                    {
+                        //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, CurrentCommand {CurrentCommand} set to FollowPlayer");
+                        CurrentCommand = EnumCommandTypes.FollowPlayer;
+                    }
+                    //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, new command {CurrentCommand}");
+
+                    // Voice
+                    PlayVoiceAfterCommand(voiceToPlay);
+
+                    internIdentity.OnCommandChanged?.Invoke(internIdentity);
                 }
-                //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, new command {CurrentCommand}");
-
-                // Voice
-                PlayVoiceAfterCommand(voiceToPlay);
-
-                internIdentity.OnCommandChanged?.Invoke(internIdentity);
             }
         }
 

@@ -164,8 +164,8 @@ namespace LethalInternship.Core.UI.CommandsControllers
 
             while (enabled)
             {
-                bool managingInterns = IdentitySelectionService.Instance.GetSelected()
-                                        .Any(x => IdentityManager.Instance.IsIdentityValidToCommand(x));
+                // Managing at least one intern ?
+                bool managingInterns = IdentitySelectionService.Instance.GetSelected().Any();
 
                 bool vehicleAvailable = InternManager.Instance.VehicleController != null;
                 bool gatheringPointSet = InternManager.Instance.GatheringPoint != null;
@@ -182,7 +182,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
                                 || gatheringPointSet != previousGatheringPointSet
                                 || restrictedLocation != previousRestrictedLocation
                                 || usingController != previousController
-                                || EventSystem.current.currentSelectedGameObject == null;
+                                || (usingController && EventSystem.current.currentSelectedGameObject == null);
 
                 if (stateChanged)
                 {
@@ -203,6 +203,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
                     UpdateActiveSelectedUI(usingController);
                 }
 
+                // Show/hide panels when on suit panel
                 if (usingController)
                 {
                     GameObject? selected = EventSystem.current.currentSelectedGameObject;

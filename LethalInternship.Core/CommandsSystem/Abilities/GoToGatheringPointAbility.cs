@@ -2,11 +2,17 @@
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
+using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Abilities
 {
     public class GoToGatheringPointAbility : Ability
     {
+        public GoToGatheringPointAbility(IEnumerable<IInternIdentity> identities) : base(identities)
+        {
+        }
+
         public override bool RequiresTargeting => false;
 
         public override void Activate()
@@ -17,7 +23,7 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
                 return;
             }
 
-            InternManager.Instance.ExecuteOrder(new GoToInterestPointOrder(InternManager.Instance.GatheringPoint));
+            InternManager.Instance.ExecuteOrder(new GoToInterestPointOrder(InternManager.Instance.GatheringPoint, IdentitiesToOrder));
         }
     }
 }

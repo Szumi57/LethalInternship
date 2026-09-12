@@ -1,6 +1,8 @@
 ﻿using LethalInternship.Core.CommandsSystem.Orders;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.CommandsSystem;
+using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Abilities
 {
@@ -10,14 +12,14 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
 
         public override bool RequiresTargeting => false;
 
-        public SetAutoDefenseAbility(bool autoDefense)
+        public SetAutoDefenseAbility(bool autoDefense, IEnumerable<IInternIdentity> identities) : base(identities)
         {
             _autoDefense = autoDefense;
         }
 
         public override void Activate()
         {
-            InternManager.Instance.ExecuteOrder(new SetAutoDefenseOrder(_autoDefense));
+            InternManager.Instance.ExecuteOrder(new SetAutoDefenseOrder(_autoDefense, IdentitiesToOrder));
         }
     }
 }

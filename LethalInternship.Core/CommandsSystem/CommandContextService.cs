@@ -23,7 +23,8 @@ namespace LethalInternship.Core.CommandsSystem
         public void EnterCommandMode()
         {
             var internsOwned = IdentityManager.Instance.GetIdentitiesSpawned()
-                                .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
+                                .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x)
+                                         && IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x))
                                 .Select(x => x.InternAI!);
             foreach (IInternAI intern in internsOwned)
             {

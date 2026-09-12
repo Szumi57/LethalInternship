@@ -19,6 +19,7 @@ using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -483,96 +484,98 @@ namespace LethalInternship.Core.Managers
         private void CommandButtonController_OnSelected(EnumInputAction typeInputAction)
         {
             InputLock.BlockThisFrame();
+            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
+                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
 
             switch (typeInputAction)
             {
                 // Direct orders
                 case EnumInputAction.FollowMe:
-                    new FollowMeAbility().Activate();
+                    new FollowMeAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.StayHere:
-                    new StayHereAbility().Activate();
+                    new StayHereAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.GoToShip:
-                    new GoToShipAbility().Activate();
+                    new GoToShipAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.GoToVehicle:
-                    new GoToVehicleAbility().Activate();
+                    new GoToVehicleAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
 
                 // Drop item
                 case EnumInputAction.DropItem:
-                    new DropHereAbility(dropAll: false).Activate();
+                    new DropHereAbility(dropAll: false, identitiesToOrder).Activate();
                     break;
                 case EnumInputAction.DropAllItems:
-                    new DropHereAbility(dropAll: true).Activate();
+                    new DropHereAbility(dropAll: true, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.DropAllItemsInShip:
-                    new DropToAbility(EnumCommandTypes.DropAllItemsToShip).Activate();
+                    new DropToAbility(EnumCommandTypes.DropAllItemsToShip, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.DropAllItemsOnGatheringPoint:
-                    new DropToAbility(EnumCommandTypes.DropAllItemsOnGatheringPoint).Activate();
+                    new DropToAbility(EnumCommandTypes.DropAllItemsOnGatheringPoint, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.DropAllItemsInCruiser:
-                    new DropToAbility(EnumCommandTypes.DropAllItemsInCruiser).Activate();
+                    new DropToAbility(EnumCommandTypes.DropAllItemsInCruiser, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
 
                 // Unload
                 case EnumInputAction.UnloadCruiser:
-                    new UnloadFromAbility(EnumCommandTypes.UnloadCruiser).Activate();
+                    new UnloadFromAbility(EnumCommandTypes.UnloadCruiser, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.UnloadGatheringPoint:
-                    new UnloadFromAbility(EnumCommandTypes.UnloadGatheringPoint).Activate();
+                    new UnloadFromAbility(EnumCommandTypes.UnloadGatheringPoint, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
 
                 // Scavenge
                 case EnumInputAction.ScavengeToShip:
-                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToShip).Activate();
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToShip, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ScavengeToCruiser:
-                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToCruiser).Activate();
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToCruiser, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
                 case EnumInputAction.ScavengeToGatheringPoint:
-                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToGatheringPoint).Activate();
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToGatheringPoint, identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
 
                 // Update option
                 case EnumInputAction.SetToAutoFlee:
-                    new SetAutoDefenseAbility(autoDefense: false).Activate();
+                    new SetAutoDefenseAbility(autoDefense: false, identitiesToOrder).Activate();
                     break;
                 case EnumInputAction.SetToAutoDefense:
-                    new SetAutoDefenseAbility(autoDefense: true).Activate();
+                    new SetAutoDefenseAbility(autoDefense: true, identitiesToOrder).Activate();
                     break;
 
                 // Context ability
                 case EnumInputAction.PointToAction:
-                    new ContextOrderAbility().Activate();
+                    new ContextOrderAbility(identitiesToOrder).Activate();
                     break;
 
                 // UI
@@ -602,26 +605,33 @@ namespace LethalInternship.Core.Managers
         private void ButtonSuitsController_OnSuitSelected(EnumInputAction typeInputAction)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
+                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
+
             switch (typeInputAction)
             {
                 case EnumInputAction.PreviousSuit:
-                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Previous).Activate();
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Previous, identitiesToOrder).Activate();
                     break;
                 case EnumInputAction.NextSuit:
-                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Next).Activate();
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Next, identitiesToOrder).Activate();
                     break;
                 case EnumInputAction.SameSuit:
-                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Same, localPlayer.currentSuitID).Activate();
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Same, localPlayer.currentSuitID, identitiesToOrder).Activate();
                     break;
                 case EnumInputAction.RandomSuit:
-                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Random).Activate();
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Random, identitiesToOrder).Activate();
                     break;
             }
         }
 
         private void ButtonSelectSuit_OnSuitSelected(int suitID)
         {
-            new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Selected, suitID).Activate();
+            new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Selected,
+                                  suitID,
+                                  IdentitySelectionService.Instance.GetSelected()
+                                    .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x)))
+                .Activate();
         }
 
         private void InternBlockUI_OnSelected()
@@ -658,13 +668,15 @@ namespace LethalInternship.Core.Managers
 
         private void GatheringPoint_OnSelected(EnumInputAction typeInputAction)
         {
+            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
+                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
             switch (typeInputAction)
             {
                 case EnumInputAction.SetGatheringPoint:
-                    new SetGatheringPointAbility().Activate();
+                    new SetGatheringPointAbility(identitiesToOrder).Activate();
                     break;
                 case EnumInputAction.GoToGatheringPoint:
-                    new GoToGatheringPointAbility().Activate();
+                    new GoToGatheringPointAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;
@@ -683,11 +695,19 @@ namespace LethalInternship.Core.Managers
         private void InputAction_ShowCommandsAll(bool forceShow = false)
         {
             if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+                && IsUsingController
                 && !forceShow)
                 return;
 
             CancelTargeting();
             UIManager.Instance.HideCommandsOne();
+
+            if (UIManager.Instance.IsCommandsAllOpened)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideCommandsAll();
+                return;
+            }
 
             IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
             IdentitySelectionService.Instance.SelectAll();
@@ -871,15 +891,23 @@ namespace LethalInternship.Core.Managers
 
         private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)
         {
+            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+                && IsUsingController)
+                return;
+
+            if (UIManager.Instance.IsCommandsOneOpened)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideCommandsOne();
+                return;
+            }
+
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null
                 || target.Value.Intern == null)
                 return;
 
             InputLock.BlockThisFrame();
-
-            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened)
-                return;
 
             CancelTargeting();
             UIManager.Instance.HideCommandsAll(resetCameraFocus: false);

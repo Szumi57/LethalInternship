@@ -297,13 +297,26 @@ namespace LethalInternship.Core.Managers
 
             if (identity.InternAI.Npc == null) return false;
 
-            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > UIConst.DISTANCE_UI_PROXIMITY * UIConst.DISTANCE_UI_PROXIMITY) return false;
-
             if (StartOfRound.Instance == null || StartOfRound.Instance.localPlayerController == null) return false;
 
             if (identity.InternAI.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId) return false;
 
             if (identity.InternAI.IsSpawningAnimationRunning()) return false;
+
+            return true;
+        }
+
+        public bool IsIdentityCloseEnoughToCommand(IInternIdentity identity)
+        {
+            if (identity == null) return false;
+
+            if (!identity.Alive) return false;
+
+            if (identity.InternAI == null) return false;
+
+            if (identity.InternAI.Npc == null) return false;
+
+            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > Const.DISTANCE_COMMAND_PROXIMITY * Const.DISTANCE_COMMAND_PROXIMITY) return false;
 
             return true;
         }

@@ -227,5 +227,26 @@ namespace LethalInternship.Core.Managers
         }
 
         #endregion
+
+        public EnumErrorTypeTerminalPage BroadcastRecallInterns()
+        {
+            SignalTranslator? signalTranslator = Object.FindObjectOfType<SignalTranslator>();
+            if (signalTranslator == null
+                || Time.realtimeSinceStartup - signalTranslator.timeLastUsingSignalTranslator <= 8f)
+            {
+                return EnumErrorTypeTerminalPage.NoSignalTranslator;
+            }
+
+            if (!base.IsServer)
+            {
+                signalTranslator.timeLastUsingSignalTranslator = Time.realtimeSinceStartup;
+            }
+            HUDManager.Instance.UseSignalTranslatorServerRpc(TerminalConst.TEXT_BROADCAST_RECALL);
+
+            // Call all interns
+            InternManager.Instance.GlobalCommandServerRpc(EnumInputAction.GoToShip);
+
+            return EnumErrorTypeTerminalPage.NoError;
+        }
     }
 }

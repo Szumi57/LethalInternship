@@ -2,6 +2,8 @@
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Abilities
 {
@@ -11,7 +13,7 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
 
         public override bool RequiresTargeting => false;
 
-        public DropToAbility(EnumCommandTypes dropCommand)
+        public DropToAbility(EnumCommandTypes dropCommand, IEnumerable<IInternIdentity> identities) : base(identities)
         {
             this.dropCommand = dropCommand;
         }
@@ -23,13 +25,13 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
                 case EnumCommandTypes.None:
                     break;
                 case EnumCommandTypes.DropAllItemsToShip:
-                    InternManager.Instance.ExecuteOrder(new DropToShipOrder());
+                    InternManager.Instance.ExecuteOrder(new DropToShipOrder(IdentitiesToOrder));
                     break;
                 case EnumCommandTypes.DropAllItemsOnGatheringPoint:
-                    InternManager.Instance.ExecuteOrder(new DropToGatheringPointOrder());
+                    InternManager.Instance.ExecuteOrder(new DropToGatheringPointOrder(IdentitiesToOrder));
                     break;
                 case EnumCommandTypes.DropAllItemsInCruiser:
-                    InternManager.Instance.ExecuteOrder(new DropToCruiserOrder());
+                    InternManager.Instance.ExecuteOrder(new DropToCruiserOrder(IdentitiesToOrder));
                     break;
             }
         }

@@ -1,6 +1,7 @@
 ﻿using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Orders
 {
@@ -8,7 +9,8 @@ namespace LethalInternship.Core.CommandsSystem.Orders
     {
         private IPointOfInterest newGatheringPoint;
 
-        public SetGatheringPointOrder(IPointOfInterest newGatheringPoint)
+        public SetGatheringPointOrder(IPointOfInterest newGatheringPoint, IReadOnlyList<IInternIdentity> identities)
+                : base(identities)
         {
             this.newGatheringPoint = newGatheringPoint;
         }

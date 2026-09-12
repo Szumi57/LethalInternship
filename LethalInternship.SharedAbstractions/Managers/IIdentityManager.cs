@@ -15,5 +15,6 @@ namespace LethalInternship.SharedAbstractions.Managers
         IInternIdentity? FindIdentityFromBodyName(string bodyName);
 
         bool IsIdentityValidToCommand(IInternIdentity identity);
+        bool IsIdentityCloseEnoughToCommand(IInternIdentity identity);
     }
 }

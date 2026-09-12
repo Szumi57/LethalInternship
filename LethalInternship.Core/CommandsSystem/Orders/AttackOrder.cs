@@ -1,5 +1,6 @@
 ﻿using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Orders
 {
@@ -7,7 +8,8 @@ namespace LethalInternship.Core.CommandsSystem.Orders
     {
         private readonly EnemyAI enemyToAttack;
 
-        public AttackOrder(EnemyAI enemyToAttack)
+        public AttackOrder(EnemyAI enemyToAttack, IReadOnlyList<IInternIdentity> identities)
+                : base(identities)
         {
             this.enemyToAttack = enemyToAttack;
         }

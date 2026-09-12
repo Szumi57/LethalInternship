@@ -31,6 +31,10 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
                                                         GameAction.Interact,
                                                     };
 
+        public SetGatheringPointAbility(IEnumerable<IInternIdentity> identities) : base(identities)
+        {
+        }
+
         protected override void BeginTargeting()
         {
             TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.GatheringPoint);
@@ -42,7 +46,7 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
             IPointOfInterest gatheringPOI = InternManager.Instance.GetPointOfInterestOrNewGatheringPoint(target.PointedPointOfInterest == null ? target.RaycastHit.point : target.PointedPointOfInterest.GetPoint());
             Dictionary<Type, IInterestPoint> dictTypeInterestPoint = gatheringPOI.GetDictTypeInterestPoints();
             if (dictTypeInterestPoint.TryGetValue(typeof(GatheringInterestPoint), out var interestPoint))
-                return new SetGatheringPointOrder(gatheringPOI);
+                return new SetGatheringPointOrder(gatheringPOI, IdentitiesToOrder);
 
             PluginLoggerHook.LogError?.Invoke("Target of SetGatheringPointAbility null or gatheringPOI is null !");
             return null;

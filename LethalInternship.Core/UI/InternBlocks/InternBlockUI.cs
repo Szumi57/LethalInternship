@@ -101,11 +101,12 @@ namespace LethalInternship.Core.UI.InternBlocks
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
-            if (isNotInteractable == interactable)
-            {
-                isNotInteractable = !interactable;
-                Refresh();
-            }
+
+            Debug.Log("SetInteractable");
+
+
+            isNotInteractable = !interactable;
+            Refresh();
 
             UpdateHighlight(forceUpdate: true);
         }
@@ -126,6 +127,7 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void Refresh()
         {
+            Debug.Log("Refresh");
             ItemCountText.transform.parent.gameObject.SetActive(isStateValid);
             ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);
             ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);

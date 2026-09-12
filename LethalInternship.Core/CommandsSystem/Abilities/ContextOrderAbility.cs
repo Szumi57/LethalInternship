@@ -29,6 +29,10 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
                                                         GameAction.Interact,
                                                     };
 
+        public ContextOrderAbility(IEnumerable<IInternIdentity> identities) : base(identities)
+        {
+        }
+
         protected override void BeginTargeting()
         {
             TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Enemy | TargetingManager.TargetType.Item);
@@ -39,17 +43,17 @@ namespace LethalInternship.Core.CommandsSystem.Abilities
         {
             Debug.Log($"ResolveTarget {target}");
             if (target.Enemy != null)
-                return new AttackOrder(target.Enemy);
+                return new AttackOrder(target.Enemy, IdentitiesToOrder);
 
             if (target.Item != null)
-                return new GoFetchItemOrder(target.Item);
+                return new GoFetchItemOrder(target.Item, IdentitiesToOrder);
 
             if (target.PointedPointOfInterest != null)
-                return new GoToInterestPointOrder(target.PointedPointOfInterest);
+                return new GoToInterestPointOrder(target.PointedPointOfInterest, IdentitiesToOrder);
 
             IPointOfInterest? resolvedPOI = ResolvePointOfInterest(target.RaycastHit);
             if (resolvedPOI != null)
-                return new GoToInterestPointOrder(resolvedPOI);
+                return new GoToInterestPointOrder(resolvedPOI, IdentitiesToOrder);
 
             PluginLoggerHook.LogError?.Invoke("Target of ContextOrderAbility null or PointOfInterest is null !");
             return null;

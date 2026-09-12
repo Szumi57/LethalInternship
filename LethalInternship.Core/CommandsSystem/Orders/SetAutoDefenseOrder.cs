@@ -1,5 +1,6 @@
 ﻿using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.Core.CommandsSystem.Orders
 {
@@ -7,7 +8,8 @@ namespace LethalInternship.Core.CommandsSystem.Orders
     {
         private bool _autoDefense;
 
-        public SetAutoDefenseOrder(bool autoDefense)
+        public SetAutoDefenseOrder(bool autoDefense, IReadOnlyList<IInternIdentity> identities)
+                : base(identities)
         {
             _autoDefense = autoDefense;
         }

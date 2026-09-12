@@ -74,6 +74,12 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
                 return true;
             }
 
+            // firstWord transmit
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_EVACUATION_COMMAND))
+            {
+                return EvacuationCommand();
+            }
+
             return false;
         }
 
@@ -89,6 +95,18 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
 
             instanceTM.SyncLandingStatusServerRpc(instanceIM.LandingStatusAllowed);
 
+            // stay on info page
+            return true;
+        }
+
+        private bool EvacuationCommand()
+        {
+            EnumErrorTypeTerminalPage errorPageMessage = TerminalManager.Instance.BroadcastRecallInterns();
+            if (errorPageMessage != EnumErrorTypeTerminalPage.NoError)
+            {
+                terminalParser.TerminalState = new ErrorPage(terminalParser.TerminalState, errorPageMessage);
+                return true;
+            }
             // stay on info page
             return true;
         }
@@ -134,7 +152,12 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
                                              nbInternsPurchasable,
                                              PluginRuntimeProvider.Context.Config.InternPrice,
                                              nbInternsToDropShip,
-                                             landingStatus);
+                                             landingStatus,
+
+                                             TerminalConst.STRING_LAND_COMMAND,
+                                             TerminalConst.STRING_EVACUATION_COMMAND,
+                                             TerminalConst.STRING_BUY_COMMAND
+                                             );
             }
             else
             {
@@ -151,7 +174,12 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
                                              PluginRuntimeProvider.Context.Config.InternPrice,
                                              textNbInternsToDropShip,
                                              nbInternsOnThisMoon,
-                                             landingStatus);
+                                             landingStatus,
+
+                                             TerminalConst.STRING_LAND_COMMAND,
+                                             TerminalConst.STRING_EVACUATION_COMMAND,
+                                             TerminalConst.STRING_BUY_COMMAND
+                                             );
             }
 
             terminalNode.displayText = textInfoPage;

@@ -165,7 +165,7 @@ namespace LethalInternship.Core.UI.CommandsControllers
                                     || gatheringPointSet != previousGatheringPointSet
                                     || restrictedLocation != previousRestrictedLocation
                                     || usingController != previousController
-                                    || EventSystem.current.currentSelectedGameObject == null;
+                                    || (usingController && EventSystem.current.currentSelectedGameObject == null);
 
                 if (stateChanged)
                 {
