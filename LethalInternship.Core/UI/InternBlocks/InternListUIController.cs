@@ -138,7 +138,7 @@ namespace LethalInternship.Core.UI.InternBlocks
                 return EnumCategoryTypeUI.InternNotOwned;
             }
 
-            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < Const.DISTANCE_COMMAND_PROXIMITY * Const.DISTANCE_COMMAND_PROXIMITY)
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < InternManager.Instance.GetMaxDistanceCommand())
             {
                 return EnumCategoryTypeUI.InternClose;
             }

@@ -48,7 +48,7 @@ namespace LethalInternship.Core.UI.Outlines
                     shouldOutline = !intern.Npc.isPlayerDead
                                     && !intern.IsSpawningAnimationRunning()
                                     && (intern.Npc.playerClientId == pointedInternClientId || allowMultiple)
-                                    && ((intern.OwnerClientId == localPlayer.OwnerClientId && intern.NpcController.GetSqrDistanceWithLocalPlayer() < Const.DISTANCE_COMMAND_PROXIMITY * Const.DISTANCE_COMMAND_PROXIMITY)
+                                    && ((intern.OwnerClientId == localPlayer.OwnerClientId && intern.NpcController.GetSqrDistanceWithLocalPlayer() < InternManager.Instance.GetMaxDistanceCommand())
                                         || intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance);
                 }
 

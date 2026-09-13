@@ -30,6 +30,9 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float MIN_SIZE_SCALE_INTERN = 0.3f;
         public static readonly float MAX_SIZE_SCALE_INTERN = 1f;
 
+        public static int DEFAULT_DISTANCE_COMMAND_OUTSIDE = 45;
+        public static int DEFAULT_DISTANCE_COMMAND_INSIDE = 15;
+
         public static readonly float DEFAULT_SPEED_INTERN = 0.85f;
         public static readonly float MIN_SPEED_INTERN = 0.05f;
         public static readonly float MAX_SPEED_INTERN = 5f;

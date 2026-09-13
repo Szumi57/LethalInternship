@@ -102,9 +102,6 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
 
-            Debug.Log("SetInteractable");
-
-
             isNotInteractable = !interactable;
             Refresh();
 
@@ -127,7 +124,6 @@ namespace LethalInternship.Core.UI.InternBlocks
 
         public void Refresh()
         {
-            Debug.Log("Refresh");
             ItemCountText.transform.parent.gameObject.SetActive(isStateValid);
             ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);
             ObjectiveIcon.transform.parent.gameObject.SetActive(isStateValid);

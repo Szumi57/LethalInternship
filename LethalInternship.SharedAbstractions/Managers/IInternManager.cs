@@ -50,6 +50,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
 
         void ExecuteOrder(Order order);
+        int GetMaxDistanceCommand();
         void GlobalCommandServerRpc(EnumInputAction enumInputAction);
 
         void SyncLoadedJsonIdentitiesServerRpc(ulong clientId);

@@ -316,7 +316,7 @@ namespace LethalInternship.Core.Managers
 
             if (identity.InternAI.Npc == null) return false;
 
-            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > Const.DISTANCE_COMMAND_PROXIMITY * Const.DISTANCE_COMMAND_PROXIMITY) return false;
+            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > InternManager.Instance.GetMaxDistanceCommand()) return false;
 
             return true;
         }

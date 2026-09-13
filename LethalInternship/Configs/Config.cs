@@ -35,6 +35,8 @@ namespace LethalInternship.Configs
         public bool RadarEnabled => radarEnabled.Value;
         public bool SpawnIdentitiesRandomly => spawnIdentitiesRandomly.Value;
         //public bool CanLosePlayer => canLosePlayer.Value;
+        public int OutsideRangeCommands => outsideRangeCommands.Value;
+        public int InsideRangeCommands => insideRangeCommands.Value;
         public bool FollowCrouchWithPlayer => followCrouchWithPlayer.Value;
         public bool ChangeSuitAutoBehaviour => changeSuitAutoBehaviour.Value;
         public int NbMaxCanCarry => nbMaxCanCarry.Value;
@@ -76,6 +78,8 @@ namespace LethalInternship.Configs
 
         // Behaviour       
         //[SyncedEntryField] private SyncedEntry<bool> canLosePlayer;
+        [SyncedEntryField] private SyncedEntry<int> outsideRangeCommands;
+        [SyncedEntryField] private SyncedEntry<int> insideRangeCommands;
         [SyncedEntryField] private SyncedEntry<bool> followCrouchWithPlayer;
         [SyncedEntryField] private SyncedEntry<bool> changeSuitAutoBehaviour;
         //[SyncedEntryField] private SyncedEntry<bool> TeleportWhenUsingLadders;
@@ -175,6 +179,17 @@ namespace LethalInternship.Configs
             //                                   "Can lose the player",
             //                                   defaultVal: false,
             //                                   "Can the intern lose the player if he goes too far ?");
+
+            outsideRangeCommands = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Maximum command range while outside",
+                                               defaultValue: ConfigConst.DEFAULT_DISTANCE_COMMAND_OUTSIDE,
+                                               new ConfigDescription("Distance at which interns stop hearing your commands while outside",
+                                                                     new AcceptableValueRange<int>(1, 1000)));
+            insideRangeCommands = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Maximum command range while inside",
+                                               defaultValue: ConfigConst.DEFAULT_DISTANCE_COMMAND_INSIDE,
+                                               new ConfigDescription("Distance at which interns stop hearing your commands while inside",
+                                                                     new AcceptableValueRange<int>(1, 1000)));
 
             followCrouchWithPlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Crouch with player",

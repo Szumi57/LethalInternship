@@ -8,7 +8,6 @@
         public static readonly int INDEX_AUDIO_ERROR = 1;
 
         public static readonly string STRING_LAND_COMMAND = "land";
-        public static readonly string STRING_STATUS_COMMAND = "status";
         public static readonly string STRING_EVACUATION_COMMAND = "evacuation";
         public static readonly string STRING_BUY_COMMAND = "buy";
 
@@ -83,6 +82,6 @@ Please CONFIRM or DENY.";
 
         public static readonly string TEXT_STATUS = @"Interns status : 
 
-{0}";
+";
     }
 }

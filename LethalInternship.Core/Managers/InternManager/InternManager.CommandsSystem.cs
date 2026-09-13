@@ -1,12 +1,13 @@
-﻿using LethalInternship.Core.CommandsSystem;
+﻿using GameNetcodeStuff;
+using LethalInternship.Core.CommandsSystem;
 using LethalInternship.Core.CommandsSystem.Abilities;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Linq;
 using Unity.Netcode;
-using UnityEngine;
 
 namespace LethalInternship.Core.Managers
 {
@@ -14,13 +15,6 @@ namespace LethalInternship.Core.Managers
     {
         public void ExecuteOrder(Order order)
         {
-            Debug.Log("========================================ExecuteOrder");
-            foreach (var a in order.IdentitiesToOrder)
-            {
-                Debug.Log(a);
-            }
-            Debug.Log("==============================================");
-
             var internsOwned = order.IdentitiesToOrder
                                 .Where(x => IdentityManager.Instance.IsIdentityValidToCommand(x))
                                 .Select(x => x.InternAI!);
@@ -28,6 +22,26 @@ namespace LethalInternship.Core.Managers
             {
                 intern.AssignOrder(order);
             }
+        }
+
+        public int GetMaxDistanceCommand()
+        {
+            if (StartOfRound.Instance == null) return 0;
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+            if (localPlayer == null
+                || localPlayer.isPlayerDead) return 0;
+
+            int maxDistance;
+            if (localPlayer.isInsideFactory)
+            {
+                maxDistance = PluginRuntimeProvider.Context.Config.InsideRangeCommands;
+            }
+            else
+            {
+                maxDistance = PluginRuntimeProvider.Context.Config.OutsideRangeCommands;
+            }
+
+            return maxDistance * maxDistance;
         }
 
         [ServerRpc(RequireOwnership = false)]
