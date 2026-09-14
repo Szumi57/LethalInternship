@@ -588,10 +588,10 @@ namespace LethalInternship.Patches.NpcPatches
                 List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
 
                 // ----------------------------------------------------------------------
-                for (var i = 0; i < codes.Count - 5; i++)
+                for (var i = 0; i < codes.Count - 9; i++)
                 {
-                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 33
-                        && codes[i + 5].ToString().StartsWith("call void GameNetcodeStuff.PlayerControllerB::LandFromJumpServerRpc(")) // 38
+                    if (codes[i].ToString().StartsWith("ldarg.0 NULL") // 17
+                        && codes[i + 9].ToString().StartsWith("call void GameNetcodeStuff.PlayerControllerB::LandFromJumpRpc(")) // 26
                     {
                         startIndex = i;
                         break;
@@ -599,7 +599,19 @@ namespace LethalInternship.Patches.NpcPatches
                 }
                 if (startIndex > -1)
                 {
-                    codes[startIndex + 5].operand = PatchesUtil.SyncLandFromJumpMethod;
+                    // Remove hitSoft parameter loading
+                    codes[startIndex + 5].opcode = OpCodes.Nop; // 22 ldarg.0 NULL
+                    codes[startIndex + 5].operand = null;
+                    codes[startIndex + 6].opcode = OpCodes.Nop; // 23 ldfld float GameNetcodeStuff.PlayerControllerB::fallValue
+                    codes[startIndex + 6].operand = null;
+                    codes[startIndex + 7].opcode = OpCodes.Nop; // 24 ldc.r4 -1
+                    codes[startIndex + 7].operand = null;
+                    codes[startIndex + 8].opcode = OpCodes.Nop; // 25 clt NULL
+                    codes[startIndex + 8].operand = null;
+
+                    // Replace method
+                    // Reverse patch only called for interns
+                    codes[startIndex + 9].operand = PatchesUtil.SyncLandFromJumpMethod;
                     codes.Insert(startIndex + 1, new CodeInstruction(OpCodes.Ldfld, PatchesUtil.FieldInfoPlayerClientId));
                     startIndex = -1;
                 }
@@ -1120,7 +1132,7 @@ namespace LethalInternship.Patches.NpcPatches
                         return;
                     }
 
-                    if (ragdoll.bodyID.Value == Const.INIT_RAGDOLL_ID)
+                    if (ragdoll.bodyID == Const.INIT_RAGDOLL_ID)
                     {
                         // Remove tooltip text
                         __instance.cursorTip.text = string.Empty;

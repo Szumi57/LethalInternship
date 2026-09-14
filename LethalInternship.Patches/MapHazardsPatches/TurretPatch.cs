@@ -32,11 +32,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 39; i++)
+            for (var i = 0; i < codes.Count - 40; i++)
             {
-                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //306
-                    && codes[i + 3].ToString().StartsWith("call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(")//309
-                    && codes[i + 39].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))//345
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //317
+                    && codes[i + 3].ToString().StartsWith("call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(")//320
+                    && codes[i + 40].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))//357
                 {
                     startIndex = i;
                     break;
@@ -62,11 +62,11 @@ namespace LethalInternship.Patches.MapHazardsPatches
             }
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 39; i++)
+            for (var i = 0; i < codes.Count - 40; i++)
             {
-                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //490
-                    && codes[i + 3].ToString().StartsWith("call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(")//493
-                    && codes[i + 39].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))//529
+                if (codes[i].ToString().StartsWith("ldarg.0 NULL") //502
+                    && codes[i + 3].ToString().StartsWith("call GameNetcodeStuff.PlayerControllerB Turret::CheckForPlayersInLineOfSight(")//505
+                    && codes[i + 40].ToString().StartsWith("callvirt void GameNetcodeStuff.PlayerControllerB::KillPlayer("))//542
                 {
                     startIndex = i;
                     break;

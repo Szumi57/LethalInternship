@@ -54,7 +54,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                 return true;
             }
 
-            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI(ragdollGrabbableObject.bodyID.Value);
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI(ragdollGrabbableObject.bodyID);
             if (internAI == null)
             {
                 if (ragdollGrabbableObject.gameObject.GetComponentInChildren<ScanNodeProperties>() == null)

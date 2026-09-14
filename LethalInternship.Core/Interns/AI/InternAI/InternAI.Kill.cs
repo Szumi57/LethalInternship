@@ -115,7 +115,7 @@ namespace LethalInternship.Core.Interns.AI
             {
                 GameObject gameObject = Instantiate(StartOfRound.Instance.ragdollGrabbableObjectPrefab, NpcController.Npc.playersManager.propsContainer);
                 gameObject.GetComponent<NetworkObject>().Spawn(false);
-                gameObject.GetComponent<RagdollGrabbableObject>().bodyID.Value = (int)NpcController.Npc.playerClientId;
+                gameObject.GetComponent<RagdollGrabbableObject>().bodyID = (int)NpcController.Npc.playerClientId;
             }
         }
 
@@ -211,7 +211,14 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.causeOfDeath = causeOfDeath;
             if (spawnBody)
             {
-                NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
+                NpcController.Npc.SpawnDeadBody(playerId: (int)NpcController.Npc.playerClientId,
+                                                bodyVelocity: bodyVelocity,
+                                                causeOfDeath: (int)causeOfDeath,
+                                                deadPlayerController: NpcController.Npc,
+                                                deathAnimation: deathAnimation,
+                                                setPhysicsParent: null,
+                                                overridePosition: null,
+                                                positionOffset: positionOffset);
 
                 if (NpcController.Npc.deadBody != null)
                 {

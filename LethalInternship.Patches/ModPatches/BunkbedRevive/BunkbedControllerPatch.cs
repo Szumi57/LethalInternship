@@ -46,7 +46,7 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
                 ___interactTrigger.StopInteraction();
                 return false;
             }
-            if (!BunkbedController.CanRevive(ragdollGrabbableObject.bodyID.Value, logStuff: true))
+            if (!BunkbedController.CanRevive(ragdollGrabbableObject.bodyID, logStuff: true))
             {
                 HUDManagerPatch.DisplayGlobalNotification_ReversePatch(HUDManager.Instance, "Can't Revive");
                 ___interactTrigger.StopInteraction();

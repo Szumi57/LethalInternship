@@ -40,6 +40,8 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo ShouldIgnoreHitKnifeIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new KnifeItem()));
         public static readonly MethodInfo ShouldIgnoreInternsEndScreenMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreInternsEndScreen(new PlayerControllerB()));
         public static readonly MethodInfo IsAnyMenuOpenedMethod = SymbolExtensions.GetMethodInfo(() => IsAnyMenuOpened());
+        public static readonly MethodInfo DropAllItemsIfInternMethod = SymbolExtensions.GetMethodInfo(() => DropAllItemsIfIntern(new PlayerControllerB()));
+        public static readonly MethodInfo BushWolfEnemyCheckIfHitInternMethod = SymbolExtensions.GetMethodInfo(() => BushWolfEnemyCheckIfHitIntern(new BushWolfEnemy(), new PlayerControllerB()));
 
         public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");
 
@@ -285,6 +287,44 @@ namespace LethalInternship.Patches.Utils
         private static bool IsAnyMenuOpened()
         {
             return UIManagerProvider.Instance.IsAnyCommandsMenuOpenedOrWasOpened;
+        }
+
+        private static void DropAllItemsIfIntern(PlayerControllerB player)
+        {
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return;
+            }
+            // intern
+
+            internAI.DropAllItems(dropOptions: SharedAbstractions.Enums.EnumOptionsGetItems.All, waitBetweenItems: false);
+        }
+
+        private static bool BushWolfEnemyCheckIfHitIntern(BushWolfEnemy bushWolfEnemy, PlayerControllerB player)
+        {
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return false;
+            }
+            // intern
+
+            if (!Physics.Linecast(bushWolfEnemy.tongueStartPoint.position,
+                                  player.gameplayCamera.transform.position - Vector3.up * 0.3f,
+                                  StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)
+                && Vector3.Distance(bushWolfEnemy.transform.position,
+                                    player.transform.position) < bushWolfEnemy.attackDistance)
+            {
+                bushWolfEnemy.HitByEnemyServerRpc();
+            }
+            else
+            {
+                bushWolfEnemy.DodgedEnemyHitServerRpc();
+            }
+            return true;
         }
     }
 }

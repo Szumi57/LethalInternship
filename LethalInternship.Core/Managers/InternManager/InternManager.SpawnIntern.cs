@@ -176,7 +176,7 @@ namespace LethalInternship.Core.Managers
                 networkObjectRagdoll = gameObject.GetComponent<NetworkObject>();
                 networkObjectRagdoll.Spawn(false);
                 ragdollInternBody = gameObject.GetComponent<RagdollGrabbableObject>();
-                ragdollInternBody.bodyID.Value = Const.INIT_RAGDOLL_ID;
+                ragdollInternBody.bodyID = Const.INIT_RAGDOLL_ID;
                 RagdollInternBodies[playerClientId] = ragdollInternBody;
             }
             else

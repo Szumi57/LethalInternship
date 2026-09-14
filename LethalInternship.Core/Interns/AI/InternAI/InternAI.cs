@@ -62,7 +62,7 @@ namespace LethalInternship.Core.Interns.AI
 
         public LineRendererUtil LineRendererUtil = null!;
 
-        private void Awake()
+        public override void Awake()
         {
             _cachedGo = this.gameObject;
 

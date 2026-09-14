@@ -65,12 +65,12 @@ namespace LethalInternship.Patches.GameEnginePatches
             var codes = new List<CodeInstruction>(instructions);
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - 5; i++)
+            for (var i = 0; i < codes.Count - 14; i++)
             {
-                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()" //128
+                if (codes[i].ToString() == "call static StartOfRound StartOfRound::get_Instance()" // 163
                     && codes[i + 1].ToString() == "ldfld GameNetcodeStuff.PlayerControllerB[] StartOfRound::allPlayerScripts"
                     && codes[i + 2].ToString() == "ldlen NULL"
-                    && codes[i + 5].ToString() == "ret NULL") // 133
+                    && codes[i + 14].ToString() == "ret NULL") // 177
                 {
                     startIndex = i;
                     break;
