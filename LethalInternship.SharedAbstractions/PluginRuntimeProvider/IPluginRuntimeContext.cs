@@ -13,7 +13,15 @@ namespace LethalInternship.SharedAbstractions.PluginRuntimeProvider
         string ConfigPath { get; }
         string VoicesPath { get; }
 
+        // Interns
         EnemyType InternNPCPrefab { get; }
+        int PreparedIrlPlayersCount { get; set; }
+        int PreparedInternCount { get; set; }
+        int PluginIrlPlayersCount { get; set; }
+        int AllEntitiesCount { get; set; }
+        GameObject[] InternObjects { get; set; }
+        uint NextInternNetworkObjectHash { get; set; }
+        uint[][] InternNetworkObjectHashes { get; set; }
 
         // UI
         bool UIAssetsLoaded { get; }
@@ -28,7 +36,6 @@ namespace LethalInternship.SharedAbstractions.PluginRuntimeProvider
         string DirectoryName { get; }
         IConfig Config { get; }
         ILethalInternshipInputs InputActionsInstance { get; }
-        int PluginIrlPlayersCount { get; set; }
 
         bool IsModTooManyEmotesLoaded { get; }
         bool IsModModelReplacementAPILoaded { get; }

@@ -3,6 +3,7 @@ using HarmonyLib;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -325,6 +326,21 @@ namespace LethalInternship.Patches.Utils
                 bushWolfEnemy.DodgedEnemyHitServerRpc();
             }
             return true;
+        }
+
+        // Other utils
+        public static void SetFieldValue(object obj, string fieldName, object value)
+        {
+            Type type = obj.GetType();
+            FieldInfo field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            field.SetValue(obj, value);
+        }
+
+        public static void SetPropertyValue(object obj, string propertyName, object value)
+        {
+            Type type = obj.GetType();
+            PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            property.SetValue(obj, value);
         }
     }
 }

@@ -135,7 +135,7 @@ namespace LethalInternship.Core.Managers
 
             if (DictAudioClipsByPath.ContainsKey(path))
             {
-                PluginLoggerHook.LogWarning?.Invoke($"A path of the same has already been added, path {path}");
+                PluginLoggerHook.LogWarning?.Invoke($"A same path has already been added, path {path}");
             }
             else
             {

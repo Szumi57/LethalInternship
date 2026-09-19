@@ -169,6 +169,11 @@ namespace LethalInternship.Core.Managers
             NetworkObject networkObjectRagdoll;
 
             // Spawn grabbable ragdoll intern body of intern
+            if (RagdollInternBodies == null)
+                RagdollInternBodies = new RagdollGrabbableObject[AllEntitiesCount];
+            else
+                Array.Resize(ref RagdollInternBodies, AllEntitiesCount);
+
             RagdollGrabbableObject? ragdollInternBody = RagdollInternBodies[playerClientId];
             if (ragdollInternBody == null)
             {

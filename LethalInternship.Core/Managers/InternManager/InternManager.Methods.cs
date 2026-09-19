@@ -208,7 +208,7 @@ namespace LethalInternship.Core.Managers
         /// <returns><c>InternAI</c> if the <c>PlayerControllerB</c> has an <c>InternAI</c> associated, else returns null</returns>
         public IInternAI? GetInternAI(int playerClientId)
         {
-            if (IndexBeginOfInterns == StartOfRound.Instance.allPlayerScripts.Length
+            if (AllInternAIs == null
                 || playerClientId < IndexBeginOfInterns)
             {
                 // Real player

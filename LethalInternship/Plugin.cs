@@ -72,7 +72,7 @@ namespace LethalInternship
         internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
         internal static ILethalInternshipInputs InputActionsInstance = null!;
-        internal static int PluginIrlPlayersCount = 0;
+        internal static int PluginIrlPlayersCount = 4;
 
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
@@ -665,6 +665,16 @@ namespace LethalInternship
         public string VoicesPath => Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, VoicesConst.VOICES_PATH);
 
         public EnemyType InternNPCPrefab => Plugin.InternNPCPrefab;
+        public int PreparedIrlPlayersCount { get; set; }
+        public int PreparedInternCount { get; set; }
+        public int PluginIrlPlayersCount { get => Plugin.PluginIrlPlayersCount; set => Plugin.PluginIrlPlayersCount = value; }
+        public int AllEntitiesCount { get; set; }
+        public GameObject[] InternObjects { get; set; } = null!;
+
+        // Network
+        public uint NextInternNetworkObjectHash { get; set; } = 100001;
+        public uint[][] InternNetworkObjectHashes { get; set; } = Array.Empty<uint[]>();
+
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
         public GameObject CommandsAll => Plugin.CommandsAll;
@@ -678,7 +688,6 @@ namespace LethalInternship
         public ILethalInternshipInputs InputActionsInstance => Plugin.InputActionsInstance;
         public IConfig Config => Plugin.Config;
 
-        public int PluginIrlPlayersCount { get => Plugin.PluginIrlPlayersCount; set => Plugin.PluginIrlPlayersCount = value; }
 
         public bool IsModTooManyEmotesLoaded => Plugin.IsModTooManyEmotesLoaded;
         public bool IsModModelReplacementAPILoaded => Plugin.IsModModelReplacementAPILoaded;

@@ -203,7 +203,7 @@ namespace LethalInternship.Patches.NpcPatches
                 __instance.gameObject.AddComponent<IgnoreRaycast>();
             }
 
-            // contine awake if player
+            // continue awake if player
             return true;
         }
 
