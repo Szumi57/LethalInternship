@@ -17,7 +17,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (UIManager.Instance.IsCommandsAllOpened)
+            if (UIManager.Instance.IsCommandsAllOpen)
                 UIManager.Instance.CommandsAllController.SetOnlyListInternsAndSuitCommandsVisible();
         }
 
@@ -30,7 +30,7 @@ namespace LethalInternship.Core.UI.CommandsControllers.Suits
                 return;
             }
 
-            if (UIManager.Instance.IsCommandsAllOpened)
+            if (UIManager.Instance.IsCommandsAllOpen)
                 UIManager.Instance.CommandsAllController.SetAllVisible();
         }
     }

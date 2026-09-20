@@ -36,7 +36,7 @@ namespace LethalInternship.Core.UI.TooltipBar
 
         void Update()
         {
-            if (!UIManager.Instance.IsAnyMenuOpened)
+            if (!UIManager.Instance.IsAnyMenuOpen)
                 return;
 
             // Follow the mouse

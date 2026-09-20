@@ -125,7 +125,7 @@ namespace LethalInternship.Core.UI.ItemBlocks
                 Destroy(scanNode);
 
             // Start coroutine only when active, ex : event when grabbing object triggers Setup while "not active"
-            if (UIManager.Instance.IsCommandsOneOpened)
+            if (UIManager.Instance.IsCommandsOneOpen)
             {
                 PlayAnimationRotation();
                 StartCoroutine(FitNextFrame());

@@ -287,7 +287,7 @@ namespace LethalInternship.Patches.Utils
 
         private static bool IsAnyMenuOpened()
         {
-            return UIManagerProvider.Instance.IsAnyCommandsMenuOpenedOrWasOpened;
+            return UIManagerProvider.Instance.IsAnyCommandsMenuOpenOrWasOpen;
         }
 
         private static void DropAllItemsIfIntern(PlayerControllerB player)

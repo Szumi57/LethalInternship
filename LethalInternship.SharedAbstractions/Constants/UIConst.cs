@@ -29,6 +29,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly string TOOLTIP_TARGETING_UNKILLABLE_ENEMY = "Can't attack this enemy !";
         public static readonly string TOOLTIP_TARGETING_ITEM = "-> Go get this item";
         public static readonly string TOOLTIP_TARGETING_POSITION = "-> Go there";
+        public static readonly string TOOLTIP_NOT_OWNED = "Unmanaged";
 
         public static readonly string[] TOOLTIP_COMMAND_FEEDBACK = {
         "[...]",// None = 0,

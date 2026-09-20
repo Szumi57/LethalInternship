@@ -1,5 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.TimedTasks;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Events;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
@@ -144,6 +145,17 @@ namespace LethalInternship.Core.Managers
             OrderedInternDistanceListTimedCheck = new TimedOrderedInternBodiesDistanceListCheck();
             InternBodiesSpawned = new List<IInternCullingBodyInfo>();
             listPointOfInterest = new List<IPointOfInterest>();
+
+            // Ignore raycast on players
+            for (int i = 0; i < IndexBeginOfInterns; i++)
+            {
+                PlayerControllerB player = StartOfRound.Instance.allPlayerScripts[i];
+                if (player != null
+                    && player.gameObject.GetComponent<IgnoreRaycast>() == null)
+                {
+                    player.gameObject.AddComponent<IgnoreRaycast>();
+                }
+            }
 
             // Managers
             UIManager.Instance.InitUI(HUDManager.Instance.HUDContainer.transform.parent);

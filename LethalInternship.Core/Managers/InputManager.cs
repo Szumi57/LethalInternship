@@ -29,6 +29,9 @@ namespace LethalInternship.Core.Managers
 {
     public class InputManager : MonoBehaviour, IInputManager
     {
+        private const int EMOTE_ID_DANCE = 1;
+        private const int EMOTE_ID_FINGER_POINTER = 2;
+
         private static InputManager _instance = null!;
         public static InputManager Instance
         {
@@ -46,6 +49,9 @@ namespace LethalInternship.Core.Managers
 
         public TargetedAbility? CurrentTargetedAbility { get; private set; }
         public TargetedAbility? PreviousTargetedAbility { get; private set; }
+
+        private int isManualEmoteToIgnore;
+        public bool IsManualEmoteToIgnore => isManualEmoteToIgnore > 0;
 
         public bool IsUsingController { get; private set; }
 
@@ -227,6 +233,8 @@ namespace LethalInternship.Core.Managers
         private void LateUpdate()
         {
             PreviousTargetedAbility = null;
+
+            if (isManualEmoteToIgnore > 0) { isManualEmoteToIgnore--; }
         }
 
         public void Init()
@@ -289,7 +297,7 @@ namespace LethalInternship.Core.Managers
             actionMap.TryGetValue(ctx.action, out GameAction gameAction);
 
             if (gameAction == GameAction.Interact
-                && UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+                && UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
                 && (ctx.started || ctx.canceled))
             {
                 if (HoldAction(ctx))
@@ -314,7 +322,7 @@ namespace LethalInternship.Core.Managers
 
             // Submitting
             if (gameAction == GameAction.Interact
-                && UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened)
+                && UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen)
             {
                 if (SubmitSelected())
                     return;
@@ -322,7 +330,7 @@ namespace LethalInternship.Core.Managers
 
             // LMB RMB
             // Directionnal pad
-            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
                 && IsUsingController)
             {
                 if (gameAction == GameAction.InspectItem)
@@ -342,14 +350,14 @@ namespace LethalInternship.Core.Managers
                 { return; }
             }
 
-            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
                 && gameAction == GameAction.Discard) // Try to close
             {
                 if (UIManager.Instance.CloseSuitPanel())
                 {
                     return; // Close only suit panel
                 }
-                else if (UIManager.Instance.IsCommandsOneOpened)
+                else if (UIManager.Instance.IsCommandsOneOpen)
                 {
                     // Return to all command
                     InputAction_ShowCommandsAll(forceShow: true);
@@ -401,8 +409,9 @@ namespace LethalInternship.Core.Managers
                 CancelTargeting();
                 return;
             }
+
             // Not interrupting action
-            // Do nothing
+            LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
         }
 
         public bool HoldAction(InputAction.CallbackContext ctx)
@@ -494,21 +503,25 @@ namespace LethalInternship.Core.Managers
                     new FollowMeAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_DANCE);
                     break;
                 case EnumInputAction.StayHere:
                     new StayHereAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
                     break;
                 case EnumInputAction.GoToShip:
                     new GoToShipAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
                     break;
                 case EnumInputAction.GoToVehicle:
                     new GoToVehicleAbility(identitiesToOrder).Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
                     break;
 
                 // Drop item
@@ -602,12 +615,23 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private void LocalPlayerPerformEmote(int emoteID)
+        {
+            var localPlayer = StartOfRound.Instance.localPlayerController;
+            if (!localPlayer.performingEmote)
+            {
+                localPlayer.performingEmote = true;
+                localPlayer.playerBodyAnimator.SetInteger("emoteNumber", emoteID);
+                localPlayer.StartPerformingEmoteServerRpc();
+                isManualEmoteToIgnore = 2;
+            }
+        }
+
         private void ButtonSuitsController_OnSuitSelected(EnumInputAction typeInputAction)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
                                         .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
-
             switch (typeInputAction)
             {
                 case EnumInputAction.PreviousSuit:
@@ -694,7 +718,7 @@ namespace LethalInternship.Core.Managers
 
         private void InputAction_ShowCommandsAll(bool forceShow = false)
         {
-            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
                 && IsUsingController
                 && !forceShow)
                 return;
@@ -702,7 +726,7 @@ namespace LethalInternship.Core.Managers
             CancelTargeting();
             UIManager.Instance.HideCommandsOne();
 
-            if (UIManager.Instance.IsCommandsAllOpened)
+            if (UIManager.Instance.IsCommandsAllOpen)
             {
                 CommandContextService.Instance.ExitCommandMode();
                 UIManager.Instance.HideCommandsAll();
@@ -723,7 +747,7 @@ namespace LethalInternship.Core.Managers
             if (next != null)
             {
                 IdentitySelectionService.Instance.SelectSingle(next);
-                if (UIManager.Instance.IsCommandsAllOpened)
+                if (UIManager.Instance.IsCommandsAllOpen)
                     InternBlockUI_OnSelected();
                 else
                     UIManager.Instance.RefreshCommandsOne();
@@ -737,7 +761,7 @@ namespace LethalInternship.Core.Managers
             if (previous != null)
             {
                 IdentitySelectionService.Instance.SelectSingle(previous);
-                if (UIManager.Instance.IsCommandsAllOpened)
+                if (UIManager.Instance.IsCommandsAllOpen)
                     InternBlockUI_OnSelected();
                 else
                     UIManager.Instance.RefreshCommandsOne();
@@ -756,7 +780,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            if (UIManager.Instance.IsAnyMenuOpened)
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
 
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
@@ -787,7 +811,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            if (UIManager.Instance.IsAnyMenuOpened)
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
 
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
@@ -835,7 +859,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            if (UIManager.Instance.IsAnyMenuOpened)
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
 
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
@@ -867,7 +891,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            if (UIManager.Instance.IsAnyMenuOpened)
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
 
             // No intern in interact range
@@ -891,11 +915,11 @@ namespace LethalInternship.Core.Managers
 
         private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)
         {
-            if (UIManager.Instance.IsAnyCommandsMenuOpenedOrWasOpened
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
                 && IsUsingController)
                 return;
 
-            if (UIManager.Instance.IsCommandsOneOpened)
+            if (UIManager.Instance.IsCommandsOneOpen)
             {
                 CommandContextService.Instance.ExitCommandMode();
                 UIManager.Instance.HideCommandsOne();

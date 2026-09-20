@@ -1,7 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using LethalInternship.Patches.Utils;
-using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
@@ -182,25 +181,6 @@ namespace LethalInternship.Patches.NpcPatches
                     var go = Object.Instantiate(PluginManagerProvider.Instance.TerminalManagerPrefab);
                     go.GetComponent<NetworkObject>().Spawn();
                 }
-            }
-            // -------------------
-
-            if (!InternManagerProvider.IsReady)
-            {
-                return true;
-            }
-
-            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
-            if (internAI != null)
-            {
-                // ignore awake if intern
-                return false;
-            }
-
-            // If player
-            if (__instance.gameObject.GetComponent<IgnoreRaycast>() == null)
-            {
-                __instance.gameObject.AddComponent<IgnoreRaycast>();
             }
 
             // continue awake if player
@@ -511,6 +491,9 @@ namespace LethalInternship.Patches.NpcPatches
         static bool TeleportPlayer_PreFix(PlayerControllerB __instance,
                                           Vector3 pos)
         {
+            if (!InternManagerProvider.IsReady)
+                return true;
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
             if (internAI != null)
             {
@@ -1053,6 +1036,41 @@ namespace LethalInternship.Patches.NpcPatches
             else
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ScrollMouse_performed could not ignore ScrollMouse_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
+        [HarmonyPatch("OpenMenu_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> OpenMenu_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 27;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.OpenMenu_performed could not ignore OpenMenu_performed input when commands opened");
             }
 
             return codes.AsEnumerable();

@@ -5,10 +5,10 @@ namespace LethalInternship.SharedAbstractions.Managers
 {
     public interface IUIManager
     {
-        bool IsCommandsAllOpened { get; }
-        bool IsCommandsOneOpened { get; }
-        bool IsAnyMenuOpened { get; }
-        bool IsAnyCommandsMenuOpenedOrWasOpened { get; }
+        bool IsCommandsAllOpen { get; }
+        bool IsCommandsOneOpen { get; }
+        bool IsAnyMenuOpen { get; }
+        bool IsAnyCommandsMenuOpenOrWasOpen { get; }
 
         GameObject? LastSelectedUI { get; }
 

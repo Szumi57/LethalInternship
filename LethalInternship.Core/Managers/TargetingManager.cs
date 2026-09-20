@@ -65,7 +65,7 @@ namespace LethalInternship.Core.Managers
                 || StartOfRound.Instance.localPlayerController == null)
                 return;
 
-            if (UIManager.Instance.IsAnyMenuOpened)
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
 
             if (Time.frameCount % 2 != 0) return;

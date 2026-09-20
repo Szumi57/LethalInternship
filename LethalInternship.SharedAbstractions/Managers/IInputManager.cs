@@ -10,6 +10,8 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         bool IsUsingController { get; }
 
+        bool IsManualEmoteToIgnore { get; }
+
         string GetKeyAction(InputAction inputAction);
     }
 }
