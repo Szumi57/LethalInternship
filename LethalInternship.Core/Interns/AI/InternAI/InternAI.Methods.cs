@@ -264,7 +264,7 @@ namespace LethalInternship.Core.Interns.AI
         /// <returns>The minimal distance from enemy to intern before panicking, null if nothing to worry about</returns>
         public float? GetFearRangeForEnemies(EnemyAI enemy)
         {
-            //PluginLoggerHook.LogDebug?.Invoke($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
+            PluginLoggerHook.LogDebug?.Invoke($"enemy \"{enemy.enemyType.enemyName}\" {enemy.enemyType.name}");
             switch (enemy.enemyType.enemyName) // using enemyName
             {
                 case "Crawler":
@@ -282,6 +282,7 @@ namespace LethalInternship.Core.Interns.AI
                 case "Flowerman":
                 case "Bush Wolf":
                 case "GiantKiwi":
+                case "Feiopar":
                     return 5f;
 
                 case "Puffer":

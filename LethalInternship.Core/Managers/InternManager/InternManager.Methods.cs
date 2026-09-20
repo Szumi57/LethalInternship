@@ -580,6 +580,7 @@ namespace LethalInternship.Core.Managers
                 case "MouthDog":
                 case "Nutcracker":
                 case "Tulip Snake":
+                case "Feiopar":
                     return true;
 
                 default:

@@ -600,6 +600,13 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            if (NpcController.GetSqrDistanceWithLocalPlayer() > InternManager.Instance.GetMaxDistanceCommand()
+                && NpcController.Npc.isCrouching)
+            {
+                NpcController.OrderToToggleCrouch();
+                return;
+            }
+
             if (PluginRuntimeProvider.Context.Config.FollowCrouchWithPlayer
                 && targetPlayer != null)
             {
