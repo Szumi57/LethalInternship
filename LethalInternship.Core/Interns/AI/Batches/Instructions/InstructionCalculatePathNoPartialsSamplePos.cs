@@ -29,24 +29,24 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             if (navPath.status == NavMeshPathStatus.PathInvalid
                 || navPath.status == NavMeshPathStatus.PathPartial) // no partials
             {
-                if (fromId == 0 && toId == 5)
-                    Debug.Log($"InstructionCalculatePathNoPartialsSamplePos what ? navPath.status={navPath.status}, start={start} target={target}");
+                //if (fromId == 0 && toId == 5)
+                //    Debug.Log($"InstructionCalculatePathNoPartialsSamplePos what ? navPath.status={navPath.status}, start={start} target={target}");
 
                 return;
             }
 
             // Valid path
             float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
-            if (navPath.status == NavMeshPathStatus.PathComplete)
-            {
-                InternManager.Instance.CancelGroup(IdBatch, GroupId);
-            }
-
             onNeighborResult(fromId,
                              toId,
                              start,
                              target,
                              distance);
+
+            if (navPath.status == NavMeshPathStatus.PathComplete)
+            {
+                InternManager.Instance.CancelGroup(IdBatch, GroupId);
+            }
         }
 
         public override void ReleaseInPool()

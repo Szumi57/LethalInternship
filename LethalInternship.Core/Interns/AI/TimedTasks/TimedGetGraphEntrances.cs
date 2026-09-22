@@ -82,10 +82,10 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
                 otherPoint.Entrance2 = currentPoint.Entrance1;
                 currentPoint.Entrance2 = otherPoint.Entrance1;
 
-                Debug.Log($"adding neighbors to grah : from {currentPoint.Id} to {otherPoint.Id} pos {otherPoint.Entrance1.entrancePoint.position} dist {Const.DISTANCE_SAME_ENTRANCE}");
+                //Debug.Log($"adding neighbors to graph : from {currentPoint.Id} to {otherPoint.Id} pos {otherPoint.Entrance1.entrancePoint.position} dist {Const.DISTANCE_SAME_ENTRANCE}");
                 graph.Neighbors[currentPoint.Id].Add(new DJKNeighbor(otherPoint.Id, otherPoint.Entrance1.entrancePoint.position, Const.DISTANCE_SAME_ENTRANCE));
 
-                Debug.Log($"adding neighbors to grah : from {otherPoint.Id} to {currentPoint.Id} pos {currentPoint.Entrance1.entrancePoint.position} dist {Const.DISTANCE_SAME_ENTRANCE}");
+                //Debug.Log($"adding neighbors to graph : from {otherPoint.Id} to {currentPoint.Id} pos {currentPoint.Entrance1.entrancePoint.position} dist {Const.DISTANCE_SAME_ENTRANCE}");
                 graph.Neighbors[otherPoint.Id].Add(new DJKNeighbor(currentPoint.Id, currentPoint.Entrance1.entrancePoint.position, Const.DISTANCE_SAME_ENTRANCE));
 
                 return;
@@ -96,9 +96,9 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
         {
             NeighborResult graphWriter = (from, to, startPos, targetPos, dist) =>
             {
-                Debug.Log($"adding neighbors to grah : from {from} to {to} pos {targetPos} dist {dist}");
+                //Debug.Log($"adding neighbors to graph : from {from} to {to} pos {targetPos} dist {dist}");
                 graphToCalculate.Neighbors[from].Add(new DJKNeighbor(to, targetPos, dist));
-                Debug.Log($"adding neighbors to grah : from {to} to {from} pos {startPos} dist {dist}");
+                //Debug.Log($"adding neighbors to graph : from {to} to {from} pos {startPos} dist {dist}");
                 graphToCalculate.Neighbors[to].Add(new DJKNeighbor(from, startPos, dist));
             };
 

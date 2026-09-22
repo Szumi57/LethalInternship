@@ -169,8 +169,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             currentContext.PathController.SetNewPath(pathIds);
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted >>> {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)} | Destination {currentContext.PathfindingContext.Destination}");
-            PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted {currentContext.PathfindingContext}");
+            //PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted >>> {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)} | Destination {currentContext.PathfindingContext.Destination}");
+            //PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted {currentContext.PathfindingContext}");
         }
     }
 }

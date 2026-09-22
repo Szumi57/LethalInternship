@@ -1,8 +1,6 @@
-﻿using LethalInternship.Core.Managers;
-using LethalInternship.SharedAbstractions.Interns;
+﻿using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Batches
 {
@@ -48,20 +46,20 @@ namespace LethalInternship.Core.Interns.AI.Batches
 
         public void Reset()
         {
-            Debug.Log("Pools.LogStats CancelBatch -------------------");
-            InternManager.Instance.Pools.LogStats();
-            Debug.Log("----------------------------------");
+            //Debug.Log("Pools.LogStats CancelBatch -------------------");
+            //InternManager.Instance.Pools.LogStats();
+            //Debug.Log("----------------------------------");
 
             while (this.HasRemaining)
             {
-                Debug.Log($"CancelBatch idBatch={this.id} currentIndex={this.currentIndex} Count={this.instructions.Count}");
+                //Debug.Log($"CancelBatch idBatch={this.id} currentIndex={this.currentIndex} Count={this.instructions.Count}");
                 this.CurrentInstruction.ReleaseInPool();
                 this.Advance();
             }
-            Debug.Log("Pools.LogStats CancelBatch -------------------");
-            InternManager.Instance.Pools.LogStats();
-            Debug.Log("----------------------------------");
-            this.instructions.Clear();
+            //Debug.Log("Pools.LogStats CancelBatch -------------------");
+            //InternManager.Instance.Pools.LogStats();
+            //Debug.Log("----------------------------------");
+            //this.instructions.Clear();
 
             this.id = -2;
             currentIndex = 0;

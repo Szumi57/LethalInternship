@@ -20,12 +20,12 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
             {
                 distance = Dijkstra.Dijkstra.ApplyPartialPathPenalty(distance, navPath.corners[^1], target);
             }
-            else if (navPath.status == NavMeshPathStatus.PathComplete)
+
+            onNeighborResult(fromId, toId, start, target, distance);
+            if (navPath.status == NavMeshPathStatus.PathComplete)
             {
                 InternManager.Instance.CancelGroup(IdBatch, GroupId);
             }
-
-            onNeighborResult(fromId, toId, start, target, distance);
         }
 
         public override void ReleaseInPool()

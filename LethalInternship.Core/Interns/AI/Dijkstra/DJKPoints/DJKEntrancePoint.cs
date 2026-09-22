@@ -46,7 +46,11 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
         public override IEnumerable<Vector3> GetAllPoints()
         {
             pointsResults.Clear();
-            pointsResults.Add(Entrance1.entrancePoint.position);
+            if (Entrance1.entrancePoint != null)
+            {
+                // Can be null after first moon
+                pointsResults.Add(Entrance1.entrancePoint.position);
+            }
             return pointsResults;
         }
 

@@ -144,7 +144,7 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             if (networkObject.IsSpawned)
             {
-                Debug.Log($"Skipping already spawned NetworkObject: {networkObject.name}");
+                //Debug.Log($"Skipping already spawned NetworkObject: {networkObject.name}");
                 return;
             }
 

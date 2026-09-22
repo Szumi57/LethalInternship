@@ -17,16 +17,16 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
 
             // Valid path
             float distance = Dijkstra.Dijkstra.GetFullDistancePath(navPath.corners);
-            if (navPath.status == NavMeshPathStatus.PathComplete)
-            {
-                InternManager.Instance.CancelGroup(IdBatch, GroupId);
-            }
-
             onNeighborResult(fromId,
                              toId,
                              start,
                              target,
                              distance);
+
+            if (navPath.status == NavMeshPathStatus.PathComplete)
+            {
+                InternManager.Instance.CancelGroup(IdBatch, GroupId);
+            }
         }
 
         public override void ReleaseInPool()

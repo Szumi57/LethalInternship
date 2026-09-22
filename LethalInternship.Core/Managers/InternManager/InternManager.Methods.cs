@@ -581,6 +581,7 @@ namespace LethalInternship.Core.Managers
                 case "Nutcracker":
                 case "Tulip Snake":
                 case "Feiopar":
+                case "Stingray":
                     return true;
 
                 default:

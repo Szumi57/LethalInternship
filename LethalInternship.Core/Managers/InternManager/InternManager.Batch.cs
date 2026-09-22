@@ -4,7 +4,6 @@ using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace LethalInternship.Core.Managers
 {
@@ -126,7 +125,7 @@ namespace LethalInternship.Core.Managers
         private void ExecuteInstruction(IInstruction instr)
         {
             instr.Execute();
-            Debug.Log($"Instruction ReleaseInPool idBatch={instr.IdBatch}");
+            //Debug.Log($"Instruction ReleaseInPool idBatch={instr.IdBatch}");
             instr.ReleaseInPool();
         }
 

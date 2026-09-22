@@ -217,8 +217,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             pathCalculated.SetNewPath(pathIds);
 
             // log
-            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap OnBatchCompleted >>> {tempPfs[randomIndex].GetFullPathString(pathCalculated.PathIds)} | Destination {tempPfs[randomIndex].Destination}");
-            PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap OnBatchCompleted itemIndex={itemIndex} tempPfs[{randomIndex}] {tempPfs[randomIndex]}");
+            //PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap OnBatchCompleted >>> {tempPfs[randomIndex].GetFullPathString(pathCalculated.PathIds)} | Destination {tempPfs[randomIndex].Destination}");
+            //PluginLoggerHook.LogDebug?.Invoke($"=> CheckForItemsToGrabInMap OnBatchCompleted itemIndex={itemIndex} tempPfs[{randomIndex}] {tempPfs[randomIndex]}");
 
             itemIndex++;
         }
