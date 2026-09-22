@@ -1,87 +1,203 @@
 ﻿using GameNetcodeStuff;
+using LethalInternship.Core.CommandsSystem;
+using LethalInternship.Core.CommandsSystem.Abilities;
+using LethalInternship.Core.UI.CommandsControllers;
+using LethalInternship.Core.UI.CommandsControllers.DualSwitch;
+using LethalInternship.Core.UI.CommandsControllers.GatheringPoint;
+using LethalInternship.Core.UI.CommandsControllers.Suits;
+using LethalInternship.Core.UI.InternBlocks;
+using LethalInternship.Core.UI.ItemBlocks;
+using LethalInternship.Core.UI.Others;
 using LethalInternship.Core.Utils;
-using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.MonoProfilerHooks;
 using LethalInternship.SharedAbstractions.Hooks.PlayerControllerBHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.AI;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace LethalInternship.Core.Managers
 {
     public class InputManager : MonoBehaviour, IInputManager
     {
-        public static InputManager Instance { get; private set; } = null!;
+        private const int EMOTE_ID_DANCE = 1;
+        private const int EMOTE_ID_FINGER_POINTER = 2;
 
-        private EnumInputAction currentInputAction;
-        public EnumInputAction CurrentInputAction { get => currentInputAction; }
+        private static InputManager _instance = null!;
+        public static InputManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(InputManager));
+                    _instance = go.AddComponent<InputManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
-        private bool openCommandsInternInputIsPressed;
-        private IInternAI? currentCommandedIntern = null!;
+        public TargetedAbility? CurrentTargetedAbility { get; private set; }
+        public TargetedAbility? PreviousTargetedAbility { get; private set; }
+
+        private int isManualEmoteToIgnore;
+        public bool IsManualEmoteToIgnore => isManualEmoteToIgnore > 0;
+
+        public bool IsUsingController { get; private set; }
+
+        private InputActionAsset inputActionAsset = null!;
+        private Dictionary<InputAction, GameAction> actionMap = new Dictionary<InputAction, GameAction>();
+
         private LineRendererUtil LineRendererUtil = null!;
-
-        private Coroutine? scanPositionCoroutine;
-        private Collider? lastColliderHit = null;
-        private Vector3? lastPointedHitPoint = null;
-        private bool isPointedValid;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
-            AddEventHandlers();
-        }
-
-        private void AddEventHandlers()
-        {
-            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed += Manage_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed += GiveTakeItem_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed += ChangeSuitIntern_performed;
-        }
-
-        public void RemoveEventHandlers()
-        {
-            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed -= Manage_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GiveTakeItem.performed -= GiveTakeItem_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
-            PluginRuntimeProvider.Context.InputActionsInstance.ChangeSuitIntern.performed -= ChangeSuitIntern_performed;
+            _instance = this;
+            InputManagerProvider.Register(this);
         }
 
         public string GetKeyAction(InputAction inputAction)
         {
-            int bindingIndex;
-            if (StartOfRound.Instance.localPlayerUsingController)
+            for (int i = 0; i < inputAction.bindings.Count; i++)
             {
-                // Gamepad
-                bindingIndex = inputAction.GetBindingIndex(InputBinding.MaskByGroup("Gamepad"));
+                string path = inputAction.bindings[i].effectivePath;
+
+                if (IsUsingController)
+                {
+                    if (path.Contains("Gamepad") ||
+                        path.Contains("XInputController"))
+                    {
+                        return inputAction.GetBindingDisplayString(i);
+                    }
+                }
+                else
+                {
+                    if (path.Contains("Keyboard") ||
+                        path.Contains("Mouse"))
+                    {
+                        return inputAction.GetBindingDisplayString(i);
+                    }
+                }
             }
-            else
-            {
-                // kbm
-                bindingIndex = inputAction.GetBindingIndex(InputBinding.MaskByGroup("KeyboardAndMouse"));
-            }
-            return inputAction.GetBindingDisplayString(bindingIndex);
+
+            // Fallback
+            return inputAction.GetBindingDisplayString();
         }
 
-
-        private void Start()
+        private void OnEnable()
         {
-            currentInputAction = EnumInputAction.None;
+            PluginLoggerHook.LogInfo?.Invoke("InputManager loading input events...");
+
+            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed += Manage_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern.performed += GiveItemToIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed += GrabIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed += ReleaseInterns_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern.performed += OpenCommandsOneIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed += OpenAllCommandsIntern_performed;
+
+            CommandButtonController.OnSelected += CommandButtonController_OnSelected;
+            ButtonDualSwitchParentController.OnDualSwitchSelected += CommandButtonController_OnSelected;
+            InternBlockUI.OnSelected += InternBlockUI_OnSelected;
+            ItemButtonController.OnSelected += ItemButtonController_OnSelected;
+            GatheringPointController.OnSelected += GatheringPoint_OnSelected;
+            RemoveGatheringPointController.OnSelected += RemoveGatheringPoint_OnSelected;
+
+            // Suits
+            ButtonSuitsController.OnSelected += ButtonSuitsController_OnSuitSelected;
+            ButtonSelectSuit.OnSuitSelected += ButtonSelectSuit_OnSuitSelected;
+
+            // BuildActionMap
+            inputActionAsset = IngamePlayerSettings.Instance.playerInput.actions;
+            foreach (var map in inputActionAsset.actionMaps)
+            {
+                foreach (InputAction? action in map.actions)
+                {
+                    switch (action.name)
+                    {
+                        case "Look": actionMap[action] = GameAction.Look; break;
+                        case "Move": actionMap[action] = GameAction.Move; break;
+                        case "Jump": actionMap[action] = GameAction.Jump; break;
+                        case "Sprint": actionMap[action] = GameAction.Sprint; break;
+                        case "Interact": actionMap[action] = GameAction.Interact; break;
+                        case "Crouch": actionMap[action] = GameAction.Crouch; break;
+                        case "Use": actionMap[action] = GameAction.Use; break;
+                        case "ActivateItem": actionMap[action] = GameAction.ActivateItem; break;
+                        case "Discard": actionMap[action] = GameAction.Discard; break;
+                        case "SwitchItem": actionMap[action] = GameAction.SwitchItem; break;
+                        case "QEItemInteract": actionMap[action] = GameAction.QEItemInteract; break;
+                        case "InspectItem": actionMap[action] = GameAction.InspectItem; break;
+                        case "PingScan": actionMap[action] = GameAction.PingScan; break;
+                        case "ItemSecondaryUse": actionMap[action] = GameAction.ItemSecondaryUse; break;
+                        case "ItemTertiaryUse": actionMap[action] = GameAction.ItemTertiaryUse; break;
+                    }
+                }
+            }
+
+            // SubscribeAllActions
+            foreach (var map in inputActionAsset.actionMaps)
+            {
+                foreach (InputAction? action in map.actions)
+                {
+                    action.started += OnAnyAction;
+                    action.performed += OnAnyAction;
+                    action.canceled += OnAnyAction;
+                }
+            }
+        }
+
+        private void OnDisable()
+        {
+            PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.performed -= Manage_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern.performed -= GiveItemToIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.performed -= GrabIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.performed -= ReleaseInterns_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern.performed -= OpenCommandsOneIntern_performed;
+            PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern.performed -= OpenAllCommandsIntern_performed;
+
+#pragma warning disable CS8601 // Possible null reference assignment.
+            CommandButtonController.OnSelected -= CommandButtonController_OnSelected;
+            ButtonDualSwitchParentController.OnDualSwitchSelected -= CommandButtonController_OnSelected;
+            InternBlockUI.OnSelected -= InternBlockUI_OnSelected;
+            ItemButtonController.OnSelected -= ItemButtonController_OnSelected;
+            GatheringPointController.OnSelected -= GatheringPoint_OnSelected;
+            RemoveGatheringPointController.OnSelected -= RemoveGatheringPoint_OnSelected;
+
+            ButtonSuitsController.OnSelected -= ButtonSuitsController_OnSuitSelected;
+            ButtonSelectSuit.OnSuitSelected -= ButtonSelectSuit_OnSuitSelected;
+#pragma warning restore CS8601 // Possible null reference assignment.
+
+            // UnsubscribeAllActions
+            foreach (var map in inputActionAsset.actionMaps)
+            {
+                foreach (var action in map.actions)
+
+                {
+                    action.started -= OnAnyAction;
+                    action.performed -= OnAnyAction;
+                    action.canceled -= OnAnyAction;
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            InputManagerProvider.Unregister(this);
         }
 
         private void Update()
@@ -97,47 +213,34 @@ namespace LethalInternship.Core.Managers
                 LineRendererUtil = new LineRendererUtil(1, GameNetworkManager.Instance.localPlayerController.transform);
             }
 
-            switch (CurrentInputAction)
+            // Commands system
+            if (CurrentTargetedAbility != null)
             {
-                case EnumInputAction.GoToPosition:
-                    StartScanPositionCoroutine();
-                    UIManager.Instance.ShowInputIcon(isPointedValid);
-                    break;
-
-                case EnumInputAction.FollowMe:
-                    GiveOrderFollowMe();
-                    SetCurrentInputAction(EnumInputAction.None);
-                    break;
-
-                case EnumInputAction.GoToShip:
-                    GiveOrderGoToShip();
-                    SetCurrentInputAction(EnumInputAction.None);
-                    break;
-
-                case EnumInputAction.GoToVehicle:
-                    GiveOrderGoToVehicle();
-                    SetCurrentInputAction(EnumInputAction.None);
-                    break;
-
-                case EnumInputAction.Scavenging:
-                    GiveOrderGoScavenging();
-                    SetCurrentInputAction(EnumInputAction.None);
-                    break;
-
-                case EnumInputAction.None:
-                default:
-                    StopScanPositionCoroutine();
+                // UI
+                UIManager.Instance.HideAll();
+                if (UIManager.Instance.GetPointOfInterestInCenter() != null)
+                {
+                    // Hide if another icon in center
                     UIManager.Instance.HideInputIcon();
-                    break;
+                }
+                else
+                {
+                    UIManager.Instance.ShowInputIcon();
+                }
             }
+        }
 
-            // Hide if another icon in center
-            if (UIManager.Instance.GetPointOfInterestInCenter() != null)
-            {
-                UIManager.Instance.HideInputIcon();
-            }
+        private void LateUpdate()
+        {
+            PreviousTargetedAbility = null;
 
-            CheckOpenCommandsInput();
+            if (isManualEmoteToIgnore > 0) { isManualEmoteToIgnore--; }
+        }
+
+        public void Init()
+        {
+            // Just to trigger lazy loading with Awake
+            PluginLoggerHook.LogDebug?.Invoke("Initializing InputManager...");
         }
 
         private bool IsPerformedValid(PlayerControllerB localPlayer)
@@ -186,105 +289,489 @@ namespace LethalInternship.Core.Managers
             return true;
         }
 
+        private void OnAnyAction(InputAction.CallbackContext ctx)
+        {
+            UpdateInputDevice(ctx);
+
+            // Any action
+            actionMap.TryGetValue(ctx.action, out GameAction gameAction);
+
+            if (gameAction == GameAction.Interact
+                && UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
+                && (ctx.started || ctx.canceled))
+            {
+                if (HoldAction(ctx))
+                    return;
+            }
+
+            if (!InputLock.CanProcessWorldInput)
+                return;
+
+            if (!ctx.performed)
+                return;
+            // Only performed
+
+            // Unknown action
+            if (gameAction == GameAction.Unknown)
+            {
+                Debug.Log($"Unknown action {ctx.action.name}");
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideAll();
+                CancelTargeting();
+                return;
+            }
+
+            // Submitting
+            if (gameAction == GameAction.Interact
+                && UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen)
+            {
+                if (SubmitSelected())
+                    return;
+            }
+
+            // LMB RMB
+            // Directionnal pad
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
+                && IsUsingController)
+            {
+                if (gameAction == GameAction.InspectItem)
+                {
+                    InputAction_PreviousIntern();
+                    return;
+                }
+                if (gameAction == GameAction.PingScan)
+                {
+                    InputAction_NextIntern();
+                    return;
+                }
+
+                if (gameAction == GameAction.QEItemInteract // Default: dpad down -> Do Nothing 
+                    || gameAction == GameAction.ItemSecondaryUse // Default: dpad down -> Do Nothing 
+                    || gameAction == GameAction.ItemTertiaryUse) // Default: dpad up -> Do Nothing 
+                { return; }
+            }
+
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
+                && gameAction == GameAction.Discard) // Try to close
+            {
+                if (UIManager.Instance.CloseSuitPanel())
+                {
+                    return; // Close only suit panel
+                }
+                else if (UIManager.Instance.IsCommandsOneOpen)
+                {
+                    // Return to all command
+                    InputAction_ShowCommandsAll(forceShow: true);
+                    return;
+                }
+            }
+
+            // Only allowed to
+            if (gameAction != GameAction.Use
+                && gameAction != GameAction.ActivateItem // Click
+                && gameAction != GameAction.Look // Move mouse
+                && gameAction != GameAction.Interact // Interact
+                && (IsUsingController && gameAction != GameAction.Move) // Move & D-Pad used for selecting UI with controller 
+                && gameAction != GameAction.SwitchItem) // Scroll
+            {
+                // Not allowed
+                Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
+                UIManager.Instance.HideAll();
+            }
+
+
+
+            // ---------------------------------
+            // If waiting for a targeted ability
+            // ---------------------------------
+            if (CurrentTargetedAbility == null)
+                return;
+
+            // Submitting action
+            if (CurrentTargetedAbility.SubmitActions.Contains(gameAction))
+            {
+                bool actionPerformed = IsUsingController ? true : Mouse.current.leftButton.wasPressedThisFrame;
+                TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+                if (actionPerformed
+                    && target != null)
+                {
+                    Order? order = CurrentTargetedAbility.ResolveTarget(target.Value);
+                    if (order != null)
+                    {
+                        InternManager.Instance.ExecuteOrder(order);
+                        CancelTargeting();
+                    }
+                }
+                return;
+            }
+
+            if (!CurrentTargetedAbility.NotInterruptingActions.Contains(gameAction))
+            {
+                CancelTargeting();
+                return;
+            }
+
+            // Not interrupting action
+            LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
+        }
+
+        public bool HoldAction(InputAction.CallbackContext ctx)
+        {
+            var selected = EventSystem.current.currentSelectedGameObject;
+
+            if (selected == null)
+                return false;
+
+            if (!selected.TryGetComponent<IHoldHandler>(out var handler))
+                return false;
+
+            if (ctx.started)
+            {
+                handler.OnHoldStart();
+            }
+            else if (ctx.canceled)
+            {
+                handler.OnHoldEnd();
+            }
+
+            return true;
+        }
+
+        public bool SubmitSelected()
+        {
+            GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+            if (selected == null)
+                return false;
+
+            ExecuteEvents.Execute(selected,
+                                  new BaseEventData(EventSystem.current),
+                                  ExecuteEvents.submitHandler);
+
+            return true;
+        }
+
+        private void UpdateInputDevice(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Gamepad)
+            {
+                if (ctx.action.activeValueType == typeof(Vector2)
+                    && ctx.ReadValue<Vector2>().sqrMagnitude < 0.001f)
+                    return;
+
+                IsUsingController = true;
+            }
+            else if (ctx.control.device is Keyboard ||
+                     ctx.control.device is Mouse)
+            {
+                IsUsingController = false;
+            }
+        }
+
+        #region Commands System
+
+        public void StartTargeting(TargetedAbility ability)
+        {
+            CurrentTargetedAbility = ability;
+        }
+
+        public void CancelTargeting()
+        {
+            if (CurrentTargetedAbility != null)
+            {
+                PreviousTargetedAbility = CurrentTargetedAbility;
+                CurrentTargetedAbility = null;
+                CommandContextService.Instance.ExitCommandMode();
+                TargetingManager.Instance.SetActiveSearch(TargetingManager.TargetType.Intern);
+                UIManager.Instance.HideInputIcon();
+            }
+        }
+
+        #endregion
+
         #region Command intern
-        private void GiveOrderFollowMe()
+
+        private void CommandButtonController_OnSelected(EnumInputAction typeInputAction)
         {
-            // Give order
-            if (currentCommandedIntern == null)
+            InputLock.BlockThisFrame();
+            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
+                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
+
+            switch (typeInputAction)
             {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandToFollowPlayer();
-                }
+                // Direct orders
+                case EnumInputAction.FollowMe:
+                    new FollowMeAbility(identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_DANCE);
+                    break;
+                case EnumInputAction.StayHere:
+                    new StayHereAbility(identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
+                    break;
+                case EnumInputAction.GoToShip:
+                    new GoToShipAbility(identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
+                    break;
+                case EnumInputAction.GoToVehicle:
+                    new GoToVehicleAbility(identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    LocalPlayerPerformEmote(EMOTE_ID_FINGER_POINTER);
+                    break;
+
+                // Drop item
+                case EnumInputAction.DropItem:
+                    new DropHereAbility(dropAll: false, identitiesToOrder).Activate();
+                    break;
+                case EnumInputAction.DropAllItems:
+                    new DropHereAbility(dropAll: true, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.DropAllItemsInShip:
+                    new DropToAbility(EnumCommandTypes.DropAllItemsToShip, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.DropAllItemsOnGatheringPoint:
+                    new DropToAbility(EnumCommandTypes.DropAllItemsOnGatheringPoint, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.DropAllItemsInCruiser:
+                    new DropToAbility(EnumCommandTypes.DropAllItemsInCruiser, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+
+                // Unload
+                case EnumInputAction.UnloadCruiser:
+                    new UnloadFromAbility(EnumCommandTypes.UnloadCruiser, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.UnloadGatheringPoint:
+                    new UnloadFromAbility(EnumCommandTypes.UnloadGatheringPoint, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+
+                // Scavenge
+                case EnumInputAction.ScavengeToShip:
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToShip, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.ScavengeToCruiser:
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToCruiser, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.ScavengeToGatheringPoint:
+                    new ScavengeToDropLocationAbility(EnumCommandTypes.ScavengingToGatheringPoint, identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+
+                // Update option
+                case EnumInputAction.SetToAutoFlee:
+                    new SetAutoDefenseAbility(autoDefense: false, identitiesToOrder).Activate();
+                    break;
+                case EnumInputAction.SetToAutoDefense:
+                    new SetAutoDefenseAbility(autoDefense: true, identitiesToOrder).Activate();
+                    break;
+
+                // Context ability
+                case EnumInputAction.PointToAction:
+                    new ContextOrderAbility(identitiesToOrder).Activate();
+                    break;
+
+                // UI
+                case EnumInputAction.Close:
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+                case EnumInputAction.ReturnToAll:
+                    InputAction_ShowCommandsAll(forceShow: true);
+                    break;
+                case EnumInputAction.NextIntern:
+                    InputAction_NextIntern();
+                    break;
+                case EnumInputAction.PreviousIntern:
+                    InputAction_PreviousIntern();
+                    break;
+
+                case EnumInputAction.None:
+                default:
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    UIManager.Instance.HideInputIcon();
+                    break;
             }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandToFollowPlayer();
-            }
-            SetCurrentInputAction(EnumInputAction.None);
         }
 
-        private void GiveOrderGoToShip()
+        private void LocalPlayerPerformEmote(int emoteID)
         {
-            Transform? shipTransform = InternManager.Instance.ShipTransform;
-            if (shipTransform == null)
+            var localPlayer = StartOfRound.Instance.localPlayerController;
+            if (!localPlayer.performingEmote)
             {
-                PluginLoggerHook.LogError?.Invoke("InputManager GiveOrderGoToShip shipTransform not found !");
+                localPlayer.performingEmote = true;
+                localPlayer.playerBodyAnimator.SetInteger("emoteNumber", emoteID);
+                localPlayer.StartPerformingEmoteServerRpc();
+                isManualEmoteToIgnore = 2;
+            }
+        }
+
+        private void ButtonSuitsController_OnSuitSelected(EnumInputAction typeInputAction)
+        {
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
+                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
+            switch (typeInputAction)
+            {
+                case EnumInputAction.PreviousSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Previous, identitiesToOrder).Activate();
+                    break;
+                case EnumInputAction.NextSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Next, identitiesToOrder).Activate();
+                    break;
+                case EnumInputAction.SameSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Same, localPlayer.currentSuitID, identitiesToOrder).Activate();
+                    break;
+                case EnumInputAction.RandomSuit:
+                    new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Random, identitiesToOrder).Activate();
+                    break;
+            }
+        }
+
+        private void ButtonSelectSuit_OnSuitSelected(int suitID)
+        {
+            new ChangeSuitAbility(ChangeSuitAbility.SuitSelectionMode.Selected,
+                                  suitID,
+                                  IdentitySelectionService.Instance.GetSelected()
+                                    .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x)))
+                .Activate();
+        }
+
+        private void InternBlockUI_OnSelected()
+        {
+            UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
+            UIManager.Instance.ShowCommandsOne();
+        }
+
+        private void ItemButtonController_OnSelected(GrabbableObject grabbableObject, EnumInputAction typeInputAction)
+        {
+            IInternIdentity? identity = IdentitySelectionService.Instance.GetCurrent();
+            if (identity == null
+                || !identity.Alive
+                || identity.InternAI == null)
+            {
                 return;
             }
 
-            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
-            // Give order
-            if (currentCommandedIntern == null)
+            switch (typeInputAction)
             {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandTo(pointOfInterest);
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandTo(pointOfInterest);
+                case EnumInputAction.SwapWeapon:
+                    identity.InternAI.BeginSwapWeaponWith(grabbableObject);
+                    break;
+
+                case EnumInputAction.ActivateItem:
+                    identity.InternAI.UseItem(grabbableObject);
+                    break;
+
+                case EnumInputAction.DropItem:
+                    identity.InternAI.DropItem(grabbableObject);
+                    break;
             }
         }
 
-        private void GiveOrderGoToVehicle()
+        private void GatheringPoint_OnSelected(EnumInputAction typeInputAction)
         {
-            VehicleController? vehicleController = InternManager.Instance.VehicleController;
-            if (vehicleController == null)
+            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
+                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
+            switch (typeInputAction)
             {
-                PluginLoggerHook.LogDebug?.Invoke("vehicleController not found !");
+                case EnumInputAction.SetGatheringPoint:
+                    new SetGatheringPointAbility(identitiesToOrder).Activate();
+                    break;
+                case EnumInputAction.GoToGatheringPoint:
+                    new GoToGatheringPointAbility(identitiesToOrder).Activate();
+                    CommandContextService.Instance.ExitCommandMode();
+                    UIManager.Instance.HideAll();
+                    break;
+            }
+        }
+
+        private void RemoveGatheringPoint_OnSelected()
+        {
+            InternManager.Instance.SetGatheringPoint(null);
+        }
+
+        #endregion
+
+        #region Input action
+
+        private void InputAction_ShowCommandsAll(bool forceShow = false)
+        {
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
+                && IsUsingController
+                && !forceShow)
+                return;
+
+            CancelTargeting();
+            UIManager.Instance.HideCommandsOne();
+
+            if (UIManager.Instance.IsCommandsAllOpen)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideCommandsAll();
                 return;
             }
 
-            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(vehicleController);
-            // Give order
-            if (currentCommandedIntern == null)
+            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
+            IdentitySelectionService.Instance.SelectAll();
+
+            CommandContextService.Instance.EnterCommandMode();
+            UIManager.Instance.ShowCommandsAll();
+        }
+
+        private void InputAction_NextIntern()
+        {
+            IInternIdentity? next = IdentitySelectionService.Instance
+                                                .NextWhere(i => IdentityManager.Instance.IsIdentityValidToCommand(i));
+            if (next != null)
             {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandTo(pointOfInterest);
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandTo(pointOfInterest);
+                IdentitySelectionService.Instance.SelectSingle(next);
+                if (UIManager.Instance.IsCommandsAllOpen)
+                    InternBlockUI_OnSelected();
+                else
+                    UIManager.Instance.RefreshCommandsOne();
             }
         }
 
-        private void GiveOrderGoScavenging()
+        private void InputAction_PreviousIntern()
         {
-            // Give order
-            if (currentCommandedIntern == null)
+            IInternIdentity? previous = IdentitySelectionService.Instance
+                                                    .PreviousWhere(i => IdentityManager.Instance.IsIdentityValidToCommand(i));
+            if (previous != null)
             {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandToScavenging();
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandToScavenging();
+                IdentitySelectionService.Instance.SelectSingle(previous);
+                if (UIManager.Instance.IsCommandsAllOpen)
+                    InternBlockUI_OnSelected();
+                else
+                    UIManager.Instance.RefreshCommandsOne();
             }
         }
 
-        public void SetCurrentInputAction(EnumInputAction action, IInternAI? internAIToCommand = null)
-        {
-            currentInputAction = action;
-            this.currentCommandedIntern = internAIToCommand;
-        }
+        #endregion
+
+        #region Shortcut performed
 
         private void Manage_performed(InputAction.CallbackContext obj)
         {
@@ -294,297 +781,30 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Check if we are giving orders
-            IPointOfInterest? pointOfInterest;
-
-            // Get point in center
-            pointOfInterest = UIManager.Instance.GetPointOfInterestInCenter();
-
-            // No point of interest pointed
-            if (pointOfInterest == null)
-            {
-                if (lastColliderHit != null && IsColliderFromVehicle(lastColliderHit))
-                {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrVehicleInterestPoint(lastColliderHit.gameObject.GetComponentInParent<VehicleController>());
-                }
-                else if (lastColliderHit != null && IsColliderFromShip(lastColliderHit))
-                {
-                    Transform? shipTransform = GetParentShip(lastColliderHit.gameObject.transform);
-                    if (shipTransform != null)
-                    {
-                        pointOfInterest = InternManager.Instance.GetPointOfInterestOrShipInterestPoint(shipTransform);
-                    }
-                }
-                else if (isPointedValid
-                         && lastPointedHitPoint.HasValue)
-                {
-                    pointOfInterest = InternManager.Instance.GetPointOfInterestOrDefaultInterestPoint(lastPointedHitPoint.Value);
-                }
-            }
-            isPointedValid = false;
-            lastColliderHit = null;
-            lastPointedHitPoint = null;
-
-            // If still nothing, maybe try manage intern
-            if (pointOfInterest == null)
-            {
-                if (CurrentInputAction == EnumInputAction.None)
-                {
-                    TryManageIntern();
-                    return;
-                }
-
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
-            }
 
-            // Give orders
-            if (currentCommandedIntern == null)
-            {
-                // All owned interns (later close interns)
-                IInternAI[] internsOwned = InternManager.Instance.GetInternsAIOwnedByLocal();
-                foreach (IInternAI intern in internsOwned)
-                {
-                    intern.SetCommandTo(pointOfInterest);
-                }
-            }
-            else
-            {
-                // Current intern
-                currentCommandedIntern.SetCommandTo(pointOfInterest);
-            }
-            SetCurrentInputAction(EnumInputAction.None);
-        }
-
-        private void TryManageIntern()
-        {
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-
-            // Use of interact key to assign intern to player
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                if (intern.OwnerClientId != localPlayer.actualClientId)
-                {
-                    intern.SyncAssignTargetAndSetMovingTo(localPlayer);
-
-                    if (PluginRuntimeProvider.Context.Config.ChangeSuitAutoBehaviour)
-                    {
-                        intern.ChangeSuitInternServerRpc(player.playerClientId, localPlayer.currentSuitID);
-                    }
-                }
-
-                //HUDManager.Instance.ClearControlTips();
-                //HUDManager.Instance.ChangeControlTipMultiple(new string[] { Const.TOOLTIPS_ORDER_1 });
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
                 return;
-            }
-        }
 
-        private void CheckOpenCommandsInput()
-        {
-            if (!PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsIntern.IsPressed())
-            {
-                openCommandsInternInputIsPressed = false;
-                UIManager.Instance.HideCommandsWheel();
+            IInternAI intern = target.Value.Intern;
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() > localPlayer.grabDistance * localPlayer.grabDistance)
                 return;
-            }
 
-            // If already open, do nothing
-            if (openCommandsInternInputIsPressed)
+            if (intern.OwnerClientId != localPlayer.actualClientId)
             {
-                return;
-            }
+                intern.SyncAssignTargetAndSetMovingTo(localPlayer);
 
-            StopScanPositionCoroutine();
-            openCommandsInternInputIsPressed = true;
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-
-            // Check if pointing intern
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
+                if (PluginRuntimeProvider.Context.Config.ChangeSuitAutoBehaviour)
                 {
-                    continue;
+                    intern.ChangeSuitInternServerRpc(intern.Npc.playerClientId, localPlayer.currentSuitID);
                 }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                // Command single intern
-                if (UIManager.Instance.ShowCommandsWheel(intern))
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern {intern.Npc.playerUsername}");
-                    currentCommandedIntern = intern;
-                }
-                return;
-            }
-
-            // Command all close interns
-            if (UIManager.Instance.ShowCommandsWheel())
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"currentCommandedIntern null");
-                currentCommandedIntern = null;
             }
         }
 
-        private void StartScanPositionCoroutine()
-        {
-            if (scanPositionCoroutine == null)
-            {
-                scanPositionCoroutine = StartCoroutine(ScanPosition());
-            }
-        }
-
-        private void StopScanPositionCoroutine()
-        {
-            if (scanPositionCoroutine != null)
-            {
-                StopCoroutine(scanPositionCoroutine);
-                scanPositionCoroutine = null;
-            }
-        }
-
-        private IEnumerator ScanPosition()
-        {
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-
-            while (CurrentInputAction == EnumInputAction.GoToPosition)
-            {
-                isPointedValid = false;
-                lastColliderHit = null;
-
-                // Scan 3D world
-                Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-                RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, 100f, StartOfRound.Instance.walkableSurfacesMask);
-                if (raycastHits.Length == 0)
-                {
-                    UIManager.Instance.SetPedestrianInputIcon();
-                    yield return null;
-                    continue;
-                }
-
-                Vector3? lastHitPoint = null;
-                raycastHits = raycastHits.OrderBy(x => x.distance).ToArray();
-                NavMeshPath path = new NavMeshPath();
-                // Check if looking too far in the distance or at a valid position
-                foreach (var hit in raycastHits)
-                {
-                    if (hit.distance < 1f)
-                    {
-                        continue;
-                    }
-
-                    if (hit.collider.tag == "Player")
-                    {
-                        continue;
-                    }
-
-                    lastHitPoint = hit.point;
-
-                    // Check for what we hit
-                    if (IsColliderFromVehicle(hit.collider))
-                    {
-                        lastColliderHit = hit.collider;
-                        isPointedValid = true;
-                        UIManager.Instance.SetVehicleInputIcon();
-                        break;
-                    }
-                    else if (IsColliderFromShip(hit.collider))
-                    {
-                        lastColliderHit = hit.collider;
-                        isPointedValid = true;
-                        UIManager.Instance.SetShipInputIcon();
-                        break;
-                    }
-                    //PluginLoggerHook.LogDebug?.Invoke($"hit {hit.collider.gameObject.GetComponentInParent<VehicleController>()} trans : {hit.collider.gameObject.transform}, {hit.collider.gameObject.transform.parent?.transform}, {hit.collider.gameObject.transform.parent?.parent?.transform}");
-
-                    // Pedestrian
-                    UIManager.Instance.SetPedestrianInputIcon();
-                    lastPointedHitPoint = hit.point;
-                    isPointedValid = lastHitPoint != null;
-
-                    break;
-                }
-                yield return null;
-            }
-
-            isPointedValid = false;
-            yield break;
-        }
-
-        private bool IsColliderFromVehicle(Collider? collider)
-        {
-            return collider?.gameObject.GetComponentInParent<VehicleController>();
-        }
-
-        private bool IsColliderFromShip(Collider? collider)
-        {
-            return IsParentShip(collider?.gameObject.transform);
-        }
-
-        private bool IsParentShip(Transform? transform)
-        {
-            if (transform == null)
-            {
-                return false;
-            }
-
-            if (transform.name == "HangarShip")
-            {
-                return true;
-            }
-
-            return IsParentShip(transform.parent);
-        }
-
-        private Transform? GetParentShip(Transform? transform)
-        {
-            if (transform == null)
-            {
-                return null;
-            }
-
-            if (transform.name == "HangarShip")
-            {
-                return transform;
-            }
-
-            return GetParentShip(transform.parent);
-        }
-
-        #endregion
-
-        #region Give/Take Item
-
-        private void GiveTakeItem_performed(InputAction.CallbackContext obj)
+        private void GiveItemToIntern_performed(InputAction.CallbackContext obj)
         {
             PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
             if (!IsPerformedValid(localPlayer))
@@ -592,69 +812,45 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // Make an intern drop his object
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB internController = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (internController == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)internController.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                // To cut Discard_performed from triggering after this input
-                FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                fieldInfo.SetValue(localPlayer, 0f);
-
-                // Player has no item to give
-                if (localPlayer.currentlyHeldObjectServer == null)
-                {
-                    // Intern just drop item
-                    GrabbableObject? itemToDrop = intern.ChooseLastPickedUpItem(EnumOptionsGetItems.ChooseWeaponLast);
-                    if (itemToDrop != null)
-                    {
-                        intern.DropItem(itemToDrop);
-                    }
-                }
-                else // Player has an item to give
-                {
-                    if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
-                    {
-                        if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
-                        {
-                            intern.DropTwoHandItem();
-                        }
-                        else
-                        {
-                            GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All);
-                            if (itemToDrop != null)
-                            {
-                                intern.DropItem(itemToDrop);
-                            }
-                        }
-                    }
-
-                    // Intern take item from player hands
-                    intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
-                }
-
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
+
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
+                return;
+
+            IInternAI intern = target.Value.Intern;
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() > localPlayer.grabDistance * localPlayer.grabDistance)
+                return;
+
+            // To cut Discard_performed from triggering after this input
+            FieldInfo fieldInfo = typeof(PlayerControllerB).GetField("timeSinceSwitchingSlots", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            fieldInfo.SetValue(localPlayer, 0f);
+
+            // Player has an item to give
+            if (localPlayer.currentlyHeldObjectServer != null)
+            {
+                if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
+                {
+                    if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
+                    {
+                        intern.DropTwoHandItem();
+                    }
+                    else
+                    {
+                        GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(EnumOptionsGetItems.IgnoreWeapon);
+                        if (itemToDrop != null)
+                        {
+                            intern.DropItem(itemToDrop);
+                        }
+                    }
+                }
+
+                // Intern take item from player hands
+                intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
             }
         }
-
-        #endregion
 
         private void GrabIntern_performed(InputAction.CallbackContext obj)
         {
@@ -664,34 +860,21 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-                intern.SyncAssignTargetAndSetMovingTo(localPlayer);
-                // Grab intern
-                intern.GrabInternServerRpc(localPlayer.playerClientId);
-
-                UIManager.Instance.UpdateControlTip();
+            if (UIManager.Instance.IsAnyMenuOpen)
                 return;
-            }
+
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
+                return;
+
+            IInternAI intern = target.Value.Intern;
+            if (intern.NpcController.GetSqrDistanceWithLocalPlayer() > localPlayer.grabDistance * localPlayer.grabDistance)
+                return;
+
+            intern.SyncAssignTargetAndSetMovingTo(localPlayer);
+            // Grab intern
+            intern.GrabInternServerRpc(localPlayer.playerClientId);
         }
 
         private void ReleaseInterns_performed(InputAction.CallbackContext obj)
@@ -709,6 +892,9 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
+            if (UIManager.Instance.IsAnyMenuOpen)
+                return;
+
             // No intern in interact range
             // Check if we hold interns
             IInternAI[] internsAIsHoldByPlayer = InternManager.Instance.GetInternsAiHoldByPlayer((int)localPlayer.playerClientId);
@@ -719,53 +905,58 @@ namespace LethalInternship.Core.Managers
                     internsAIsHoldByPlayer[i].SyncReleaseIntern(localPlayer);
                 }
             }
-
-            HUDManager.Instance.ClearControlTips();
         }
 
-        private void ChangeSuitIntern_performed(InputAction.CallbackContext obj)
+        private void OpenAllCommandsIntern_performed(InputAction.CallbackContext obj)
         {
-            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
-            if (!IsPerformedValid(localPlayer))
-            {
-                return;
-            }
+            InputLock.BlockThisFrame();
 
-            // Use of change suit key to change suit of intern
-            Ray interactRay = new Ray(localPlayer.gameplayCamera.transform.position, localPlayer.gameplayCamera.transform.forward);
-            RaycastHit[] raycastHits = Physics.RaycastAll(interactRay, localPlayer.grabDistance, Const.PLAYER_MASK);
-            foreach (RaycastHit hit in raycastHits)
-            {
-                if (hit.collider.tag != "Player")
-                {
-                    continue;
-                }
-
-                PlayerControllerB player = hit.collider.gameObject.GetComponent<PlayerControllerB>();
-                if (player == null)
-                {
-                    continue;
-                }
-                IInternAI? intern = InternManager.Instance.GetInternAI((int)player.playerClientId);
-                if (intern == null
-                    || intern.IsSpawningAnimationRunning())
-                {
-                    continue;
-                }
-
-
-                if (intern.NpcController.Npc.currentSuitID == localPlayer.currentSuitID)
-                {
-                    intern.ChangeSuitInternServerRpc(intern.NpcController.Npc.playerClientId, 0);
-                }
-                else
-                {
-                    intern.ChangeSuitInternServerRpc(intern.NpcController.Npc.playerClientId, localPlayer.currentSuitID);
-                }
-
-                return;
-            }
+            InputAction_ShowCommandsAll();
         }
 
+        private void OpenCommandsOneIntern_performed(InputAction.CallbackContext obj)
+        {
+            if (UIManager.Instance.IsAnyCommandsMenuOpenOrWasOpen
+                && IsUsingController)
+                return;
+
+            if (UIManager.Instance.IsCommandsOneOpen)
+            {
+                CommandContextService.Instance.ExitCommandMode();
+                UIManager.Instance.HideCommandsOne();
+                return;
+            }
+
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
+                return;
+
+            InputLock.BlockThisFrame();
+
+            CancelTargeting();
+            UIManager.Instance.HideCommandsAll(resetCameraFocus: false);
+
+            IdentitySelectionService.Instance.Refresh(IdentityManager.Instance.GetIdentitiesSpawned());
+            IdentitySelectionService.Instance.SelectSingle(target.Value.Intern.InternIdentity);
+
+            CommandContextService.Instance.EnterCommandMode();
+            UIManager.Instance.ShowCommandsOne();
+        }
+
+        #endregion
+
+        public static class InputLock
+        {
+            static int blockedFrame = -1;
+
+            public static bool CanProcessWorldInput =>
+                Time.frameCount != blockedFrame;
+
+            public static void BlockThisFrame()
+            {
+                blockedFrame = Time.frameCount;
+            }
+        }
     }
 }

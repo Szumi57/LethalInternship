@@ -8,6 +8,9 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// </summary>
     public class InverterNode : IParentBehaviourTreeNode, IPrintableNode
     {
+        private readonly List<IPrintableNode> printableChildren = new List<IPrintableNode>();
+        public IReadOnlyList<IPrintableNode> PrintableChildren => printableChildren;
+
         /// <summary>
         /// Name of the node.
         /// </summary>
@@ -16,20 +19,8 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// <summary>
         /// The child to be inverted.
         /// </summary>
-        private IBehaviourTreeNode childNode;
+        private IBehaviourTreeNode childNode = null!;
 
-        public List<IPrintableNode> PrintableChildren
-        {
-            get
-            {
-                if (childNode is IPrintableNode)
-                {
-                    return new List<IPrintableNode>() { (IPrintableNode)childNode };
-                }
-
-                return new List<IPrintableNode>();
-            }
-        }
         public string Name { get { return name; } }
         public string NodeType { get { return "inverter"; } }
         public string NodeTypeSign { get { return "<->"; } }
@@ -72,6 +63,11 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
             }
 
             this.childNode = child;
+
+            if (childNode is IPrintableNode)
+            {
+                printableChildren.Add((IPrintableNode)childNode);
+            }
         }
 
         public List<IBehaviourTreeNode> Children()

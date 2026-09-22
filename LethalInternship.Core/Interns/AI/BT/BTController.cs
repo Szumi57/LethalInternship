@@ -2,7 +2,6 @@
 using LethalInternship.Core.Interns.AI.BT.ActionNodes;
 using LethalInternship.Core.Interns.AI.BT.ConditionNodes;
 using LethalInternship.Core.Interns.AI.CoroutineControllers;
-using LethalInternship.Core.Interns.AI.Dijkstra;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Managers;
@@ -10,6 +9,7 @@ using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 
 namespace LethalInternship.Core.Interns.AI.BT
@@ -29,6 +29,13 @@ namespace LethalInternship.Core.Interns.AI.BT
 
         // Data context
         private BTContext BTContext = null!;
+
+        private DJKMovingPoint _movingPlayerPoint = new DJKMovingPoint();
+        private DJKMovingPoint _movingEnemyPoint = new DJKMovingPoint();
+        private DJKItemPoint _itemPoint = new DJKItemPoint();
+        private DJKStaticPoint _staticInterestPoint = new DJKStaticPoint();
+        private DJKVehiclePoint _vehiclePoint = new DJKVehiclePoint("Cruiser interest point");
+        private IDJKPoint? _tempPoint;
 
         public BTController(InternAI internAI)
         {
@@ -77,9 +84,13 @@ namespace LethalInternship.Core.Interns.AI.BT
             {
                 { "AttackEnemy", new AttackEnemy() },
                 { "CalculateNextPathPoint", new CalculateNextPathPoint() },
+                { "CancelGoAttack", new CancelGoAttack() },
                 { "CancelGoToItem", new CancelGoToItem() },
+                { "CheckForEnemies", new CheckForEnemies() },
+                { "CheckForItemsInCruiser", new CheckForItemsInCruiser() },
                 { "CheckForItemsInMap", new CheckForItemsInMap() },
                 { "CheckForItemsInRange", new CheckForItemsInRange() },
+                { "CheckForItemsNearGatheringPoint", new CheckForItemsNearGatheringPoint() },
                 { "CheckLOSForClosestPlayer", new CheckLOSForClosestPlayer() },
                 { "Chill", new Chill() },
                 { "DropAllItems", new DropAllItems() },
@@ -93,63 +104,71 @@ namespace LethalInternship.Core.Interns.AI.BT
                 { "InVehicle", new InVehicle() },
                 { "LookingAround", new LookingAround() },
                 { "LookingForPlayer", new LookingForPlayer() },
-                { "SetNextDestToShip", new SetNextDestToShip() },
+                { "ResetDestToCruiser", new ResetDestToCruiser() },
                 { "UnequipWeapon", new EquipUnequipWeapon(equip: false) },
+                { "UpdateDestCruiser", new UpdateDestCruiser() },
+                { "UpdateDestPos", new UpdateDestPos() },
                 { "UpdateLastKnownPos", new UpdateLastKnownPos() },
                 { "VoiceScavenging", new VoiceScavenging() },
+                { "WaitForCommand", new WaitForCommand() },
             };
 
             // Condition nodes
             conditions = new Dictionary<string, IBTCondition>()
             {
                 { "AreFreeSlotsAvailable", new AreFreeSlotsAvailable() },
-                { "EnemySeen", new EnemySeen() },
+                { "CanAttackEnemy", new CanAttackEnemy() },
                 { "HasItemAndInShip", new HasItemAndInShip() },
                 { "IsAutoDefense", new IsAutoDefense() },
+                { "IsCommandDropAllItemsInCruiser", new IsCommandThis(EnumCommandTypes.DropAllItemsInCruiser) },
+                { "IsCommandDropAllItemsToPos", new IsCommandThis(new EnumCommandTypes[] { EnumCommandTypes.DropAllItemsToShip, EnumCommandTypes.DropAllItemsOnGatheringPoint }) },
                 { "IsCommandFollowPlayer", new IsCommandThis(EnumCommandTypes.FollowPlayer) },
+                { "IsCommandGoFetchItem", new IsCommandThis(EnumCommandTypes.GoFetchItem) },
                 { "IsCommandGoToVehicle", new IsCommandThis(EnumCommandTypes.GoToVehicle) },
                 { "IsCommandGoToPosition", new IsCommandThis(EnumCommandTypes.GoToPosition) },
-                { "IsCommandWait", new IsCommandThis(EnumCommandTypes.Wait) },
-                { "IsCommandScavengingMode", new IsCommandThis(EnumCommandTypes.ScavengingMode) },
+                { "IsCommandScavengingMode", new IsCommandThis(new EnumCommandTypes[] { EnumCommandTypes.ScavengingToShip, EnumCommandTypes.ScavengingToCruiser, EnumCommandTypes.ScavengingToGatheringPoint }) },
+                { "IsCommandScavengingToPos", new IsCommandThis(new EnumCommandTypes[] { EnumCommandTypes.ScavengingToShip, EnumCommandTypes.ScavengingToGatheringPoint }) },
+                { "IsCommandScavengingToCruiser", new IsCommandThis(EnumCommandTypes.ScavengingToCruiser) },
+                { "IsCommandUnloadCruiser", new IsCommandThis(EnumCommandTypes.UnloadCruiser) },
+                { "IsCommandUnloadGatheringPoint", new IsCommandThis(EnumCommandTypes.UnloadGatheringPoint) },
+                { "IsCommandWaitForCommand", new IsCommandThis(EnumCommandTypes.WaitForCommand) },
+                { "IsCommandKill", new IsCommandThis(EnumCommandTypes.Kill) },
+                { "IsInDanger", new IsInDanger() },
                 { "IsInternInVehicle", new IsInternInVehicle() },
                 { "IsLastKnownPositionValid", new IsLastKnownPositionValid() },
+                { "IsStillInCombat", new IsStillInCombat() },
                 { "IsTargetInVehicle", new IsTargetInVehicle() },
                 { "IsTargetItemValid", new IsTargetItemValid() },
                 { "TargetValid", new TargetValid() },
+                { "TooFarFromCruiser", new TooFarFromCruiser() },
                 { "TooFarFromEnemy", new TooFarFromEnemy() },
                 { "TooFarFromObject", new TooFarFromObject() },
                 { "TooFarFromPos", new TooFarFromPos() },
-                { "TooFarFromVehicle", new TooFarFromVehicle() }
             };
         }
 
         private void InitContext(InternAI internAI)
         {
-            DJKPointMapper mapper = new DJKPointMapper();
-            mapper.Register<DefaultInterestPoint>(ip => new DJKStaticPoint(ip.Point));
-            mapper.Register<ShipInterestPoint>(ip => new DJKStaticPoint(ip.Point));
-            mapper.Register<VehicleInterestPoint>(ip => new DJKVehiclePoint(ip.VehicleTransform, "Cruiser"));
-
             BTContext = new BTContext()
             {
                 InternAI = internAI,
 
-                PathController = new PathController(),
-                DJKPointMapper = mapper,
-
                 searchForPlayers = this.searchForPlayers,
 
                 LookingAroundCoroutineController = CoroutineControllers[0],
-                PanikCoroutine = CoroutineControllers[1],
-                searchingWanderCoroutineController = CoroutineControllers[2],
-                CalculatePathCoroutineController = CoroutineControllers[3],
+                searchingWanderCoroutineController = CoroutineControllers[1],
+                CalculatePathCoroutineController = CoroutineControllers[2],
+                ChillCoroutine = CoroutineControllers[3],
             };
         }
 
         public void ResetContextNewCommandFollowPlayer()
         {
-            BTContext.PathController.ResetPathAndIndex();
-            BTContext.PathController.SetNewDestination(new DJKMovingPoint(BTContext.InternAI.targetPlayer.transform, $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}"));
+            _movingPlayerPoint.Transform = BTContext.InternAI.targetPlayer.transform;
+            _movingPlayerPoint.Name = $"targetPlayer {BTContext.InternAI.targetPlayer.playerUsername}";
+
+            BTContext.PathController.Reset();
+            BTContext.PathfindingContext.SetDestination(_movingPlayerPoint.Clone(InternManager.Instance.Pools));
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -158,11 +177,40 @@ namespace LethalInternship.Core.Interns.AI.BT
             IInterestPoint? interestPoint = pointOfInterest.GetInterestPoint();
             if (interestPoint == null)
             {
-                PluginLoggerHook.LogError?.Invoke("SetNextDestInterestPoint interestPoint is null");
+                PluginLoggerHook.LogError?.Invoke("ResetContextNewCommandToInterestPoint interestPoint is null");
                 return;
             }
 
-            BTContext.PathController.SetNewDestination(BTContext.DJKPointMapper.Map(interestPoint));
+            switch (interestPoint)
+            {
+                case GatheringInterestPoint gp:
+                    _staticInterestPoint.Position = gp.Point;
+                    _staticInterestPoint.Name = "Gathering point interest point";
+                    _tempPoint = _staticInterestPoint;
+                    break;
+                case PositionInterestPoint pp:
+                    _staticInterestPoint.Position = pp.Point;
+                    _staticInterestPoint.Name = "Position interest point";
+                    _tempPoint = _staticInterestPoint;
+                    break;
+                case ShipInterestPoint sp:
+                    _staticInterestPoint.Position = sp.Point;
+                    _staticInterestPoint.Name = "Ship interest point";
+                    _tempPoint = _staticInterestPoint;
+                    break;
+                case VehicleInterestPoint vp:
+                    _vehiclePoint.Transform = vp.VehicleTransform;
+                    _tempPoint = _vehiclePoint;
+                    break;
+            }
+            if (_tempPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("ResetContextNewCommandToInterestPoint _tempPoint is null");
+                return;
+            }
+
+            BTContext.PathfindingContext.SetDestination(_tempPoint.Clone(InternManager.Instance.Pools));
+            BTContext.PathController.Reset();
             BTContext.TargetItem = null;
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
@@ -170,12 +218,86 @@ namespace LethalInternship.Core.Interns.AI.BT
         {
             BTContext.TargetItem = null;
             BTContext.cancelScavenging = false;
+            BTContext.PathController.Reset();
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandGoFetchItem(GrabbableObject itemToFetch)
+        {
+            BTContext.TargetItem = itemToFetch;
+
+            _itemPoint.Transform = itemToFetch.transform;
+            _itemPoint.GrabDistance = BTContext.InternAI.Npc.grabDistance * PluginRuntimeProvider.Context.Config.InternSizeScale;
+            _itemPoint.SetName(itemToFetch);
+            BTContext.PathfindingContext.SetDestination(_itemPoint.Clone(InternManager.Instance.Pools));
+            BTContext.PathController.Reset();
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextAttackEnemy(EnemyAI enemy)
+        {
+            _movingEnemyPoint.Transform = enemy.transform;
+            _movingEnemyPoint.Name = $"targetEnemy {enemy.enemyType.enemyName}";
+            BTContext.PathController.Reset();
+            BTContext.PathfindingContext.SetDestination(_movingEnemyPoint.Clone(InternManager.Instance.Pools));
+            BTContext.CurrentEnemy = enemy;
+            BTContext.TargetItem = null;
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandDropToPos(IPointOfInterest pointOfInterest)
+        {
+            IInterestPoint? interestPoint = pointOfInterest.GetInterestPoint();
+            if (interestPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("ResetContextNewCommandDropToPos interestPoint is null");
+                return;
+            }
+
+            BTContext.TargetItem = null;
+            _staticInterestPoint.Position = interestPoint.Point;
+            BTContext.PathfindingContext.SetDestination(_staticInterestPoint.Clone(InternManager.Instance.Pools));
+            BTContext.PathController.Reset();
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandDropToCruiser()
+        {
+            BTContext.TargetItem = null;
+            BTContext.PathController.Reset();
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandUnloadFromCruiser()
+        {
+            BTContext.TargetItem = null;
+            BTContext.PathController.Reset();
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+        public void ResetContextNewCommandUnloadFromPos(IPointOfInterest pointOfInterest)
+        {
+            IInterestPoint? interestPoint = pointOfInterest.GetInterestPoint();
+            if (interestPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke("ResetContextNewCommandDropToPos interestPoint is null");
+                return;
+            }
+
+            BTContext.TargetItem = null;
+            BTContext.PathController.Reset();
+            _staticInterestPoint.Position = interestPoint.Point;
+            BTContext.PathfindingContext.SetDestination(_staticInterestPoint.Clone(InternManager.Instance.Pools));
+            InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
+        }
+
+        public void ResetContext()
+        {
+            BTContext.PathController.Reset();
             InternManager.Instance.CancelBatch((int)BTContext.InternAI.Npc.playerClientId);
         }
 
         public EnemyAI? GetTarget()
         {
             return BTContext.CurrentEnemy;
+        }
+        public GrabbableObject? GetTargetItem()
+        {
+            return BTContext.TargetItem;
         }
 
         private IBehaviourTreeNode CreateTree()
@@ -184,14 +306,41 @@ namespace LethalInternship.Core.Interns.AI.BT
             return builder
                 .Selector("Panik or commands")
 
-                    .Sequence("Enemy close ?")
-                        .Condition("<EnemySeen>", t => conditions["EnemySeen"].Condition(BTContext))
-                        .Splice(CreateSubTreePanik())
+                    .Sequence("Command kill enemy ?")
+                        .Condition("<IsCommandKill>", t => conditions["IsCommandKill"].Condition(BTContext))
+                        .Selector("Can attack enemy or cancel ?")
+                            .Sequence("Go attack if can")
+                                .Condition("<CanAttackEnemy>", t => conditions["CanAttackEnemy"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoAttack())
+                            .End()
+                            .Do("CancelGoAttack", t => actions["CancelGoAttack"].Action(BTContext))
+                        .End()
+                    .End()
+
+                    .Sequence("Is in danger ?")
+                        .Do("CheckForEnemies", t => actions["CheckForEnemies"].Action(BTContext))
+                        .Condition("<IsInDanger>", t => conditions["IsInDanger"].Condition(BTContext))
+
+                        .Selector("Attack or flee")
+                            .Sequence("Attack if auto defense ok")
+                                .Condition("<IsAutoDefense>", t => conditions["IsAutoDefense"].Condition(BTContext))
+                                .Condition("<CanAttackEnemy>", t => conditions["CanAttackEnemy"].Condition(BTContext))
+                                .Condition("<IsStillInCombat>", t => conditions["IsStillInCombat"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoAttack())
+                            .End()
+                            .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
+                        .End()
                     .End()
 
                     .Sequence("Follow orders")
                         .Do("UnequipWeapon", t => actions["UnequipWeapon"].Action(BTContext))
                         .Selector("Check commands")
+
+                            .Sequence("Command wait for commands")
+                                .Condition("<isCommand WaitForCommand>", t => conditions["IsCommandWaitForCommand"].Condition(BTContext))
+                                .Do("WaitForCommand", t => actions["WaitForCommand"].Action(BTContext))
+                            .End()
+
                             .Sequence("Command go to position")
                                 .Condition("<isCommand GoToPosition>", t => conditions["IsCommandGoToPosition"].Condition(BTContext))
                                 .Selector("Go to position")
@@ -206,10 +355,28 @@ namespace LethalInternship.Core.Interns.AI.BT
 
                             .Sequence("Command go to vehicle")
                                 .Condition("<isCommand GoToVehicle>", t => conditions["IsCommandGoToVehicle"].Condition(BTContext))
-                                .Splice(CreateSubTreeGoToVehicle())
+                                .Splice(CreateSubTreeGoToVehicle(actionInCruiser: "InVehicle"))
                             .End()
 
-                            .Sequence("Fetch object")
+                            .Sequence("Command GoFetchItem")
+                                .Condition("<isCommand GoFetchItem>", t => conditions["IsCommandGoFetchItem"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoFetchItem())
+                            .End()
+
+                            .Sequence("Command drop items to position")
+                                .Condition("<IsCommandDropAllItemsToPos>", t => conditions["IsCommandDropAllItemsToPos"].Condition(BTContext))
+                                .Selector("Go to position or drop object")
+                                    .Splice(CreateSubTreeGoToPosition())
+                                    .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Command drop items in cruiser")
+                                .Condition("<IsCommandDropAllItemsInCruiser>", t => conditions["IsCommandDropAllItemsInCruiser"].Condition(BTContext))
+                                .Splice(CreateSubTreeGoToVehicle(actionInCruiser: "DropAllItems"))
+                            .End()
+
+                            .Sequence("Fetch object casually")
                                 .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
                                 .Do("CheckForItemsInRange", t => actions["CheckForItemsInRange"].Action(BTContext))
                                 .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
@@ -225,9 +392,19 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .Splice(CreateSubTreeFollowPlayer())
                             .End()
 
+                            .Sequence("Command Unload from cruiser")
+                                .Condition("<IsCommandUnloadCruiser>", t => conditions["IsCommandUnloadCruiser"].Condition(BTContext))
+                                .Splice(CreateSubTreeUnloadCruiser())
+                            .End()
+
+                            .Sequence("Command Unload from gathering point")
+                                .Condition("<IsCommandUnloadGatheringPoint>", t => conditions["IsCommandUnloadGatheringPoint"].Condition(BTContext))
+                                .Splice(CreateSubTreeUnloadGatheringPoint())
+                            .End()
+
                             .Sequence("Command scavenging")
                                 .Condition("<isCommand ScavengingMode>", t => conditions["IsCommandScavengingMode"].Condition(BTContext))
-                                .Splice(CreateSubScavenging())
+                                .Splice(CreateSubTreeScavenging())
                             .End()
 
                         //.Do("checkLOSForClosestPlayer", t => actions["CheckLOSForClosestPlayer"].Action(BTContext))
@@ -282,23 +459,28 @@ namespace LethalInternship.Core.Interns.AI.BT
                 .Build();
         }
 
-        private IBehaviourTreeNode CreateSubTreeGoToVehicle()
+        private IBehaviourTreeNode CreateSubTreeGoToVehicle(string actionInCruiser)
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                .Selector("Go to vehicle")
-                    .Sequence("In vehicle")
-                        .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
-                        .Do("inVehicle", t => actions["InVehicle"].Action(BTContext))
+                .Sequence("Go to cruiser")
+                    .Do("UpdateDestCruiser", t => actions["UpdateDestCruiser"].Action(BTContext))
+                    .Selector("Enter cruiser")
+                        .Sequence(actionInCruiser)
+                            .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                            .Do(actionInCruiser, t => actions[actionInCruiser].Action(BTContext))
+                        .End()
+                        .Sequence("Go to position if too far")
+                            .Condition("<tooFarFromPos>", t => conditions["TooFarFromPos"].Condition(BTContext))
+                            .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
+                            .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
+                        .End()
+                        .Sequence("Too far from cruiser ?")
+                            .Condition("<TooFarFromCruiser>", t => conditions["TooFarFromCruiser"].Condition(BTContext))
+                            .Do("ResetDestToCruiser", t => actions["ResetDestToCruiser"].Action(BTContext))
+                        .End()
+                        .Do("EnterVehicle", t => actions["EnterVehicle"].Action(BTContext))
                     .End()
-
-                    .Sequence("Go to vehicle")
-                        .Condition("<tooFarFromVehicle>", t => conditions["TooFarFromVehicle"].Condition(BTContext))
-                        .Do("CalculateNextPathPoint", t => actions["CalculateNextPathPoint"].Action(BTContext))
-                        .Do("goToPosition", t => actions["GoToPosition"].Action(BTContext))
-                    .End()
-
-                    .Do("enterVehicle", t => actions["EnterVehicle"].Action(BTContext))
                 .End()
                 .Build();
         }
@@ -310,7 +492,7 @@ namespace LethalInternship.Core.Interns.AI.BT
                 .Selector("Should follow player")
                     .Sequence("Target in vehicle")
                         .Condition("<isTargetInVehicle>", t => conditions["IsTargetInVehicle"].Condition(BTContext))
-                        .Splice(CreateSubTreeGoToVehicle())
+                        .Splice(CreateSubTreeGoToVehicle(actionInCruiser: "InVehicle"))
                     .End()
 
                     .Sequence("Follow player")
@@ -331,37 +513,35 @@ namespace LethalInternship.Core.Interns.AI.BT
                 .Build();
         }
 
-        private IBehaviourTreeNode CreateSubTreePanik()
+        private IBehaviourTreeNode CreateSubTreeGoAttack()
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                        .Selector("Auto defense or flee")
+                        .Selector("Go to enemy or attack")
                             .Sequence("Attack if auto defense ok")
-                                .Condition("<IsAutoDefense>", t => conditions["IsAutoDefense"].Condition(BTContext))
-                                .Selector("Go to enemy of attack")
-                                    .Sequence("Attack if auto defense ok")
-                                        .Do("EquipWeapon", t => actions["EquipWeapon"].Action(BTContext))
-                                        .Condition("<TooFarFromEnemy>", t => conditions["TooFarFromEnemy"].Condition(BTContext))
-                                        .Do("GoToEnemy", t => actions["GoToEnemy"].Action(BTContext))
-                                    .End()
-                                    .Do("AttackEnemy", t => actions["AttackEnemy"].Action(BTContext))
-                                .End()
+                                .Do("EquipWeapon", t => actions["EquipWeapon"].Action(BTContext))
+                                .Condition("<TooFarFromEnemy>", t => conditions["TooFarFromEnemy"].Condition(BTContext))
+                                .Do("GoToEnemy", t => actions["GoToEnemy"].Action(BTContext))
                             .End()
-                            .Do("FleeFromEnemy", t => actions["FleeFromEnemy"].Action(BTContext))
+                            .Do("AttackEnemy", t => actions["AttackEnemy"].Action(BTContext))
                         .End()
                         .Build();
         }
 
-        private IBehaviourTreeNode CreateSubScavenging()
+        private IBehaviourTreeNode CreateSubTreeScavenging()
         {
             var builder = new BehaviourTreeBuilder();
             return builder
-                        .Selector("Return to ship or scavenge ?")
+                        .Selector("Return to drop location or scavenge ?")
                             .Sequence("Look for items if hands free")
                                 .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
-                                .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
                                 .Selector("Cancel scavenging ?")
+                                    .Sequence("Intern in vehicle, exit")
+                                        .Condition("<isInternInVehicle>", t => conditions["IsInternInVehicle"].Condition(BTContext))
+                                        .Do("exitVehicle", t => actions["ExitVehicle"].Action(BTContext))
+                                    .End()
                                     .Sequence("Go grab if item found")
+                                        .Do("CheckForItemsInMap", t => actions["CheckForItemsInMap"].Action(BTContext))
                                         .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
                                         .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
                                         .Selector("Go to object or grab")
@@ -373,9 +553,69 @@ namespace LethalInternship.Core.Interns.AI.BT
                                 .End()
                             .End()
 
-                            .Sequence("Return to ship")
-                                .Do("Set next point to ship", t => actions["SetNextDestToShip"].Action(BTContext))
+                            .Sequence("Drop to drop location")
                                 .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
+
+                                .Selector("Drop location to where ?")
+                                    .Sequence("Drop location position")
+                                        .Condition("<IsCommandScavengingToPos>", t => conditions["IsCommandScavengingToPos"].Condition(BTContext))
+                                        .Do("UpdateDestPos", t => actions["UpdateDestPos"].Action(BTContext))
+                                        .Selector("Go to position or drop object")
+                                            .Splice(CreateSubTreeGoToPosition())
+                                            .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
+                                        .End()
+                                    .End()
+
+                                    .Sequence("Drop location cruiser")
+                                        .Condition("<IsCommandScavengingToCruiser>", t => conditions["IsCommandScavengingToCruiser"].Condition(BTContext))
+                                        .Splice(CreateSubTreeGoToVehicle(actionInCruiser: "DropAllItems"))
+                                    .End()
+                                .End()
+                            .End()
+                        .End()
+                        .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubTreeGoFetchItem()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Selector("Item valid or cancel ?")
+                            .Sequence("Go fetch if hands free")
+                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
+                                .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                .Selector("Go to object or grab")
+                                    .Splice(CreateSubTreeGoToObject())
+                                    .Do("GrabObject", t => actions["GrabItemBehavior"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
+                        .End()
+                        .Build();
+        }
+
+        private IBehaviourTreeNode CreateSubTreeUnloadCruiser()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Selector("Return to drop location or scavenge ?")
+                            .Sequence("Look for items if hands free")
+                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
+                                .Selector("Cancel scavenging ?")
+                                    .Sequence("Go grab if item found")
+                                        .Do("CheckForItemsInCruiser", t => actions["CheckForItemsInCruiser"].Action(BTContext))
+                                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                        .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
+                                        .Splice(CreateSubTreeGoToVehicle(actionInCruiser: "GrabItemBehavior"))
+                                    .End()
+                                    .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Drop to drop location")
+                                .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
+                                .Do("UpdateDestPos", t => actions["UpdateDestPos"].Action(BTContext))
                                 .Selector("Go to position or drop object")
                                     .Splice(CreateSubTreeGoToPosition())
                                     .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
@@ -384,5 +624,40 @@ namespace LethalInternship.Core.Interns.AI.BT
                         .End()
                         .Build();
         }
+
+        private IBehaviourTreeNode CreateSubTreeUnloadGatheringPoint()
+        {
+            var builder = new BehaviourTreeBuilder();
+            return builder
+                        .Selector("Return to drop location or scavenge ?")
+                            .Sequence("Look for items if hands free")
+                                .Condition("<AreFreeSlotsAvailable>", t => conditions["AreFreeSlotsAvailable"].Condition(BTContext))
+                                .Selector("Cancel scavenging ?")
+                                    .Sequence("Go grab if item found")
+                                        .Do("CheckForItemsNearGatheringPoint", t => actions["CheckForItemsNearGatheringPoint"].Action(BTContext))
+                                        .Condition("<IsTargetItemValid>", t => conditions["IsTargetItemValid"].Condition(BTContext))
+                                        .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
+                                        .Do("UpdateDestPos", t => actions["UpdateDestPos"].Action(BTContext))
+                                        .Selector("Go to position or drop object")
+                                            .Splice(CreateSubTreeGoToPosition())
+                                            .Do("GrabItemBehavior", t => actions["GrabItemBehavior"].Action(BTContext))
+                                        .End()
+                                    .End()
+                                    .Do("CancelGoToItem", t => actions["CancelGoToItem"].Action(BTContext))
+                                .End()
+                            .End()
+
+                            .Sequence("Drop to drop location")
+                                .Do("VoiceScavenging", t => actions["VoiceScavenging"].Action(BTContext))
+                                .Do("UpdateDestPos", t => actions["UpdateDestPos"].Action(BTContext))
+                                .Selector("Go to position or drop object")
+                                    .Splice(CreateSubTreeGoToPosition())
+                                    .Do("DropAllItems", t => actions["DropAllItems"].Action(BTContext))
+                                .End()
+                            .End()
+                        .End()
+                        .Build();
+        }
+
     }
 }

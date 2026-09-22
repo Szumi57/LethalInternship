@@ -1,4 +1,7 @@
-﻿namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.Enums;
+
+namespace LethalInternship.Core.Interns.AI.BT.ConditionNodes
 {
     public class IsTargetItemValid : IBTCondition
     {
@@ -8,7 +11,9 @@
             {
                 return false;
             }
-            if (!context.InternAI.IsGrabbableObjectGrabbable(context.TargetItem))
+            if (!InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem, forcePickUp: context.InternAI.CurrentCommand == EnumCommandTypes.GoFetchItem
+                                                                                                 || context.InternAI.CurrentCommand == EnumCommandTypes.UnloadCruiser
+                                                                                                 || context.InternAI.CurrentCommand == EnumCommandTypes.UnloadGatheringPoint))
             {
                 return false;
             }

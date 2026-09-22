@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using LethalInternship.SharedAbstractions.Enums;
 
 namespace LethalInternship.SharedAbstractions.UI
 {
     public interface IIconUIInfos
     {
-        string GetUIKey();
+        EnumIconImagesTypes IconImagesTypes { get; }
 
-        List<GameObject> GetImagesPrefab();
+        int GetUIKey();
     }
 }

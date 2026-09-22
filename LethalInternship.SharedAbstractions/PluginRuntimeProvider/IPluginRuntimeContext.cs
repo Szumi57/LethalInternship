@@ -13,29 +13,29 @@ namespace LethalInternship.SharedAbstractions.PluginRuntimeProvider
         string ConfigPath { get; }
         string VoicesPath { get; }
 
+        // Interns
         EnemyType InternNPCPrefab { get; }
+        int PreparedIrlPlayersCount { get; set; }
+        int PreparedInternCount { get; set; }
+        int PluginIrlPlayersCount { get; set; }
+        int AllEntitiesCount { get; set; }
+        GameObject[] InternObjects { get; set; }
+        uint NextInternNetworkObjectHash { get; set; }
+        uint[][] InternNetworkObjectHashes { get; set; }
 
         // UI
         bool UIAssetsLoaded { get; }
 
-        GameObject MainUICommands { get; }
+        GameObject CommandsAll { get; }
+        GameObject CommandsOne { get; }
+        GameObject TooltipBar { get; }
 
         GameObject WorldIconPrefab { get; }
         GameObject InputIconPrefab { get; }
 
-        GameObject DefaultIconImagePrefab { get; }
-        GameObject PointerIconImagePrefab { get; }
-        GameObject PedestrianIconImagePrefab { get; }
-        GameObject VehicleIconImagePrefab { get; }
-        GameObject ShipIconImagePrefab { get; }
-        GameObject MeetingPointIconImagePrefab { get; }
-        GameObject GatheringPointIconImagePrefab { get; }
-        GameObject AttackIconImagePrefab { get; }
-
         string DirectoryName { get; }
         IConfig Config { get; }
         ILethalInternshipInputs InputActionsInstance { get; }
-        int PluginIrlPlayersCount { get; set; }
 
         bool IsModTooManyEmotesLoaded { get; }
         bool IsModModelReplacementAPILoaded { get; }

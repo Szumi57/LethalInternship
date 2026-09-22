@@ -1,8 +1,11 @@
 ﻿using LethalInternship.Core.Interns.AI.BT;
 using LethalInternship.Core.Managers;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using Unity.Netcode;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI
 {
@@ -11,7 +14,13 @@ namespace LethalInternship.Core.Interns.AI
         public BTController BTController = null!;
 
         public IPointOfInterest? PointOfInterest = null!;
-        public EnumCommandTypes CurrentCommand;
+        public EnumCommandTypes CurrentCommand { get; private set; }
+        public EnumCommandTypes PendingCommand { get; private set; }
+        public EnumTempCommandFeedback TempCommandFeedback { get; private set; }
+
+        private EnumVoicesState voiceToPlay;
+
+        private float tempCommandFeedbackTimer;
 
         #region Commands
 
@@ -26,13 +35,13 @@ namespace LethalInternship.Core.Interns.AI
             return this.PointOfInterest;
         }
 
+        public void AssignOrder(Order order)
+        {
+            order.ApplyTo(this);
+        }
+
         public void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true)
         {
-            if (!CanGiveOrder())
-            {
-                return;
-            }
-
             this.PointOfInterest = pointOfInterest;
 
             EnumCommandTypes? newCommand = pointOfInterest.GetCommand();
@@ -41,85 +50,221 @@ namespace LethalInternship.Core.Interns.AI
                 SetCommandToFollowPlayer();
                 return;
             }
-            CurrentCommand = newCommand.Value;
 
-            PluginLoggerHook.LogDebug?.Invoke($"SetCommandTo {CurrentCommand}");
-            PluginLoggerHook.LogDebug?.Invoke($"VVV PointOfInterest VVV");
-            foreach (var p in this.PointOfInterest.GetListInterestPoints())
-            {
-                PluginLoggerHook.LogDebug?.Invoke($"Interest point {p.GetType()}");
-            }
+            SetCommand(newCommand.Value, playVoice ? EnumVoicesState.OrderedToGoThere : EnumVoicesState.None);
 
             // AI
             BTController.ResetContextNewCommandToInterestPoint(pointOfInterest);
-
-            // Voice
-            if (playVoice)
-            {
-                TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToGoThere);
-            }
         }
 
         public void SetCommandToFollowPlayer(bool playVoice = true)
         {
-            if (!CanGiveOrder())
-            {
-                return;
-            }
-
             if (this.targetPlayer == null)
             {
                 PluginLoggerHook.LogWarning?.Invoke($"{Npc.playerUsername} no target player assigned, wait for someone to manage this intern before giving commands.");
                 return;
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToFollowPlayer, before {CurrentCommand}");
-            CurrentCommand = EnumCommandTypes.FollowPlayer;
+            //Debug.Log($"{Npc.playerUsername} SetCommandToFollowPlayer {Environment.StackTrace}");
+            SetCommand(EnumCommandTypes.FollowPlayer, playVoice ? EnumVoicesState.OrderedToFollow : EnumVoicesState.None);
             this.PointOfInterest = null;
 
             // AI
             BTController.ResetContextNewCommandFollowPlayer();
-
-            // Voice
-            if (playVoice)
-            {
-                TryPlayCurrentOrderVoiceAudio(EnumVoicesState.OrderedToFollow);
-            }
         }
 
-        public void SetCommandToScavenging()
+        public void SetCommandToScavengingToShip()
         {
-            if (!CanGiveOrder())
-            {
-                return;
-            }
-
-            CurrentCommand = EnumCommandTypes.ScavengingMode;
+            SetCommand(EnumCommandTypes.ScavengingToShip, EnumVoicesState.NowScavenging);
             this.PointOfInterest = null;
-            PluginLoggerHook.LogDebug?.Invoke($"SetCommandToScavengingMode");
+
+            // AI
+            BTController.ResetContextNewCommandToScavenging();
+        }
+        public void SetCommandToScavengingToCruiser()
+        {
+            SetCommand(EnumCommandTypes.ScavengingToCruiser, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandToScavenging();
+        }
+        public void SetCommandToScavengingToGatheringPoint()
+        {
+            SetCommand(EnumCommandTypes.ScavengingToGatheringPoint, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
 
             // AI
             BTController.ResetContextNewCommandToScavenging();
         }
 
-        private bool CanGiveOrder()
+        public void SetCommandToFetchItem(GrabbableObject itemToFetch)
         {
-            if (!this.IsSpawned
-                || this.IsEnemyDead
-                || this.NpcController == null
-                || this.NpcController.Npc == null
-                || this.NpcController.Npc.isPlayerDead
-                || !this.NpcController.Npc.isPlayerControlled
-                || this.InternIdentity.Status != EnumStatusIdentity.Spawned
-                || this.IsSpawningAnimationRunning())
+            SetCommand(EnumCommandTypes.GoFetchItem, EnumVoicesState.OrderedToGoThere);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandGoFetchItem(itemToFetch);
+        }
+
+        public void SetCommandToAttackEnemy(EnemyAI enemy)
+        {
+            SetCommand(EnumCommandTypes.Kill, EnumVoicesState.None);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextAttackEnemy(enemy);
+        }
+
+        public void SetCommandToDropToShip()
+        {
+            Transform? shipTransform = InternManager.Instance.ShipTransform;
+            if (shipTransform == null)
             {
-                return false;
+                PluginLoggerHook.LogError?.Invoke($"{Npc.playerUsername} SetCommandToDropToShip shipTransform not found !");
+                return;
+            }
+            if (this.AreHandsFree())
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToDropToShip but no items held = SetCommandToFollowPlayer");
+                SetCommandToFollowPlayer(playVoice: false);
+                return;
             }
 
-            return true;
+            // SetCommand DropAllItemsToShip
+            SetCommand(EnumCommandTypes.DropAllItemsToShip, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            IPointOfInterest pointOfInterest = InternManager.Instance.GetPointOfInterestOrNewShipPoint(shipTransform);
+            BTController.ResetContextNewCommandDropToPos(pointOfInterest);
+        }
+        public void SetCommandToDropToGatheringPoint()
+        {
+            if (InternManager.Instance.GatheringPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{Npc.playerUsername} SetCommandToDropToGatheringPoint no gathering point set !");
+                return;
+            }
+            if (this.AreHandsFree())
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCommandToDropToGatheringPoint but no items held = SetCommandToFollowPlayer");
+                SetCommandToFollowPlayer(playVoice: false);
+                return;
+            }
+
+            // SetCommand DropAllItemsOnGatheringPoint
+            SetCommand(EnumCommandTypes.DropAllItemsOnGatheringPoint, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandDropToPos(InternManager.Instance.GatheringPoint);
+        }
+        public void SetCommandToDropToCruiser()
+        {
+            SetCommand(EnumCommandTypes.DropAllItemsInCruiser, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandDropToCruiser();
+        }
+
+        public void SetCommandToUnloadFromCruiser()
+        {
+            SetCommand(EnumCommandTypes.UnloadCruiser, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandUnloadFromCruiser();
+        }
+        public void SetCommandToUnloadFromGatheringPoint()
+        {
+            if (InternManager.Instance.GatheringPoint == null)
+            {
+                PluginLoggerHook.LogError?.Invoke($"{Npc.playerUsername} SetCommandToUnloadFromGatheringPoint no gathering point set !");
+                return;
+            }
+
+            SetCommand(EnumCommandTypes.UnloadGatheringPoint, EnumVoicesState.NowScavenging);
+            this.PointOfInterest = null;
+
+            // AI
+            BTController.ResetContextNewCommandUnloadFromPos(InternManager.Instance.GatheringPoint);
+        }
+
+
+        private void SetCommand(EnumCommandTypes command, EnumVoicesState voiceCommand)
+        {
+            if (CurrentCommand == EnumCommandTypes.WaitForCommand)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetPendingCommand {command}");
+                PendingCommand = command;
+                voiceToPlay = voiceCommand;
+            }
+            else
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"{Npc.playerUsername} SetCurrentCommand {command}");
+                CurrentCommand = command;
+                PlayVoiceAfterCommand(voiceCommand);
+
+                internIdentity.OnCommandChanged?.Invoke(internIdentity);
+            }
+        }
+
+        public void SetCommandToWaitForCommand(bool wait)
+        {
+            if (wait)
+            {
+                PendingCommand = CurrentCommand;
+                CurrentCommand = EnumCommandTypes.WaitForCommand;
+                //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait true");
+            }
+            else
+            {
+                if (CurrentCommand == EnumCommandTypes.WaitForCommand)
+                {
+                    CurrentCommand = PendingCommand;
+                    if (CurrentCommand == EnumCommandTypes.WaitForCommand
+                        || CurrentCommand == EnumCommandTypes.None)
+                    {
+                        //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, CurrentCommand {CurrentCommand} set to FollowPlayer");
+                        CurrentCommand = EnumCommandTypes.FollowPlayer;
+                    }
+                    //PluginLoggerHook.LogDebug?.Invoke($"SetCommandToWaitForCommand wait false, new command {CurrentCommand}");
+
+                    // Voice
+                    PlayVoiceAfterCommand(voiceToPlay);
+
+                    internIdentity.OnCommandChanged?.Invoke(internIdentity);
+                }
+            }
+        }
+
+        private void PlayVoiceAfterCommand(EnumVoicesState voice)
+        {
+            if (voice != EnumVoicesState.None)
+            {
+                TryPlayCurrentOrderVoiceAudio(voiceToPlay);
+            }
         }
 
         #endregion
+
+        private void CheckTempCommandFeedbackTimer()
+        {
+            tempCommandFeedbackTimer += Time.deltaTime;
+            if (tempCommandFeedbackTimer > 5f)
+            {
+                tempCommandFeedbackTimer = 0f;
+                TempCommandFeedback = EnumTempCommandFeedback.None;
+            }
+        }
+
+        public void SetCommandFeedback(EnumTempCommandFeedback commandFeedback)
+        {
+            TempCommandFeedback = commandFeedback;
+            tempCommandFeedbackTimer = 0f;
+        }
 
         public void HitTargetWithShovel(Shovel shovel)
         {
@@ -160,6 +305,56 @@ namespace LethalInternship.Core.Interns.AI
             RoundManager.PlayRandomClip(knife.knifeAudio, knife.hitSFX, true, 1f, 0, 1000);
             RoundManager.Instance.PlayAudibleNoise(base.transform.position, 17f, 0.8f, 0, false, 0);
             knife.HitShovelServerRpc(-1);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SetAutoDefenseModeServerRpc(bool autoDefense)
+        {
+            SetAutoDefenseModeClientRpc(autoDefense);
+        }
+
+        [ClientRpc]
+        private void SetAutoDefenseModeClientRpc(bool autoDefense)
+        {
+            this.InternIdentity.SetAutoDefense(autoDefense);
+        }
+
+        public void OnCollisionWithCruiser()
+        {
+            this.BTController.ResetContext();
+
+            VehicleController? vehicleController = InternManager.Instance.VehicleController;
+            if (vehicleController == null)
+                return;
+
+            if (this.npcController.IsControllerInCruiser)
+                return;
+
+            if (this.CurrentCommand == EnumCommandTypes.GoToVehicle)
+            {
+                this.EnterCruiser(vehicleController);
+                return;
+            }
+
+            if (this.CurrentCommand == EnumCommandTypes.ScavengingToCruiser
+                && !this.AreFreeSlotsAvailable())
+            {
+                this.EnterCruiser(vehicleController);
+                return;
+            }
+
+            if (this.CurrentCommand == EnumCommandTypes.UnloadCruiser
+                && this.BTController.GetTargetItem() != null)
+            {
+                this.EnterCruiser(vehicleController);
+                return;
+            }
+
+            if (this.CurrentCommand == EnumCommandTypes.DropAllItemsInCruiser)
+            {
+                this.EnterCruiser(vehicleController);
+                return;
+            }
         }
     }
 }

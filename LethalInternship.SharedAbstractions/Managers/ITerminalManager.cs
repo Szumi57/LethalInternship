@@ -13,5 +13,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         TerminalNode? ParseLethalInternshipCommands(string command, ref Terminal terminal);
         EnumTerminalStates GetTerminalPage();
         void ResetTerminalParser();
+
+        EnumErrorTypeTerminalPage BroadcastRecallInterns();
     }
 }

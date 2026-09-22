@@ -1,8 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.Core.Managers;
-using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -19,34 +17,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            // Teleport to cruiser and enter vehicle
-            // Place intern in random spot
-            Vector3 internPassengerPos = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomInCruiserPos();
-            ai.SyncTeleportInternVehicle(internPassengerPos, enteringVehicle: true, vehicleController);
-            PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} EnterVehicle !");
-
-            // random rotation
-            float angleRandom = Random.Range(-180f, 180f);
-            ai.NpcController.UpdateNowTurnBodyTowardsDirection(Quaternion.Euler(0, angleRandom, 0) * ai.NpcController.Npc.thisController.transform.forward);
-
-            // Crouch or not
-            float crouchRancom = Random.Range(0f, 1f);
-            if (crouchRancom > 0.5f
-                && !ai.NpcController.Npc.isCrouching)
+            if (!ai.NpcController.IsControllerInCruiser)
             {
-                ai.NpcController.OrderToToggleCrouch();
+                ai.EnterCruiser(vehicleController);
             }
 
             return BehaviourTreeStatus.Success;
-        }
-
-        private Vector3 GetNextRandomInCruiserPos()
-        {
-            float x = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.x, Const.SECOND_CORNER_INSIDE_CRUISER.x);
-            float y = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.y, Const.SECOND_CORNER_INSIDE_CRUISER.y);
-            float z = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.z, Const.SECOND_CORNER_INSIDE_CRUISER.z);
-
-            return new Vector3(x, y, z);
         }
     }
 }

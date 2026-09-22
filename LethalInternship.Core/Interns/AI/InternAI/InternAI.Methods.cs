@@ -1,13 +1,13 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
-using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
-using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
+using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace LethalInternship.Core.Interns.AI
 {
@@ -17,6 +17,11 @@ namespace LethalInternship.Core.Interns.AI
         private DoorLock[] doorLocksArray = null!;
         private string stateIndicatorServer = string.Empty;
         private float timerCheckDoor;
+
+        // GetSizedBillboardStateIndicator
+        private string cachedIndicator = "";
+        private int lastSize;
+        private string lastIndicator = string.Empty;
 
         public bool IsAgentInValidState()
         {
@@ -44,21 +49,22 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         /// <summary>
-        /// Try to set the destination on the agent, if destination not reachable, try the closest possible position of the destination
+        /// Try to set the destination on the agent
         /// </summary>
-        public void UpdateDestinationToAgent(bool calculatePartialPath = false, bool checkForPath = false)
+        public bool UpdateDestinationToAgent()
         {
             if (IsAgentInValidState()
                 && agent.destination != base.destination)
             {
-                agent.SetDestination(destination);
+                return agent.SetDestination(destination);
             }
+            return false;
         }
 
-        public void OrderAgentAndBodyMoveToDestination(bool calculatePartialPath = false, bool checkForPath = false)
+        public void OrderAgentAndBodyMoveToDestination()
         {
             NpcController.OrderToMove();
-            UpdateDestinationToAgent(calculatePartialPath, checkForPath);
+            UpdateDestinationToAgent();
         }
 
         public void StopMoving()
@@ -276,6 +282,8 @@ namespace LethalInternship.Core.Interns.AI
                 case "Flowerman":
                 case "Bush Wolf":
                 case "GiantKiwi":
+                case "Feiopar":
+                case "Stingray":
                     return 5f;
 
                 case "Puffer":
@@ -411,21 +419,19 @@ namespace LethalInternship.Core.Interns.AI
 
         public string GetSizedBillboardStateIndicator()
         {
-            string indicator;
-            int sizePercentage = Math.Clamp((int)(100f + 2.5f * NpcController.GetSqrDistanceWithLocalPlayer(NpcController.Npc.transform.position)),
-                                 100, 500);
+            int size = Math.Clamp((int)(100f + 2.5f * NpcController.GetSqrDistanceWithLocalPlayer()),
+                                  100, 500);
 
-            if (IsOwner)
-            {
-                //indicator = State == null ? string.Empty : State.GetBillboardStateIndicator();
-                indicator = string.Empty;
-            }
-            else
-            {
-                indicator = stateIndicatorServer;
-            }
+            string indicator = IsOwner ? string.Empty : stateIndicatorServer;
 
-            return $"<size={sizePercentage}%>{indicator}</size>";
+            if (size == lastSize && indicator == lastIndicator)
+                return cachedIndicator;
+
+            lastSize = size;
+            lastIndicator = indicator;
+            cachedIndicator = $"<size={size}%>{indicator}</size>";
+
+            return cachedIndicator;
         }
 
         /// <summary>
@@ -570,152 +576,6 @@ namespace LethalInternship.Core.Interns.AI
             return true;
         }
 
-        /// <summary>
-        /// Check all conditions for deciding if an item is grabbable or not.
-        /// </summary>
-        /// <param name="grabbableObject">Item to check</param>
-        /// <returns></returns>
-        public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject)
-        {
-            InternManager.Instance.TrimDictJustDroppedItems();
-
-            if (grabbableObject == null
-                || !grabbableObject.gameObject.activeSelf)
-            {
-                return false;
-            }
-
-            if (grabbableObject.isHeld
-                || !grabbableObject.grabbable
-                || grabbableObject.deactivated)
-            {
-                return false;
-            }
-
-            if (!CanHoldItem(grabbableObject))
-            {
-                return false;
-            }
-
-            RagdollGrabbableObject? ragdollGrabbableObject = grabbableObject as RagdollGrabbableObject;
-            if (ragdollGrabbableObject != null)
-            {
-                if (!ragdollGrabbableObject.grabbableToEnemies)
-                {
-                    return false;
-                }
-            }
-
-            // Item just dropped, should wait a bit before grab it again
-            if (InternManager.Instance.IsGrabbableObjectJustDropped(grabbableObject))
-            {
-                // Trim dictionnary if too large
-                return false;
-            }
-
-            // Is item too close to entrance (with config option enabled)
-            if (!PluginRuntimeProvider.Context.Config.GrabItemsNearEntrances)
-            {
-                for (int j = 0; j < EntrancesTeleportArray.Length; j++)
-                {
-                    if ((grabbableObject.transform.position - EntrancesTeleportArray[j].entrancePoint.position).sqrMagnitude < Const.DISTANCE_ITEMS_TO_ENTRANCE * Const.DISTANCE_ITEMS_TO_ENTRANCE)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            // Object on ship
-            if (grabbableObject.isInElevator
-                || grabbableObject.isInShipRoom)
-            {
-                return false;
-            }
-
-            // Object in cruiser vehicle
-            if (grabbableObject.transform.parent != null
-                && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
-            {
-                return false;
-            }
-
-            // Object in a container mod of some sort ?
-            if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
-            {
-                if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
-                {
-                    return false;
-                }
-            }
-
-            // Is a pickmin (LethalMin mod) holding the object ?
-            if (PluginRuntimeProvider.Context.IsModLethalMinLoaded)
-            {
-                if (LethalMinHook.IsGrabbableObjectHeldByPikminMod?.Invoke(grabbableObject) ?? false)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
-        {
-            // Bee nest
-            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
-                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
-            {
-                return true;
-            }
-
-            // Dead bodies
-            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
-                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
-                && gameObjectToEvaluate.tag == "PhysicsProp"
-                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
-            {
-                return true;
-            }
-
-            // Maneater
-            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
-                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
-            {
-                return true;
-            }
-
-            // Wheelbarrow
-            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
-                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
-            {
-                return true;
-            }
-
-            // ShoppingCart
-            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
-                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
-            {
-                return true;
-            }
-
-            // Baby kiwi egg
-            if (!PluginRuntimeProvider.Context.Config.GrabKiwiBabyItem
-                && gameObjectToEvaluate.name.Contains("KiwiBabyItem"))
-            {
-                return true;
-            }
-
-            // Apparatus
-            if (!PluginRuntimeProvider.Context.Config.GrabApparatus
-                && gameObjectToEvaluate.name.Contains("LungApparatus"))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
         public void SetInternInElevator()
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
@@ -854,6 +714,36 @@ namespace LethalInternship.Core.Interns.AI
                     break;
                 }
             }
+        }
+
+        public void EnterCruiser(VehicleController vehicleController)
+        {
+            // Teleport to cruiser and enter vehicle
+            // Place intern in random spot
+            Vector3 internPassengerPos = vehicleController.transform.position + vehicleController.transform.rotation * GetNextRandomInCruiserPos();
+            this.SyncTeleportInternVehicle(internPassengerPos, enteringVehicle: true, vehicleController);
+            PluginLoggerHook.LogDebug?.Invoke($"{this.Npc.playerUsername} EnterVehicle !");
+
+            // random rotation
+            float angleRandom = Random.Range(-180f, 180f);
+            this.NpcController.UpdateNowTurnBodyTowardsDirection(Quaternion.Euler(0, angleRandom, 0) * this.NpcController.Npc.thisController.transform.forward);
+
+            // Crouch or not
+            float crouchRancom = Random.Range(0f, 1f);
+            if (crouchRancom > 0.5f
+                && !this.NpcController.Npc.isCrouching)
+            {
+                this.NpcController.OrderToToggleCrouch();
+            }
+        }
+
+        private Vector3 GetNextRandomInCruiserPos()
+        {
+            float x = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.x, Const.SECOND_CORNER_INSIDE_CRUISER.x);
+            float y = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.y, Const.SECOND_CORNER_INSIDE_CRUISER.y);
+            float z = Random.Range(Const.FIRST_CORNER_INSIDE_CRUISER.z, Const.SECOND_CORNER_INSIDE_CRUISER.z);
+
+            return new Vector3(x, y, z);
         }
     }
 }

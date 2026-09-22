@@ -1,5 +1,6 @@
 ﻿using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.UI.Icons;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.UI;
 using System;
@@ -11,42 +12,42 @@ namespace LethalInternship.Core.UI.Renderers
     public class PointOfInterestRendererService
     {
         private readonly InterestPointRendererRegistery registery;
-        private readonly Dictionary<string, IIconUIInfos> dictIconInfos;
+        private readonly Dictionary<int, IIconUIInfos> dictIconInfos;
 
         private readonly List<Type> priorityOrder = new List<Type>()
         {
-            typeof(DefaultInterestPoint),
+            typeof(PositionInterestPoint),
             typeof(VehicleInterestPoint),
-            typeof(ShipInterestPoint)
+            typeof(ShipInterestPoint),
+            typeof(GatheringInterestPoint)
         };
 
         public PointOfInterestRendererService(InterestPointRendererRegistery registery)
         {
             this.registery = registery;
-            dictIconInfos = new Dictionary<string, IIconUIInfos>();
+            dictIconInfos = new Dictionary<int, IIconUIInfos>();
         }
 
         public IIconUIInfos GetIconUIInfos(IPointOfInterest pointOfInterest)
         {
-            string key = string.Empty;
-            var imagesPrefabs = new List<GameObject>();
-            foreach (var interestPoint in pointOfInterest.GetListInterestPoints())
+            EnumIconImagesTypes iconImagesTypes = EnumIconImagesTypes.None;
+
+            Dictionary<Type, IInterestPoint> dictTypeInterestPoint = pointOfInterest.GetDictTypeInterestPoints();
+            foreach (var type in priorityOrder)
             {
-                GameObject? imagePrefab = registery.GetImagePrefab(interestPoint);
-                if (imagePrefab != null)
+                if (dictTypeInterestPoint.TryGetValue(type, out var interestPoint))
                 {
-                    imagesPrefabs.Add(imagePrefab);
-                    key += imagePrefab.name;
+                    iconImagesTypes |= registery.GetIconImagesTypes(interestPoint);
                 }
             }
 
-            if (dictIconInfos.TryGetValue(key, out IIconUIInfos iconUIInfos))
+            if (dictIconInfos.TryGetValue((int)iconImagesTypes, out IIconUIInfos iconUIInfos))
             {
                 return iconUIInfos;
             }
 
-            dictIconInfos[key] = new IconUIInfos(key, imagesPrefabs);
-            return dictIconInfos[key];
+            dictIconInfos[(int)iconImagesTypes] = new IconUIInfos(iconImagesTypes);
+            return dictIconInfos[(int)iconImagesTypes];
         }
 
         public Vector3 GetUIIcon(IPointOfInterest pointOfInterest)

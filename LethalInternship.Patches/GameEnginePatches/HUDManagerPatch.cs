@@ -223,6 +223,41 @@ namespace LethalInternship.Patches.GameEnginePatches
             return codes.AsEnumerable();
         }
 
+        [HarmonyPatch("PingScan_performed")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> PingScan_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var startIndex = -1;
+            var codes = new List<CodeInstruction>(instructions);
+            int indexJumpTo = 45;
+
+            // ----------------------------------------------------------------------
+            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            {
+                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                };
+                codes.InsertRange(startIndex, codesToAdd);
+                startIndex = -1;
+            }
+            else
+            {
+                PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.GameEnginePatches.HUDManagerPatch.PingScan_performed could not ignore PingScan_performed input when commands opened");
+            }
+
+            return codes.AsEnumerable();
+        }
+
         #endregion
 
         #region PostFixes
@@ -232,8 +267,6 @@ namespace LethalInternship.Patches.GameEnginePatches
         public static void Start_Postfix(HUDManager __instance)
         {
             ResizeStatsUIElements(__instance);
-
-            UIManagerProvider.Instance.InitUI(__instance.HUDContainer.transform.parent);
         }
 
         private static void ResizeStatsUIElements(HUDManager instance)
@@ -259,27 +292,6 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
 
             PluginLoggerHook.LogDebug?.Invoke($"ResizeStatsUIElements {instance.statsUIElements.playerNamesText.Length}");
-        }
-
-        [HarmonyPatch("ChangeControlTipMultiple")]
-        [HarmonyPostfix]
-        public static void ChangeControlTipMultiple_Postfix(HUDManager __instance)
-        {
-            UIManagerProvider.Instance.AddInternsControlTip(__instance);
-        }
-
-        [HarmonyPatch("ClearControlTips")]
-        [HarmonyPostfix]
-        public static void ClearControlTips_Postfix(HUDManager __instance)
-        {
-            UIManagerProvider.Instance.AddInternsControlTip(__instance);
-        }
-
-        [HarmonyPatch("ChangeControlTip")]
-        [HarmonyPostfix]
-        public static void ChangeControlTip_Postfix(HUDManager __instance)
-        {
-            UIManagerProvider.Instance.AddInternsControlTip(__instance);
         }
 
         #endregion

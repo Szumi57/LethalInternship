@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Managers;
-using System;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
@@ -9,8 +8,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     {
         private float distance;
 
-        private long timer = 1000 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 1f;
+        private float nextCheckTime;
 
         public float GetClosestPlayerDistance(Vector3 internPos)
         {
@@ -25,16 +24,12 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-            if (elapsedTime > timer)
+            if (Time.time >= nextCheckTime)
             {
-                lastTimeCalculate = DateTime.Now.Ticks;
+                nextCheckTime = Time.time + timer;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void CalculateGetClosestPlayerDistance(Vector3 internPos)

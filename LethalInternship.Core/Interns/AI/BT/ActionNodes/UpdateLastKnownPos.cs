@@ -1,7 +1,4 @@
-﻿using GameNetcodeStuff;
-using LethalInternship.Core.BehaviorTree;
-using LethalInternship.SharedAbstractions.Constants;
-using UnityEngine;
+﻿using LethalInternship.Core.BehaviorTree;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -17,33 +14,33 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Success;
             }
 
-            float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
-            float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
-            if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
-                    && sqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
-            {
-                context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
-            }
-            else
-            {
-                PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
-                if (target != null)
-                {
-                    context.TargetLastKnownPosition = target.transform.position;
-                }
-                else
-                {
-                    // Maybe target got inside/outside
-                    if ((ai.isOutside && ai.targetPlayer.isInsideFactory)
-                        || (!ai.isOutside && !ai.targetPlayer.isInsideFactory))
-                    {
-                        context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
-                    }
-                }
-            }
+            //float sqrHorizontalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(1, 0, 1)).sqrMagnitude;
+            //float sqrVerticalDistanceWithTarget = Vector3.Scale(ai.targetPlayer.transform.position - ai.NpcController.Npc.transform.position, new Vector3(0, 1, 0)).sqrMagnitude;
+            //if (sqrHorizontalDistanceWithTarget < Const.DISTANCE_AWARENESS_HOR * Const.DISTANCE_AWARENESS_HOR
+            //        && sqrVerticalDistanceWithTarget < Const.DISTANCE_AWARENESS_VER * Const.DISTANCE_AWARENESS_VER)
+            //{
+            //    context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
+            //}
+            //else
+            //{
+            //    PlayerControllerB? target = ai.CheckLOSForTarget(Const.INTERN_FOV, Const.INTERN_ENTITIES_RANGE, (int)Const.DISTANCE_CLOSE_ENOUGH_HOR);
+            //    if (target != null)
+            //    {
+            //        context.TargetLastKnownPosition = target.transform.position;
+            //    }
+            //    else
+            //    {
+            //        // Maybe target got inside/outside
+            //        if ((ai.isOutside && ai.targetPlayer.isInsideFactory)
+            //            || (!ai.isOutside && !ai.targetPlayer.isInsideFactory))
+            //        {
+            //            context.TargetLastKnownPosition = ai.targetPlayer.transform.position;
+            //        }
+            //    }
+            //}
 
-            //PluginLoggerHook.LogDebug?.Invoke($"targetPlayer pos {ai.TargetLastKnownPosition}");
-            return BehaviourTreeStatus.Success;
+            ////PluginLoggerHook.LogDebug?.Invoke($"targetPlayer pos {ai.TargetLastKnownPosition}");
+            //return BehaviourTreeStatus.Success;
         }
     }
 }

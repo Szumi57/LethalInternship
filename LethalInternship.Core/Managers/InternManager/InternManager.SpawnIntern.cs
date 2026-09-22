@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns;
 using LethalInternship.Core.Interns.AI;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
@@ -168,6 +169,11 @@ namespace LethalInternship.Core.Managers
             NetworkObject networkObjectRagdoll;
 
             // Spawn grabbable ragdoll intern body of intern
+            if (RagdollInternBodies == null)
+                RagdollInternBodies = new RagdollGrabbableObject[AllEntitiesCount];
+            else
+                Array.Resize(ref RagdollInternBodies, AllEntitiesCount);
+
             RagdollGrabbableObject? ragdollInternBody = RagdollInternBodies[playerClientId];
             if (ragdollInternBody == null)
             {
@@ -175,7 +181,7 @@ namespace LethalInternship.Core.Managers
                 networkObjectRagdoll = gameObject.GetComponent<NetworkObject>();
                 networkObjectRagdoll.Spawn(false);
                 ragdollInternBody = gameObject.GetComponent<RagdollGrabbableObject>();
-                ragdollInternBody.bodyID.Value = Const.INIT_RAGDOLL_ID;
+                ragdollInternBody.bodyID = Const.INIT_RAGDOLL_ID;
                 RagdollInternBodies[playerClientId] = ragdollInternBody;
             }
             else
@@ -296,6 +302,7 @@ namespace LethalInternship.Core.Managers
             internAI.AdaptController(internController);
             internAI.eye = internController.GetComponentsInChildren<Transform>().First(x => x.name == "PlayerEye");
             internAI.InternIdentity = internIdentity;
+            internAI.InternIdentity.InternAI = internAI;
             internAI.InternIdentity.Hp = spawnParamsNetworkSerializable.Hp == 0 ? PluginRuntimeProvider.Context.Config.InternMaxHealth : spawnParamsNetworkSerializable.Hp;
             internAI.InternIdentity.SuitID = spawnParamsNetworkSerializable.SuitID;
             internAI.InternIdentity.Status = EnumStatusIdentity.Spawned;
@@ -358,6 +365,13 @@ namespace LethalInternship.Core.Managers
                     radarTarget.name = internController.playerUsername;
                     break;
                 }
+            }
+
+            // Remove ignore raycast from player
+            IgnoreRaycast? ignoreRaycast = objectParent.GetComponent<IgnoreRaycast>();
+            if (ignoreRaycast != null)
+            {
+                Object.Destroy(ignoreRaycast);
             }
 
             // Init intern

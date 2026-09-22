@@ -75,7 +75,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void UpdateNowTurnBodyTowardsDirection(Vector3 direction);
         void StopAnimations();
 
-        float GetSqrDistanceWithLocalPlayer(Vector3 internBodyPos);
+        float GetSqrDistanceWithLocalPlayer();
         Bounds GetBoundsModel(GameObject model);
     }
 }

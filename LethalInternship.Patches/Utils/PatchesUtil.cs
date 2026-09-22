@@ -3,6 +3,7 @@ using HarmonyLib;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -39,6 +40,9 @@ namespace LethalInternship.Patches.Utils
         public static readonly MethodInfo ShouldIgnoreHitShovelIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new Shovel()));
         public static readonly MethodInfo ShouldIgnoreHitKnifeIfInternMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreIfIntern(new KnifeItem()));
         public static readonly MethodInfo ShouldIgnoreInternsEndScreenMethod = SymbolExtensions.GetMethodInfo(() => ShouldIgnoreInternsEndScreen(new PlayerControllerB()));
+        public static readonly MethodInfo IsAnyMenuOpenedMethod = SymbolExtensions.GetMethodInfo(() => IsAnyMenuOpened());
+        public static readonly MethodInfo DropAllItemsIfInternMethod = SymbolExtensions.GetMethodInfo(() => DropAllItemsIfIntern(new PlayerControllerB()));
+        public static readonly MethodInfo BushWolfEnemyCheckIfHitInternMethod = SymbolExtensions.GetMethodInfo(() => BushWolfEnemyCheckIfHitIntern(new BushWolfEnemy(), new PlayerControllerB()));
 
         public static readonly MethodInfo GetGameobjectMethod = AccessTools.PropertyGetter(typeof(UnityEngine.Component), "gameObject");
 
@@ -279,6 +283,64 @@ namespace LethalInternship.Patches.Utils
         private static bool ShouldIgnoreInternsEndScreen(PlayerControllerB player)
         {
             return InternManagerProvider.Instance.ShouldIgnoreInternsEndScreen(player);
+        }
+
+        private static bool IsAnyMenuOpened()
+        {
+            return UIManagerProvider.Instance.IsAnyCommandsMenuOpenOrWasOpen;
+        }
+
+        private static void DropAllItemsIfIntern(PlayerControllerB player)
+        {
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return;
+            }
+            // intern
+
+            internAI.DropAllItems(dropOptions: SharedAbstractions.Enums.EnumOptionsGetItems.All, waitBetweenItems: false);
+        }
+
+        private static bool BushWolfEnemyCheckIfHitIntern(BushWolfEnemy bushWolfEnemy, PlayerControllerB player)
+        {
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
+            if (internAI == null)
+            {
+                // Player
+                return false;
+            }
+            // intern
+
+            if (!Physics.Linecast(bushWolfEnemy.tongueStartPoint.position,
+                                  player.gameplayCamera.transform.position - Vector3.up * 0.3f,
+                                  StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)
+                && Vector3.Distance(bushWolfEnemy.transform.position,
+                                    player.transform.position) < bushWolfEnemy.attackDistance)
+            {
+                bushWolfEnemy.HitByEnemyServerRpc();
+            }
+            else
+            {
+                bushWolfEnemy.DodgedEnemyHitServerRpc();
+            }
+            return true;
+        }
+
+        // Other utils
+        public static void SetFieldValue(object obj, string fieldName, object value)
+        {
+            Type type = obj.GetType();
+            FieldInfo field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            field.SetValue(obj, value);
+        }
+
+        public static void SetPropertyValue(object obj, string propertyName, object value)
+        {
+            Type type = obj.GetType();
+            PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            property.SetValue(obj, value);
         }
     }
 }

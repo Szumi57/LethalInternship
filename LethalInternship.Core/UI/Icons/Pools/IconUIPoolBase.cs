@@ -1,5 +1,4 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.UI;
+﻿using LethalInternship.SharedAbstractions.UI;
 using System.Collections.Generic;
 
 namespace LethalInternship.Core.UI.Icons.Pools
@@ -29,7 +28,6 @@ namespace LethalInternship.Core.UI.Icons.Pools
                 }
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"---------------------- NewIcon {typeof(T)}");
             return NewIcon(iconInfos);
         }
 

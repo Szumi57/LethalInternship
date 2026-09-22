@@ -1,7 +1,9 @@
-﻿using LethalInternship.Core.Managers;
+﻿using LethalInternship.Core.Interns;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using System.Text;
 using UnityEngine;
 
 namespace LethalInternship.Core.TerminalAdapter.TerminalStates
@@ -11,6 +13,8 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
     /// </summary>
     public class InfoPage : TerminalState
     {
+        private readonly StringBuilder _sb = new StringBuilder();
+
         private int diffNbInternAvailable;
         private int diffNbInternToDrop;
 
@@ -67,11 +71,10 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
                 return LandingStatusCommand(firstWord);
             }
 
-            // firstWord status
-            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_STATUS_COMMAND))
+            // firstWord transmit
+            if (terminalParser.IsMatchWord(firstWord, TerminalConst.STRING_EVACUATION_COMMAND))
             {
-                terminalParser.TerminalState = new StatusPage(this);
-                return true;
+                return EvacuationCommand();
             }
 
             return false;
@@ -89,6 +92,18 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
 
             instanceTM.SyncLandingStatusServerRpc(instanceIM.LandingStatusAllowed);
 
+            // stay on info page
+            return true;
+        }
+
+        private bool EvacuationCommand()
+        {
+            EnumErrorTypeTerminalPage errorPageMessage = TerminalManager.Instance.BroadcastRecallInterns();
+            if (errorPageMessage != EnumErrorTypeTerminalPage.NoError)
+            {
+                terminalParser.TerminalState = new ErrorPage(terminalParser.TerminalState, errorPageMessage);
+                return true;
+            }
             // stay on info page
             return true;
         }
@@ -111,30 +126,35 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
 
             // Landing status
             string landingStatus = instanceIM.LandingStatusAllowed ? TerminalConst.STRING_LANDING_STATUS_ALLOWED : TerminalConst.STRING_LANDING_STATUS_ABORTED;
-            bool isCurrentMoonCompanyBuilding = instanceSOR.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID;
+            bool isCurrentMoonCompanyBuilding = instanceIM.IsCurrentMoonCompanyMoon();
             if (isCurrentMoonCompanyBuilding)
             {
                 landingStatus += TerminalConst.STRING_LANDING_STATUS_ABORTED_COMPANY_MOON;
             }
 
-            string textInfoPage;
             int nbInternsPurchasable = instanceIDM.GetNbIdentitiesAvailable() + diffNbInternAvailable;
             int nbInternsToDropShip = instanceIDM.GetNbIdentitiesToDrop() + diffNbInternToDrop;
 
             // Reset values for client number simulation
             this.diffNbInternAvailable = 0;
             this.diffNbInternToDrop = 0;
+            _sb.Clear();
 
             if (instanceSOR.inShipPhase
                 || instanceSOR.shipIsLeaving
                 || isCurrentMoonCompanyBuilding)
             {
                 // in space or on company building moon
-                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_IN_SPACE,
+                _sb.Append(string.Format(TerminalConst.TEXT_INFO_PAGE_IN_SPACE,
                                              nbInternsPurchasable,
                                              PluginRuntimeProvider.Context.Config.InternPrice,
                                              nbInternsToDropShip,
-                                             landingStatus);
+                                             landingStatus,
+
+                                             TerminalConst.STRING_LAND_COMMAND,
+                                             TerminalConst.STRING_EVACUATION_COMMAND,
+                                             TerminalConst.STRING_BUY_COMMAND
+                                             ));
             }
             else
             {
@@ -146,16 +166,72 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
                 {
                     textNbInternsToDropShip = string.Format(TerminalConst.TEXT_INFO_PAGE_INTERN_TO_DROPSHIP, nbInternsToDropShip);
                 }
-                textInfoPage = string.Format(TerminalConst.TEXT_INFO_PAGE_ON_MOON,
+                _sb.Append(string.Format(TerminalConst.TEXT_INFO_PAGE_ON_MOON,
                                              nbInternsPurchasable,
                                              PluginRuntimeProvider.Context.Config.InternPrice,
                                              textNbInternsToDropShip,
                                              nbInternsOnThisMoon,
-                                             landingStatus);
+                                             landingStatus,
+
+                                             TerminalConst.STRING_LAND_COMMAND,
+                                             TerminalConst.STRING_EVACUATION_COMMAND,
+                                             TerminalConst.STRING_BUY_COMMAND
+                                             ));
             }
 
-            terminalNode.displayText = textInfoPage;
+            // Interns status
+            _sb.AppendLine();
+            _sb.AppendLine();
+            _sb.AppendLine();
+            _sb.Append(TerminalConst.TEXT_STATUS);
+            _sb.Append($"{"Name",-20} {"Hp",-3} {"Status",-7}  {"Suit",-4}");
+            _sb.AppendLine();
+            _sb.Append($"---------------------------------------------------"); // 51
+            foreach (InternIdentity identity in IdentityManager.Instance.InternIdentities)
+            {
+                if (identity == null)
+                {
+                    continue;
+                }
+
+                string status = string.Empty;
+                switch (identity.Status)
+                {
+                    case EnumStatusIdentity.Available:
+                        break;
+                    case EnumStatusIdentity.ToDrop:
+                        status = "to drop";
+                        break;
+                    case EnumStatusIdentity.Spawned:
+                        status = "on moon";
+                        break;
+                }
+
+                if (!identity.Alive)
+                {
+                    status = "dead";
+                }
+
+                string? identityName = identity.Name.Truncate(19);
+                string? suit = identity.Suit.Truncate(16);
+
+                _sb.AppendLine();
+                _sb.Append($"{identityName,-20} {identity.Hp,-3} {status,-7}  {suit}");
+            }
+
+            terminalNode.displayText = _sb.ToString();
             return terminalNode;
+        }
+    }
+
+    public static class StringExt
+    {
+        // https://stackoverflow.com/questions/2776673/how-do-i-truncate-a-net-string
+        public static string? Truncate(this string? value, int maxLength, string truncationSuffix = "…")
+        {
+            return value?.Length > maxLength
+                ? value.Substring(0, maxLength) + truncationSuffix
+                : value;
         }
     }
 }

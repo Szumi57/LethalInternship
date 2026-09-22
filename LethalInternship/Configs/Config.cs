@@ -34,8 +34,9 @@ namespace LethalInternship.Configs
         public bool CanSpectateInterns => canSpectateInterns.Value;
         public bool RadarEnabled => radarEnabled.Value;
         public bool SpawnIdentitiesRandomly => spawnIdentitiesRandomly.Value;
-        public bool CanUseWeapons => canUseWeapons.Value;
         //public bool CanLosePlayer => canLosePlayer.Value;
+        public int OutsideRangeCommands => outsideRangeCommands.Value;
+        public int InsideRangeCommands => insideRangeCommands.Value;
         public bool FollowCrouchWithPlayer => followCrouchWithPlayer.Value;
         public bool ChangeSuitAutoBehaviour => changeSuitAutoBehaviour.Value;
         public int NbMaxCanCarry => nbMaxCanCarry.Value;
@@ -77,7 +78,8 @@ namespace LethalInternship.Configs
 
         // Behaviour       
         //[SyncedEntryField] private SyncedEntry<bool> canLosePlayer;
-        [SyncedEntryField] private SyncedEntry<bool> canUseWeapons;
+        [SyncedEntryField] private SyncedEntry<int> outsideRangeCommands;
+        [SyncedEntryField] private SyncedEntry<int> insideRangeCommands;
         [SyncedEntryField] private SyncedEntry<bool> followCrouchWithPlayer;
         [SyncedEntryField] private SyncedEntry<bool> changeSuitAutoBehaviour;
         //[SyncedEntryField] private SyncedEntry<bool> TeleportWhenUsingLadders;
@@ -178,10 +180,16 @@ namespace LethalInternship.Configs
             //                                   defaultVal: false,
             //                                   "Can the intern lose the player if he goes too far ?");
 
-            canUseWeapons = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
-                                               "Can use weapons",
-                                               defaultVal: true,
-                                               "Can the intern use weapons ? (shovel, signs, knife, shotgun, ...)");
+            outsideRangeCommands = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Maximum command range while outside",
+                                               defaultValue: ConfigConst.DEFAULT_DISTANCE_COMMAND_OUTSIDE,
+                                               new ConfigDescription("Distance at which interns stop hearing your commands while outside",
+                                                                     new AcceptableValueRange<int>(1, 1000)));
+            insideRangeCommands = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                               "Maximum command range while inside",
+                                               defaultValue: ConfigConst.DEFAULT_DISTANCE_COMMAND_INSIDE,
+                                               new ConfigDescription("Distance at which interns stop hearing your commands while inside",
+                                                                     new AcceptableValueRange<int>(1, 1000)));
 
             followCrouchWithPlayer = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
                                                "Crouch with player",
@@ -325,10 +333,7 @@ namespace LethalInternship.Configs
         public float GetVolumeVoicesMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
-            NumberFormatInfo nfi = new NumberFormatInfo();
-            nfi.NumberDecimalSeparator = ",";
-
-            if (float.TryParse(volumeVoicesMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(volumeVoicesMultiplierInterns.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }
@@ -338,10 +343,7 @@ namespace LethalInternship.Configs
         public float GetVolumeFootstepMultiplierInterns()
         {
             // https://stackoverflow.com/questions/29452263/make-tryparse-compatible-with-comma-or-dot-decimal-separator
-            NumberFormatInfo nfi = new NumberFormatInfo();
-            nfi.NumberDecimalSeparator = ",";
-
-            if (float.TryParse(volumeFootstepMultiplierInterns.Value, NumberStyles.Any, nfi, out float volume))
+            if (float.TryParse(volumeFootstepMultiplierInterns.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float volume))
             {
                 return Mathf.Clamp(volume, 0f, 1f);
             }

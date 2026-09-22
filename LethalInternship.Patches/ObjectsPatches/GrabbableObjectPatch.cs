@@ -54,7 +54,7 @@ namespace LethalInternship.Patches.ObjectsPatches
                 return true;
             }
 
-            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI(ragdollGrabbableObject.bodyID.Value);
+            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI(ragdollGrabbableObject.bodyID);
             if (internAI == null)
             {
                 if (ragdollGrabbableObject.gameObject.GetComponentInChildren<ScanNodeProperties>() == null)
@@ -82,6 +82,16 @@ namespace LethalInternship.Patches.ObjectsPatches
 
             // Grabbable ragdoll body, not sellable, intern not dead
             return false;
+        }
+
+        [HarmonyPatch("UseItemOnClient")]
+        [HarmonyPrefix]
+        public static bool UseItemOnClient_PreFix(GrabbableObject __instance)
+        {
+            // Cut input if using intern command UI to target something
+            // InputManagerProvider.Instance.CurrentTargetedAbility is set to null just before this method
+            // so we use previous
+            return InputManagerProvider.Instance.PreviousTargetedAbility == null;
         }
 
         [HarmonyReversePatch]

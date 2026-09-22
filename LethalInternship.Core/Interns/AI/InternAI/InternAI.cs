@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.BT;
-using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.Core.Managers;
 using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Adapters;
@@ -38,7 +37,8 @@ namespace LethalInternship.Core.Interns.AI
         public PlayerControllerB Npc => npcController.Npc;
         public IInternIdentity InternIdentity { get => internIdentity; set => internIdentity = value; }
 
-        public GameObject GameObject => this.gameObject;
+        private GameObject _cachedGo = null!;
+        public GameObject GameObject => _cachedGo;
         public new ulong OwnerClientId => base.OwnerClientId;
         public new NetworkObject NetworkObject => base.NetworkObject;
         public Transform Transform => this.transform;
@@ -62,8 +62,10 @@ namespace LethalInternship.Core.Interns.AI
 
         public LineRendererUtil LineRendererUtil = null!;
 
-        private void Awake()
+        public override void Awake()
         {
+            _cachedGo = this.gameObject;
+
             // Behaviour states
             currentBehaviourStateIndex = -1;
         }
@@ -201,10 +203,6 @@ namespace LethalInternship.Core.Interns.AI
             TeleportAgentAIAndBody(NpcController.Npc.transform.position);
             StateControllerMovement = EnumStateControllerMovement.FollowAgent;
 
-            // Start timed calculation
-            IsTouchingGroundTimedCheck = new TimedTouchingGroundCheck();
-            AngleFOVWithLocalPlayerTimedCheck = new TimedAngleFOVWithLocalPlayerCheck();
-
             // Spawn animation
             spawnAnimationCoroutine = BeginInternSpawnAnimation(enumSpawnAnimation);
         }
@@ -308,6 +306,7 @@ namespace LethalInternship.Core.Interns.AI
             this.GrabItem(grabbableObject);
         }
 
+
         private void FixedUpdate()
         {
             if (NpcController == null)
@@ -317,6 +316,8 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             UpdateSurfaceRayCast();
+
+            DebugChangeOutlineLive();
         }
 
         private void UpdateSurfaceRayCast()
@@ -327,9 +328,13 @@ namespace LethalInternship.Core.Interns.AI
             if (NpcController.IsTouchingGround)
             {
                 RaycastHit groundRaycastHit = IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
-                if (InternManager.Instance.DictTagSurfaceIndex.ContainsKey(groundRaycastHit.collider.tag))
+                foreach (var kvp in InternManager.Instance.DictTagSurfaceIndex)
                 {
-                    NpcController.Npc.currentFootstepSurfaceIndex = InternManager.Instance.DictTagSurfaceIndex[groundRaycastHit.collider.tag];
+                    if (groundRaycastHit.collider.CompareTag(kvp.Key))
+                    {
+                        NpcController.Npc.currentFootstepSurfaceIndex = kvp.Value;
+                        break;
+                    }
                 }
             }
         }
@@ -471,6 +476,10 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
+            // 
+            CheckTempCommandFeedbackTimer();
+
+            // Ai interval time
             if (ShouldDoAIInterval())
             {
                 DoAIInterval();
@@ -557,16 +566,16 @@ namespace LethalInternship.Core.Interns.AI
         {
             if (IsTouchingGroundTimedCheck.IsTouchingGround(NpcController.Npc.thisPlayerBody.position))
             {
-                RaycastHit raycastHit = IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position);
-                if (raycastHit.collider != null
-                    && dictComponentByCollider.TryGetValue(raycastHit.collider.name, out Component component))
+                string groundHitColliderName = IsTouchingGroundTimedCheck.GetGroundHitColliderName(NpcController.Npc.thisPlayerBody.position);
+                if (!string.IsNullOrWhiteSpace(groundHitColliderName)
+                    && dictComponentByCollider.TryGetValue(groundHitColliderName, out Component component))
                 {
                     BridgeTrigger? bridgeTrigger = component as BridgeTrigger;
                     if (bridgeTrigger != null
                         && bridgeTrigger.fallenBridgeColliders.Length > 0
                         && bridgeTrigger.fallenBridgeColliders[0].enabled)
                     {
-                        PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} on fallen bridge ! {IsTouchingGroundTimedCheck.GetGroundHit(NpcController.Npc.thisPlayerBody.position).collider.name}");
+                        PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} on fallen bridge ! {groundHitColliderName}");
                         return true;
                     }
                 }
@@ -585,6 +594,13 @@ namespace LethalInternship.Core.Interns.AI
         public void FollowCrouchIfCanDo(bool panik = false)
         {
             if (panik
+                && NpcController.Npc.isCrouching)
+            {
+                NpcController.OrderToToggleCrouch();
+                return;
+            }
+
+            if (NpcController.GetSqrDistanceWithLocalPlayer() > InternManager.Instance.GetMaxDistanceCommand()
                 && NpcController.Npc.isCrouching)
             {
                 NpcController.OrderToToggleCrouch();
@@ -686,6 +702,59 @@ namespace LethalInternship.Core.Interns.AI
             {
                 agent.enabled = enabled;
             }
+        }
+
+        //private float rimPower = 8f;
+        //private float intensity = 3f;
+        private void DebugChangeOutlineLive()
+        {
+            // Use this to see change in outline live and choose rimPower and intensity
+
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    rimPower += 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+
+            //}
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    rimPower -= 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+            //}
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    intensity += 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+            //}
+            //if (PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns.IsPressed())
+            //{
+            //    SimpleOutline.Remove(this.Npc.gameObject);
+            //    intensity -= 0.1f;
+            //    SimpleOutline.Add(this.Npc.gameObject,
+            //                  StartOfRound.Instance.localPlayerController.gameplayCamera,
+            //                  new Color(255 / 255f, 111 / 255f, 1 / 255f),
+            //                  rimPower: rimPower,
+            //                  intensity: intensity);
+            //    PluginLoggerHook.LogDebug?.Invoke($"rimPower {rimPower}, intensity {intensity}");
+            //}
         }
     }
 }

@@ -7,6 +7,9 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
     /// </summary>
     public class ParallelNode : IParentBehaviourTreeNode, IPrintableNode
     {
+        private readonly List<IPrintableNode> printableChildren = new List<IPrintableNode>();
+        public IReadOnlyList<IPrintableNode> PrintableChildren => printableChildren;
+
         /// <summary>
         /// Name of the node.
         /// </summary>
@@ -27,22 +30,6 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         /// </summary>
         private int numRequiredToSucceed;
 
-        public List<IPrintableNode> PrintableChildren
-        {
-            get
-            {
-                var list = new List<IPrintableNode>();
-                foreach (var child in children)
-                {
-                    if (child is IPrintableNode)
-                    {
-                        list.Add((IPrintableNode)child);
-                    }
-                }
-                
-                return list;
-            }
-        }
         public string Name { get { return name; } }
         public string NodeType { get { return "parallel"; } }
         public string NodeTypeSign { get { return "//"; } }
@@ -85,6 +72,10 @@ namespace LethalInternship.Core.BehaviorTree.Nodes
         public void AddChild(IBehaviourTreeNode child)
         {
             children.Add(child);
+            if (child is IPrintableNode)
+            {
+                printableChildren.Add((IPrintableNode)child);
+            }
         }
     }
 }

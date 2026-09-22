@@ -44,13 +44,26 @@ These passionate workers are available in a new section of your shop.
 ![status_page](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/status_page.png?raw=true)
 - You can revive intern by buying them specifically while in orbit.
 - You can revive intern with other mods like 'Revive company', 'Bunkbed revives' and 'Zaprillator'</br>
-</br>
-While they are spawned, while pointing at them: </br>
-- You can give them item with [G]
-- Make them drop item with [G]
-- Grab the intern with you [A], to go faster or useful on some map where the AI pathfind is not the best
-- Change the suit of the intern by the one you're wearing with \[X]
-- All input are configurable.
+
+## Command system
+
+**Command your interns** <br/>
+Interns can be directly commanded through a dedicated command system. <br/>
+Two menus are available to help you manage them. <br/> 
+<br/>**Manage all your interns** <br/>
+![CommandsMenuAll](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/CommandsMenuAll.png?raw=true)<br/>
+The main menu lets you see and command all your interns at once. <br/>
+From there, you can give them orders such as moving to a location, returning to the ship, waiting, scavenging or managing items. <br/> 
+<br/>**Command an individual intern** <br/>
+![CommandsMenuOne](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/CommandsMenuOne.png?raw=true)<br/>
+Each intern also has their own dedicated menu. <br/>
+This allows you to give specific orders to a single intern without affecting the others. <br/>
+You can check their current status and access the commands available to them. <br/> 
+<br/>**Your interns, your commands** <br/>
+Whether you need the whole team to move or just one intern to fetch an item, the command system gives you direct control over what they do.
+
+
+
 
 ## Configuration files
 Lots of configs are available for you, so go check them !</br>

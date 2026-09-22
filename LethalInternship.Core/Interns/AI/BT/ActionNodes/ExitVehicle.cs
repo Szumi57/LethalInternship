@@ -13,6 +13,12 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             InternAI ai = context.InternAI;
 
+            if (ai.DropAllObjectsCoroutineRunning)
+            {
+                PluginLoggerHook.LogDebug?.Invoke("// No ExitVehicle, intern still dropping items");
+                return BehaviourTreeStatus.Success;
+            }
+
             VehicleController? vehicleController = InternManager.Instance.VehicleController;
             if (vehicleController == null)
             {

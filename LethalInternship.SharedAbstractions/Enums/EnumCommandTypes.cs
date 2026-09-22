@@ -6,7 +6,16 @@
         FollowPlayer,
         GoToVehicle,
         GoToPosition,
-        Wait,
-        ScavengingMode
+        WaitForCommand,
+        ScavengingToShip,
+        ScavengingToCruiser,
+        ScavengingToGatheringPoint,
+        GoFetchItem,
+        Kill,
+        DropAllItemsToShip,
+        DropAllItemsOnGatheringPoint,
+        DropAllItemsInCruiser,
+        UnloadCruiser,
+        UnloadGatheringPoint,
     }
 }

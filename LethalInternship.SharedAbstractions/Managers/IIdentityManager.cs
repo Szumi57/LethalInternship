@@ -1,13 +1,20 @@
 ﻿using LethalInternship.SharedAbstractions.Interns;
+using System.Collections.Generic;
 
 namespace LethalInternship.SharedAbstractions.Managers
 {
     public interface IIdentityManager
     {
         int GetNewIdentityToSpawn();
-        int[] GetIdentitiesSpawned();
+
+        int[] GetIdentitiesIDsSpawned();
+        List<IInternIdentity> GetIdentitiesSpawned();
+
         int[] GetIdentitiesToDrop();
 
         IInternIdentity? FindIdentityFromBodyName(string bodyName);
+
+        bool IsIdentityValidToCommand(IInternIdentity identity);
+        bool IsIdentityCloseEnoughToCommand(IInternIdentity identity);
     }
 }

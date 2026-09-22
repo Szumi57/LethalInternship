@@ -1,6 +1,8 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Enums;
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -25,10 +27,27 @@ namespace LethalInternship.SharedAbstractions.Interns
         bool IsSpawned { get; }
         bool IsEnemyDead { get; }
 
+        EnumCommandTypes PendingCommand { get; }
+        EnumCommandTypes CurrentCommand { get; }
         IPointOfInterest? GetPointOfInterest();
+        void AssignOrder(Order order);
         void SetCommandToFollowPlayer(bool playVoice = true);
-        void SetCommandToScavenging();
+        void SetCommandToScavengingToShip();
+        void SetCommandToScavengingToCruiser();
+        void SetCommandToScavengingToGatheringPoint();
+        void SetCommandToFetchItem(GrabbableObject itemToFetch);
         void SetCommandTo(IPointOfInterest pointOfInterest, bool playVoice = true);
+        void SetCommandToAttackEnemy(EnemyAI enemy);
+        void SetCommandToDropToShip();
+        void SetCommandToDropToGatheringPoint();
+        void SetCommandToDropToCruiser();
+        void SetCommandToUnloadFromCruiser();
+        void SetCommandToUnloadFromGatheringPoint();
+        void SetCommandToWaitForCommand(bool wait);
+
+        EnumTempCommandFeedback TempCommandFeedback { get; }
+        void SetCommandFeedback(EnumTempCommandFeedback commandFeedback);
+        void OnCollisionWithCruiser();
 
         void AdaptController(PlayerControllerB playerControllerB);
         void UpdateController();
@@ -41,6 +60,8 @@ namespace LethalInternship.SharedAbstractions.Interns
         void DropTwoHandItem();
         void DropAllItems(EnumOptionsGetItems dropOptions, bool waitBetweenItems = true);
         void StopSinkingState();
+
+        Action<IInternAI>? OnInternDead { get; set; }
         void SyncDamageIntern(int damageNumber,
                               CauseOfDeath causeOfDeath = CauseOfDeath.Unknown,
                               int deathAnimation = 0,
@@ -64,6 +85,9 @@ namespace LethalInternship.SharedAbstractions.Interns
         void UpdateItemOffsetsWhileHeld();
         bool IsHoldingTwoHandedItem();
         void UpdateItemRotation(GrabbableObject grabbableObject);
+        void BeginSwapWeaponWith(GrabbableObject newWeapon);
+        void UseItem(GrabbableObject item);
+
         bool IsClientOwnerOfIntern();
         void SyncStopPerformingEmote();
         void SyncChangeSinkingState(bool startSinking, float sinkingSpeed = 0f, int audioClipIndex = 0);
@@ -79,14 +103,24 @@ namespace LethalInternship.SharedAbstractions.Interns
         void HideShowLevelStickerBetaBadge(bool show);
         void ChangeSuitInternServerRpc(ulong idInternController, int suitID);
         void SyncReleaseIntern(PlayerControllerB playerGrabberController);
+
+        Action<IInternAI>? OnOwnerChanged { get; set; }
         void SyncAssignTargetAndSetMovingTo(PlayerControllerB newTarget);
         void GrabInternServerRpc(ulong idPlayerGrabberController);
+
+        Action<IInternAI>? OnHeldItemsChanged { get; set; }
+        List<GrabbableObject> GetHeldGrabbableObjects();
+        GrabbableObject? GetHeldWeapon();
+        GrabbableObject? GetCurrentlyHeldItem();
+        int GetNbHeldItems();
         void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
         void GrabItem(GrabbableObject grabbableObject);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
         void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
         void HitTargetWithShovel(Shovel shovel);
         void HitTargetWithKnife(KnifeItem knife);
+
+        void SetAutoDefenseModeServerRpc(bool autoDefense);
 
         // Npc adapter
         Vector3 GetBillBoardPosition(GameObject bodyModel);

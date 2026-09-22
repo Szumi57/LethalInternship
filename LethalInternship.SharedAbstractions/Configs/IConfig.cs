@@ -23,7 +23,8 @@ namespace LethalInternship.SharedAbstractions.Configs
         // Behaviour
 
         //bool CanLosePlayer { get; }
-        bool CanUseWeapons { get; }
+        int OutsideRangeCommands { get; }
+        int InsideRangeCommands { get; }
         bool FollowCrouchWithPlayer { get; }
         bool ChangeSuitAutoBehaviour { get; }
         int NbMaxCanCarry { get; }

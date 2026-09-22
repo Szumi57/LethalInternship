@@ -1,7 +1,6 @@
 ﻿using LethalInternship.SharedAbstractions.Interns;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.TimedTasks
 {
@@ -9,8 +8,8 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
     {
         private List<IInternCullingBodyInfo> orderedInternBodiesDistanceList = null!;
 
-        private long timer = 200 * TimeSpan.TicksPerMillisecond;
-        private long lastTimeCalculate;
+        private float timer = 0.2f;
+        private float nextCheckTime;
 
         public List<IInternCullingBodyInfo> GetOrderedInternDistanceList(List<IInternCullingBodyInfo> internBodies)
         {
@@ -30,25 +29,20 @@ namespace LethalInternship.Core.Interns.AI.TimedTasks
 
         private bool NeedToRecalculate()
         {
-            long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-            if (elapsedTime > timer)
+            if (Time.time >= nextCheckTime)
             {
-                lastTimeCalculate = DateTime.Now.Ticks;
+                nextCheckTime = Time.time + timer;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         private void CalculateOrderedInternDistanceList(List<IInternCullingBodyInfo> internBodies)
         {
             orderedInternBodiesDistanceList.Clear();
             orderedInternBodiesDistanceList.AddRange(internBodies);
-            orderedInternBodiesDistanceList = orderedInternBodiesDistanceList
-                                                .OrderBy(x => x.GetSqrDistanceWithLocalPlayer())
-                                                .ToList();
+            orderedInternBodiesDistanceList.Sort((a, b) => a.GetSqrDistanceWithLocalPlayer()
+                                                           .CompareTo(b.GetSqrDistanceWithLocalPlayer()));
         }
     }
 }

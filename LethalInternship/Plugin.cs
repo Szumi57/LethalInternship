@@ -2,9 +2,9 @@
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
+using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Inputs;
 using LethalInternship.Managers;
-using LethalInternship.PluginPatches.GameEnginePatches;
 using LethalInternship.SharedAbstractions.Configs;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Events;
@@ -61,25 +61,18 @@ namespace LethalInternship
 
         // UI
         internal static bool UIAssetsLoaded = false;
-        public static GameObject MainUICommands = null!;
+        public static GameObject CommandsAll = null!;
+        public static GameObject CommandsOne = null!;
+        public static GameObject TooltipBar = null!;
 
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
-
-        public static GameObject DefaultIconImagePrefab = null!;
-        public static GameObject PointerIconImagePrefab = null!;
-        public static GameObject PedestrianIconImagePrefab = null!;
-        public static GameObject VehicleIconImagePrefab = null!;
-        public static GameObject ShipIconImagePrefab = null!;
-        public static GameObject MeetingPointIconImagePrefab = null!;
-        public static GameObject GatheringPointIconImagePrefab = null!;
-        public static GameObject AttackIconImagePrefab = null!;
 
         internal static string DirectoryName = null!;
         internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
         internal static ILethalInternshipInputs InputActionsInstance = null!;
-        internal static int PluginIrlPlayersCount = 0;
+        internal static int PluginIrlPlayersCount = 4;
 
         internal static bool IsModTooManyEmotesLoaded = false;
         internal static bool IsModModelReplacementAPILoaded = false;
@@ -219,11 +212,27 @@ namespace LethalInternship
 
         private bool LoadUIPrefabs()
         {
-            // Commands wheel
-            MainUICommands = Plugin.ModAssets.LoadAsset<GameObject>("MainUICommands");
-            if (MainUICommands == null)
+            // Commands all
+            CommandsAll = Plugin.ModAssets.LoadAsset<GameObject>("CommandsAll");
+            if (CommandsAll == null)
             {
-                Logger.LogError($"Failed to load MainUICommands prefab.");
+                Logger.LogError($"Failed to load CommandsAll prefab.");
+                return false;
+            }
+
+            // Commands all
+            CommandsOne = Plugin.ModAssets.LoadAsset<GameObject>("CommandsOne");
+            if (CommandsOne == null)
+            {
+                Logger.LogError($"Failed to load CommandsOne prefab.");
+                return false;
+            }
+
+            // TooltipBar
+            TooltipBar = Plugin.ModAssets.LoadAsset<GameObject>("Tooltip");
+            if (TooltipBar == null)
+            {
+                Logger.LogError($"Failed to load TooltipBar prefab.");
                 return false;
             }
 
@@ -242,62 +251,7 @@ namespace LethalInternship
                 return false;
             }
 
-            // Images prefabs
-            PointerIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PointerIconImage");
-            if (PointerIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load PointerIconImage UI prefab.");
-                return false;
-            }
-
-            DefaultIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("DefaultIconImage");
-            if (DefaultIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load DefaultIconImage UI prefab.");
-                return false;
-            }
-
-            PedestrianIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("PedestrianIconImage");
-            if (PedestrianIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load PedestrianIconImage UI prefab.");
-                return false;
-            }
-
-            VehicleIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("VehicleIconImage");
-            if (VehicleIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load VehicleIconImage UI prefab.");
-                return false;
-            }
-
-            ShipIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("ShipIconImage");
-            if (ShipIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load ShipIconImage UI prefab.");
-                return false;
-            }
-
-            MeetingPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("MeetingPointIconImage");
-            if (MeetingPointIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load MeetingPointIconImage UI prefab.");
-                return false;
-            }
-
-            GatheringPointIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("GatheringPointIconImage");
-            if (GatheringPointIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load GatheringPointIconImage UI prefab.");
-                return false;
-            }
-
-            AttackIconImagePrefab = Plugin.ModAssets.LoadAsset<GameObject>("AttackIconImage");
-            if (AttackIconImagePrefab == null)
-            {
-                Logger.LogError($"Failed to load AttackIconImage UI prefab.");
-                return false;
-            }
+            OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"));
 
             return true;
         }
@@ -328,7 +282,6 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.NetworkObjectPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.RoundManagerPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.SoundManagerPatch"));
-            _harmony.PatchAll(typeof(StartOfRoundPatch));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.GameEnginePatches.StartOfRoundPatch"));
 
             // Npc
@@ -354,6 +307,7 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.JesterAIPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.MaskedPlayerEnemyPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.MouthDogAIPatch"));
+            _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.PumaAIPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.RadMechAIPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.RadMechMissilePatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.EnemiesPatches.RedLocustBeesPatch"));
@@ -373,6 +327,7 @@ namespace LethalInternship
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ItemDropShipPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ManualCameraRendererPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ShipTeleporterPatch"));
+            _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.VehicleCollisionTriggerPatch"));
             _harmony.PatchAll(patchesAssembly.GetType("LethalInternship.Patches.MapPatches.VehicleControllerPatch"));
 
             patchesAssembly.GetType("LethalInternship.Patches.MapPatches.ShipTeleporterUtils")?.GetMethod("Init")?.Invoke(null, null);
@@ -711,27 +666,29 @@ namespace LethalInternship
         public string VoicesPath => Utility.CombinePaths(Paths.ConfigPath, PluginInfo.PLUGIN_GUID, VoicesConst.VOICES_PATH);
 
         public EnemyType InternNPCPrefab => Plugin.InternNPCPrefab;
+        public int PreparedIrlPlayersCount { get; set; }
+        public int PreparedInternCount { get; set; }
+        public int PluginIrlPlayersCount { get => Plugin.PluginIrlPlayersCount; set => Plugin.PluginIrlPlayersCount = value; }
+        public int AllEntitiesCount { get; set; }
+        public GameObject[] InternObjects { get; set; } = null!;
+
+        // Network
+        public uint NextInternNetworkObjectHash { get; set; } = 100001;
+        public uint[][] InternNetworkObjectHashes { get; set; } = Array.Empty<uint[]>();
+
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
 
-        public GameObject MainUICommands => Plugin.MainUICommands;
+        public GameObject CommandsAll => Plugin.CommandsAll;
+        public GameObject CommandsOne => Plugin.CommandsOne;
+        public GameObject TooltipBar => Plugin.TooltipBar;
 
         public GameObject WorldIconPrefab => Plugin.WorldIconPrefab;
         public GameObject InputIconPrefab => Plugin.InputIconPrefab;
-
-        public GameObject DefaultIconImagePrefab => Plugin.DefaultIconImagePrefab;
-        public GameObject PointerIconImagePrefab => Plugin.PointerIconImagePrefab;
-        public GameObject PedestrianIconImagePrefab => Plugin.PedestrianIconImagePrefab;
-        public GameObject VehicleIconImagePrefab => Plugin.VehicleIconImagePrefab;
-        public GameObject ShipIconImagePrefab => Plugin.ShipIconImagePrefab;
-        public GameObject MeetingPointIconImagePrefab => Plugin.MeetingPointIconImagePrefab;
-        public GameObject GatheringPointIconImagePrefab => Plugin.GatheringPointIconImagePrefab;
-        public GameObject AttackIconImagePrefab => Plugin.AttackIconImagePrefab;
 
         public string DirectoryName => Plugin.DirectoryName;
         public ILethalInternshipInputs InputActionsInstance => Plugin.InputActionsInstance;
         public IConfig Config => Plugin.Config;
 
-        public int PluginIrlPlayersCount { get => Plugin.PluginIrlPlayersCount; set => Plugin.PluginIrlPlayersCount = value; }
 
         public bool IsModTooManyEmotesLoaded => Plugin.IsModTooManyEmotesLoaded;
         public bool IsModModelReplacementAPILoaded => Plugin.IsModModelReplacementAPILoaded;

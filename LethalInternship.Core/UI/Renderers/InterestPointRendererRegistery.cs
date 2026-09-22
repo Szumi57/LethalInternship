@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Interns;
+﻿using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Interns;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,14 +15,14 @@ namespace LethalInternship.Core.UI.Renderers
             wrappers[typeof(T)] = new InterestPointRendererWrapper<T>(renderer);
         }
 
-        public GameObject? GetImagePrefab(IInterestPoint interestPoint)
+        public EnumIconImagesTypes GetIconImagesTypes(IInterestPoint interestPoint)
         {
             if (wrappers.TryGetValue(interestPoint.GetType(), out var interestPointRendererWrapper))
             {
-                return interestPointRendererWrapper.GetImagePrefab(interestPoint);
+                return interestPointRendererWrapper.GetIconImagesTypes(interestPoint);
             }
 
-            return null;
+            return EnumIconImagesTypes.None;
         }
 
         public Vector3 GetUIPosOffset(IInterestPoint interestPoint)
@@ -30,7 +31,7 @@ namespace LethalInternship.Core.UI.Renderers
             {
                 return interestPointRendererWrapper.GetUIPos(interestPoint);
             }
-            
+
             return Vector3.zero;
         }
     }

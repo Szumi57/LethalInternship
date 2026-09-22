@@ -3,6 +3,7 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
@@ -16,20 +17,40 @@ namespace LethalInternship.Core.Managers
 {
     public class IdentityManager : MonoBehaviour, IIdentityManager
     {
-        public static IdentityManager Instance { get; private set; } = null!;
+        private static IdentityManager _instance = null!;
+        public static IdentityManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(IdentityManager));
+                    _instance = go.AddComponent<IdentityManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
         public IInternIdentity[] InternIdentities = null!;
 
         private ConfigIdentity[] configIdentities = null!;
 
+        private readonly List<IInternIdentity> _spawnedBuffer = new List<IInternIdentity>();
+
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
+            _instance = this;
+            IdentityManagerProvider.Register(this);
+
+            // Identities
+            InitIdentities(PluginRuntimeProvider.Context.Config.ConfigIdentities.configIdentities);
         }
 
         private void Update()
@@ -51,9 +72,14 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private void OnDestroy()
+        {
+            IdentityManagerProvider.Unregister(this);
+        }
+
         public void InitIdentities(ConfigIdentity[] configIdentities)
         {
-            PluginLoggerHook.LogDebug?.Invoke($"InitIdentities, nbIdentities {configIdentities.Length}");
+            PluginLoggerHook.LogDebug?.Invoke($"InitIdentities... nbIdentities {configIdentities.Length}");
             InternIdentities = new InternIdentity[configIdentities.Length];
             this.configIdentities = configIdentities;
 
@@ -107,11 +133,15 @@ namespace LethalInternship.Core.Managers
 
             // Voice
             InternVoice voice = new InternVoice(configIdentity.voiceFolder,
-                                                configIdentity.volume, 
+                                                configIdentity.volume,
                                                 configIdentity.voicePitch);
 
             // InternIdentity
-            return new InternIdentity(idIdentity, name, suitID, voice);
+            return new InternIdentity(idIdentity,
+                                      name,
+                                      suitID,
+                                      configIdentity.autoDefenseMode,
+                                      voice);
         }
 
         public string[] GetIdentitiesNamesLowerCaseWithoutSpace()
@@ -217,7 +247,7 @@ namespace LethalInternship.Core.Managers
                         .ToArray();
         }
 
-        public int[] GetIdentitiesSpawned()
+        public int[] GetIdentitiesIDsSpawned()
         {
             if (InternIdentities == null)
             {
@@ -230,6 +260,23 @@ namespace LethalInternship.Core.Managers
                         .ToArray();
         }
 
+        public List<IInternIdentity> GetIdentitiesSpawned()
+        {
+            _spawnedBuffer.Clear();
+
+            if (InternIdentities == null)
+                return _spawnedBuffer;
+
+            foreach (var identity in InternIdentities)
+            {
+                if (identity != null
+                    && identity.Status == EnumStatusIdentity.Spawned)
+                    _spawnedBuffer.Add(identity);
+            }
+
+            return _spawnedBuffer;
+        }
+
         public bool IsAnIdentityToDrop()
         {
             return InternIdentities.FilterToDropAlive().Any();
@@ -238,6 +285,40 @@ namespace LethalInternship.Core.Managers
         public int GetNbIdentitiesSpawned()
         {
             return InternIdentities.FilterSpawnedAlive().Count();
+        }
+
+        public bool IsIdentityValidToCommand(IInternIdentity identity)
+        {
+            if (identity == null) return false;
+
+            if (!identity.Alive) return false;
+
+            if (identity.InternAI == null) return false;
+
+            if (identity.InternAI.Npc == null) return false;
+
+            if (StartOfRound.Instance == null || StartOfRound.Instance.localPlayerController == null) return false;
+
+            if (identity.InternAI.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId) return false;
+
+            if (identity.InternAI.IsSpawningAnimationRunning()) return false;
+
+            return true;
+        }
+
+        public bool IsIdentityCloseEnoughToCommand(IInternIdentity identity)
+        {
+            if (identity == null) return false;
+
+            if (!identity.Alive) return false;
+
+            if (identity.InternAI == null) return false;
+
+            if (identity.InternAI.Npc == null) return false;
+
+            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > InternManager.Instance.GetMaxDistanceCommand()) return false;
+
+            return true;
         }
     }
 

@@ -1,8 +1,6 @@
 ﻿using LethalInternship.Core.BehaviorTree;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Interns;
-using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
@@ -10,15 +8,16 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
     {
         public BehaviourTreeStatus Action(BTContext context)
         {
-            IInternAI ai = context.InternAI;
+            InternAI ai = context.InternAI;
 
             if (ai.AreHandsFree())
             {
-                PluginLoggerHook.LogError?.Invoke("DropItem action failed, no item held !");
-                return BehaviourTreeStatus.Failure;
+                PluginLoggerHook.LogDebug?.Invoke($"{ai.Npc.playerUsername} DropAllItems action failed, no item held ! SetCommandToFollowPlayer");
+                ai.SetCommandToFollowPlayer(playVoice: false);
+                return BehaviourTreeStatus.Success;
             }
 
-            EnumOptionsGetItems options = PluginRuntimeProvider.Context.Config.CanUseWeapons ? EnumOptionsGetItems.IgnoreWeapon : EnumOptionsGetItems.All;
+            EnumOptionsGetItems options = EnumOptionsGetItems.IgnoreWeapon;
             ai.DropAllItems(options);
 
             return BehaviourTreeStatus.Success;

@@ -1,13 +1,12 @@
 ﻿using LethalInternship.SharedAbstractions.UI;
-using System.Linq;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Icons.InputIcons
 {
     public class InputIconUI : IIconUI
     {
-        public string Key => key;
-        private string key;
+        public int Key => key;
+        private int key;
 
         private GameObject iconGameObject;
         private RectTransform rectTransformCanvasOverlay;
@@ -21,32 +20,19 @@ namespace LethalInternship.Core.UI.Icons.InputIcons
             this.rectTransformCanvasOverlay = rectTransformCanvasOverlay;
 
             iconUIController = this.iconGameObject.GetComponentInChildren<InputIconUIController>();
-            iconUIController.SetImageOnTop(iconUIInfos.GetImagesPrefab().First());
+            iconUIController.SetImageOnTop(iconUIInfos.IconImagesTypes);
 
             SetIconActive(false);
-        }
-
-        public void SetPositionUICenter()
-        {
-            iconUIController.PlaceOnCenterCanvas();
-            SetIconActive(true);
-        }
-
-        public void SetColorIconValidOrNot(bool isValidNavMeshPoint)
-        {
-            if (isValidNavMeshPoint)
-            {
-                iconUIController.SetColor(new Color(255 / 255f, 111 / 255f, 1 / 255f));
-            }
-            else
-            {
-                iconUIController.SetColor(Color.red);
-            }
         }
 
         public void SetIconActive(bool active)
         {
             iconGameObject.SetActive(active);
+        }
+
+        public void PlayStartAnim()
+        {
+            iconUIController.PlayStartAnim();
         }
     }
 }

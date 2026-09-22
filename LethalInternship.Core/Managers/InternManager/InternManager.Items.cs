@@ -1,11 +1,13 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Hooks.CustomItemBehaviourLibraryHooks;
+using LethalInternship.SharedAbstractions.Hooks.LethalMinHooks;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalInternship.Core.Managers
@@ -68,6 +70,186 @@ namespace LethalInternship.Core.Managers
             return getGrabbableObjectsListTimed.GetGrabbableObjectsList();
         }
 
+        public List<GrabbableObject> LookingForItemsToGrabInMap(List<GrabbableObject> items, bool forcePickUp = false)
+        {
+            items.Clear();
+            var grabbableObjectsList = GetGrabbableObjectsList();
+            for (int i = 0; i < grabbableObjectsList.Count; i++)
+            {
+                GameObject gameObject = grabbableObjectsList[i];
+                if (gameObject == null)
+                {
+                    continue;
+                }
+
+                // Black listed ? 
+                if (IsGrabbableObjectBlackListed(gameObject))
+                {
+                    continue;
+                }
+
+                // Get grabbable object infos
+                GrabbableObject? grabbableObject = gameObject.GetComponent<GrabbableObject>();
+                if (grabbableObject == null)
+                {
+                    continue;
+                }
+
+                // Grabbable object ?
+                if (!IsGrabbableObjectGrabbable(grabbableObject, forcePickUp))
+                {
+                    continue;
+                }
+
+                items.Add(grabbableObject);
+            }
+
+            return items;
+        }
+
+        /// <summary>
+        /// Check all conditions for deciding if an item is grabbable or not.
+        /// </summary>
+        /// <param name="grabbableObject">Item to check</param>
+        /// <returns></returns>
+        public bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject, bool forcePickUp = false)
+        {
+            InternManager.Instance.TrimDictJustDroppedItems();
+
+            if (grabbableObject == null
+                || !grabbableObject.gameObject.activeSelf)
+            {
+                return false;
+            }
+
+            if (grabbableObject.isHeld
+                || !grabbableObject.grabbable
+                || grabbableObject.deactivated)
+            {
+                return false;
+            }
+
+            RagdollGrabbableObject? ragdollGrabbableObject = grabbableObject as RagdollGrabbableObject;
+            if (ragdollGrabbableObject != null)
+            {
+                if (!ragdollGrabbableObject.grabbableToEnemies)
+                {
+                    return false;
+                }
+            }
+
+            if (forcePickUp)
+            {
+                return true;
+            }
+
+            // Item just dropped, should wait a bit before grab it again
+            if (InternManager.Instance.IsGrabbableObjectJustDropped(grabbableObject))
+            {
+                // Trim dictionnary if too large
+                return false;
+            }
+
+            // Object on ship
+            if (grabbableObject.isInElevator
+                || grabbableObject.isInShipRoom)
+            {
+                return false;
+            }
+
+            // Object in cruiser vehicle
+            if (grabbableObject.transform.parent != null
+                && grabbableObject.transform.parent.name.StartsWith("CompanyCruiser"))
+            {
+                return false;
+            }
+
+            // Object in a container mod of some sort ?
+            if (PluginRuntimeProvider.Context.IsModCustomItemBehaviourLibraryLoaded)
+            {
+                if (CustomItemBehaviourLibraryHook.IsGrabbableObjectInContainerMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            // Object too close to gathering point ?
+            if (GatheringPoint != null)
+            {
+                if ((GatheringPoint.GetPoint() - grabbableObject.transform.position).sqrMagnitude < Const.GATHERING_POINT_RANGE * Const.GATHERING_POINT_RANGE)
+                {
+                    return false;
+                }
+            }
+
+            // Is a pickmin (LethalMin mod) holding the object ?
+            if (PluginRuntimeProvider.Context.IsModLethalMinLoaded)
+            {
+                if (LethalMinHook.IsGrabbableObjectHeldByPikminMod?.Invoke(grabbableObject) ?? false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate)
+        {
+            // Bee nest
+            if (!PluginRuntimeProvider.Context.Config.GrabBeesNest
+                && gameObjectToEvaluate.name.Contains("RedLocustHive"))
+            {
+                return true;
+            }
+
+            // Dead bodies
+            if (!PluginRuntimeProvider.Context.Config.GrabDeadBodies
+                && gameObjectToEvaluate.name.Contains("RagdollGrabbableObject")
+                && gameObjectToEvaluate.tag == "PhysicsProp"
+                && gameObjectToEvaluate.GetComponentInParent<DeadBodyInfo>() != null)
+            {
+                return true;
+            }
+
+            // Maneater
+            if (!PluginRuntimeProvider.Context.Config.GrabManeaterBaby
+                && gameObjectToEvaluate.name.Contains("CaveDwellerEnemy"))
+            {
+                return true;
+            }
+
+            // Wheelbarrow
+            if (!PluginRuntimeProvider.Context.Config.GrabWheelbarrow
+                && gameObjectToEvaluate.name.Contains("Wheelbarrow"))
+            {
+                return true;
+            }
+
+            // ShoppingCart
+            if (!PluginRuntimeProvider.Context.Config.GrabShoppingCart
+                && gameObjectToEvaluate.name.Contains("ShoppingCart"))
+            {
+                return true;
+            }
+
+            // Baby kiwi egg
+            if (!PluginRuntimeProvider.Context.Config.GrabKiwiBabyItem
+                && gameObjectToEvaluate.name.Contains("KiwiBabyItem"))
+            {
+                return true;
+            }
+
+            // Apparatus
+            if (!PluginRuntimeProvider.Context.Config.GrabApparatus
+                && gameObjectToEvaluate.name.Contains("LungApparatus"))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform)
         {
             IInternAI? internHolder = GetInternAI((int)shovel.playerHeldBy.playerClientId);
@@ -111,6 +293,41 @@ namespace LethalInternship.Core.Managers
                     return true;
                 }
             }
+
+            return false;
+        }
+
+        public bool IsItemUsableWeapon(GrabbableObject grabbableObject)
+        {
+            if (grabbableObject == null)
+                return false;
+
+            if (grabbableObject.itemProperties.itemName.Contains("Shovel")
+                || grabbableObject.itemProperties.itemName.Contains("Stop")
+                || grabbableObject.itemProperties.itemName.Contains("Yield")
+                || grabbableObject.itemProperties.itemName.Contains("Kitchen")
+                || grabbableObject.itemProperties.itemName.Contains("Shotgun")
+                )
+                return true;
+
+            return false;
+        }
+
+        public bool IsItemUsableItem(GrabbableObject grabbableObject)
+        {
+            if (grabbableObject == null)
+                return false;
+
+            if (grabbableObject.itemProperties.itemName.Contains("Boombox")
+                || grabbableObject.itemProperties.itemName.Contains("Extension")
+                || grabbableObject.itemProperties.itemName.Contains("lashlight")
+                || grabbableObject.itemProperties.itemName.Contains("Booster")
+                || grabbableObject.itemProperties.itemName.Contains("Airhorn")
+                || grabbableObject.itemProperties.itemName.Contains("Clown")
+                || grabbableObject.itemProperties.itemName.Contains("Hairdryer")
+                || grabbableObject.itemProperties.itemName.Contains("Laser")
+                )
+                return true;
 
             return false;
         }

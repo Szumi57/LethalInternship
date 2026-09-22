@@ -144,7 +144,7 @@ namespace LethalInternship.Core.Interns
         private Vector3 directionToUpdateTurnBodyTowardsTo;
         private Vector3 positionPlayerEyeToLookAt;
         private Vector3 positionToLookAt;
-        private Transform movingTargetToLookAt;
+        private Transform movingTargetToLookAt = null!;
         private Vector3 lastDirectionToLookAt;
         private Quaternion cameraRotationToUpdateLookAt;
 
@@ -162,6 +162,9 @@ namespace LethalInternship.Core.Interns
         private float timerShowName;
         private float timerPlayFootstep;
         private float timerBillboardText;
+
+        // Minor optimization
+        private readonly StringBuilder _sb = new StringBuilder(256);
 
         public NpcController(PlayerControllerB npc)
         {
@@ -1783,19 +1786,19 @@ namespace LethalInternship.Core.Interns
                 timerBillboardText = 0f;
 
                 // Text billboard
-                StringBuilder sb = new StringBuilder();
-                sb.Append(InternAIController.GetSizedBillboardStateIndicator());
+                _sb.Clear();
+                _sb.Append(InternAIController.GetSizedBillboardStateIndicator());
                 if (timerShowName >= 0f)
                 {
                     timerShowName -= Time.deltaTime;
 
-                    sb.Append($"\n{Npc.playerUsername}");
+                    _sb.Append($"\n{Npc.playerUsername}");
                     if (InternAIController.IsClientOwnerOfIntern())
                     {
-                        sb.Append($"\nv");
+                        _sb.Append($"\nv");
                     }
                 }
-                Npc.usernameBillboardText.text = sb.ToString();
+                Npc.usernameBillboardText.text = _sb.ToString();
             }
 
             if (GameNetworkManager.Instance.localPlayerController != null
@@ -2395,9 +2398,9 @@ namespace LethalInternship.Core.Interns
                                lastPosition.z);
         }
 
-        public float GetSqrDistanceWithLocalPlayer(Vector3 internBodyPos)
+        public float GetSqrDistanceWithLocalPlayer()
         {
-            return SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(internBodyPos);
+            return SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(this.Npc.transform.position);
         }
 
         public Bounds GetBoundsModel(GameObject model)
@@ -2410,8 +2413,8 @@ namespace LethalInternship.Core.Interns
             private Bounds bounds;
             private GameObject? model;
 
-            private long timer = 10000 * TimeSpan.TicksPerMillisecond;
-            private long lastTimeCalculate;
+            private float timer = 10f;
+            private float nextCheckTime;
 
             public Bounds GetBoundsModel(GameObject model)
             {
@@ -2428,16 +2431,12 @@ namespace LethalInternship.Core.Interns
 
             private bool NeedToRecalculate()
             {
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timer)
+                if (Time.time >= nextCheckTime)
                 {
-                    lastTimeCalculate = DateTime.Now.Ticks;
+                    nextCheckTime = Time.time + timer;
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
 
             private void CalculateBoundsModel(GameObject model)
@@ -2459,8 +2458,8 @@ namespace LethalInternship.Core.Interns
         {
             private float sqrDistance;
 
-            private long timer = 100 * TimeSpan.TicksPerMillisecond;
-            private long lastTimeCalculate;
+            private float timer = 0.1f;
+            private float nextCheckTime;
 
             public float GetSqrDistanceWithLocalPlayer(Vector3 internBodyPos)
             {
@@ -2481,16 +2480,12 @@ namespace LethalInternship.Core.Interns
 
             private bool NeedToRecalculate()
             {
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timer)
+                if (Time.time >= nextCheckTime)
                 {
-                    lastTimeCalculate = DateTime.Now.Ticks;
+                    nextCheckTime = Time.time + timer;
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
 
             private void CalculateSqrDistanceWithLocalPlayer(Vector3 internBodyPos)
@@ -2501,8 +2496,8 @@ namespace LethalInternship.Core.Interns
 
         public class TimedUpdateBillboardLookAtCheck
         {
-            private long timer = 100 * TimeSpan.TicksPerMillisecond;
-            private long lastTimeCalculate;
+            private float timer = 0.1f;
+            private float nextCheckTime;
 
             public void UpdateBillboardLookAt(PlayerControllerB player, bool forceUpdate)
             {
@@ -2523,16 +2518,12 @@ namespace LethalInternship.Core.Interns
 
             private bool NeedToRecalculate()
             {
-                long elapsedTime = DateTime.Now.Ticks - lastTimeCalculate;
-                if (elapsedTime > timer)
+                if (Time.time >= nextCheckTime)
                 {
-                    lastTimeCalculate = DateTime.Now.Ticks;
+                    nextCheckTime = Time.time + timer;
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
 
             private void CalculateUpdateBillboardLookAt(PlayerControllerB player)

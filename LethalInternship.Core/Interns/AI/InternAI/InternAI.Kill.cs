@@ -3,14 +3,20 @@ using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Hooks.ReviveCompanyHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
+using System;
 using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.Interns.AI
 {
     public partial class InternAI
     {
+        public Action<IInternAI>? OnInternDead { get { return onInternDead; } set { onInternDead = value!; } }
+        private Action<IInternAI> onInternDead = null!;
+
         #region Kill intern RPC
 
         public override void KillEnemy(bool destroy = false)
@@ -109,7 +115,7 @@ namespace LethalInternship.Core.Interns.AI
             {
                 GameObject gameObject = Instantiate(StartOfRound.Instance.ragdollGrabbableObjectPrefab, NpcController.Npc.playersManager.propsContainer);
                 gameObject.GetComponent<NetworkObject>().Spawn(false);
-                gameObject.GetComponent<RagdollGrabbableObject>().bodyID.Value = (int)NpcController.Npc.playerClientId;
+                gameObject.GetComponent<RagdollGrabbableObject>().bodyID = (int)NpcController.Npc.playerClientId;
             }
         }
 
@@ -205,7 +211,14 @@ namespace LethalInternship.Core.Interns.AI
             NpcController.Npc.causeOfDeath = causeOfDeath;
             if (spawnBody)
             {
-                NpcController.Npc.SpawnDeadBody((int)NpcController.Npc.playerClientId, bodyVelocity, (int)causeOfDeath, NpcController.Npc, deathAnimation, null, positionOffset);
+                NpcController.Npc.SpawnDeadBody(playerId: (int)NpcController.Npc.playerClientId,
+                                                bodyVelocity: bodyVelocity,
+                                                causeOfDeath: (int)causeOfDeath,
+                                                deadPlayerController: NpcController.Npc,
+                                                deathAnimation: deathAnimation,
+                                                setPhysicsParent: null,
+                                                overridePosition: null,
+                                                positionOffset: positionOffset);
 
                 if (NpcController.Npc.deadBody != null)
                 {
@@ -247,6 +260,9 @@ namespace LethalInternship.Core.Interns.AI
 
             PointOfInterest = null;
             InternManager.Instance.CancelBatch((int)Npc.playerClientId);
+
+            // Event
+            OnInternDead?.Invoke(this);
         }
 
         #endregion

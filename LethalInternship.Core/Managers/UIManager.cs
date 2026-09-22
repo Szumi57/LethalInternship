@@ -4,34 +4,70 @@ using LethalInternship.Core.UI.Icons;
 using LethalInternship.Core.UI.Icons.InputIcons;
 using LethalInternship.Core.UI.Icons.Pools;
 using LethalInternship.Core.UI.Icons.WorldIcons;
+using LethalInternship.Core.UI.Others;
+using LethalInternship.Core.UI.Outlines;
 using LethalInternship.Core.UI.Renderers;
 using LethalInternship.Core.UI.Renderers.InterestPointsRenderer;
+using LethalInternship.Core.UI.TooltipBar;
+using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
+using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
-using System;
-using System.Collections;
+using LethalInternship.SharedAbstractions.UI;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static LethalInternship.Core.Managers.TargetingManager;
+using Object = UnityEngine.Object;
 
 namespace LethalInternship.Core.Managers
 {
     public class UIManager : MonoBehaviour, IUIManager
     {
-        public static UIManager Instance { get; private set; } = null!;
+        private static UIManager _instance = null!;
+        public static UIManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject(nameof(UIManager));
+                    _instance = go.AddComponent<UIManager>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
-        // Commands wheel
-        public GameObject MainUICommands = null!;
-        public bool IsMainUICommandsOpened { get { return MainUICommands != null && MainUICommands.activeSelf; } }
-        private CommandsMainUIController CommandsUIController = null!;
+        // Commands all panel
+        private GameObject commandsAllGo = null!;
+        public CommandsAllController CommandsAllController { get; private set; } = null!;
+        public bool IsCommandsAllOpen { get { return commandsAllGo != null && commandsAllGo.activeSelf; } }
+
+        // Commands one panel
+        private GameObject commandsOneGo = null!;
+        public CommandsOneController CommandsOneController { get; private set; } = null!;
+        public bool IsCommandsOneOpen { get { return commandsOneGo != null && commandsOneGo.activeSelf; } }
+
+        public bool IsAnyMenuOpen { get { return IsCommandsAllOpen || IsCommandsOneOpen || (GameNetworkManager.Instance?.localPlayerController?.quickMenuManager.isMenuOpen ?? false); } }
+        private bool wasAnyMenuOpen;
+
+        public bool IsAnyCommandsMenuOpenOrWasOpen { get { return IsCommandsAllOpen || IsCommandsOneOpen || wasAnyCommandsMenuOpen; } }
+        private bool wasAnyCommandsMenuOpen;
+
+        public GameObject? LastSelectedUI { get; private set; }
+
+        // TooltipBar
+        private GameObject toolTipBarUIGo = null!;
+        public TooltipBarUI ToolTipBarUI { get; private set; } = null!;
+
+        public TMP_FontAsset FontToUse => HUDManager.Instance.statsUIElements.playerNamesText[0].font;
 
         // Canvas overlay
         public Canvas CanvasOverlay = null!;
@@ -40,31 +76,46 @@ namespace LethalInternship.Core.Managers
         private WorldIconUIPool worldIconUIPool = null!;
         private InputIconUIPool inputIconUIPool = null!;
 
-        // Input icon current icon
-        private GameObject inputIconImagePrefab = null!;
+        // Input icon anim
+        private bool firstShowNeedAnim;
 
         // Renderers
         private InterestPointRendererRegistery interestPointRendererRegistery = null!;
         private PointOfInterestRendererService pointOfInterestRendererService = null!;
 
-        private PlayerControllerB localPlayerController = null!;
-        private bool InternsOwned;
         private IPointOfInterest? PointOfInterestInCenter = null;
-        private List<IPointOfInterest> pointOfInterestsAlreadyDisplayed = new List<IPointOfInterest>();
-        private Coroutine CoroutineUpdateRightPanel = null!;
-        private IInternAI? internAIToManage;
+
+        // Allocation optimizations
+        private readonly List<IInternAI> _internsOwned = new List<IInternAI>();
+        private readonly List<IPointOfInterest> _poiToShow = new List<IPointOfInterest>();
+        private readonly HashSet<IPointOfInterest> _poiSet = new HashSet<IPointOfInterest>();
+        private readonly List<WorldIconUI> _worldIconsToReturn = new List<WorldIconUI>();
+        private readonly HashSet<IPointOfInterest> _poiDisplayedLastFrameSet = new HashSet<IPointOfInterest>();
+
+        // Outlines
+        private bool allowMultipleInternOutline = false;
+
+        private float timerUpdateTooltips;
+
+        // Minor optimization
+        private readonly StringBuilder _sb = new StringBuilder(256);
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
-                Destroy(Instance.gameObject);
+                Destroy(gameObject);
+                return;
             }
 
-            Instance = this;
+            _instance = this;
+            UIManagerProvider.Register(this);
         }
 
-        private void Start() { }
+        private void OnDestroy()
+        {
+            UIManagerProvider.Unregister(this);
+        }
 
         private void Update()
         {
@@ -73,89 +124,99 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            // ----------------
+            // Icons
             ShowWorldIconUIs();
+
+            UpdateBillBoard();
+            UpdateOutlines();
+
+            // Tooltips
+            timerUpdateTooltips += Time.deltaTime;
+            if (timerUpdateTooltips > 0.25f)
+            {
+                timerUpdateTooltips = 0f;
+                UpdateControlTip(HUDManager.Instance);
+            }
+
+            wasAnyMenuOpen = IsAnyMenuOpen;
+            wasAnyCommandsMenuOpen = IsCommandsAllOpen || IsCommandsOneOpen;
         }
 
         private void LateUpdate()
         {
-            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
-            {
-                return;
-            }
-
-            switch (InputManager.Instance.CurrentInputAction)
-            {
-                case EnumInputAction.GoToPosition:
-                    localPlayerController.cursorTip.text = UIConst.UI_CHOOSE_LOCATION;
-                    break;
-
-                case EnumInputAction.None:
-                default:
-                    //ClearCursorTipText();
-                    break;
-            }
+            UpdateCursorTooltips();
         }
 
         private void ShowWorldIconUIs()
         {
             if (worldIconUIPool == null)
-            {
                 return;
-            }
+
+            if (GameNetworkManager.Instance == null
+                || GameNetworkManager.Instance.localPlayerController == null)
+                return;
 
             PointOfInterestInCenter = null;
 
-            // Check for interns owned
-            IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
-            InternsOwned = internsOwned.Length > 0;
-            if (!InternsOwned)
+            bool isAnyMenuWasClosed = wasAnyMenuOpen && !IsAnyMenuOpen;
+
+            // Check if nothing to show
+            if (IsAnyMenuOpen)
             {
-                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
+                // Clear remaining icons
+                worldIconUIPool.DisableOtherIcons();
+                return;
             }
 
-            List<WorldIconUI> worldIconsToReturn = new List<WorldIconUI>();
-            WorldIconUI worldIcon;
-            // Show other already active icons
-            var pointsOfInterest = internsOwned
-                         .Where(y => y.GetPointOfInterest() != null)
-                         .Select(x => x.GetPointOfInterest()!)
-                         .Distinct();
-            foreach (IPointOfInterest pointOfInterest in pointsOfInterest)
+            InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal(_internsOwned);
+
+            _poiToShow.Clear();
+            _poiSet.Clear();
+
+            foreach (var intern in _internsOwned)
             {
-                //PluginLoggerHook.LogDebug?.Invoke($"pointOfInterest {pointOfInterest.}");
+                var poi = intern.GetPointOfInterest();
+                if (poi == null) continue;
+
+                if (_poiSet.Add(poi))
+                    _poiToShow.Add(poi);
+            }
+            if (InternManager.Instance.GatheringPoint != null)
+                _poiToShow.Add(InternManager.Instance.GatheringPoint);
+
+            WorldIconUI worldIcon;
+            foreach (IPointOfInterest pointOfInterest in _poiToShow)
+            {
+                //Debug.Log($"uimanager pointOfInterest GetUIKey {pointOfInterestRendererService.GetIconUIInfos(pointOfInterest).GetUIKey()}");
+                //foreach (var ip in pointOfInterest.GetListInterestPoints())
+                //    Debug.Log($"uimanager pointOfInterest ip {ip.GetType()}");
+
                 worldIcon = worldIconUIPool.GetIcon(pointOfInterestRendererService.GetIconUIInfos(pointOfInterest));
                 worldIcon.SetPositionUI(pointOfInterestRendererService.GetUIIcon(pointOfInterest));
-                worldIcon.SetDefaultColor();
                 worldIcon.SetIconActive(true);
-                worldIconsToReturn.Add(worldIcon);
+                worldIcon.ForceVisible(value: InputManager.Instance.CurrentTargetedAbility != null || isAnyMenuWasClosed);
+                _worldIconsToReturn.Add(worldIcon);
 
                 // Scan icon in center
                 if (PointOfInterestInCenter == null)
-                {
                     PointOfInterestInCenter = worldIcon.IsIconInCenter ? pointOfInterest : null;
-                }
 
                 // Should use ping animation ?
-                if (!pointOfInterestsAlreadyDisplayed.Contains(pointOfInterest))
-                {
+                if (!_poiDisplayedLastFrameSet.Contains(pointOfInterest))
                     worldIcon.TriggerPingAnimation();
-                }
             }
 
-            pointOfInterestsAlreadyDisplayed = pointsOfInterest.ToList();
+            // Save already displayed icons
+            _poiDisplayedLastFrameSet.Clear();
+            foreach (var poi in _poiToShow)
+                _poiDisplayedLastFrameSet.Add(poi);
 
             // Clear remaining icons
             worldIconUIPool.DisableOtherIcons();
-            foreach (var icon in worldIconsToReturn)
-            {
+            foreach (var icon in _worldIconsToReturn)
                 worldIconUIPool.ReturnIcon(icon);
-            }
-        }
 
-        public void AttachUIToLocalPlayer(PlayerControllerB player)
-        {
-            localPlayerController = player;
+            _worldIconsToReturn.Clear();
         }
 
         public void InitUI(Transform HUDContainerParent)
@@ -166,7 +227,7 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            PluginLoggerHook.LogDebug?.Invoke($"InitUI");
+            PluginLoggerHook.LogInfo?.Invoke($"UIManager : Initialization...");
 
             if (CanvasOverlay == null)
             {
@@ -178,9 +239,10 @@ namespace LethalInternship.Core.Managers
 
             // Renderers
             interestPointRendererRegistery = new InterestPointRendererRegistery();
-            interestPointRendererRegistery.Register(new DefaultInterestPointRenderer());
+            interestPointRendererRegistery.Register(new PositionInterestPointRenderer());
             interestPointRendererRegistery.Register(new VehicleInterestPointRenderer());
             interestPointRendererRegistery.Register(new ShipInterestPointRenderer());
+            interestPointRendererRegistery.Register(new GatheringPointRenderer());
 
             pointOfInterestRendererService = new PointOfInterestRendererService(interestPointRendererRegistery);
 
@@ -189,59 +251,35 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool ??= new InputIconUIPool(CanvasOverlay);
 
             // Instantiating prefabs
-            MainUICommands = GameObject.Instantiate(PluginRuntimeProvider.Context.MainUICommands, HUDContainerParent);
-            foreach (CommandButtonController commandButtonController in MainUICommands.GetComponentsInChildren<CommandButtonController>())
+            // ---------------------
+            // CommandsAll
+            if (commandsAllGo != null)
             {
-                if (commandButtonController == null)
-                {
-                    continue;
-                }
-
-                PluginLoggerHook.LogDebug?.Invoke($"MainUICommands commandButtonController id {commandButtonController.ID} event linkin");
-                commandButtonController.OnSelected += CommandWheelButtonController_OnSelected;
+                Object.Destroy(commandsAllGo);
             }
-            CommandsUIController = MainUICommands.GetComponent<CommandsMainUIController>();
-            CommandsUIController.SetFont(HUDManager.Instance.statsUIElements.playerNamesText[0].font);
-            MainUICommands.SetActive(false);
+            commandsAllGo = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsAll, HUDContainerParent);
+            CommandsAllController = commandsAllGo.GetComponent<CommandsAllController>();
+            commandsAllGo.SetActive(false);
+
+            // CommandsOne
+            if (commandsOneGo != null)
+            {
+                Object.Destroy(commandsOneGo);
+            }
+            commandsOneGo = GameObject.Instantiate(PluginRuntimeProvider.Context.CommandsOne, HUDContainerParent);
+            CommandsOneController = commandsOneGo.GetComponent<CommandsOneController>();
+            commandsOneGo.SetActive(false);
+
+            // Tooltip
+            if (toolTipBarUIGo != null)
+            {
+                Object.Destroy(toolTipBarUIGo);
+            }
+            toolTipBarUIGo = GameObject.Instantiate(PluginRuntimeProvider.Context.TooltipBar, HUDContainerParent);
+            ToolTipBarUI = toolTipBarUIGo.GetComponent<TooltipBarUI>();
         }
 
-        private void CommandWheelButtonController_OnSelected(object sender, EventArgs e)
-        {
-            CommandButtonController commandButtonController = (CommandButtonController)sender;
-            PluginLoggerHook.LogDebug?.Invoke($"CommandButtonController? sender {commandButtonController.ID} {(EnumInputAction)commandButtonController.ID}, e {e}, interns ? {InternsOwned}");
-
-            if (!InternsOwned)
-            {
-                HideCommandsWheel();
-                InputManager.Instance.SetCurrentInputAction(EnumInputAction.None);
-                return;
-            }
-
-            EnumInputAction enumInputAction = (EnumInputAction)commandButtonController.ID;
-            if (enumInputAction != EnumInputAction.None)
-            {
-                HideCommandsWheel();
-            }
-            switch (enumInputAction)
-            {
-                case EnumInputAction.GoToPosition:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
-                    SetPedestrianInputIcon();
-                    break;
-
-                case EnumInputAction.FollowMe:
-                case EnumInputAction.GoToShip:
-                case EnumInputAction.GoToVehicle:
-                case EnumInputAction.Scavenging:
-                    InputManager.Instance.SetCurrentInputAction(enumInputAction, internAIToManage);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        public void ShowInputIcon(bool isValid)
+        public void ShowInputIcon()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
             {
@@ -253,10 +291,14 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
-            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(inputIconImagePrefab.name, new List<GameObject>() { inputIconImagePrefab }));
-            inputIconUI.SetPositionUICenter();
-            inputIconUI.SetColorIconValidOrNot(isValid);
+            InputIconUI inputIconUI = inputIconUIPool.GetIcon(new IconUIInfos(GetInputIcon()));
             inputIconUI.SetIconActive(true);
+
+            if (firstShowNeedAnim)
+            {
+                inputIconUI.PlayStartAnim();
+                firstShowNeedAnim = false;
+            }
 
             inputIconUIPool.DisableOtherIcons();
             inputIconUIPool.ReturnIcon(inputIconUI);
@@ -269,6 +311,8 @@ namespace LethalInternship.Core.Managers
                 return;
             }
 
+            firstShowNeedAnim = true;
+
             if (inputIconUIPool == null)
             {
                 return;
@@ -277,21 +321,53 @@ namespace LethalInternship.Core.Managers
             inputIconUIPool.DisableOtherIcons();
         }
 
-        public void SetDefaultInputIcon()
+        private EnumIconImagesTypes GetInputIcon()
         {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.DefaultIconImagePrefab;
-        }
-        public void SetPedestrianInputIcon()
-        {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.PedestrianIconImagePrefab;
-        }
-        public void SetVehicleInputIcon()
-        {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.VehicleIconImagePrefab;
-        }
-        public void SetShipInputIcon()
-        {
-            inputIconImagePrefab = PluginRuntimeProvider.Context.ShipIconImagePrefab;
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null)
+            {
+                return EnumIconImagesTypes.None;
+            }
+
+            // Icon are set here
+            if (target.Value.Item != null)
+            {
+                return EnumIconImagesTypes.FetchItem;
+            }
+            else if (target.Value.Enemy != null)
+            {
+                if (InternManager.Instance.IsEnemyKillable(target.Value.Enemy))
+                    return EnumIconImagesTypes.Attack;
+                else
+                    return EnumIconImagesTypes.CantAttack;
+            }
+            else if ((TargetingManager.Instance.ActiveSearch & TargetType.GatheringPoint) != 0)
+            {
+                return EnumIconImagesTypes.GatheringPoint;
+            }
+            else if (target.Value.PointedPointOfInterest != null)
+            {
+                IIconUIInfos iconUIInfos = pointOfInterestRendererService.GetIconUIInfos(target.Value.PointedPointOfInterest);
+                return iconUIInfos.IconImagesTypes;
+            }
+            else
+            {
+                RaycastHit targetHit = target.Value.RaycastHit;
+                if (TargetingManager.Instance.IsColliderFromVehicle(targetHit.collider))
+                {
+                    return EnumIconImagesTypes.Vehicle;
+                }
+                else if (TargetingManager.Instance.IsColliderFromShip(targetHit.collider))
+                {
+                    Transform? shipTransform = TargetingManager.Instance.GetParentShip(targetHit.collider.gameObject.transform);
+                    if (shipTransform != null)
+                        return EnumIconImagesTypes.Ship;
+                }
+                else
+                    return EnumIconImagesTypes.Position;
+            }
+
+            return EnumIconImagesTypes.None;
         }
 
         public IPointOfInterest? GetPointOfInterestInCenter()
@@ -299,116 +375,244 @@ namespace LethalInternship.Core.Managers
             return PointOfInterestInCenter;
         }
 
-        //PluginLoggerHook.LogDebug?.Invoke($"pos {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.position}, {GameNetworkManager.Instance.localPlayerController.quickMenuManager.menuContainer.transform.GetSiblingIndex()}");
+        public void UpdateLastSelectedUI(GameObject? gameObject)
+        {
+            LastSelectedUI = gameObject;
+        }
 
-        //Component[] components = GroupCommandWheel.GetComponentsInChildren(typeof(Component));
-        //PluginLoggerHook.LogDebug?.Invoke($"==================");
-        //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel component n {components.Length}");
-        //foreach (Component component in components)
-        //{
-        //    if (component == null) continue;
+        public bool CloseSuitPanel()
+        {
+            if (IsCommandsOneOpen)
+            {
+                if (CommandsOneController.ButtonSelectSuit == null
+                    || CommandsOneController.ButtonSelectSuit.SuitListPanel == null)
+                    return false;
 
-        //    component.transform.SetAsLastSibling();
-        //    PluginLoggerHook.LogDebug?.Invoke($"pos {component.transform.position}, index {component.transform.GetSiblingIndex()}, active {component.gameObject.activeSelf} {component.ToString()}");
-        //}
+                return CommandsOneController.ButtonSelectSuit.CloseSuitPanel();
+            }
+            else if (IsCommandsAllOpen)
+            {
+                if (CommandsAllController.ButtonSelectSuit == null
+                    || CommandsAllController.ButtonSelectSuit.SuitListPanel == null)
+                    return false;
 
-        //PluginLoggerHook.LogDebug?.Invoke($"GroupCommandWheel {GroupCommandWheel.activeSelf}");
+                return CommandsAllController.ButtonSelectSuit.CloseSuitPanel();
+            }
+            return false;
+        }
 
-        public bool ShowCommandsWheel(IInternAI? internAIToManage = null)
+        #region Show/Hide commands
+
+        public void ShowCommandsAll()
         {
             if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
-            {
-                return false;
-            }
+                return;
             if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
-            {
-                return false;
-            }
-            if (InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal().Length == 0)
-            {
-                return false;
-            }
+                return;
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
-            InputManager.Instance.SetCurrentInputAction(EnumInputAction.None, internAIToManage);
-            this.internAIToManage = internAIToManage;
-
-            if (CoroutineUpdateRightPanel != null)
+            if (!InputManager.Instance.IsUsingController)
             {
-                StopCoroutine(CoroutineUpdateRightPanel);
+                Cursor.visible = true;
             }
-            CoroutineUpdateRightPanel = StartCoroutine(UpdateCommandsWheelUI(internAIToManage));
 
-            MainUICommands.SetActive(true);
-            return true;
+            commandsAllGo.SetActive(true);
         }
 
-        public void HideCommandsWheel()
+        public void ShowCommandsOne()
         {
-            if (!IsMainUICommandsOpened)
-            {
+            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
                 return;
+            if (GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen)
+                return;
+
+            GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = true;
+            Cursor.lockState = CursorLockMode.None;
+            if (!InputManager.Instance.IsUsingController)
+            {
+                Cursor.visible = true;
             }
+
+            commandsOneGo.SetActive(true);
+        }
+
+        public void RefreshCommandsOne()
+        {
+            if (!PluginRuntimeProvider.Context.UIAssetsLoaded)
+                return;
+
+            if (!IsCommandsOneOpen)
+                ShowCommandsOne();
+
+            commandsOneGo.GetComponent<CommandsOneController>().Refresh();
+        }
+
+        public void HideCommandsAll(bool resetCameraFocus = true)
+        {
+            if (!IsCommandsAllOpen)
+                return;
 
             GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            MainUICommands.SetActive(false);
+            ToolTipBarUI.Hide();
+
+            if (resetCameraFocus)
+                CameraFocusUI.Instance.ReturnToInitial();
+
+            commandsAllGo.SetActive(false);
         }
+
+        public void HideCommandsOne()
+        {
+            if (!IsCommandsOneOpen)
+                return;
+
+            GameNetworkManager.Instance.localPlayerController.quickMenuManager.isMenuOpen = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            ToolTipBarUI.Hide();
+            CameraFocusUI.Instance.ReturnToInitial();
+
+            commandsOneGo.SetActive(false);
+        }
+
+        public void HideAll()
+        {
+            HideCommandsAll();
+            HideCommandsOne();
+        }
+
+        #endregion
+
+        #region CursorTooltip
+
+        private readonly List<(string id, string text)> _cursorTooltips = new List<(string id, string text)>(10);
 
         public void ClearCursorTipText()
         {
-            if (localPlayerController.cursorTip.text == UIConst.UI_CHOOSE_LOCATION)
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
+
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            if (localPlayer.cursorTip.text == UIConst.UI_CHOOSE_LOCATION)
             {
-                localPlayerController.cursorTip.text = string.Empty;
+                localPlayer.cursorTip.text = string.Empty;
             }
         }
 
-        private IEnumerator UpdateCommandsWheelUI(IInternAI? internAIToManage)
+        private void UpdateCursorTooltips()
         {
-            yield return null;
+            if (StartOfRound.Instance == null
+                || StartOfRound.Instance.localPlayerController == null)
+                return;
 
-            while (IsMainUICommandsOpened)
+            PlayerControllerB localPlayer = StartOfRound.Instance.localPlayerController;
+
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null)
+                return;
+
+            _cursorTooltips.Clear();
+
+            // Targeting tooltip
+            if (InputManager.Instance.CurrentTargetedAbility != null)
             {
-                // Buttons
-                CommandButtonController? commandWheelController = CommandsUIController.CommandsPanelController.GetGoToVehicleButton();
-                if (commandWheelController != null)
+                if (target.Value.Item != null)
                 {
-                    commandWheelController.IsNotAvailable = InternManager.Instance.VehicleController == null;
+                    _cursorTooltips.Add(("targetingItem", UIConst.TOOLTIP_TARGETING_ITEM));
+                }
+                else if (target.Value.Enemy != null)
+                {
+                    if (InternManager.Instance.IsEnemyKillable(target.Value.Enemy))
+                        _cursorTooltips.Add(("targetingKillableEnemy", UIConst.TOOLTIP_TARGETING_ENEMY));
+                    else
+                        _cursorTooltips.Add(("targetingUnkillableEnemy", UIConst.TOOLTIP_TARGETING_UNKILLABLE_ENEMY));
+                }
+                else if (target.Value.PointedPointOfInterest != null)
+                {
+                    _cursorTooltips.Add(("targetingPosition", UIConst.TOOLTIP_TARGETING_POSITION));
+                }
+            }
+            else if (target.Value.Intern != null) // Not targeting command
+            {
+                IInternAI intern = target.Value.Intern;
+
+                // Temp command feedback
+                if (!intern.IsOwner)
+                {
+                    _cursorTooltips.Add(("commandFeedback", UIConst.TOOLTIP_NOT_OWNED));
+                }
+                else if (intern.TempCommandFeedback != EnumTempCommandFeedback.None)
+                {
+                    _cursorTooltips.Add(("commandFeedback", GetCommandFeedbackString(intern.TempCommandFeedback, intern.CurrentCommand)));
                 }
 
-                // Right panel
-                if (internAIToManage == null)
+                if (intern.NpcController.GetSqrDistanceWithLocalPlayer() < localPlayer.grabDistance * localPlayer.grabDistance)
                 {
-                    IInternAI[] internsOwned = InternManager.Instance.GetAliveAndSpawnInternsAIOwnedByLocal();
-                    CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_INTERNS);
-
-                    StringBuilder sb = new StringBuilder();
-                    foreach (IInternAI intern in internsOwned)
+                    // Grab distance
+                    // Line give item
+                    if (localPlayer.currentlyHeldObjectServer != null)
                     {
-                        sb.Append("> ");
-                        sb.Append(intern.Npc.playerUsername);
-                        sb.Append("\n");
+                        _cursorTooltips.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
+                                                                     InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern))));
                     }
-                    CommandsUIController.SetTextListInterns(sb.ToString());
-                }
-                else
-                {
-                    CommandsUIController.SetTitleListInterns(UIConst.UI_TITLE_LIST_SINGLE_INTERN);
-                    CommandsUIController.SetTextListInterns("> " + internAIToManage.Npc.playerUsername);
+
+                    // Owning ?
+                    if (intern.OwnerClientId != localPlayer.actualClientId)
+                    {
+                        // Line manage
+                        _cursorTooltips.Add(("manage", string.Format(UIConst.TOOLTIP_MANAGE,
+                                                                   InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ManageIntern))));
+                    }
+
+                    // Grab intern
+                    _cursorTooltips.Add(("manage", string.Format(UIConst.TOOLTIP_GRAB_INTERNS,
+                                                               InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GrabIntern))));
                 }
 
-                yield return null;
+                // Owning ?
+                if (intern.OwnerClientId == localPlayer.actualClientId)
+                {
+                    // Line manage
+                    _cursorTooltips.Add(("commandsOne", string.Format(UIConst.TOOLTIP_COMMANDS_ONE,
+                                                                    InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenCommandsOneIntern))));
+                }
+            }
+
+            // Send tooltips
+            SetTooltips(localPlayer.cursorTip,
+                        isSeparatorToAdd: false,
+                        _cursorTooltips);
+        }
+
+        private string GetCommandFeedbackString(EnumTempCommandFeedback enumTempCommandFeedback, EnumCommandTypes enumCommand)
+        {
+            if (enumTempCommandFeedback == EnumTempCommandFeedback.ExecutingCommand)
+            {
+                return UIConst.TOOLTIP_EXECUTING_COMMAND[(int)enumCommand];
+            }
+            else
+            {
+                return UIConst.TOOLTIP_COMMAND_FEEDBACK[(int)enumTempCommandFeedback];
             }
         }
 
-        #region Tips display
+        #endregion
 
-        public void AddInternsControlTip(HUDManager hudManager)
+        #region Tips top right display
+
+        const string SEPARATOR = "--------------";
+        const string TT_START = "<tt id=";
+
+        private readonly List<(string id, string text)> _controlTooltips = new List<(string id, string text)>(2);
+
+        private void UpdateControlTip(HUDManager hudManager)
         {
             int index = -1;
             for (int i = 0; i < hudManager.controlTipLines.Length - 1; i++)
@@ -420,63 +624,138 @@ namespace LethalInternship.Core.Managers
                     break;
                 }
             }
-
             if (index == -1)
             {
                 index = hudManager.controlTipLines.Length - 1;
             }
 
+            _controlTooltips.Clear();
+
+            // Release grabbed interns
             if (InternManager.Instance.IsLocalPlayerHoldingInterns())
             {
-                WriteControlTipLine(hudManager.controlTipLines[index], Const.TOOLTIP_RELEASE_INTERNS, InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns));
+                _controlTooltips.Add(("release", string.Format(UIConst.TOOLTIP_RELEASE_INTERNS,
+                                                            InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.ReleaseInterns))));
             }
-            if (InternManager.Instance.IsLocalPlayerNextToChillInterns())
+
+            // Intern commands 
+            if (_internsOwned.Count > 0)
             {
-                WriteControlTipLine(hudManager.controlTipLines[index], Const.TOOLTIP_MAKE_INTERN_LOOK, InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.MakeInternLookAtPosition));
+                _controlTooltips.Add(("commandsAll", string.Format(UIConst.TOOLTIP_COMMANDS_ALL,
+                                                             InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.OpenAllCommandsIntern))));
+            }
+
+            SetTooltips(hudManager.controlTipLines[index],
+                        isSeparatorToAdd: index > 0,
+                        _controlTooltips);
+        }
+
+        private void SetTooltips(TextMeshProUGUI tmp,
+                                 bool isSeparatorToAdd,
+                                 List<(string id, string text)> tooltips)
+        {
+            string baseText = StripAllTooltips(tmp.text);
+
+            if (tooltips.Count == 0)
+            {
+                tmp.text = baseText;
+                return;
+            }
+
+            _sb.Clear();
+            _sb.Append(baseText);
+            if (isSeparatorToAdd && !string.IsNullOrWhiteSpace(baseText))
+            {
+                _sb.Append('\n').Append(SEPARATOR);
+            }
+
+            foreach (var tt in tooltips)
+            {
+                _sb.Append("\n<size=0>")
+                   .Append(TT_START)
+                   .Append(tt.id)
+                   .Append("></size>")
+                   .Append(tt.text);
+            }
+
+            string newText = _sb.ToString();
+            if (tmp.text != newText)
+            {
+                tmp.text = newText;
             }
         }
 
-        private void WriteControlTipLine(TextMeshProUGUI line, string textToAdd, string keyAction)
+        private string StripAllTooltips(string src)
         {
-            if (!IsStringPresent(line.text, textToAdd))
+            // remove all rows with <tt id=...>
+            _sb.Clear();
+
+            int lineStart = 0;
+
+            while (lineStart < src.Length)
             {
-                if (!string.IsNullOrWhiteSpace(line.text))
+                int lineEnd = src.IndexOf('\n', lineStart);
+                if (lineEnd < 0)
+                    lineEnd = src.Length;
+
+                int length = lineEnd - lineStart;
+
+                bool isTooltip = src.IndexOf(TT_START, lineStart, length) >= 0;
+                bool isSeparator = src.IndexOf(SEPARATOR, lineStart, length) >= 0;
+
+                if (!isTooltip && !isSeparator)
                 {
-                    line.text += "\n";
+                    if (_sb.Length > 0)
+                        _sb.Append('\n');
+
+                    _sb.Append(src, lineStart, length);
                 }
-                line.text += string.Format(textToAdd, keyAction);
+
+                lineStart = lineEnd + 1;
             }
+
+            return _sb.ToString();
         }
 
-        private bool IsStringPresent(string stringCurrent, string stringToAdd)
-        {
-            string[] splits = stringCurrent.Split(new string[] { "[", "]\n" }, System.StringSplitOptions.None);
-            foreach (string split in splits)
-            {
-                if (string.IsNullOrWhiteSpace(split))
-                {
-                    continue;
-                }
+        #endregion
 
-                if (stringToAdd.Contains(split.Trim()))
-                {
-                    return true;
-                }
+        #region Outlines
+
+        private void UpdateBillBoard()
+        {
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null
+                || target.Value.Intern == null)
+            {
+                return;
             }
 
-            return false;
+            // Name billboard
+            target.Value.Intern.NpcController.ShowFullNameBillboard();
         }
 
-        public void UpdateControlTip()
+        private void UpdateOutlines()
         {
-            string[] currentControlTipLines = { };
-            if (HUDManager.Instance.controlTipLines != null
-                && HUDManager.Instance.controlTipLines.Length > 0)
-            {
-                currentControlTipLines = HUDManager.Instance.controlTipLines.Select(i => i.text).ToArray();
-            }
+            TargetData? target = TargetingManager.Instance.GetCurrentTarget();
+            if (target == null)
+                return;
 
-            HUDManager.Instance.ChangeControlTipMultiple(currentControlTipLines);
+            // Update intern outlines
+            InternOutlineController.UpdateInternsOutlines(IdentityManager.Instance.GetIdentitiesSpawned(),
+                                                          target?.Intern?.Npc.playerClientId,
+                                                          allowMultipleInternOutline,
+                                                          forceNoOutlines: IsAnyMenuOpen);
+
+
+            InternOutlineController.UpdateEnemiesOutlines(InternManager.Instance.GetEnemiesList(),
+                                                          target?.Enemy,
+                                                          allowMultipleInternOutline,
+                                                          forceNoOutlines: IsAnyMenuOpen);
+
+            InternOutlineController.UpdateItemsOutlines(InternManager.Instance.GetGrabbableObjectsList(),
+                                                        target?.Item,
+                                                        allowMultipleInternOutline,
+                                                        forceNoOutlines: IsAnyMenuOpen);
         }
 
         #endregion

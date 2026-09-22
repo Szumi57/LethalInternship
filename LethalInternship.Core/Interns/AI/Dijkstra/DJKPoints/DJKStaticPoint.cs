@@ -1,45 +1,44 @@
 ﻿using LethalInternship.Core.Interns.AI.Batches.Instructions;
+using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.Parameters;
+using LethalInternship.SharedAbstractions.Pools;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
 {
     public class DJKStaticPoint : DJKPointBase
     {
+        private readonly StringBuilder _pathSb = new StringBuilder(256);
+
         public string Name { get; set; }
         public Vector3 Position { get; set; }
 
-        public DJKStaticPoint(Vector3 position)
+        private InstructionCalculatePathNoPartialsSamplePos instruction = null!;
+        private List<Vector3> pointsResults = new List<Vector3>();
+
+        public DJKStaticPoint()
             : base()
         {
-            Position = position;
+            Position = Vector3.zero;
             Name = string.Empty;
         }
 
-        public DJKStaticPoint(Vector3 position, string name)
+        public DJKStaticPoint(string name)
             : base()
         {
             Name = name;
-            Position = position;
+            Position = Vector3.zero;
         }
 
-        public override object Clone()
+        public override IEnumerable<Vector3> GetAllPoints()
         {
-            var copy = new DJKStaticPoint(Position, Name);
-            copy.Id = Id;
-            copy.Neighbors = Neighbors
-                .Select(n => (n.idNeighbor, n.neighborPos, n.weight))
-                .ToList();
-            return copy;
-        }
-
-        public override Vector3[] GetAllPoints()
-        {
-            return new Vector3[] { Position };
+            pointsResults.Clear();
+            pointsResults.Add(Position);
+            return pointsResults;
         }
 
         public override Vector3 GetClosestPointTo(Vector3 point)
@@ -47,31 +46,63 @@ namespace LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints
             return Position;
         }
 
-        public override Vector3[] GetNearbyPoints(Vector3 point)
+        public override IEnumerable<Vector3> GetNearbyPoints(Vector3 point)
         {
-            List<Vector3> points = new List<Vector3> { Position };
-            return points
-                        .Where(p => p.y - point.y <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
-                        .ToArray();
+            pointsResults.Clear();
+            if (Mathf.Abs(Position.y - point.y) <= Const.OUTSIDE_INSIDE_DISTANCE_LIMIT)
+                pointsResults.Add(Position);
+
+            return pointsResults;
         }
 
         public override IInstruction GenerateInstruction(int idBatch, InstructionParameters instructionToProcess)
         {
-            return new InstructionCalculatePathNoPartialsSamplePos(
-                                idBatch,
-                                instructionToProcess.groupId,
-                                start: instructionToProcess.start,
-                                target: instructionToProcess.target,
-                                startDJKPoint: instructionToProcess.startDJKPoint,
-                                targetDJKPoint: instructionToProcess.targetDJKPoint,
-                                samplePosDist: 2f);
+            instruction = InternManager.Instance.Pools.Get<InstructionCalculatePathNoPartialsSamplePos>();
+            instruction.Initialize(idBatch,
+                                   instructionToProcess.groupId,
+                                   start: instructionToProcess.start,
+                                   target: instructionToProcess.target,
+                                   startDJKPoint: instructionToProcess.startDJKPoint,
+                                   targetDJKPoint: instructionToProcess.targetDJKPoint,
+                                   0f,
+                                   fromId: instructionToProcess.startDJKPoint.Id,
+                                   toId: instructionToProcess.targetDJKPoint.Id,
+                                   resultCallback: instructionToProcess.resultCallback);
+
+            return instruction;
         }
 
         public override string ToString()
         {
-            string neighborsString = string.Join(",", Neighbors.Select(x => $"{x.idNeighbor}({(int)Mathf.Sqrt(x.weight)})"));
+            _pathSb.Clear();
 
-            return $"DJKStaticPoint \"{Name}\" id:{Id}, Position: {Position}, Neighbors {{{neighborsString}}}";
+            _pathSb.Append("DJKStaticPoint \"");
+            _pathSb.Append(Name);
+            _pathSb.Append("\" id:");
+            _pathSb.Append(Id);
+            _pathSb.Append(" pos: ");
+            _pathSb.Append(Position);
+
+            return _pathSb.ToString();
+        }
+
+        public override void ReturnToPool(IPoolManager pool)
+        {
+            pool.Return(this);
+        }
+
+        public void CopyFrom(DJKStaticPoint other)
+        {
+            Id = other.Id;
+            Name = other.Name;
+            Position = other.Position;
+        }
+
+        public override IDJKPoint Clone(IPoolManager pool)
+        {
+            var clone = pool.Get<DJKStaticPoint>();
+            clone.CopyFrom(this);
+            return clone;
         }
     }
 }

@@ -75,7 +75,7 @@ namespace LethalInternship.Core.Managers
         public bool AreInternsScheduledToLand()
         {
             // no drop of interns on company building moon
-            if (StartOfRound.Instance.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID)
+            if (IsCurrentMoonCompanyMoon())
             {
                 return false;
             }
@@ -190,6 +190,16 @@ namespace LethalInternship.Core.Managers
             }
         }
 
+        private ulong GetActualClientId()
+        {
+            if (GameNetworkManager.Instance == null
+               || GameNetworkManager.Instance.localPlayerController == null)
+            {
+                return ulong.MaxValue;
+            }
+
+            return GameNetworkManager.Instance.localPlayerController.actualClientId;
+        }
 
         /// <summary>
         /// Get <c>InternAI</c> from <c>PlayerControllerB</c> <c>playerClientId</c>
@@ -198,7 +208,7 @@ namespace LethalInternship.Core.Managers
         /// <returns><c>InternAI</c> if the <c>PlayerControllerB</c> has an <c>InternAI</c> associated, else returns null</returns>
         public IInternAI? GetInternAI(int playerClientId)
         {
-            if (IndexBeginOfInterns == StartOfRound.Instance.allPlayerScripts.Length
+            if (AllInternAIs == null
                 || playerClientId < IndexBeginOfInterns)
             {
                 // Real player
@@ -224,7 +234,7 @@ namespace LethalInternship.Core.Managers
         {
             IInternAI? internAI = GetInternAI(index);
             if (internAI != null
-                && internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                && internAI.OwnerClientId == GetActualClientId())
             {
                 return internAI;
             }
@@ -332,7 +342,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return internAI.OwnerClientId == GetActualClientId();
         }
 
         /// <summary>
@@ -365,7 +375,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return internAI.OwnerClientId == GetActualClientId();
         }
 
         /// <summary>
@@ -384,7 +394,7 @@ namespace LethalInternship.Core.Managers
                 return false;
             }
 
-            return internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId;
+            return internAI.OwnerClientId == GetActualClientId();
         }
 
         public bool IsPlayerInternControlledAndOwner(PlayerControllerB player)
@@ -403,25 +413,62 @@ namespace LethalInternship.Core.Managers
             return true;
         }
 
+        public void GetAliveAndSpawnInternsAI(List<IInternAI> result)
+        {
+            result.Clear();
+
+            foreach (var x in AllInternAIs)
+            {
+                if (x == null) continue;
+                if (x.IsEnemyDead) continue;
+
+                var npcController = x.NpcController;
+                if (npcController == null) continue;
+
+                var npc = npcController.Npc;
+                if (npc == null) continue;
+                if (npc.isPlayerDead) continue;
+                if (!npc.isPlayerControlled) continue;
+
+                var identity = x.InternIdentity;
+                if (identity == null) continue;
+                if (identity.Status != EnumStatusIdentity.Spawned) continue;
+
+                result.Add(x);
+            }
+        }
+
         public IInternAI[] GetInternsAIOwnedByLocal()
         {
             return AllInternAIs.Where(x => x != null
-                                        && x.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                                        && x.OwnerClientId == GetActualClientId())
                                .ToArray();
         }
 
-        public IInternAI[] GetAliveAndSpawnInternsAIOwnedByLocal()
+        public void GetAliveAndSpawnInternsAIOwnedByLocal(List<IInternAI> result)
         {
-            return AllInternAIs.Where(x => x != null
-                                        && x.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId
-                                        && !x.IsEnemyDead
-                                        && x.NpcController != null
-                                        && x.NpcController.Npc != null
-                                        && !x.NpcController.Npc.isPlayerDead
-                                        && x.NpcController.Npc.isPlayerControlled
-                                        && x.InternIdentity != null
-                                        && x.InternIdentity.Status == EnumStatusIdentity.Spawned)
-                               .ToArray();
+            result.Clear();
+
+            foreach (var x in AllInternAIs)
+            {
+                if (x == null) continue;
+                if (x.OwnerClientId != GetActualClientId()) continue;
+                if (x.IsEnemyDead) continue;
+
+                var npcController = x.NpcController;
+                if (npcController == null) continue;
+
+                var npc = npcController.Npc;
+                if (npc == null) continue;
+                if (npc.isPlayerDead) continue;
+                if (!npc.isPlayerControlled) continue;
+
+                var identity = x.InternIdentity;
+                if (identity == null) continue;
+                if (identity.Status != EnumStatusIdentity.Spawned) continue;
+
+                result.Add(x);
+            }
         }
 
         public void SetInternsInElevatorLateUpdate(float deltaTime)
@@ -458,7 +505,7 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                if (internAI.OwnerClientId == GameNetworkManager.Instance.localPlayerController.actualClientId)
+                if (internAI.OwnerClientId == GetActualClientId())
                 {
                     return true;
                 }
@@ -512,9 +559,81 @@ namespace LethalInternship.Core.Managers
             return GetEnemiesTimed.GetEnemiesList();
         }
 
+        public bool IsEnemyKillable(EnemyAI enemy)
+        {
+            switch (enemy.enemyType.enemyName) // using enemyName
+            {
+                // Killable
+                case "Baboon hawk":
+                case "Bunker Spider":
+                case "Bush Wolf":
+                case "Butler":
+                case "Centipede":
+                case "Crawler":
+                case "Flowerman":
+                case "ForestGiant":
+                case "GiantKiwi":
+                case "Hoarding bug":
+                case "Maneater":
+                case "Masked":
+                case "Manticoil":
+                case "MouthDog":
+                case "Nutcracker":
+                case "Tulip Snake":
+                case "Feiopar":
+                case "Stingray":
+                    return true;
+
+                default:
+                    // Not killable
+
+                    // "Butler Bees":
+                    // "Blob":
+                    // "ImmortalSnail":
+                    // "Red Locust Bees":
+                    // "Earth Leviathan":
+                    // "Clay Surgeon":
+                    // "Puffer":
+                    // "Spring":
+                    // "Jester":
+                    // "RadMech":
+                    // "Docile Locust Bees":
+                    // "Girl":
+                    return false;
+            }
+        }
+
         public bool ShouldIgnoreInternsEndScreen(PlayerControllerB player)
         {
             return IsPlayerIntern(player);
+        }
+
+        public void GetListOfAvailableSuitIDs(List<int> indexesSpawnedSuits)
+        {
+            StartOfRound instanceSOR = StartOfRound.Instance;
+            UnlockableItem unlockableItem;
+            indexesSpawnedSuits.Clear();
+            foreach (var unlockable in instanceSOR.SpawnedShipUnlockables)
+            {
+                if (unlockable.Value == null)
+                {
+                    continue;
+                }
+
+                unlockableItem = instanceSOR.unlockablesList.unlockables[unlockable.Key];
+                if (unlockableItem != null
+                    && unlockableItem.unlockableType == 0) // Suit
+                {
+                    // Suits
+                    indexesSpawnedSuits.Add(unlockable.Key);
+                    //PluginLoggerHook.LogDebug?.Invoke($"unlockable index {unlockable.Key}");
+                }
+            }
+        }
+
+        public bool IsCurrentMoonCompanyMoon()
+        {
+            return StartOfRound.Instance.currentLevel.levelID == Const.COMPANY_BUILDING_MOON_ID;
         }
     }
 }

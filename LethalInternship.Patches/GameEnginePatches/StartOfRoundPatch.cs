@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalInternship.Patches.GameEnginePatches
@@ -430,22 +431,17 @@ namespace LethalInternship.Patches.GameEnginePatches
 
         #endregion
 
-        /// <summary>
-        /// Patch for sync the info from the save from the server to the client (who does not load the save file)
-        /// </summary>
-        /// <param name="__instance"></param>
-        [HarmonyPatch("OnPlayerConnectedClientRpc")]
+        [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        static void OnPlayerConnectedClientRpc_PostFix(StartOfRound __instance, ulong clientId)
+        static void Start_PostFix(StartOfRound __instance)
         {
-            // Sync save file
-            if (!__instance.IsServer
-                && !__instance.IsHost
-                && __instance.NetworkManager.LocalClientId == clientId)
+            if (!InternManagerProvider.IsReady)
             {
-                InternManagerProvider.Instance.SyncLoadedJsonIdentitiesServerRpc(clientId);
-                SaveManagerProvider.Instance.SyncCurrentValuesServerRpc(clientId);
+                PluginLoggerHook.LogWarning?.Invoke("InternManager networkBehaviour not spawned in StartOfRoundPatch Start_PostFix !");
+                return;
             }
+
+            InternManagerProvider.Instance.Init();
         }
 
         [HarmonyPatch("LateUpdate")]
@@ -460,14 +456,57 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
         }
 
-        /// <summary>
-        /// Removes duplication of event triggering when quitting to main menu and coming back
-        /// </summary>
-        [HarmonyPatch("OnDisable")]
+        [HarmonyPatch("OnDestroy")]
         [HarmonyPostfix]
-        static void OnDisable_Postfix()
+        static void OnDestroy_Postfix()
         {
-            InputManagerProvider.Instance.RemoveEventHandlers();
+            var nm = NetworkManager.Singleton;
+
+            // Monobehaviours
+            InternManagerProvider.Instance.DestroyMonoManagers();
+
+            // NetworkBehaviours
+            // InternManager
+            var no = ((NetworkBehaviour)InternManagerProvider.Instance).NetworkObject;
+            if (nm != null && nm.IsListening && no.IsSpawned)
+            {
+                // Network ok
+                no.Despawn(destroy: true);
+            }
+            else
+            {
+                // Network dead
+                UnityEngine.Object.Destroy(no.gameObject);
+            }
+            InternManagerProvider.ForceClear();
+
+            // SaveManager
+            no = ((NetworkBehaviour)SaveManagerProvider.Instance).NetworkObject;
+            if (nm != null && nm.IsListening && no.IsSpawned)
+            {
+                // Network ok
+                no.Despawn(destroy: true);
+            }
+            else
+            {
+                // Network dead
+                UnityEngine.Object.Destroy(no.gameObject);
+            }
+            SaveManagerProvider.ForceClear();
+
+            // TerminalManager
+            no = ((NetworkBehaviour)TerminalManagerProvider.Instance).NetworkObject;
+            if (nm != null && nm.IsListening && no.IsSpawned)
+            {
+                // Network ok
+                no.Despawn(destroy: true);
+            }
+            else
+            {
+                // Network dead
+                UnityEngine.Object.Destroy(no.gameObject);
+            }
+            TerminalManagerProvider.ForceClear();
         }
 
         [HarmonyPatch("UpdatePlayerVoiceEffects")]

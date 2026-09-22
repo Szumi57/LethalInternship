@@ -132,7 +132,7 @@ namespace LethalInternship.SharedAbstractions.Constants
         public static readonly float MAX_TIME_FREEZE_LOOKING_AROUND = 2f;
 
         // Cruiser vehicle
-        public static readonly float DISTANCE_TO_CRUISER = 6f;
+        public static readonly float DISTANCE_TO_CRUISER = 10f;
 
         // Front
         public static readonly Vector3 LEFT_FRONT_POS_CRUISER = new Vector3(-0.75f, -1f, 5.5f);
@@ -150,15 +150,10 @@ namespace LethalInternship.SharedAbstractions.Constants
         // Panik
         public static readonly float DISTANCE_FLEEING_NO_LOS = 5f;
 
-        // Tips
-        public static readonly string TOOLTIP_DROP_ITEM = "Drop your item : [{0}]";
-        public static readonly string TOOLTIP_TAKE_ITEM = "Take my item : [{0}]";
-        public static readonly string TOOLTIP_FOLLOW_ME = "Follow me: [{0}]";
-        public static readonly string TOOLTIP_GRAB_INTERNS = "Grab intern: [{0}]";
-        public static readonly string TOOLTIP_RELEASE_INTERNS = "Release grabbed interns : [{0}]";
-        public static readonly string TOOLTIP_CHANGE_SUIT_INTERNS = "Change suit : [{0}]";
-        public static readonly string TOOLTIP_COMMANDS = "Commands : [{0}]";
-        public static readonly string TOOLTIP_MAKE_INTERN_LOOK = "Make interns look : [{0}]";
-        public static readonly string TOOLTIPS_ORDER_1 = "order 1 : [{0}]";
+        public static readonly float DISTANCE_SAME_ENTRANCE = 1f;
+        public static readonly float PENALTY_ENTRANCE = 100f;
+        public static readonly float GATHERING_POINT_RANGE = 5f;
+
+        public static readonly int GRAPH_CAPACITY = 256;
     }
 }

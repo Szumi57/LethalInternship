@@ -1,22 +1,22 @@
 ﻿using LethalInternship.Core.BehaviorTree;
-using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
-using System.Collections;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
 {
     public class FleeFromEnemy : IBTAction
     {
+        private float fleeRepathInterval = 0.5f;
+        private float nextFleeUpdateTime;
+
         public BehaviourTreeStatus Action(BTContext context)
         {
             InternAI ai = context.InternAI;
-            CoroutineController panikCoroutine = context.PanikCoroutine;
 
             if (context.CurrentEnemy == null)
             {
@@ -28,13 +28,8 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             if (!fearRange.HasValue)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"FleeFromEnemy fearRange is null, ignoring enemy \"{context.CurrentEnemy.enemyType.enemyName}\"");
-                panikCoroutine.StopCoroutine();
-                context.CurrentEnemy = null;
                 return BehaviourTreeStatus.Success;
             }
-
-            // Keep coroutine
-            panikCoroutine.KeepAlive();
 
             // Check to see if the intern can see the enemy, or enemy has line of sight to intern
             float sqrDistanceToEnemy = (ai.NpcController.Npc.transform.position - context.CurrentEnemy.transform.position).sqrMagnitude;
@@ -43,10 +38,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             {
                 // If line of sight broke
                 // and the intern is far enough when the enemy can not see him
+                //Debug.Log($"No Linecast DistanceToEnemy {Mathf.Sqrt(sqrDistanceToEnemy)} <? {Const.DISTANCE_FLEEING_NO_LOS}");
                 if (sqrDistanceToEnemy > Const.DISTANCE_FLEEING_NO_LOS * Const.DISTANCE_FLEEING_NO_LOS)
                 {
-                    panikCoroutine.StopCoroutine();
-                    context.CurrentEnemy = null;
                     return BehaviourTreeStatus.Success;
                 }
             }
@@ -55,16 +49,16 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             // Far enough from enemy
             if (sqrDistanceToEnemy > fearRange * fearRange)
             {
-                context.CurrentEnemy = null;
-                panikCoroutine.StopCoroutine();
                 return BehaviourTreeStatus.Success;
             }
             // Enemy still too close
 
-            // If enemy still too close, and destination reached, restart the panic routine
-            if ((ai.destination - ai.NpcController.Npc.transform.position).sqrMagnitude < Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION * Const.DISTANCE_CLOSE_ENOUGH_TO_DESTINATION)
+            if (Time.time > nextFleeUpdateTime)
             {
-                panikCoroutine.RestartCoroutine(ChooseFleeingNodeFromPosition(ai, context.CurrentEnemy.transform, fearRange.Value));
+                nextFleeUpdateTime = Time.time + fleeRepathInterval;
+
+                // Search for node to flee to
+                UpdateNodeToFleeTo(context, fearRange.Value);
             }
 
             // Sprint of course
@@ -98,41 +92,39 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             });
         }
 
-        /// <summary>
-        /// Coroutine to find the closest node after some distance (see: <see cref="InternAI.GetFearRangeForEnemies"><c>InternAI.GetFearRangeForEnemies</c></see>).
-        /// In other word, find a path node to flee from the enemy.
-        /// </summary>
-        /// <remarks>Or should I say an attempt to code it.</remarks>
-        /// <param name="enemyTransform">Position of the enemy</param>
-        /// <returns></returns>
-        private IEnumerator ChooseFleeingNodeFromPosition(InternAI ai, Transform enemyTransform, float fearRange)
+        private void UpdateNodeToFleeTo(BTContext context, float fearRange)
         {
-            var nodes = ai.allAINodes.OrderBy(node => (node.transform.position - ai.transform.position).sqrMagnitude)
-                                     .ToArray();
-            yield return null;
+            InternAI ai = context.InternAI;
 
-            // no need for a loop I guess
-            for (var i = 0; i < nodes.Length; i++)
+            Vector3 npcPos = ai.Npc.transform.position;
+            Vector3 enemyPos = context.CurrentEnemy!.transform.position;
+
+            Vector3 baseDir = (npcPos - enemyPos).normalized;
+
+            Vector3[] dirs =
             {
-                Transform nodeTransform = nodes[i].transform;
+                baseDir,
+                Quaternion.Euler(0, -60f, 0) * baseDir,
+                Quaternion.Euler(0,  60f, 0) * baseDir
+            };
 
-                if ((nodeTransform.position - enemyTransform.position).sqrMagnitude < fearRange * fearRange)
-                {
-                    continue;
-                }
-
-                if (!ai.agent.CalculatePath(nodeTransform.position, ai.path1))
-                {
-                    yield return null;
-                    continue;
-                }
-
-                // Assign destination
-                ai.SetDestinationToPositionInternAI(nodeTransform.position);
-                break;
+            foreach (var dir in dirs)
+            {
+                if (TrySetFleeDestination(ai, dir, fearRange))
+                    return;
             }
+        }
 
-            yield break;
+        bool TrySetFleeDestination(InternAI ai, Vector3 dir, float fleeDistance)
+        {
+            Vector3 target = ai.Npc.transform.position + dir * fleeDistance;
+
+            if (!NavMesh.SamplePosition(target, out var hit, 6f, NavMesh.AllAreas))
+                return false;
+
+            ai.SetDestinationToPositionInternAI(hit.position);
+
+            return ai.agent.pathStatus == NavMeshPathStatus.PathComplete;
         }
     }
 }

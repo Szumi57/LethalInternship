@@ -46,6 +46,9 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
 
             switch (enumErrorType)
             {
+                case EnumErrorTypeTerminalPage.NoError:
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_NOERROR;
+                    break;
                 case EnumErrorTypeTerminalPage.NotEnoughCredits:
                     terminalNode.displayText = TerminalConst.TEXT_ERROR_NOT_ENOUGH_CREDITS;
                     break;
@@ -60,6 +63,9 @@ namespace LethalInternship.Core.TerminalAdapter.TerminalStates
                     break;
                 case EnumErrorTypeTerminalPage.InternAlreadySelected:
                     terminalNode.displayText = TerminalConst.TEXT_ERROR_INTERN_ALREADY_SELECTED;
+                    break;
+                case EnumErrorTypeTerminalPage.NoSignalTranslator:
+                    terminalNode.displayText = TerminalConst.TEXT_ERROR_SIGNAL;
                     break;
                 default:
                     terminalNode.displayText = TerminalConst.TEXT_ERROR_DEFAULT;

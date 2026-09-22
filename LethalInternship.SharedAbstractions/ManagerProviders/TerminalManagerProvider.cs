@@ -1,26 +1,39 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Managers;
+﻿using LethalInternship.SharedAbstractions.Managers;
+using System;
 
 namespace LethalInternship.SharedAbstractions.ManagerProviders
 {
     public class TerminalManagerProvider
     {
-        private static ITerminalManager instance = null!;
+        private static ITerminalManager? instance;
+
+        public static bool IsReady => instance != null;
 
         public static ITerminalManager Instance
         {
             get
             {
                 if (instance == null)
-                {
-                    // Error
-                    PluginLoggerHook.LogError?.Invoke("Terminal manager not initialized !");
-                    return null!;
-                }
+                    throw new InvalidOperationException("TerminalManager not available yet");
+
                 return instance;
             }
+        }
 
-            set => instance = value;
+        public static void Register(ITerminalManager manager)
+        {
+            instance = manager;
+        }
+
+        public static void Unregister(ITerminalManager manager)
+        {
+            if (instance == manager)
+                instance = null;
+        }
+
+        public static void ForceClear()
+        {
+            instance = null;
         }
     }
 }

@@ -20,7 +20,7 @@ namespace LethalInternship.Core.Interns
         public int? RankDistanceNoModelReplacementInFOV { get => rankDistanceNoModelReplacementInFOV; set => rankDistanceNoModelReplacementInFOV = value; }
         public int? RankDistanceWithModelReplacementInFOV { get => rankDistanceWithModelReplacementInFOV; set => rankDistanceWithModelReplacementInFOV = value; }
         public float TimerRagdollUpdateModelReplacement { get => timerRagdollUpdateModelReplacement; set => timerRagdollUpdateModelReplacement = value; }
-        
+
         private Component internBody;
         private EnumBodyTypeCulling enumBodyTypeCulling;
 
@@ -73,11 +73,11 @@ namespace LethalInternship.Core.Interns
         public void ResetBodyInfos()
         {
             this.bodyInFOV = false;
-            
+
             this.rankDistanceAnyModel = null;
             this.rankDistanceWithModelReplacement = null;
             this.rankDistanceNoModelReplacement = null;
-            
+
             this.rankDistanceAnyModelInFOV = null;
             this.rankDistanceNoModelReplacementInFOV = null;
             this.rankDistanceWithModelReplacementInFOV = null;
@@ -116,7 +116,7 @@ namespace LethalInternship.Core.Interns
                         return float.MaxValue;
                     }
 
-                    return internAI.NpcController.GetSqrDistanceWithLocalPlayer(internAI.NpcController.Npc.transform.position);
+                    return internAI.NpcController.GetSqrDistanceWithLocalPlayer();
                 }
             }
 

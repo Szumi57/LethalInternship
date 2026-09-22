@@ -1,29 +1,34 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Managers;
+﻿using LethalInternship.SharedAbstractions.Managers;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LethalInternship.SharedAbstractions.ManagerProviders
 {
     public class UIManagerProvider
     {
-        private static IUIManager instance = null!;
+        private static IUIManager? instance;
+
+        public static bool IsReady => instance != null;
 
         public static IUIManager Instance
         {
             get
             {
                 if (instance == null)
-                {
-                    // Error
-                    PluginLoggerHook.LogError?.Invoke("UI manager not initialized !");
-                    return null!;
-                }
+                    throw new InvalidOperationException("UIManager not available yet");
+
                 return instance;
             }
+        }
 
-            set => instance = value;
+        public static void Register(IUIManager manager)
+        {
+            instance = manager;
+        }
+
+        public static void Unregister(IUIManager manager)
+        {
+            if (instance == manager)
+                instance = null;
         }
     }
 }

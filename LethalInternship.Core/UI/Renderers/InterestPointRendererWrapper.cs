@@ -1,4 +1,5 @@
-﻿using LethalInternship.SharedAbstractions.Interns;
+﻿using LethalInternship.SharedAbstractions.Enums;
+using LethalInternship.SharedAbstractions.Interns;
 using UnityEngine;
 
 namespace LethalInternship.Core.UI.Renderers
@@ -12,9 +13,9 @@ namespace LethalInternship.Core.UI.Renderers
             this.renderer = renderer;
         }
 
-        public GameObject GetImagePrefab(IInterestPoint interestPoint)
+        public EnumIconImagesTypes GetIconImagesTypes(IInterestPoint interestPoint)
         {
-            return renderer.GetImagePrefab((T)interestPoint);
+            return renderer.GetIconImagesTypes((T)interestPoint);
         }
 
         public Vector3 GetUIPos(IInterestPoint interestPoint)

@@ -1,120 +1,237 @@
-﻿using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using System;
+﻿using LethalInternship.Core.Managers;
+using LethalInternship.Core.UI.Others;
+using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
+using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 namespace LethalInternship.Core.UI.CommandsControllers
 {
-    public class CommandButtonController : MonoBehaviour
+    public class CommandButtonController : MonoBehaviour,
+        IVisibilityUI,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        IPointerClickHandler,
+        ISelectHandler,
+        IDeselectHandler,
+        ISubmitHandler
     {
-        public event EventHandler OnSelected = null!;
+        public static System.Action<EnumInputAction> OnSelected = null!;
 
-        public int ID;
-        public Image CommandFrameImage;
-        public Image CommandIcon;
-        public Sprite[] UsedSpritesInAnimation;
+        public GameObject Go { get; private set; } = null!;
+        public EnumUIGroups GroupUI = EnumUIGroups.None;
+        EnumUIGroups IGroupUI.GroupUI => this.GroupUI;
 
-        public bool IsNotAvailable;
-        public bool IsHovered;
+        public EnumInputAction TypeInputAction;
+        public Image BgImage = null!;
+        public Image IconImage = null!;
+        public TextMeshProUGUI TMPDescription = null!;
 
-        // Start is called before the first frame update
-        void Start()
+        private float transparencyFull = 1f;
+        private float transparencyNotInteractable = 0.2f;
+
+        private bool isHovered;
+        private bool isPointerOver;
+        private bool isSelected;
+
+        // Typing animation
+        private string fullText = string.Empty;
+        private string cursorChar = "$";
+        private float cursorBlink = 0.2f;
+        private Coroutine typingCoroutine = null!;
+        private Coroutine cursorCoroutine = null!;
+        private bool showCursor = true;
+        private string currentText = string.Empty;
+
+        private bool isNotInteractable;
+        private string tooltipMessageNotInteractable = string.Empty;
+        private string tooltipMessage => isNotInteractable ? tooltipMessageNotInteractable : SetTooltipMessage();
+
+        void Awake()
         {
-            if (CommandFrameImage == null)
+            if ((int)TypeInputAction < UIConst.COMMANDS_BUTTON_STRING.Length)
             {
-                CommandFrameImage = GetComponent<Image>();
+                fullText = UIConst.COMMANDS_BUTTON_STRING[(int)TypeInputAction];
             }
-            CommandFrameImage.sprite = UsedSpritesInAnimation[(int)SpriteForAnimation.WheelButtonFrameSelected];
-            SetAlpha(CommandFrameImage, 0f);
-
-            if (CommandIcon == null)
-            {
-                CommandIcon = GetComponentInChildren<Image>();
-            }
-
-            if (UsedSpritesInAnimation == null
-                || UsedSpritesInAnimation.Length == 0)
-            {
-                PluginLoggerHook.LogDebug?.Invoke("No UsedSpritesInAnimation found !");
-            }
+            Go = this.gameObject;
         }
 
-        // Update is called once per frame
-        void Update()
+        void OnEnable()
         {
-            if (UsedSpritesInAnimation == null
-                || UsedSpritesInAnimation.Length == 0)
-            {
-                return;
-            }
+            isPointerOver = false;
+            isSelected = false;
+            isHovered = false;
+            StopHover();
+            SetTMPDescriptionFont(UIManager.Instance.FontToUse);
+        }
 
-            // Transparency
-            float transparency = 1f;
-            if (IsNotAvailable)
-            {
-                transparency = 0.2f;
-            }
+        public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
+        {
+            this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
+            isNotInteractable = !interactable;
+            if (isNotInteractable)
+                SetAlpha(IconImage, transparencyNotInteractable);
+            else
+                SetAlpha(IconImage, transparencyFull);
 
-            if (CommandIcon != null
-                && CommandIcon.color.a != transparency)
-            {
-                SetAlpha(CommandIcon, transparency);
-            }
+            UpdateHighlight(forceUpdate: true);
         }
 
         private void SetAlpha(Image image, float transparency)
         {
-            Color alpha = image.color;
-            alpha.a = transparency;
-            image.color = alpha;
-        }
-
-        public void Selected()
-        {
-            DrawButtonNotHovered();
-            OnSelected?.Invoke(this, null);
-        }
-
-        public void MouseOver()
-        {
-            if (IsNotAvailable)
+            if (image != null
+                && image.color.a != transparency)
             {
-                return;
+                Color alpha = image.color;
+                alpha.a = transparency;
+                image.color = alpha;
             }
-
-            IsHovered = true;
-
-            DrawButtonHovered();
         }
 
-        public void MouseLeave()
+        private void SetTMPDescriptionFont(TMP_FontAsset font)
         {
-            if (IsNotAvailable)
+            if (TMPDescription != null)
             {
-                return;
+                TMPDescription.font = font;
             }
-
-            IsHovered = false;
-
-            DrawButtonNotHovered();
         }
 
-        private void DrawButtonHovered()
+        private void UpdateHighlight(bool forceUpdate = false)
         {
-            SetAlpha(CommandFrameImage, 1f);
-            CommandIcon.color = new Color(0f, 0f, 0f);
+            bool highlighted = isPointerOver || isSelected;
+
+            if (highlighted == isHovered
+                && !forceUpdate)
+                return;
+
+            isHovered = highlighted;
+
+            if (isHovered)
+                StartHover();
+            else
+                StopHover();
         }
 
-        private void DrawButtonNotHovered()
+        private void StartHover()
         {
-            SetAlpha(CommandFrameImage, 0f);
-            CommandIcon.color = new Color(255 / 255f, 255 / 255f, 255 / 255f);
+            SetAlpha(BgImage, isNotInteractable ? transparencyNotInteractable : transparencyFull);
+            StopTypeTextCoroutine();
+            if (TMPDescription != null)
+            {
+                typingCoroutine = StartCoroutine(TypeText());
+                cursorCoroutine = StartCoroutine(CursorBlink());
+            }
         }
-    }
 
-    public enum SpriteForAnimation
-    {
-        WheelButtonFrameUnselected,
-        WheelButtonFrameSelected
+        private void StopHover()
+        {
+            SetAlpha(BgImage, 0f);
+            StopTypeTextCoroutine();
+        }
+
+        private void StopTypeTextCoroutine()
+        {
+            StopAllCoroutines();
+            if (TMPDescription != null)
+            {
+                TMPDescription.text = string.Empty;
+                currentText = string.Empty;
+            }
+        }
+
+        IEnumerator TypeText()
+        {
+            foreach (char c in fullText)
+            {
+                currentText += c;
+                UpdateText();
+                yield return new WaitForSeconds(Random.Range(0.02f, 0.07f));
+            }
+        }
+
+        IEnumerator CursorBlink()
+        {
+            while (currentText != fullText)
+            {
+                showCursor = !showCursor;
+                UpdateText();
+                yield return new WaitForSeconds(cursorBlink);
+            }
+            // No cursor after the end
+            showCursor = false;
+            UpdateText();
+        }
+
+        void UpdateText()
+        {
+            TMPDescription.text = currentText + (showCursor ? cursorChar : " ");
+        }
+
+        private string SetTooltipMessage()
+        {
+            return fullText;
+        }
+
+        #region Mouse events
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = true;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (isNotInteractable) return;
+            OnSelected?.Invoke(TypeInputAction);
+        }
+
+        #endregion
+
+        #region Controller events
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            UIManager.Instance.UpdateLastSelectedUI(this.gameObject);
+            isPointerOver = false;
+            isSelected = true;
+
+            UIManager.Instance.ToolTipBarUI.RequestShow(tooltipMessage);
+            UpdateHighlight();
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            isPointerOver = false;
+            isSelected = false;
+
+            UIManager.Instance.ToolTipBarUI.Hide();
+            UpdateHighlight();
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            if (isNotInteractable) return;
+            OnSelected?.Invoke(TypeInputAction);
+        }
+
+        #endregion
     }
 }

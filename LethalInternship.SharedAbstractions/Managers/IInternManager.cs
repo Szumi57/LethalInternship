@@ -1,5 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.Adapters;
+using LethalInternship.SharedAbstractions.CommandsSystem;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.NetworkSerializers;
 using System.Collections.Generic;
@@ -22,6 +24,8 @@ namespace LethalInternship.SharedAbstractions.Managers
         Transform? ShipTransform { get; }
         VehicleController? VehicleController { get; }
 
+        void Init();
+        void DestroyMonoManagers();
         IInternAI? GetInternAI(int playerClientId);
         IInternAI? GetInternAIByInternId(int internId);
         void ManagePoolOfInterns();
@@ -39,10 +43,15 @@ namespace LethalInternship.SharedAbstractions.Managers
 
         int GetDamageFromSlimeIfIntern(PlayerControllerB player);
         IInternAI? GetInternAIIfLocalIsOwner(int index);
+        void GetAliveAndSpawnInternsAI(List<IInternAI> result);
         IInternAI[] GetInternsAIOwnedByLocal();
-        IInternAI[] GetAliveAndSpawnInternsAIOwnedByLocal();
+        void GetAliveAndSpawnInternsAIOwnedByLocal(List<IInternAI> result);
         IInternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject);
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
+
+        void ExecuteOrder(Order order);
+        int GetMaxDistanceCommand();
+        void GlobalCommandServerRpc(EnumInputAction enumInputAction);
 
         void SyncLoadedJsonIdentitiesServerRpc(ulong clientId);
         void SetInternsInElevatorLateUpdate(float deltaTime);
@@ -69,8 +78,30 @@ namespace LethalInternship.SharedAbstractions.Managers
         // Shovel
         bool ShouldShovelIgnoreIntern(Shovel shovel, Transform transform);
 
+        /// <summary>
+        /// Check all object array
+        /// </summary>
+        /// <returns><c>GrabbableObject</c>GrabbableObject to try to grab</returns>
+        List<GrabbableObject> LookingForItemsToGrabInMap(List<GrabbableObject> items, bool forcePickUp = false);
+        /// <summary>
+        /// Check all conditions for deciding if an item is grabbable or not.
+        /// </summary>
+        /// <param name="grabbableObject">Item to check</param>
+        /// <returns></returns>
+        bool IsGrabbableObjectGrabbable(GrabbableObject grabbableObject, bool forcePickUp = false);
+        bool IsGrabbableObjectBlackListed(GameObject gameObjectToEvaluate);
+
+        bool IsItemUsableWeapon(GrabbableObject grabbableObject);
+
+        bool IsItemUsableItem(GrabbableObject grabbableObject);
+
         List<EnemyAI> GetEnemiesList();
+        bool IsEnemyKillable(EnemyAI enemy);
 
         bool ShouldIgnoreInternsEndScreen(PlayerControllerB player);
+
+        void GetListOfAvailableSuitIDs(List<int> indexesSpawnedSuits);
+
+        bool IsCurrentMoonCompanyMoon();
     }
 }
