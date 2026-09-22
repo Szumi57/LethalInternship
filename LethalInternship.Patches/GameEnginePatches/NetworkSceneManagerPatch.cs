@@ -168,7 +168,7 @@ namespace LethalInternship.Patches.GameEnginePatches
                 return;
             }
 
-            PluginLoggerHook.LogInfo?.Invoke($"Populating network with intern globalObjectIdHash {globalObjectIdHash}");
+            //PluginLoggerHook.LogInfo?.Invoke($"Populating network with intern globalObjectIdHash {globalObjectIdHash}");
             objectsByScene.Add(handle, networkObject);
         }
 
