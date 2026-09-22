@@ -315,6 +315,7 @@ namespace LethalInternship.Core.Managers
             if (gameAction == GameAction.Unknown)
             {
                 Debug.Log($"Unknown action {ctx.action.name}");
+                CommandContextService.Instance.ExitCommandMode();
                 UIManager.Instance.HideAll();
                 CancelTargeting();
                 return;

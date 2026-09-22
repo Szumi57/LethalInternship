@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.24.0 [Alpha] - 2026-09-22
+
+### Added
+- Added a rewritten intern command system with many new commands for movement, item management, combat, scavenging, waiting and returning to the ship.
+- Added gathering points and related intern commands.
+- Added a new highlight system for outlining interns, enemies and interactable objects.
+- Added two intern menus: a global menu for managing all interns and individual menus dedicated to each intern.
+- Added new intern information and feedback, including objectives, status information and contextual command feedback.
+- Added new item interactions, including using items and swapping weapons.
+- Added controller support for the intern interface.
+- Added new configuration options, including the maximum distance at which interns can hear commands outside.
+- Added a new terminal command to recall all interns to the ship.
+### Changed
+- Completely redesigned the intern command interface and navigation.
+- Reworked intern targeting and world indicators, with improved visibility and feedback.
+- Added camera focus when selecting an intern or target.
+- Reworked intern pathfinding using Dijkstra and optimized its memory allocations.
+### Fixed
+- Fixed intern tooltip messages overwriting messages from the base game.
+
 ## 0.23.1 [Alpha] - 2026-01-06
 Happy new year ! Some bugfixes for the first update of 2026 !
 
