@@ -51,11 +51,11 @@ These passionate workers are available in a new section of your shop.
 Interns can be directly commanded through a dedicated command system. <br/>
 Two menus are available to help you manage them. <br/> 
 <br/>**Manage all your interns** <br/>
-![CommandsMenuAll](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/CommandsMenuAll.png?raw=true)
+![CommandsMenuAll](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/CommandsMenuAll.png?raw=true)<br/>
 The main menu lets you see and command all your interns at once. <br/>
 From there, you can give them orders such as moving to a location, returning to the ship, waiting, scavenging or managing items. <br/> 
 <br/>**Command an individual intern** <br/>
-![CommandsMenuOne](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/CommandsMenuOne.png?raw=true)
+![CommandsMenuOne](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/CommandsMenuOne.png?raw=true)<br/>
 Each intern also has their own dedicated menu. <br/>
 This allows you to give specific orders to a single intern without affecting the others. <br/>
 You can check their current status and access the commands available to them. <br/> 
