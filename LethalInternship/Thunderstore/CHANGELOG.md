@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.24.1 [Alpha] - 2026-09-
+## 0.24.1 [Alpha] - 2026-09-26
 ### Hotfix
 - Fix some base game patches to be compatible with more mods, thanks DravenXD (issue [#112](https://github.com/Szumi57/LethalInternship/issues/112))
 
