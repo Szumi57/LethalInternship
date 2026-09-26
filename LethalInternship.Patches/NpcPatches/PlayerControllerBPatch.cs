@@ -870,34 +870,32 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ItemSecondaryUse_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = -1;
+            var startIndex = 0;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 71;
 
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            int retIndex = -1;
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ret NULL")
+                    && codes[i].labels.Count > 0)
                 {
-                    startIndex = i;
+                    retIndex = i;
                     break;
                 }
             }
-            if (startIndex > -1)
-            {
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
-                {
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
-                };
-                codes.InsertRange(startIndex, codesToAdd);
-                startIndex = -1;
-            }
-            else
+            if (retIndex < 0)
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ItemSecondaryUse_performed could not ignore ItemSecondaryUse_performed input when commands opened");
+                return codes.AsEnumerable();
             }
 
+            // ----------------------------------------------------------------------
+            List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + retIndex].labels[0])
+                };
+            codes.InsertRange(startIndex, codesToAdd);
             return codes.AsEnumerable();
         }
 
@@ -905,34 +903,32 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ItemTertiaryUse_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = -1;
+            var startIndex = 0;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 57;
 
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            int retIndex = -1;
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ret NULL")
+                    && codes[i].labels.Count > 0)
                 {
-                    startIndex = i;
+                    retIndex = i;
                     break;
                 }
             }
-            if (startIndex > -1)
-            {
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
-                {
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
-                };
-                codes.InsertRange(startIndex, codesToAdd);
-                startIndex = -1;
-            }
-            else
+            if (retIndex < 0)
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ItemTertiaryUse_performed could not ignore ItemTertiaryUse_performed input when commands opened");
+                return codes.AsEnumerable();
             }
 
+            // ----------------------------------------------------------------------
+            List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + retIndex].labels[0])
+                };
+            codes.InsertRange(startIndex, codesToAdd);
             return codes.AsEnumerable();
         }
 
@@ -940,33 +936,32 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> QEItemInteract_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = -1;
+            var startIndex = 0;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 68;
 
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            int retIndex = -1;
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ret NULL")
+                    && codes[i].labels.Count > 0)
                 {
-                    startIndex = i;
+                    retIndex = i;
                     break;
                 }
             }
-            if (startIndex > -1)
-            {
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
-                {
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
-                };
-                codes.InsertRange(startIndex, codesToAdd);
-                startIndex = -1;
-            }
-            else
+            if (retIndex < 0)
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.QEItemInteract_performed could not ignore QEItemInteract_performed input when commands opened");
+                return codes.AsEnumerable();
             }
+
+            // ----------------------------------------------------------------------
+            List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + retIndex].labels[0])
+                };
+            codes.InsertRange(startIndex, codesToAdd);
 
             return codes.AsEnumerable();
         }
@@ -975,34 +970,32 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> InspectItem_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = -1;
+            var startIndex = 0;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 52;
 
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            int retIndex = -1;
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ret NULL")
+                    && codes[i].labels.Count > 0)
                 {
-                    startIndex = i;
+                    retIndex = i;
                     break;
                 }
             }
-            if (startIndex > -1)
-            {
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
-                {
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
-                };
-                codes.InsertRange(startIndex, codesToAdd);
-                startIndex = -1;
-            }
-            else
+            if (retIndex < 0)
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.InspectItem_performed could not ignore InspectItem_performed input when commands opened");
+                return codes.AsEnumerable();
             }
 
+            // ----------------------------------------------------------------------
+            List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + retIndex].labels[0])
+                };
+            codes.InsertRange(startIndex, codesToAdd);
             return codes.AsEnumerable();
         }
 
@@ -1010,33 +1003,32 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ScrollMouse_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = -1;
+            var startIndex = 0;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 59;
 
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            int retIndex = -1;
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ret NULL")
+                    && codes[i].labels.Count > 0)
                 {
-                    startIndex = i;
+                    retIndex = i;
                     break;
                 }
             }
-            if (startIndex > -1)
-            {
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
-                {
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
-                };
-                codes.InsertRange(startIndex, codesToAdd);
-                startIndex = -1;
-            }
-            else
+            if (retIndex < 0)
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.ScrollMouse_performed could not ignore ScrollMouse_performed input when commands opened");
+                return codes.AsEnumerable();
             }
+
+            // ----------------------------------------------------------------------
+            List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + retIndex].labels[0])
+                };
+            codes.InsertRange(startIndex, codesToAdd);
 
             return codes.AsEnumerable();
         }
@@ -1045,33 +1037,32 @@ namespace LethalInternship.Patches.NpcPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> OpenMenu_performed_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            var startIndex = -1;
+            var startIndex = 0;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 27;
 
-            // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            int retIndex = -1;
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ret NULL")
+                    && codes[i].labels.Count > 0)
                 {
-                    startIndex = i;
+                    retIndex = i;
                     break;
                 }
             }
-            if (startIndex > -1)
-            {
-                List<CodeInstruction> codesToAdd = new List<CodeInstruction>
-                {
-                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
-                };
-                codes.InsertRange(startIndex, codesToAdd);
-                startIndex = -1;
-            }
-            else
+            if (retIndex < 0)
             {
                 PluginLoggerHook.LogError?.Invoke($"LethalInternship.Patches.NpcPatches.PlayerControllerBPatch.OpenMenu_performed could not ignore OpenMenu_performed input when commands opened");
+                return codes.AsEnumerable();
             }
+
+            // ----------------------------------------------------------------------
+            List<CodeInstruction> codesToAdd = new List<CodeInstruction>
+                {
+                    new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + retIndex].labels[0])
+                };
+            codes.InsertRange(startIndex, codesToAdd);
 
             return codes.AsEnumerable();
         }

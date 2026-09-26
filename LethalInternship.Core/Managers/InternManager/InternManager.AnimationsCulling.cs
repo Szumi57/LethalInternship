@@ -13,8 +13,8 @@ namespace LethalInternship.Core.Managers
 {
     public partial class InternManager
     {
-        public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = null!;
-        public List<IInternCullingBodyInfo> InternBodiesSpawned = null!;
+        public TimedOrderedInternBodiesDistanceListCheck OrderedInternDistanceListTimedCheck = new TimedOrderedInternBodiesDistanceListCheck();
+        public List<IInternCullingBodyInfo> InternBodiesSpawned = new List<IInternCullingBodyInfo>();
         public IInternCullingBodyInfo[] OrderedInternBodiesInFOV = new IInternCullingBodyInfo[PluginRuntimeProvider.Context.Config.MaxInternsAvailable * 2];
 
         private List<int> heldInternsLocalPlayer = new List<int>();

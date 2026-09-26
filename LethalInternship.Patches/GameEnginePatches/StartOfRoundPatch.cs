@@ -509,13 +509,6 @@ namespace LethalInternship.Patches.GameEnginePatches
             TerminalManagerProvider.ForceClear();
         }
 
-        [HarmonyPatch("UpdatePlayerVoiceEffects")]
-        [HarmonyPostfix]
-        static void UpdatePlayerVoiceEffects_PostFix()
-        {
-            InternManagerProvider.Instance.UpdateAllInternsVoiceEffects();
-        }
-
         [HarmonyPatch("FirePlayersAfterDeadlineClientRpc")]
         [HarmonyPostfix]
         static void FirePlayersAfterDeadlineClientRpc_PostFix()

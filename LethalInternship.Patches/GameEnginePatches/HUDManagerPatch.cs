@@ -229,12 +229,12 @@ namespace LethalInternship.Patches.GameEnginePatches
         {
             var startIndex = -1;
             var codes = new List<CodeInstruction>(instructions);
-            int indexJumpTo = 45;
 
             // ----------------------------------------------------------------------
-            for (var i = 0; i < codes.Count - indexJumpTo; i++)
+            for (var i = 0; i < codes.Count - 1; i++)
             {
-                if (codes[i + indexJumpTo].ToString().StartsWith("ret NULL"))
+                if (codes[i].ToString().StartsWith("ldarg.0")
+                    && codes[i + 1].ToString().StartsWith("ldfld float HUDManager::playerPingingScan"))
                 {
                     startIndex = i;
                     break;
@@ -242,12 +242,14 @@ namespace LethalInternship.Patches.GameEnginePatches
             }
             if (startIndex > -1)
             {
+                codes[startIndex].opcode = OpCodes.Nop;
                 List<CodeInstruction> codesToAdd = new List<CodeInstruction>
                 {
                     new CodeInstruction(OpCodes.Call, PatchesUtil.IsAnyMenuOpenedMethod),
-                    new CodeInstruction(OpCodes.Brtrue_S, codes[startIndex + indexJumpTo].labels[0])
+                    new CodeInstruction(OpCodes.Brtrue_S, codes[^1].labels[0]),
+                    new CodeInstruction(OpCodes.Ldarg_0), // continue code for playerPingingScan
                 };
-                codes.InsertRange(startIndex, codesToAdd);
+                codes.InsertRange(startIndex + 1, codesToAdd);
                 startIndex = -1;
             }
             else
