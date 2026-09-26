@@ -1,7 +1,10 @@
 # Changelog
 
-## 0.24.0 [Alpha] - 2026-09-22
+## 0.24.1 [Alpha] - 2026-09-
+### Hotfix
+- Fix some base game patches to be compatible with more mods, thanks DravenXD (issue [#112](https://github.com/Szumi57/LethalInternship/issues/112))
 
+## 0.24.0 [Alpha] - 2026-09-22
 ### Added
 - Added a rewritten intern command system with many new commands for movement, item management, combat, scavenging, waiting and returning to the ship.
 - Added gathering points and related intern commands.

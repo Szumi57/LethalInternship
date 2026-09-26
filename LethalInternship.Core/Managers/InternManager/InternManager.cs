@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using LethalInternship.Core.Interns.AI.TimedTasks;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Events;
@@ -139,12 +138,11 @@ namespace LethalInternship.Core.Managers
             DictTagSurfaceIndex.Clear();
             for (int i = 0; i < StartOfRound.Instance.footstepSurfaces.Length; i++)
             {
-                DictTagSurfaceIndex.Add(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
+                DictTagSurfaceIndex.TryAdd(StartOfRound.Instance.footstepSurfaces[i].surfaceTag, i);
             }
 
-            OrderedInternDistanceListTimedCheck = new TimedOrderedInternBodiesDistanceListCheck();
-            InternBodiesSpawned = new List<IInternCullingBodyInfo>();
-            listPointOfInterest = new List<IPointOfInterest>();
+            if (InternBodiesSpawned != null) { InternBodiesSpawned.Clear(); }
+            if (listPointOfInterest != null) { listPointOfInterest.Clear(); }
 
             // Ignore raycast on players
             for (int i = 0; i < IndexBeginOfInterns; i++)
@@ -191,6 +189,7 @@ namespace LethalInternship.Core.Managers
             }
 
             UpdateSoundManagerWithInterns(AllEntitiesCount);
+            UpdateAllInternsVoiceEffects();
         }
 
         private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
