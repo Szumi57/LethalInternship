@@ -314,7 +314,7 @@ namespace LethalInternship.Core.Managers
             // Unknown action
             if (gameAction == GameAction.Unknown)
             {
-                Debug.Log($"Unknown action {ctx.action.name}");
+                //Debug.Log($"Unknown action {ctx.action.name}");
                 CommandContextService.Instance.ExitCommandMode();
                 UIManager.Instance.HideAll();
                 CancelTargeting();
@@ -375,7 +375,7 @@ namespace LethalInternship.Core.Managers
                 && gameAction != GameAction.SwitchItem) // Scroll
             {
                 // Not allowed
-                Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
+                //Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
                 UIManager.Instance.HideAll();
             }
 
@@ -815,6 +815,18 @@ namespace LethalInternship.Core.Managers
             if (UIManager.Instance.IsAnyMenuOpen)
                 return;
 
+            if (localPlayer.currentlyHeldObjectServer == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"GiveItemToIntern_performed localPlayer.currentlyHeldObjectServer == null");
+                return;
+            }
+
+            if (localPlayer.currentlyHeldObjectServer.itemProperties.spawnPrefab == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"GiveItemToIntern_performed grabbableObject {localPlayer.currentlyHeldObjectServer} not grabbable (spawnPrefab null)");
+                return;
+            }
+
             TargetData? target = TargetingManager.Instance.GetCurrentTarget();
             if (target == null
                 || target.Value.Intern == null)
@@ -829,27 +841,24 @@ namespace LethalInternship.Core.Managers
             fieldInfo.SetValue(localPlayer, 0f);
 
             // Player has an item to give
-            if (localPlayer.currentlyHeldObjectServer != null)
+            if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
             {
-                if (!intern.CanHoldItem(localPlayer.currentlyHeldObjectServer))
+                if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
                 {
-                    if (localPlayer.currentlyHeldObjectServer.itemProperties.twoHanded && intern.IsHoldingTwoHandedItem())
+                    intern.DropTwoHandItem();
+                }
+                else
+                {
+                    GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(EnumOptionsGetItems.IgnoreWeapon);
+                    if (itemToDrop != null)
                     {
-                        intern.DropTwoHandItem();
-                    }
-                    else
-                    {
-                        GrabbableObject? itemToDrop = intern.ChooseFirstPickedUpItem(EnumOptionsGetItems.IgnoreWeapon);
-                        if (itemToDrop != null)
-                        {
-                            intern.DropItem(itemToDrop);
-                        }
+                        intern.DropItem(itemToDrop);
                     }
                 }
-
-                // Intern take item from player hands
-                intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
             }
+
+            // Intern take item from player hands
+            intern.GiveItemToInternServerRpc(localPlayer.playerClientId, localPlayer.currentlyHeldObjectServer.NetworkObject);
         }
 
         private void GrabIntern_performed(InputAction.CallbackContext obj)

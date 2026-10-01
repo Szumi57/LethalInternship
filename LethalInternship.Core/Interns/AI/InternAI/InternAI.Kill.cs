@@ -29,8 +29,6 @@ namespace LethalInternship.Core.Interns.AI
         /// Sync the action to kill intern between server and clients
         /// </summary>
         /// <remarks>
-        /// Better to call <see cref="PlayerControllerB.KillPlayer"><c>PlayerControllerB.KillPlayer</c></see> so prefixes from other mods can activate. (ex : peepers)
-        /// The base game function will be ignored because the intern playerController is not owned because not spawned
         /// </remarks>
         /// <param name="bodyVelocity"></param>
         /// <param name="spawnBody">Should a body be spawned ?</param>

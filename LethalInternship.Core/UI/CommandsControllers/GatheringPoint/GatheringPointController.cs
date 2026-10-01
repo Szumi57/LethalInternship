@@ -92,6 +92,9 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
                                                                     || InternManager.Instance.IsCurrentMoonCompanyMoon());
 
             interactable = managingInterns && !restrictedLocation;
+            if (DebugConst.ALLOW_COMMANDS_ALWAYS)
+                interactable = true;
+
             isNotInteractable = !interactable;
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
             UpdateIconAndDesc();
@@ -188,7 +191,8 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
 
         private void RemoveGatheringPoint_OnSelected()
         {
-            if (!this.isActiveAndEnabled)
+            if (this == null
+                || !this.isActiveAndEnabled)
                 return;
 
             // Gathering point is removed, does not wait for InternManager.Instance.GatheringPoint != null

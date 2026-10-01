@@ -1,15 +1,11 @@
-﻿using LethalInternship.SharedAbstractions.Constants;
-using LethalInternship.SharedAbstractions.Enums;
+﻿using LethalInternship.Core.VoiceAdapter;
+using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
-using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -32,7 +28,7 @@ namespace LethalInternship.Core.Managers
             }
         }
 
-        public Dictionary<string, AudioClip?> DictAudioClipsByPath = new Dictionary<string, AudioClip?>();
+        public Dictionary<string, VoiceSource> Voices = new Dictionary<string, VoiceSource>();
 
         private void Awake()
         {
@@ -62,85 +58,27 @@ namespace LethalInternship.Core.Managers
         {
             // Try to load user custom voices
             string directoryPath = Path.Combine(PluginRuntimeProvider.Context.DirectoryName, VoicesConst.VOICES_PATH);
-            string defaultDirectoryVoicesPath = Path.Combine(directoryPath, VoicesConst.DEFAULT_VOICES_FOLDER);
-            if (Directory.Exists(directoryPath)
-                && Directory.Exists(defaultDirectoryVoicesPath))
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+
+            string[] customVoiceFiles = Directory.GetFiles(directoryPath, "*.ogg", SearchOption.AllDirectories);
+
+            // Load custom voices paths
+            if (customVoiceFiles.Length > 0)
             {
-                // Directory exists
-                var enumVoiceStatesStrings = ((EnumVoicesState[])Enum.GetValues(typeof(EnumVoicesState))).ToList()
-                                                                     .ConvertAll(e => e.ToString())
-                                                                     .Where(x => x != EnumVoicesState.None.ToString())
-                                                                     .Select(x => FormatAudioDirectoriesNames(x)).ToList();
-                var defaultDirectoryVoicesFolder = Directory.GetDirectories(defaultDirectoryVoicesPath)
-                                                            .Select(Path.GetFileName)
-                                                            .Select(x => FormatAudioDirectoriesNames(x));
-                var differences = enumVoiceStatesStrings.Except(defaultDirectoryVoicesFolder);
-                if (differences.Any())
+                foreach (string filePath in customVoiceFiles)
                 {
-                    PluginLoggerHook.LogWarning?.Invoke($"Loading audio manager : Default voices directory not complete, folders missing :");
-                    foreach (string directory in differences)
-                    {
-                        PluginLoggerHook.LogWarning?.Invoke($"{directory}");
-                    }
+                    string customVoiceName = Path.GetFileNameWithoutExtension(filePath);
 
-                    PluginLoggerHook.LogWarning?.Invoke($"Restoring default voices...");
-                    Directory.Delete(defaultDirectoryVoicesPath, true);
-                    UnzipToDirectory(directoryPath);
+                    Voices[customVoiceName] = new VoiceSource(customVoiceName, filePath);
                 }
-                else
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"Loading audio manager : Default voice directory complete.");
-                }
-            }
-            else
-            {
-                // Directory does not exists
-                PluginLoggerHook.LogWarning?.Invoke($"Loading audio manager : Default voices directory missing !");
-                PluginLoggerHook.LogWarning?.Invoke($"Restoring default voices...");
-                UnzipToDirectory(directoryPath);
+                return; // only custom if exist
             }
 
-            // Load all paths
-            foreach (string filePath in Directory.GetFiles(directoryPath, "*.ogg", SearchOption.AllDirectories))
+            // Default voices in bundle
+            foreach (AudioClip clip in PluginRuntimeProvider.Context.DefaultVoicesClips)
             {
-                AddPath("file://" + filePath);
-            }
-        }
-
-        private void UnzipToDirectory(string toDirectoryPath)
-        {
-            if (!Directory.Exists(toDirectoryPath))
-            {
-                Directory.CreateDirectory(toDirectoryPath);
-            }
-
-            // Load zip and extract it
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            using (Stream resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".Assets.Audio.Voices.DefaultVoices.zip"))
-            {
-                using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
-                {
-                    // Works if using 7zip to re-zip archive from dropbox (extract and rezip), why ?
-                    archive.ExtractToDirectory(toDirectoryPath);
-                }
-            }
-        }
-
-        private void AddPath(string path)
-        {
-            if (DictAudioClipsByPath == null)
-            {
-                DictAudioClipsByPath = new Dictionary<string, AudioClip?>();
-            }
-
-            if (DictAudioClipsByPath.ContainsKey(path))
-            {
-                PluginLoggerHook.LogWarning?.Invoke($"A same path has already been added, path {path}");
-            }
-            else
-            {
-
-                DictAudioClipsByPath.Add(path, null);
+                Voices.TryAdd(clip.name, new VoiceSource(clip.name, clip));
             }
         }
 
@@ -149,80 +87,47 @@ namespace LethalInternship.Core.Managers
             return directoryName.Replace(" ", "").Replace("_", "").ToLower();
         }
 
-        public void SyncPlayAudio(string path, int internID)
+        public void SyncPlayAudio(string clipName, int internID)
         {
-            string smallPath = string.Empty;
+            InternManager.Instance.SyncPlayAudioIntern(internID, clipName);
+        }
 
-            try
+        public void LoadAudio(string voiceName, Action<AudioClip?> callback)
+        {
+            if (!Voices.TryGetValue(voiceName, out VoiceSource? source))
             {
-                int indexOfSmallPath = path.IndexOf(VoicesConst.VOICES_PATH);
-                smallPath = path.Substring(indexOfSmallPath);
-            }
-            catch (Exception ex)
-            {
-                PluginLoggerHook.LogError?.Invoke($"Error while loading voice audios, error : {ex.Message}");
-            }
+                PluginLoggerHook.LogWarning?.Invoke($"Could not find \"{voiceName}\" in loaded voices !");
 
-            if (string.IsNullOrWhiteSpace(smallPath))
-            {
-                PluginLoggerHook.LogError?.Invoke($"Problem occured while getting the small path of audio clip, original path : {path}");
+                callback(null);
                 return;
             }
 
-            InternManager.Instance.SyncPlayAudioIntern(internID, smallPath);
+            if (source.Clip != null)
+            {
+                callback(source.Clip);
+                return;
+            }
+
+            StartCoroutine(LoadAudio(source, callback));
         }
 
-        public void PlayAudio(string smallPathAudioClip, IInternVoice internVoice)
+        private IEnumerator LoadAudio(VoiceSource voiceSource, Action<AudioClip?> callback)
         {
-            var audioClipByPath = DictAudioClipsByPath.FirstOrDefault(x => x.Key.Contains(smallPathAudioClip));
-            AudioClip? audioClip = audioClipByPath.Value;
-            if (audioClip == null)
-            {
-                StartCoroutine(LoadAudioAndPlay(audioClipByPath.Key, internVoice));
-            }
-            else
-            {
-                internVoice.PlayAudioClip(audioClip);
-            }
-            PluginLoggerHook.LogDebug?.Invoke($"New audioClip loaded/played {smallPathAudioClip}");
-        }
+            using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(voiceSource.FilePath, AudioType.OGGVORBIS);
+            yield return www.SendWebRequest();
 
-        private IEnumerator LoadAudioAndPlay(string uri, IInternVoice internVoice)
-        {
-            using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(uri, AudioType.OGGVORBIS))
+            if (www.result != UnityWebRequest.Result.Success)
             {
-                yield return www.SendWebRequest();
+                PluginLoggerHook.LogError?.Invoke($"Error while loading audio file at {voiceSource.FilePath} : {www.error}");
 
-                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
-                {
-                    internVoice.ResetAboutToTalk();
-                    PluginLoggerHook.LogError?.Invoke($"Error while loading audio file at {uri} : {www.error}");
-                }
-                else
-                {
-                    AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
-                    AddAudioClip(uri, audioClip);
-
-                    internVoice.PlayAudioClip(audioClip);
-                }
-            }
-        }
-
-        private void AddAudioClip(string path, AudioClip audioClip)
-        {
-            if (DictAudioClipsByPath == null)
-            {
-                DictAudioClipsByPath = new Dictionary<string, AudioClip?>();
+                callback(null);
+                yield break;
             }
 
-            if (DictAudioClipsByPath.ContainsKey(path))
-            {
-                DictAudioClipsByPath[path] = audioClip;
-            }
-            else
-            {
-                DictAudioClipsByPath.Add(path, audioClip);
-            }
+            AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
+            voiceSource.Clip = audioClip;
+
+            callback(audioClip);
         }
 
         public void FadeInAudio(AudioSource audioSource, float fadeTime, float volumeMax)

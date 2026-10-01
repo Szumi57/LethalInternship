@@ -40,10 +40,11 @@ These passionate workers are available in a new section of your shop.
 - From there you can buy intern with 'buy' command or 'buy nameOfIntern' if you know the name of the one you want.</br>
 ![buy4](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/buy4.png?raw=true) or
 ![buy_mathew](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/buy_mathew.png?raw=true)
-- Type 'Status' to see check all of the available intern status.
+- Scroll on the info page to check all of the available intern and their status.
 ![status_page](https://github.com/Szumi57/LethalInternship/blob/master/LethalInternship.Core/Assets/Images/status_page.png?raw=true)
 - You can revive intern by buying them specifically while in orbit.
 - You can revive intern with other mods like 'Revive company', 'Bunkbed revives' and 'Zaprillator'</br>
+- Type "evacuation" to send a message to all interns to return to the ship.
 
 ## Command system
 
@@ -81,8 +82,36 @@ Chilling with you, following, founding loot, panicking, you name it, there's a v
 You may know him as **Dragon-V0942** from [FurAffinity](https://www.furaffinity.net/user/dragon-v0942), and you can find some of his voice acting works on youtube [(Voice acting example)](https://www.youtube.com/watch?v=5LGVz-ONeKE).
 </br>
 </br>
-Some AI voices should be added next update (0.20.0)
-
+If you want to use a custom voice pack, you must manually extract it into the plugin folder under Audio/Voices.</br>
+Custom voice filenames must follow the category naming convention.</br> 
+The filename must start with one of the following categories:</br>
+        AttackingWithGun,</br>
+        AttackingWithMelee,</br>
+        CantDoCommand,</br>
+        Chilling,</br>
+        EnteringCruiser,</br>
+        FollowingPlayer,</br>
+        FoundLoot,</br>
+        HasLoot,</br>
+        HearsPlayer,</br>
+        Hit,</br>
+        LosingPlayer,</br>
+        Lost,</br>
+        LostAndFound,</br>
+        NoLoot,</br>
+        NowScavenging,</br>
+        OrderedToFollow,</br>
+        OrderedToGoThere,</br>
+        OrderedToStay,</br>
+        RunningFromMonster,</br>
+        Sinking,</br>
+        SteppedOnTrap,</br>
+        Thinking,</br>
+        Waiting,</br></br>
+For example: </br>
+ Chilling_1.ogg, </br>
+ Attacking_with_gun_46.ogg</br>
+The underscore (_) is not taken into account when matching the category name.</br>
 ## Have fun with cosmetic mods !
 This mod is compatible with ModelReplacementAPI and all of its users (tooManySuits, MoreSuits, ThiccCompany, etc...).
 It is also compatible with the emotes mod, emote in front of intern and they will copy your dance moves !
@@ -93,10 +122,5 @@ It is also compatible with the emotes mod, emote in front of intern and they wil
 This mod is very alpha and I still need some polishing.
 <br/>I'm just happy to share this project with you, in hope that you find it fun and enjoyable.
 
-## Things to add
-- Orders, a system to control the interns in some way. Can take some time to implement that too.
-
-## Bug to fix
-- Sand spider web trap not working for interns.
-- Nutcracker ignoring interns.
-- Compatibility with modded maps, for environmental hazards damages.
+## I found a bug !
+- -> https://github.com/Szumi57/LethalInternship/issues

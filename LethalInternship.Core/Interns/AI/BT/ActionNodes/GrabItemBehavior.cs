@@ -21,7 +21,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 return BehaviourTreeStatus.Failure;
             }
 
-            ai.GrabItemServerRpc(context.TargetItem.NetworkObject, itemGiven: false);
+            ai.GrabItemServerRpc(context.TargetItem.NetworkObject);
             context.TargetItem = null;
             return BehaviourTreeStatus.Success;
         }

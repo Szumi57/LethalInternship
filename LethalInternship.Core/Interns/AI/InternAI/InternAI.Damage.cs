@@ -13,7 +13,7 @@ namespace LethalInternship.Core.Interns.AI
     public partial class InternAI
     {
         public int MaxHealth = ConfigConst.DEFAULT_INTERN_MAX_HEALTH;
-        
+
         private float healthRegenerateTimerMax;
 
         #region Damage intern from client players RPC
@@ -97,8 +97,6 @@ namespace LethalInternship.Core.Interns.AI
         /// Sync the damage taken by the intern between server and clients
         /// </summary>
         /// <remarks>
-        /// Better to call <see cref="PlayerControllerB.DamagePlayer"><c>PlayerControllerB.DamagePlayer</c></see> so prefixes from other mods can activate. (ex : peepers)
-        /// The base game function will be ignored because the intern playerController is not owned because not spawned
         /// </remarks>
         /// <param name="damageNumber"></param>
         /// <param name="causeOfDeath"></param>

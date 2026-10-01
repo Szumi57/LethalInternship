@@ -124,7 +124,8 @@ namespace LethalInternship.Core.Managers
 
             if (grabbableObject.isHeld
                 || !grabbableObject.grabbable
-                || grabbableObject.deactivated)
+                || grabbableObject.deactivated
+                || grabbableObject.itemProperties.spawnPrefab == null)
             {
                 return false;
             }

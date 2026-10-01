@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.24.2 [Alpha] - 202X-XX-XX
+### Changed
+- Default voices are now included in the AssetBundles and loaded automatically when the plugin starts. 
+  They are no longer extracted to a folder.
+- If you want to use a custom voice pack, you must manually extract it into the plugin folder under Audio/Voices
+- Custom voice filenames must follow the category naming convention. The filename must start with one of the following categories:</br>
+        AttackingWithGun,</br>
+        AttackingWithMelee,</br>
+        CantDoCommand,</br>
+        Chilling,</br>
+        EnteringCruiser,</br>
+        FollowingPlayer,</br>
+        FoundLoot,</br>
+        HasLoot,</br>
+        HearsPlayer,</br>
+        Hit,</br>
+        LosingPlayer,</br>
+        Lost,</br>
+        LostAndFound,</br>
+        NoLoot,</br>
+        NowScavenging,</br>
+        OrderedToFollow,</br>
+        OrderedToGoThere,</br>
+        OrderedToStay,</br>
+        RunningFromMonster,</br>
+        Sinking,</br>
+        SteppedOnTrap,</br>
+        Thinking,</br>
+        Waiting,</br></br>
+For example: </br>
+ Chilling_1.ogg, </br>
+ Attacking_with_gun_46.ogg</br>
+
+The underscore (_) is not taken into account when matching the category name.
+### Hotfix
+- Fix taking the same damage as interns, thanks DravenXD (issue [#115](https://github.com/Szumi57/LethalInternship/issues/115))
+- Fix removing gathering point when placed, thanks DravenXD (issue [#114](https://github.com/Szumi57/LethalInternship/issues/114))
+- Fix giving interns some non valid items, like post-it or user manual.
+
 ## 0.24.1 [Alpha] - 2026-09-26
 ### Hotfix
 - Fix some base game patches to be compatible with more mods, thanks DravenXD (issue [#112](https://github.com/Szumi57/LethalInternship/issues/112))

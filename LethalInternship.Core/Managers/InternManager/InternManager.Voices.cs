@@ -60,9 +60,9 @@ namespace LethalInternship.Core.Managers
             return false;
         }
 
-        public void SyncPlayAudioIntern(int internID, string smallPathAudioClip)
+        public void SyncPlayAudioIntern(int internID, string clipName)
         {
-            AllInternAIs[internID].PlayAudioServerRpc(smallPathAudioClip, PluginRuntimeProvider.Context.Config.Talkativeness);
+            AllInternAIs[internID].PlayAudioServerRpc(clipName, PluginRuntimeProvider.Context.Config.Talkativeness);
         }
 
         public void PlayAudibleNoiseForIntern(int internID,

@@ -557,7 +557,8 @@ namespace LethalInternship.Core.Managers
                 {
                     // Grab distance
                     // Line give item
-                    if (localPlayer.currentlyHeldObjectServer != null)
+                    if (localPlayer.currentlyHeldObjectServer != null
+                        && localPlayer.currentlyHeldObjectServer.itemProperties.spawnPrefab != null)
                     {
                         _cursorTooltips.Add(("giveItem", string.Format(UIConst.TOOLTIP_GIVE_ITEM,
                                                                      InputManager.Instance.GetKeyAction(PluginRuntimeProvider.Context.InputActionsInstance.GiveItemToIntern))));
