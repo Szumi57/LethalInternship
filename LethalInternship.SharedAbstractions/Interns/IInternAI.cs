@@ -113,7 +113,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         GrabbableObject? GetHeldWeapon();
         GrabbableObject? GetCurrentlyHeldItem();
         int GetNbHeldItems();
-        void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
+        void GrabItemServerRpc(NetworkObjectReference networkObjectReference);
         void GrabItem(GrabbableObject grabbableObject);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
         void PlayAudioServerRpc(string clipName, int enumTalkativeness);

@@ -92,6 +92,9 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
                                                                     || InternManager.Instance.IsCurrentMoonCompanyMoon());
 
             interactable = managingInterns && !restrictedLocation;
+            if (DebugConst.ALLOW_COMMANDS_ALWAYS)
+                interactable = true;
+
             isNotInteractable = !interactable;
             this.tooltipMessageNotInteractable = tooltipMessageNotInteractable;
             UpdateIconAndDesc();

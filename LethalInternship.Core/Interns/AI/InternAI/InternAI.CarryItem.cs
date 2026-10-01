@@ -94,7 +94,9 @@ namespace LethalInternship.Core.Interns.AI
 
         public List<GrabbableObject> GetHeldGrabbableObjects()
         {
-            return HeldItems.Items.Where(x => x.GrabbableObject != null).Select(x => x.GrabbableObject!).ToList();
+            return HeldItems.Items.Where(x => x.GrabbableObject != null
+                                        && x.GrabbableObject.itemProperties.spawnPrefab != null)
+                                  .Select(x => x.GrabbableObject!).ToList();
         }
 
         public GrabbableObject? GetHeldWeapon()
@@ -251,7 +253,7 @@ namespace LethalInternship.Core.Interns.AI
         /// </summary>
         /// <param name="networkObjectReference">Item reference over the network</param>
         [ServerRpc(RequireOwnership = false)]
-        public void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven)
+        public void GrabItemServerRpc(NetworkObjectReference networkObjectReference)
         {
             if (!networkObjectReference.TryGet(out NetworkObject networkObject))
             {
@@ -266,15 +268,12 @@ namespace LethalInternship.Core.Interns.AI
                 return;
             }
 
-            if (!itemGiven)
+            if (!InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject, forcePickUp: this.CurrentCommand == EnumCommandTypes.GoFetchItem
+                                                                                              || this.CurrentCommand == EnumCommandTypes.UnloadCruiser
+                                                                                              || this.CurrentCommand == EnumCommandTypes.UnloadGatheringPoint))
             {
-                if (!InternManager.Instance.IsGrabbableObjectGrabbable(grabbableObject, forcePickUp: this.CurrentCommand == EnumCommandTypes.GoFetchItem
-                                                                                                  || this.CurrentCommand == EnumCommandTypes.UnloadCruiser
-                                                                                                  || this.CurrentCommand == EnumCommandTypes.UnloadGatheringPoint))
-                {
-                    PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
-                    return;
-                }
+                PluginLoggerHook.LogDebug?.Invoke($"{NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable");
+                return;
             }
 
             GrabItemClientRpc(networkObjectReference);
@@ -989,6 +988,12 @@ namespace LethalInternship.Core.Interns.AI
             if (grabbableObject == null)
             {
                 PluginLoggerHook.LogError?.Invoke($"{NpcController.Npc.playerUsername} GiveItemToInternServerRpc for InternAI {InternId} {NpcController.Npc.playerUsername}: Failed to get GrabbableObject component from network object (Grab item RPC)");
+                return;
+            }
+
+            if (grabbableObject.itemProperties.spawnPrefab == null)
+            {
+                PluginLoggerHook.LogDebug?.Invoke($"GiveItemToInternServerRpc {NpcController.Npc.playerUsername} grabbableObject {grabbableObject} not grabbable (spawnPrefab null)");
                 return;
             }
 

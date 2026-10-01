@@ -88,16 +88,6 @@ namespace LethalInternship.Core.Interns.AI
 
             try
             {
-                // Ok so the unity project is so broken with this dll right now
-                // External mod dependencies chain nightmare
-                // So we initialize enemyType in the code, it's ugly sorry (but it works ;p)
-                EnemyType enemyTypeIntern = ScriptableObject.CreateInstance<EnemyType>();
-                enemyTypeIntern.name = "InternNPC";
-                enemyTypeIntern.enemyName = enemyTypeIntern.name;
-                enemyTypeIntern.doorSpeedMultiplier = 0.25f;
-                enemyTypeIntern.canDie = true;
-                this.enemyType = enemyTypeIntern;
-
                 gameObject.GetComponentInChildren<EnemyAICollisionDetect>().mainScript = this;
                 agent = gameObject.GetComponentInChildren<NavMeshAgent>();
                 agent.enabled = false;
