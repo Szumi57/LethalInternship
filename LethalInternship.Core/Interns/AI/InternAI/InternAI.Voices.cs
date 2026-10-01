@@ -1,7 +1,6 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.Core.Managers;
 using LethalInternship.SharedAbstractions.Enums;
-using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Parameters;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using Unity.Netcode;
@@ -69,18 +68,22 @@ namespace LethalInternship.Core.Interns.AI
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness)
+        public void PlayAudioServerRpc(string clipName, int enumTalkativeness)
         {
-            PlayAudioClientRpc(smallPathAudioClip, enumTalkativeness);
+            PlayAudioClientRpc(clipName, enumTalkativeness);
         }
 
         [ClientRpc]
-        private void PlayAudioClientRpc(string smallPathAudioClip, int enumTalkativeness)
+        private void PlayAudioClientRpc(string clipName, int enumTalkativeness)
         {
             if (enumTalkativeness == PluginRuntimeProvider.Context.Config.Talkativeness
                 || InternIdentity.Voice.CanPlayAudioAfterCooldown())
             {
-                AudioManager.Instance.PlayAudio(smallPathAudioClip, InternIdentity.Voice);
+                AudioManager.Instance.LoadAudio(clipName, clip =>
+                {
+                    if (clip != null)
+                        InternIdentity.Voice.PlayAudioClip(clip);
+                });
             }
         }
 

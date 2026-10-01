@@ -26,6 +26,8 @@ namespace LethalInternship.SharedAbstractions.PluginRuntimeProvider
         // UI
         bool UIAssetsLoaded { get; }
 
+        AudioClip[] DefaultVoicesClips { get; }
+
         GameObject CommandsAll { get; }
         GameObject CommandsOne { get; }
         GameObject TooltipBar { get; }

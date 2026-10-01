@@ -314,7 +314,7 @@ namespace LethalInternship.Core.Managers
             // Unknown action
             if (gameAction == GameAction.Unknown)
             {
-                Debug.Log($"Unknown action {ctx.action.name}");
+                //Debug.Log($"Unknown action {ctx.action.name}");
                 CommandContextService.Instance.ExitCommandMode();
                 UIManager.Instance.HideAll();
                 CancelTargeting();
@@ -375,7 +375,7 @@ namespace LethalInternship.Core.Managers
                 && gameAction != GameAction.SwitchItem) // Scroll
             {
                 // Not allowed
-                Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
+                //Debug.Log($"Not allowed gameAction {gameAction} ctx.action {ctx.action}");
                 UIManager.Instance.HideAll();
             }
 

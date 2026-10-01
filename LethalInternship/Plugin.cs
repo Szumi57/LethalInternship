@@ -68,6 +68,9 @@ namespace LethalInternship
         public static GameObject WorldIconPrefab = null!;
         public static GameObject InputIconPrefab = null!;
 
+        // Audio
+        public static AudioClip[] DefaultVoiceClips = null!;
+
         internal static string DirectoryName = null!;
         internal static new ManualLogSource Logger = null!;
         internal static new Configs.Config Config = null!;
@@ -116,6 +119,8 @@ namespace LethalInternship
             // Load UI prefabs
             //UIAssetsLoaded = false;
             UIAssetsLoaded = LoadUIPrefabs();
+
+            LoadAudioClips();
 
             InitSharedValues();
 
@@ -254,6 +259,11 @@ namespace LethalInternship
             OutlineResources.Init(Plugin.ModAssets.LoadAsset<Material>("FakeOutlineMat"));
 
             return true;
+        }
+
+        private void LoadAudioClips()
+        {
+            DefaultVoiceClips = Plugin.ModAssets.LoadAllAssets<AudioClip>();
         }
 
         private void PatchBaseGame()
@@ -677,6 +687,8 @@ namespace LethalInternship
         public uint[][] InternNetworkObjectHashes { get; set; } = Array.Empty<uint[]>();
 
         public bool UIAssetsLoaded => Plugin.UIAssetsLoaded;
+
+        public AudioClip[] DefaultVoicesClips => Plugin.DefaultVoiceClips;
 
         public GameObject CommandsAll => Plugin.CommandsAll;
         public GameObject CommandsOne => Plugin.CommandsOne;

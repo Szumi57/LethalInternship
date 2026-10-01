@@ -116,7 +116,7 @@ namespace LethalInternship.SharedAbstractions.Interns
         void GrabItemServerRpc(NetworkObjectReference networkObjectReference, bool itemGiven);
         void GrabItem(GrabbableObject grabbableObject);
         void GiveItemToInternServerRpc(ulong playerClientIdGiver, NetworkObjectReference networkObjectReference);
-        void PlayAudioServerRpc(string smallPathAudioClip, int enumTalkativeness);
+        void PlayAudioServerRpc(string clipName, int enumTalkativeness);
         void HitTargetWithShovel(Shovel shovel);
         void HitTargetWithKnife(KnifeItem knife);
 

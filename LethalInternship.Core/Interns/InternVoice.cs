@@ -40,8 +40,8 @@ namespace LethalInternship.Core.Interns
         private bool aboutToTalk;
         private EnumVoicesState lastVoiceState;
 
-        private Dictionary<EnumVoicesState, List<string>> dictAvailableAudioClipPathsByState = new Dictionary<EnumVoicesState, List<string>>();
-        private Dictionary<EnumVoicesState, List<string>> availableAudioClipPaths = new Dictionary<EnumVoicesState, List<string>>();
+        private Dictionary<EnumVoicesState, List<string>> dictAvailableAudioClipsByState = new Dictionary<EnumVoicesState, List<string>>();
+        private Dictionary<EnumVoicesState, List<string>> availableAudioClips = new Dictionary<EnumVoicesState, List<string>>();
 
         private bool wasInside;
         private bool wasAllowedToSwear;
@@ -179,8 +179,8 @@ namespace LethalInternship.Core.Interns
         public void PlayRandomVoiceAudio(EnumVoicesState enumVoicesState, PlayVoiceParameters parameters)
         {
             ResetAboutToTalk();
-            string audioClipPath = GetRandomAudioClipByState(enumVoicesState, parameters);
-            if (string.IsNullOrWhiteSpace(audioClipPath))
+            string audioClipName = GetRandomAudioClipByState(enumVoicesState, parameters);
+            if (string.IsNullOrWhiteSpace(audioClipName))
             {
                 return;
             }
@@ -189,11 +189,15 @@ namespace LethalInternship.Core.Interns
             if (parameters.ShouldSync)
             {
                 // Can take time, coroutine stuff
-                AudioManager.Instance.SyncPlayAudio(audioClipPath, InternID);
+                AudioManager.Instance.SyncPlayAudio(audioClipName, InternID);
             }
             else
             {
-                AudioManager.Instance.PlayAudio(audioClipPath, this);
+                AudioManager.Instance.LoadAudio(audioClipName, clip =>
+                {
+                    if (clip != null)
+                        this.PlayAudioClip(clip);
+                });
             }
         }
 
@@ -235,44 +239,44 @@ namespace LethalInternship.Core.Interns
         private string GetRandomAudioClipByState(EnumVoicesState enumVoicesState,
                                                  PlayVoiceParameters parameters)
         {
-            if (!dictAvailableAudioClipPathsByState.ContainsKey(enumVoicesState))
+            if (!dictAvailableAudioClipsByState.ContainsKey(enumVoicesState))
             {
-                dictAvailableAudioClipPathsByState.Add(enumVoicesState, LoadAudioClipPathsByState(enumVoicesState).ToList());
+                dictAvailableAudioClipsByState.Add(enumVoicesState, LoadAudioClipPathsByState(enumVoicesState).ToList());
             }
 
-            if (!availableAudioClipPaths.ContainsKey(enumVoicesState))
+            if (!availableAudioClips.ContainsKey(enumVoicesState))
             {
-                availableAudioClipPaths.Add(enumVoicesState, FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], parameters).ToList());
+                availableAudioClips.Add(enumVoicesState, FilterAudioClipPaths(dictAvailableAudioClipsByState[enumVoicesState], parameters).ToList());
             }
 
-            if (availableAudioClipPaths[enumVoicesState].Count == 0)
+            if (availableAudioClips[enumVoicesState].Count == 0)
             {
                 //PluginLoggerHook.LogDebug?.Invoke($"reset audio paths");
-                availableAudioClipPaths[enumVoicesState] = FilterAudioClipPaths(dictAvailableAudioClipPathsByState[enumVoicesState], parameters).ToList();
+                availableAudioClips[enumVoicesState] = FilterAudioClipPaths(dictAvailableAudioClipsByState[enumVoicesState], parameters).ToList();
             }
 
-            List<string> audioClipPaths = availableAudioClipPaths[enumVoicesState];
-            if (audioClipPaths.Count == 0)
+            List<string> audioClips = availableAudioClips[enumVoicesState];
+            if (audioClips.Count == 0)
             {
                 return string.Empty;
             }
 
-            string audioClipPath;
+            string audioClipName;
             Random randomInstance = new Random();
-            int index = randomInstance.Next(0, audioClipPaths.Count);
-            audioClipPath = audioClipPaths[index];
+            int index = randomInstance.Next(0, audioClips.Count);
+            audioClipName = audioClips[index];
 
             if (DidParametersChanged(parameters))
             {
                 // Reset pool of audio path
-                availableAudioClipPaths[enumVoicesState].Clear();
+                availableAudioClips[enumVoicesState].Clear();
             }
             else
             {
-                audioClipPaths.RemoveAt(index);
+                audioClips.RemoveAt(index);
             }
 
-            return audioClipPath;
+            return audioClipName;
         }
 
         private IEnumerable<string> FilterAudioClipPaths(List<string> audioClipPaths,
@@ -316,19 +320,19 @@ namespace LethalInternship.Core.Interns
 
         private string[] LoadAudioClipPathsByState(EnumVoicesState enumVoicesState)
         {
-            string path = string.Join(' ', VoiceFolder + "\\" + enumVoicesState.ToString()).Replace("_", "").ToLower();
+            string voiceState = enumVoicesState.ToString().Replace("_", "").ToLower();
 
-            var audioClipPaths = AudioManager.Instance.DictAudioClipsByPath
-                                    .Where(x => AudioManager.Instance.FormatAudioDirectoriesNames(x.Key).Contains(path));
+            var audioClips = AudioManager.Instance.Voices
+                                    .Where(x => AudioManager.Instance.FormatAudioDirectoriesNames(x.Key).Contains(voiceState));
 
             //PluginLoggerHook.LogDebug?.Invoke($"Loaded {audioClipPaths.Count()} path containing {path}");
-            return audioClipPaths.Select(y => y.Key).ToArray();
+            return audioClips.Select(y => y.Key).ToArray();
         }
 
         public void ResetAvailableAudioPaths()
         {
-            dictAvailableAudioClipPathsByState.Clear();
-            availableAudioClipPaths.Clear();
+            dictAvailableAudioClipsByState.Clear();
+            availableAudioClips.Clear();
         }
 
         public void TryStopAudioFadeOut()
