@@ -34,6 +34,10 @@ For example: </br>
  Attacking_with_gun_46.ogg</br>
 
 The underscore (_) is not taken into account when matching the category name.
+### Hotfix
+- Fix taking the same damage as interns, thanks DravenXD (issue [#115](https://github.com/Szumi57/LethalInternship/issues/115))
+- Fix removing gathering point when placed, thanks DravenXD (issue [#114](https://github.com/Szumi57/LethalInternship/issues/114))
+- Fix giving interns some non valid items, like post-it or user manual.
 
 ## 0.24.1 [Alpha] - 2026-09-26
 ### Hotfix
