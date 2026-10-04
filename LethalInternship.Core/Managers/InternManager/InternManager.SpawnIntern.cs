@@ -484,7 +484,6 @@ namespace LethalInternship.Core.Managers
 
         #endregion
 
-
         public IInternIdentity? GetIdentityAssociatedWithBody(PlayerControllerB body)
         {
             if (_associatedBodies.TryGetValue(body, out var associatedBody))

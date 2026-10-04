@@ -259,6 +259,7 @@ namespace LethalInternship.Core.Managers
                                                    (int)body.playerClientId,
                                                    new SpawnInternsParamsNetworkSerializable()
                                                    {
+                                                       ShouldDestroyDeadBody = true,
                                                        enumSpawnAnimation = (int)EnumSpawnAnimation.OnlyPlayerSpawnAnimation,
                                                        SpawnPosition = spawnPosition,
                                                        YRot = body.transform.rotation.y,

@@ -49,7 +49,12 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 __instance.viewState.ReportBodyReplacementRemoval();
                 __instance.cosmeticAvatar = __instance.ragdollAvatar;
                 CreateAndParentRagdoll_ReversePatch(__instance, __instance.controller.deadBody);
-                internAI.InternIdentity.BodyReplacementBase = __instance;
+
+                IInternIdentity? identity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(__instance.controller);
+                if (identity != null)
+                {
+                    identity.BodyReplacementBase = __instance;
+                }
             }
 
             if (InternManagerProvider.Instance.ListBodyReplacementOnDeadBodies.Any(x => x.BodyReplacementBase == instanceComponent))

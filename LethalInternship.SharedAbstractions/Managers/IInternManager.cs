@@ -107,5 +107,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         void GetListOfAvailableSuitIDs(List<int> indexesSpawnedSuits);
 
         bool IsCurrentMoonCompanyMoon();
+
+        IInternIdentity? GetIdentityAssociatedWithBody(PlayerControllerB body);
     }
 }
