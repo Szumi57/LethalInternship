@@ -49,7 +49,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 ai.NpcController.MimicEmotes(ai.targetPlayer);
             }
 
-
             return BehaviourTreeStatus.Success;
         }
 
@@ -76,7 +75,9 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
         {
             ai.NpcController.OrderToLookForward();
 
-            while (true)
+            while (!ai.IsEnemyDead
+                   && ai.Npc != null
+                   && !ai.Npc.isPlayerDead)
             {
                 FindTargetToLookAt();
 

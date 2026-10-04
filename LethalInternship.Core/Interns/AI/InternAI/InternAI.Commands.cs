@@ -207,7 +207,7 @@ namespace LethalInternship.Core.Interns.AI
                 CurrentCommand = command;
                 PlayVoiceAfterCommand(voiceCommand);
 
-                internIdentity.OnCommandChanged?.Invoke(internIdentity);
+                internIdentity?.OnCommandChanged?.Invoke(internIdentity);
             }
         }
 
@@ -235,7 +235,7 @@ namespace LethalInternship.Core.Interns.AI
                     // Voice
                     PlayVoiceAfterCommand(voiceToPlay);
 
-                    internIdentity.OnCommandChanged?.Invoke(internIdentity);
+                    internIdentity?.OnCommandChanged?.Invoke(internIdentity);
                 }
             }
         }

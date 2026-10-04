@@ -55,7 +55,8 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void UpdateInternPositionClientRpc(Vector3 newPos, bool inElevator, bool isInShip, bool exhausted, bool isPlayerGrounded)
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null)
             {
                 return;
             }
@@ -144,7 +145,8 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void UpdateInternRotationAndLookClientRpc(string stateIndicator, Vector3 direction, int intEnumObjectsLookingAt, Vector3 playerEyeToLookAt, Vector3 positionToLookAt)
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null)
             {
                 return;
             }
@@ -198,7 +200,8 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void UpdateInternAnimationClientRpc(int animationState, float animationSpeed)
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null)
             {
                 return;
             }
@@ -264,7 +267,8 @@ namespace LethalInternship.Core.Interns.AI
         /// <param name="climbingLadder">Is climbing ladder ?</param>
         private void UpdateInternSpecialAnimation(bool specialAnimation, float timed, bool climbingLadder)
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null)
             {
                 return;
             }
@@ -295,6 +299,12 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void SyncDeadBodyPositionClientRpc(Vector3 newBodyPosition)
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return;
+            }
+
             PlayerControllerBHook.SyncBodyPositionClientRpc_ReversePatch?.Invoke(NpcController.Npc, newBodyPosition);
         }
 
@@ -311,11 +321,16 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void SyncSetFaceUnderwaterClientRpc(bool isUnderwater)
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return;
+            }
+
             NpcController.Npc.isUnderwater = isUnderwater;
         }
 
         #endregion
-
 
 
         #region Jump RPC
@@ -351,6 +366,12 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void JumpClientRpc()
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return;
+            }
+
             if (!IsClientOwnerOfIntern())
             {
                 PlayerControllerBHook.PlayJumpAudio_ReversePatch?.Invoke(NpcController.Npc);
@@ -394,6 +415,12 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void JumpLandFromClientRpc(bool fallHard)
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return;
+            }
+
             if (fallHard)
             {
                 NpcController.Npc.movementAudio.PlayOneShot(StartOfRound.Instance.playerHitGroundHard, 1f);
@@ -445,6 +472,12 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void ChangeSinkingStateClientRpc(bool startSinking, float sinkingSpeed, int audioClipIndex)
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return;
+            }
+
             if (startSinking)
             {
                 NpcController.Npc.sinkingSpeedMultiplier = sinkingSpeed;
@@ -506,6 +539,12 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void DisableJetpackModeClientRpc()
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return;
+            }
+
             NpcController.Npc.DisableJetpackControlsLocally();
         }
 
@@ -515,6 +554,12 @@ namespace LethalInternship.Core.Interns.AI
 
         public Vector3 GetBillBoardPosition(GameObject bodyModel)
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+            {
+                return Vector3.zero;
+            }
+
             return npcController.GetBillBoardPosition(bodyModel, Npc.usernameCanvas.transform.localPosition);
         }
 

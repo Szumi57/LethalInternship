@@ -169,7 +169,6 @@ namespace LethalInternship.Core.Interns
         public NpcController(PlayerControllerB npc)
         {
             this.npc = npc;
-            Init();
         }
 
         /// <summary>
@@ -239,6 +238,9 @@ namespace LethalInternship.Core.Interns
         /// </remarks>
         public void Update()
         {
+            if (this.npc == null)
+                return;
+
             StartOfRound instanceSOR = StartOfRound.Instance;
 
             // The owner of the intern (and the controller)
@@ -1586,6 +1588,9 @@ namespace LethalInternship.Core.Interns
         /// </remarks>
         public void LateUpdate()
         {
+            if (npc == null)
+                return;
+
             Npc.previousElevatorPosition = Npc.playersManager.elevatorTransform.position;
 
             if (NetworkManager.Singleton == null)
@@ -2400,6 +2405,9 @@ namespace LethalInternship.Core.Interns
 
         public float GetSqrDistanceWithLocalPlayer()
         {
+            if (this.npc == null)
+                return float.MaxValue;
+
             return SqrDistanceWithLocalPlayerTimedCheck.GetSqrDistanceWithLocalPlayer(this.Npc.transform.position);
         }
 

@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.24.2 [Alpha] - 202X-XX-XX
+## 0.24.3 [Alpha] - 202X-XX-XX
+
+## 0.24.2 [Alpha] - 2026-10-01
 ### Changed
 - Default voices are now included in the AssetBundles and loaded automatically when the plugin starts. 
   They are no longer extracted to a folder.

@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using LethalInternship.SharedAbstractions.CommandsSystem;
 using LethalInternship.SharedAbstractions.Constants;
+using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Events;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
 using LethalInternship.SharedAbstractions.Hooks.MoreCompanyHooks;
@@ -8,6 +9,7 @@ using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.ManagerProviders;
 using LethalInternship.SharedAbstractions.Managers;
+using LethalInternship.SharedAbstractions.NetworkSerializers;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using System;
 using System.Collections.Generic;
@@ -55,9 +57,7 @@ namespace LethalInternship.Core.Managers
         public List<int> HeldInternsLocalPlayer { get => heldInternsLocalPlayer; set => heldInternsLocalPlayer = value; }
         public new bool IsServer => base.IsServer;
 
-        private IInternAI[] AllInternAIs = null!;
-        private GameObject[] AllPlayerObjectsBackUp = null!;
-        private PlayerControllerB[] AllPlayerScriptsBackUp = null!;
+        public IInternAI[] AllInternAIs { get; private set; } = null!;
 
         public override void OnNetworkSpawn()
         {
@@ -125,6 +125,11 @@ namespace LethalInternship.Core.Managers
             //    Pools.LogStats();
             //    Debug.Log("----------------------------------");
             //}
+
+            if (this.IsServer)
+            {
+                CheckForResurrectedInterns();
+            }
         }
 
         public void Init()
@@ -220,6 +225,46 @@ namespace LethalInternship.Core.Managers
             Object.Destroy(InputManager.Instance);
             Object.Destroy(TargetingManager.Instance);
             Object.Destroy(UIManager.Instance);
+        }
+
+        private void CheckForResurrectedInterns()
+        {
+            if (StartOfRound.Instance == null)
+            {
+                return;
+            }
+
+            for (int i = IndexBeginOfInterns; i < StartOfRound.Instance.allPlayerScripts.Length; i++)
+            {
+                PlayerControllerB body = StartOfRound.Instance.allPlayerScripts[i];
+                if (body.isPlayerDead
+                    || !body.isPlayerControlled)
+                {
+                    continue;
+                }
+
+                IInternIdentity? identity = GetIdentityAssociatedWithBody(body);
+                if (identity == null
+                    || identity.Alive)
+                {
+                    continue;
+                }
+
+                // Avoiding multiple calls while serverRpc try to do its thing
+                RemoveAssociatedIdentityFrom(body);
+
+                // Spawn and reinit this body with this identity
+                Vector3 spawnPosition = body.transform.position;
+                SpawnThisIdentityThisBodyServerRpc(identity.IdIdentity,
+                                                   (int)body.playerClientId,
+                                                   new SpawnInternsParamsNetworkSerializable()
+                                                   {
+                                                       enumSpawnAnimation = (int)EnumSpawnAnimation.OnlyPlayerSpawnAnimation,
+                                                       SpawnPosition = spawnPosition,
+                                                       YRot = body.transform.rotation.y,
+                                                       IsOutside = spawnPosition.y >= -80f,
+                                                   });
+            }
         }
     }
 }

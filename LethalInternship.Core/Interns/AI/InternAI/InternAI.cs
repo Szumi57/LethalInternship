@@ -43,6 +43,8 @@ namespace LethalInternship.Core.Interns.AI
         public new NetworkObject NetworkObject => base.NetworkObject;
         public Transform Transform => this.transform;
 
+        public int InternId { get; private set; } = -1;
+
         public IRagdollInternBody RagdollInternBody { get => ragdollInternBody; set => ragdollInternBody = value; }
         public bool IsEnemyDead => base.isEnemyDead;
         public new bool IsSpawned => base.IsSpawned;
@@ -52,7 +54,6 @@ namespace LethalInternship.Core.Interns.AI
         private INpcController npcController = null!;
         private IInternIdentity internIdentity = null!;
         private IRagdollInternBody ragdollInternBody = null!;
-        public int InternId = -1;
 
         public Collider InternBodyCollider = null!;
         private List<IBodyReplacementBase> listModelReplacement = null!;
@@ -115,6 +116,8 @@ namespace LethalInternship.Core.Interns.AI
         /// </remarks>
         public void Init(EnumSpawnAnimation enumSpawnAnimation)
         {
+            InternId = Array.IndexOf(InternManager.Instance.AllInternAIs, this);
+
             // Entrances
             EntrancesTeleportArray = FindObjectsByType<EntranceTeleport>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
@@ -299,7 +302,8 @@ namespace LethalInternship.Core.Interns.AI
 
         private void FixedUpdate()
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null)
             {
                 // Intern AI not init
                 return;
@@ -338,7 +342,9 @@ namespace LethalInternship.Core.Interns.AI
         /// </remarks>
         public override void Update()
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null
+                || InternIdentity == null)
             {
                 // Intern AI not init
                 return;
@@ -486,6 +492,8 @@ namespace LethalInternship.Core.Interns.AI
             }
 
             if (isEnemyDead
+                || npcController == null
+                || npcController.Npc == null
                 || NpcController.Npc.isPlayerDead
                 || (RagdollInternBody != null && RagdollInternBody.IsRagdollBodyHeld()))
             {
@@ -542,7 +550,8 @@ namespace LethalInternship.Core.Interns.AI
 
         private void LateUpdate()
         {
-            if (NpcController == null)
+            if (NpcController == null
+                || NpcController.Npc == null)
             {
                 // Intern AI not init
                 return;
@@ -615,6 +624,11 @@ namespace LethalInternship.Core.Interns.AI
 
         public override void OnCollideWithPlayer(Collider other)
         {
+            if (NpcController == null
+                || NpcController.Npc == null
+                || NpcController.Npc.isPlayerDead)
+                return;
+
             if (other.CompareTag("Player"))
             {
                 PlayerControllerB componentPlayer = other.GetComponent<PlayerControllerB>();
@@ -632,6 +646,11 @@ namespace LethalInternship.Core.Interns.AI
             {
                 return;
             }
+
+            if (NpcController == null
+                || NpcController.Npc == null
+                || NpcController.Npc.isPlayerDead)
+                return;
 
             if (collidedEnemy == null
                 || collidedEnemy.GetType() == typeof(InternAI))
@@ -658,6 +677,7 @@ namespace LethalInternship.Core.Interns.AI
         public override void DetectNoise(Vector3 noisePosition, float noiseLoudness, int timesPlayedInOneSpot = 0, int noiseID = 0)
         {
             if (NpcController == null
+                || NpcController.Npc == null
                 || !NpcController.Npc.gameObject.activeSelf
                 || !NpcController.Npc.isPlayerControlled
                 || isEnemyDead

@@ -14,6 +14,7 @@ namespace LethalInternship.SharedAbstractions.Managers
     {
         GameObject ManagerGameObject { get; }
 
+        IInternAI[] AllInternAIs { get; }
         int IndexBeginOfInterns { get; }
         int AllEntitiesCount { get; }
         Vector3 ItemDropShipPos { get; set; }
@@ -60,7 +61,10 @@ namespace LethalInternship.SharedAbstractions.Managers
         void SpawnInternsFromDropShip(Transform[] spawnPositions);
         void TeleportOutInterns(ShipTeleporter teleporter, Random shipTeleporterSeed);
         void VehicleHasLanded();
-        void SpawnThisInternServerRpc(int identityID, SpawnInternsParamsNetworkSerializable spawnInternsParamsNetworkSerializable);
+        void SpawnThisIdentityServerRpc(int identityID, SpawnInternsParamsNetworkSerializable spawnInternsParamsNetworkSerializable);
+        void SpawnThisIdentityThisBodyServerRpc(int identityID,
+                                                int bodyID,
+                                                SpawnInternsParamsNetworkSerializable spawnInternsParamsNetworkSerializable);
         void SyncGroupCreditsForNotOwnerTerminalServerRpc(int newGroupCredits, int numItemsInShip);
         void UpdateReviveCountServerRpc(int id);
         IInternCullingBodyInfo? GetInternCullingBodyInfo(GameObject gameObject);

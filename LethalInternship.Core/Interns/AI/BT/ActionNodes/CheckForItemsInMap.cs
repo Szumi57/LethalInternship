@@ -38,7 +38,6 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 if (InternManager.Instance.IsGrabbableObjectGrabbable(context.TargetItem))
                     return BehaviourTreeStatus.Success;
 
-                Debug.Log($"--------- {ai.Npc.playerUsername} CheckForItemsInMap context.TargetItem {context.TargetItem.name} not grabbable !!!!");
                 CleanItemsToCheck(context);
             }
 

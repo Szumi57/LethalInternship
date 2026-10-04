@@ -110,6 +110,7 @@ namespace LethalInternship.Core.Interns
                 {
                     if (internAI.IsEnemyDead
                         || internAI.NpcController == null
+                        || internAI.Npc == null
                         || !internAI.NpcController.Npc.isPlayerControlled
                         || internAI.NpcController.Npc.isPlayerDead)
                     {
@@ -152,6 +153,7 @@ namespace LethalInternship.Core.Interns
                 {
                     if (internAI.IsEnemyDead
                         || internAI.NpcController == null
+                        || internAI.Npc == null
                         || !internAI.NpcController.Npc.isPlayerControlled
                         || internAI.NpcController.Npc.isPlayerDead)
                     {

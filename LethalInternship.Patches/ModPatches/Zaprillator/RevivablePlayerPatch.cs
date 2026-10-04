@@ -52,7 +52,7 @@ namespace LethalInternship.Patches.ModPatches.Zaprillator
             ____shockedBy.SyncBatteryServerRpc(0);
             ____shockedBy = null!;
 
-            InternManagerProvider.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
+            InternManagerProvider.Instance.SpawnThisIdentityServerRpc(internIdentity.IdIdentity,
                                                                     new SpawnInternsParamsNetworkSerializable()
                                                                     {
                                                                         ShouldDestroyDeadBody = true,
