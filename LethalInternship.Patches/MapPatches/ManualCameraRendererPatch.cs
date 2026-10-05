@@ -38,7 +38,8 @@ namespace LethalInternship.Patches.MapPatches
             }
 
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)controller.playerClientId);
-            if (internAI == null)
+            if (internAI == null
+                || internAI.InternIdentity == null)
             {
                 if ((int)controller.playerClientId >= InternManagerProvider.Instance.IndexBeginOfInterns)
                 {

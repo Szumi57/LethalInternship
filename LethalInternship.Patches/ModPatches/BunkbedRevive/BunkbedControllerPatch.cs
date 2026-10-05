@@ -56,7 +56,7 @@ namespace LethalInternship.Patches.ModPatches.BunkbedRevive
             terminalScript.groupCredits -= reviveCost;
             InternManagerProvider.Instance.SyncGroupCreditsForNotOwnerTerminalServerRpc(terminalScript.groupCredits, terminalScript.numberOfItemsInDropship);
 
-            InternManagerProvider.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
+            InternManagerProvider.Instance.SpawnThisIdentityServerRpc(internIdentity.IdIdentity,
                                                                     new SpawnInternsParamsNetworkSerializable()
                                                                     {
                                                                         ShouldDestroyDeadBody = true,

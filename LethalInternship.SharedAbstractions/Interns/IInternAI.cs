@@ -11,6 +11,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 {
     public interface IInternAI
     {
+        int InternId { get; }
         INpcController NpcController { get; }
         PlayerControllerB Npc { get; }
         IInternIdentity InternIdentity { get; set; }
@@ -135,5 +136,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         // RadMech
         void SyncSetTargetToThreatServerRpc(NetworkObjectReference radMechNOR, Vector3 lastSeenPos);
+
+        bool IsTalking();
     }
 }

@@ -369,7 +369,8 @@ namespace LethalInternship.Patches.NpcPatches
         {
             // send to server if intern from controller
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
-            if (internAI != null)
+            if (internAI != null
+                && internAI.Npc != null)
             {
                 PluginLoggerHook.LogDebug?.Invoke($"NetworkManager {__instance.NetworkManager}, newBodyPosition {newBodyPosition}, this.deadBody {__instance.deadBody}");
                 internAI.SyncDeadBodyPositionServerRpc(newBodyPosition);
@@ -487,7 +488,8 @@ namespace LethalInternship.Patches.NpcPatches
                 return true;
 
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
-            if (internAI != null)
+            if (internAI != null
+                && internAI.Npc != null)
             {
                 internAI.TeleportIntern(pos);
                 return false;
@@ -501,7 +503,8 @@ namespace LethalInternship.Patches.NpcPatches
         static bool PlayFootstepServer_PreFix(PlayerControllerB __instance)
         {
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
-            if (internAI != null)
+            if (internAI != null
+                && internAI.Npc != null)
             {
                 internAI.NpcController.PlayFootstep(isServer: true);
                 return false;
@@ -515,7 +518,8 @@ namespace LethalInternship.Patches.NpcPatches
         static bool PlayFootstepLocal_PreFix(PlayerControllerB __instance)
         {
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.playerClientId);
-            if (internAI != null)
+            if (internAI != null
+                && internAI.Npc != null)
             {
                 internAI.NpcController.PlayFootstep(isServer: false);
                 return false;
@@ -1100,7 +1104,7 @@ namespace LethalInternship.Patches.NpcPatches
                 identityID = IdentityManagerProvider.Instance.GetNewIdentityToSpawn();
             }
 
-            InternManagerProvider.Instance.SpawnThisInternServerRpc(identityID, new SpawnInternsParamsNetworkSerializable()
+            InternManagerProvider.Instance.SpawnThisIdentityServerRpc(identityID, new SpawnInternsParamsNetworkSerializable()
             {
                 enumSpawnAnimation = (int)EnumSpawnAnimation.None,
                 SpawnPosition = __instance.transform.position,

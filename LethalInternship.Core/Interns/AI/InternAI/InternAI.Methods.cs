@@ -580,11 +580,6 @@ namespace LethalInternship.Core.Interns.AI
         {
             StartOfRound instanceSOR = StartOfRound.Instance;
 
-            if (NpcController == null)
-            {
-                return;
-            }
-
             if (RagdollInternBody != null
                 && RagdollInternBody.IsRagdollBodyHeld())
             {

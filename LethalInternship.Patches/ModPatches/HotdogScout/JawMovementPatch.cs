@@ -12,6 +12,11 @@ namespace LethalInternship.Patches.ModPatches.HotdogScout
         [HarmonyPrefix]
         static bool Update_Prefix(JawMovement __instance)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.player.playerClientId);
             if (internAI == null)
             {
@@ -19,7 +24,7 @@ namespace LethalInternship.Patches.ModPatches.HotdogScout
             }
 
             float num = 0f;
-            if (internAI.InternIdentity.Voice.IsTalking())
+            if (internAI.IsTalking())
             {
                 num = __instance.player.isPlayerDead ? 0f : Mathf.Clamp(internAI.InternIdentity.Voice.GetAmplitude() * __instance.sensibility, 0f, __instance.maxJawOpening);
             }

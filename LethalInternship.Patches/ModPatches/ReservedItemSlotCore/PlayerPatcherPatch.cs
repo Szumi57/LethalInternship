@@ -7,6 +7,9 @@ namespace LethalInternship.Patches.ModPatches.ReservedItemSlotCore
     {
         public static bool InitializePlayerControllerLate_Prefix(PlayerControllerB __0)
         {
+            if (!InternManagerProvider.IsReady)
+                return true;
+
             if (InternManagerProvider.Instance.IsPlayerIntern(__0))
             {
                 return false;

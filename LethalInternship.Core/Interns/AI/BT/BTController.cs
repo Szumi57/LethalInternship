@@ -5,7 +5,6 @@ using LethalInternship.Core.Interns.AI.CoroutineControllers;
 using LethalInternship.Core.Interns.AI.Dijkstra.DJKPoints;
 using LethalInternship.Core.Interns.AI.PointsOfInterest.InterestPoints;
 using LethalInternship.Core.Managers;
-using LethalInternship.Core.Utils;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
@@ -45,8 +44,8 @@ namespace LethalInternship.Core.Interns.AI.BT
 
             BehaviorTree = CreateTree();
 
-            BTUtil.PrintTree(CreateTree());
-            PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
+            //BTUtil.PrintTree(CreateTree());
+            //PluginLoggerHook.LogDebug?.Invoke($"{BTUtil.Export1TreeJson(BehaviorTree)}");
         }
 
         public void TickTree(float deltaTime)

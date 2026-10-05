@@ -539,7 +539,8 @@ namespace LethalInternship.Core.Managers
                     _cursorTooltips.Add(("targetingPosition", UIConst.TOOLTIP_TARGETING_POSITION));
                 }
             }
-            else if (target.Value.Intern != null) // Not targeting command
+            else if (target.Value.Intern != null
+                     && target.Value.Intern.Npc != null) // Not targeting command
             {
                 IInternAI intern = target.Value.Intern;
 
@@ -743,7 +744,7 @@ namespace LethalInternship.Core.Managers
 
             // Update intern outlines
             InternOutlineController.UpdateInternsOutlines(IdentityManager.Instance.GetIdentitiesSpawned(),
-                                                          target?.Intern?.Npc.playerClientId,
+                                                          target?.Intern?.Npc?.playerClientId,
                                                           allowMultipleInternOutline,
                                                           forceNoOutlines: IsAnyMenuOpen);
 

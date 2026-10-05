@@ -7,6 +7,9 @@ namespace LethalInternship.Patches.ModPatches.QuickBuy
     {
         public static bool RunQuickBuy_Prefix(Terminal __0, ref TerminalNode __result)
         {
+            if (!TerminalManagerProvider.IsReady)
+                return true;
+
             if (TerminalManagerProvider.Instance.GetTerminalPage() == EnumTerminalStates.Info)
             {
                 string command = __0.screenText.text.Substring(__0.screenText.text.Length - __0.textAdded);

@@ -1,6 +1,20 @@
 # Changelog
 
-## 0.24.2 [Alpha] - 202X-XX-XX
+## 0.24.3 [Alpha] - 2026-10-05
+### Added 
+- Added a configuration option to prevent interns from triggering landmines.
+### Fixed
+- Fixed intern spawning compatibility with mods that resurrect interns.
+- Fixed model replacement API issues causing models to pile up on interns when spawning, resurrecting, or respawning.
+- Improved compatibility with additional model replacement mods.
+- Fixed intern commands being available when interns were too far away.
+- Fixed intern list being not interactable when some interns where close but not all of them.
+- Fixed gathering points being settable even when interns were too far away.
+- Fixed a null reference exception when switching cameras.
+- Fixed suit loading issues when using MoreSuits alongside other mods.
+- Fixed a null reference issue with intern voices after an intern died.
+
+## 0.24.2 [Alpha] - 2026-10-01
 ### Changed
 - Default voices are now included in the AssetBundles and loaded automatically when the plugin starts. 
   They are no longer extracted to a folder.

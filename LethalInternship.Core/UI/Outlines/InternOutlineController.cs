@@ -36,7 +36,7 @@ namespace LethalInternship.Core.UI.Outlines
             foreach (IInternIdentity identity in identities)
             {
                 IInternAI? intern = identity.InternAI;
-                if (intern == null) continue;
+                if (intern == null || intern.NpcController.Npc == null) continue;
 
                 bool shouldOutline;
                 if (forceNoOutlines)

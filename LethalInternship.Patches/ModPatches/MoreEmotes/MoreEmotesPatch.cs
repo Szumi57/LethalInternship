@@ -30,6 +30,9 @@ namespace LethalInternship.Patches.ModPatches.MoreEmotes
         [HarmonyPrefix]
         static void UpdatePrefix_Prefix(ref bool[] ___s_wasPerformingEmote)
         {
+            if (!InternManagerProvider.IsReady)
+                return;
+
             int allEntitiesCount = InternManagerProvider.Instance.AllEntitiesCount;
             if (___s_wasPerformingEmote != null
                 && ___s_wasPerformingEmote.Length < allEntitiesCount)

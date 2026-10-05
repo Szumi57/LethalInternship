@@ -34,7 +34,5 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
             _suitName = _srcType.GetProperty("suitName")?.GetValue(_src)?.ToString() ?? string.Empty;
             _deadBody = _srcType.GetProperty("deadBody")?.GetValue(_src) as GameObject;
         }
-
-
     }
 }

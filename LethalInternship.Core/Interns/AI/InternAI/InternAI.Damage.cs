@@ -203,6 +203,13 @@ namespace LethalInternship.Core.Interns.AI
             {
                 NpcController.Npc.health = Mathf.Clamp(NpcController.Npc.health - damageNumber, 0, MaxHealth);
             }
+
+            NpcController.Npc.takingFallDamage = false;
+            if (!NpcController.Npc.inSpecialInteractAnimation)
+            {
+                NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_DAMAGE);
+            }
+            NpcController.Npc.specialAnimationWeight = 1f;
             NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
 
             // Kill intern if necessary
@@ -256,14 +263,6 @@ namespace LethalInternship.Core.Interns.AI
                     AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
                 });
             }
-
-            NpcController.Npc.takingFallDamage = false;
-            if (!NpcController.Npc.inSpecialInteractAnimation)
-            {
-                NpcController.Npc.playerBodyAnimator.SetTrigger(Const.PLAYER_ANIMATION_TRIGGER_DAMAGE);
-            }
-            NpcController.Npc.specialAnimationWeight = 1f;
-            NpcController.Npc.PlayQuickSpecialAnimation(0.7f);
         }
 
         public void HealthRegen()

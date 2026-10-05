@@ -248,6 +248,13 @@ namespace LethalInternship.Core.Managers
                 return true;
             }
 
+            // Mines
+            if (!PluginRuntimeProvider.Context.Config.GrabMines
+                && gameObjectToEvaluate.name.Contains("andmine"))
+            {
+                return true;
+            }
+
             return false;
         }
 

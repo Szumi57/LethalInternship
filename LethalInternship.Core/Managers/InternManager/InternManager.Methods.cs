@@ -117,7 +117,9 @@ namespace LethalInternship.Core.Managers
             for (int i = 0; i < array.Length; i++)
             {
                 GrabbableObject grabbableObject = array[i];
-                if (!grabbableObject.grabbableToEnemies || grabbableObject.deactivated)
+                if (grabbableObject == null
+                    || !grabbableObject.grabbableToEnemies
+                    || grabbableObject.deactivated)
                 {
                     continue;
                 }
@@ -482,7 +484,9 @@ namespace LethalInternship.Core.Managers
 
             foreach (InternAI internAI in AllInternAIs)
             {
-                if (internAI == null)
+                if (internAI == null
+                    || internAI.NpcController == null
+                    || internAI.NpcController.Npc == null)
                 {
                     continue;
                 }

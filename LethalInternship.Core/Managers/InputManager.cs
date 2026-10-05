@@ -693,15 +693,16 @@ namespace LethalInternship.Core.Managers
 
         private void GatheringPoint_OnSelected(EnumInputAction typeInputAction)
         {
-            var identitiesToOrder = IdentitySelectionService.Instance.GetSelected()
-                                        .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
             switch (typeInputAction)
             {
                 case EnumInputAction.SetGatheringPoint:
-                    new SetGatheringPointAbility(identitiesToOrder).Activate();
+                    new SetGatheringPointAbility(IdentitySelectionService.Instance.GetSelected())
+                        .Activate();
                     break;
                 case EnumInputAction.GoToGatheringPoint:
-                    new GoToGatheringPointAbility(identitiesToOrder).Activate();
+                    new GoToGatheringPointAbility(IdentitySelectionService.Instance.GetSelected()
+                                                    .Where(x => IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x)))
+                        .Activate();
                     CommandContextService.Instance.ExitCommandMode();
                     UIManager.Instance.HideAll();
                     break;

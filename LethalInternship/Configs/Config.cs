@@ -48,6 +48,7 @@ namespace LethalInternship.Configs
         public bool GrabShoppingCart => grabShoppingCart.Value;
         public bool GrabKiwiBabyItem => grabKiwiBabyItem.Value;
         public bool GrabApparatus => grabApparatus.Value;
+        public bool GrabMines => grabMines.Value;
         public bool TeleportedInternDropItems => teleportedInternDropItems.Value;
         public string VolumeVoicesMultiplierInterns => volumeVoicesMultiplierInterns.Value;
         public int Talkativeness => talkativeness.Value;
@@ -92,6 +93,7 @@ namespace LethalInternship.Configs
         [SyncedEntryField] private SyncedEntry<bool> grabShoppingCart;
         [SyncedEntryField] private SyncedEntry<bool> grabKiwiBabyItem;
         [SyncedEntryField] private SyncedEntry<bool> grabApparatus;
+        [SyncedEntryField] private SyncedEntry<bool> grabMines;
 
         // Teleporters
         [SyncedEntryField] private SyncedEntry<bool> teleportedInternDropItems;
@@ -251,6 +253,11 @@ namespace LethalInternship.Configs
                                       "Grab the apparatus",
                                       defaultVal: false,
                                       "Should the intern try to grab the apparatus ? (useful if the mod FacilityMeltdown is active)");
+
+            grabMines = cfg.BindSyncedEntry(ConfigConst.ConfigSectionBehaviour,
+                                      "Grab mines",
+                                      defaultVal: false,
+                                      "Should the intern try to grab the mines ? (can grab them with mods)");
 
             // Teleporters
             teleportedInternDropItems = cfg.BindSyncedEntry(ConfigConst.ConfigSectionTeleporters,

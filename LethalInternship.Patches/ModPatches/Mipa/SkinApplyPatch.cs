@@ -11,13 +11,16 @@ namespace LethalInternship.Patches.ModPatches.Mipa
         [HarmonyPrefix]
         static bool FixedUpdate_Prefix(SkinApply __instance)
         {
+            if (!InternManagerProvider.IsReady)
+                return true;
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.m_Player.playerClientId);
             if (internAI == null)
             {
                 return true;
             }
 
-            __instance.m_IsTalking = internAI.InternIdentity.Voice.IsTalking();
+            __instance.m_IsTalking = internAI.IsTalking();
             return false;
         }
     }

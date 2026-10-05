@@ -76,19 +76,27 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void PlayAudioClientRpc(string clipName, int enumTalkativeness)
         {
-            if (enumTalkativeness == PluginRuntimeProvider.Context.Config.Talkativeness
-                || InternIdentity.Voice.CanPlayAudioAfterCooldown())
+            if (internIdentity.Voice == null)
+                return;
+
+            if (enumTalkativeness != PluginRuntimeProvider.Context.Config.Talkativeness
+                && !InternIdentity.Voice.CanPlayAudioAfterCooldown())
             {
-                AudioManager.Instance.LoadAudio(clipName, clip =>
-                {
-                    if (clip != null)
-                        InternIdentity.Voice.PlayAudioClip(clip);
-                });
+                return;
             }
+
+            AudioManager.Instance.LoadAudio(clipName, clip =>
+            {
+                if (clip != null)
+                    InternIdentity.Voice.PlayAudioClip(clip);
+            });
         }
 
         private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
         {
+            if (internIdentity.Voice == null)
+                return;
+
             // Default states, wait for cooldown and if no one is talking close
             this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
@@ -106,6 +114,9 @@ namespace LethalInternship.Core.Interns.AI
 
         public void TryPlayCantDoCommandVoiceAudio()
         {
+            if (internIdentity.Voice == null)
+                return;
+
             // Default states, wait for cooldown and if no one is talking close
             this.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
             {
@@ -121,6 +132,15 @@ namespace LethalInternship.Core.Interns.AI
             });
         }
 
+        public bool IsTalking()
+        {
+            if (internIdentity == null
+                || internIdentity.Voice == null)
+            {
+                return false;
+            }
+            return internIdentity.Voice.IsTalking();
+        }
         #endregion
     }
 }

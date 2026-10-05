@@ -165,8 +165,9 @@ namespace LethalInternship.Core.UI.CommandsControllers
             while (enabled)
             {
                 // Managing at least one intern ?
-                bool managingInterns = IdentitySelectionService.Instance.GetSelected().Any();
-
+                bool managingInterns = IdentitySelectionService.Instance.GetSelected()
+                                            .Any(x => IdentityManager.Instance.IsIdentityValidToCommand(x)
+                                                      && IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
                 bool vehicleAvailable = InternManager.Instance.VehicleController != null;
                 bool gatheringPointSet = InternManager.Instance.GatheringPoint != null;
 

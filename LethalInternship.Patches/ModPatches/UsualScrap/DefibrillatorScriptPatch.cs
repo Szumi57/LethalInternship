@@ -42,7 +42,7 @@ namespace LethalInternship.Patches.ModPatches.UsualScrap
 
             // Respawn intern
             PluginLoggerHook.LogDebug?.Invoke($"Reviving intern {internIdentity.Name}");
-            InternManagerProvider.Instance.SpawnThisInternServerRpc(internIdentity.IdIdentity,
+            InternManagerProvider.Instance.SpawnThisIdentityServerRpc(internIdentity.IdIdentity,
                                                                     new SpawnInternsParamsNetworkSerializable()
                                                                     {
                                                                         ShouldDestroyDeadBody = true,

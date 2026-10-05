@@ -35,7 +35,7 @@ namespace LethalInternship.Core.Interns.AI
 
         public void ChangeSuitIntern(ulong idInternController, int suitID, bool playAudio = false)
         {
-            if (suitID > StartOfRound.Instance.unlockablesList.unlockables.Count())
+            if (suitID >= StartOfRound.Instance.unlockablesList.unlockables.Count())
             {
                 suitID = 0;
             }

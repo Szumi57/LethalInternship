@@ -156,7 +156,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             int idBatch = (int)ai.Npc.playerClientId;
             Dijkstra.Dijkstra.GenerateNeighborInstructions(pf, idBatch, startWriter, destinationWriter, instructionsToProcess);
             InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchCompleted);
-            PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CalculateNextPathPoint begin CalculatePathToDest {pf.Destination}");
+            //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CalculateNextPathPoint begin CalculatePathToDest {pf.Destination}");
         }
 
         private void OnBatchCompleted()

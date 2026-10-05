@@ -7,6 +7,9 @@ namespace LethalInternship.Patches.ModPatches.LethalProgression
     {
         public static bool HPRegenUpdate_Prefix(PlayerControllerB __0)
         {
+            if (!InternManagerProvider.IsReady)
+                return true;
+
             if (InternManagerProvider.Instance.IsPlayerIntern(__0))
             {
                 return false;

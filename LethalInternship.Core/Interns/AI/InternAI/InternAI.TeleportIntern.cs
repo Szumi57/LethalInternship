@@ -62,6 +62,10 @@ namespace LethalInternship.Core.Interns.AI
         /// <param name="isUsingEntrance">Is the intern actually using entrance to teleport ?</param>
         public void TeleportIntern(Vector3 pos, bool? setOutside = null, bool isUsingEntrance = false)
         {
+            if (NpcController == null
+                || NpcController.Npc == null)
+                return;
+
             // teleport body
             TeleportAgentAIAndBody(pos);
 
@@ -110,6 +114,7 @@ namespace LethalInternship.Core.Interns.AI
                 agent.enabled = false;
                 transform.position = navMeshPosition;
                 agent.enabled = true;
+                agent.Warp(navMeshPosition);
             }
 
             // For CullFactory mod

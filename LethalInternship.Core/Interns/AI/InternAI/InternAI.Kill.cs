@@ -259,6 +259,12 @@ namespace LethalInternship.Core.Interns.AI
             PointOfInterest = null;
             InternManager.Instance.CancelBatch((int)Npc.playerClientId);
 
+            NpcController.Npc.transform.position = Npc.playersManager.notSpawnedPosition.position;
+
+            // Detach body and AI from identity
+            this.internIdentity.InternAI = null;
+            this.internIdentity = null!;
+
             // Event
             OnInternDead?.Invoke(this);
         }

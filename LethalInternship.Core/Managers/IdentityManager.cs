@@ -289,36 +289,33 @@ namespace LethalInternship.Core.Managers
 
         public bool IsIdentityValidToCommand(IInternIdentity identity)
         {
-            if (identity == null) return false;
+            if (identity == null || !identity.Alive)
+                return false;
 
-            if (!identity.Alive) return false;
+            var ai = identity.InternAI;
+            if (ai == null || ai.Npc == null)
+                return false;
 
-            if (identity.InternAI == null) return false;
+            var localPlayer = StartOfRound.Instance?.localPlayerController;
+            if (localPlayer == null)
+                return false;
 
-            if (identity.InternAI.Npc == null) return false;
+            if (ai.OwnerClientId != localPlayer.actualClientId)
+                return false;
 
-            if (StartOfRound.Instance == null || StartOfRound.Instance.localPlayerController == null) return false;
-
-            if (identity.InternAI.OwnerClientId != StartOfRound.Instance.localPlayerController.actualClientId) return false;
-
-            if (identity.InternAI.IsSpawningAnimationRunning()) return false;
-
-            return true;
+            return !ai.IsSpawningAnimationRunning();
         }
 
         public bool IsIdentityCloseEnoughToCommand(IInternIdentity identity)
         {
-            if (identity == null) return false;
+            if (identity == null || !identity.Alive)
+                return false;
 
-            if (!identity.Alive) return false;
+            var ai = identity.InternAI;
+            if (ai?.Npc == null)
+                return false;
 
-            if (identity.InternAI == null) return false;
-
-            if (identity.InternAI.Npc == null) return false;
-
-            if (identity.InternAI.NpcController.GetSqrDistanceWithLocalPlayer() > InternManager.Instance.GetMaxDistanceCommand()) return false;
-
-            return true;
+            return ai.NpcController.GetSqrDistanceWithLocalPlayer() <= InternManager.Instance.GetMaxDistanceCommand();
         }
     }
 
