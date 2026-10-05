@@ -50,7 +50,7 @@ namespace LethalInternship.Core.Managers
                     continue;
                 }
 
-                if (internAI.InternIdentity.Voice.IsTalking()
+                if (internAI.IsTalking()
                     && (internAI.NpcController.Npc.transform.position - internTryingToTalk.NpcController.Npc.transform.position).sqrMagnitude < VoicesConst.DISTANCE_HEAR_OTHER_INTERNS * VoicesConst.DISTANCE_HEAR_OTHER_INTERNS)
                 {
                     return true;

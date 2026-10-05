@@ -136,5 +136,7 @@ namespace LethalInternship.SharedAbstractions.Interns
 
         // RadMech
         void SyncSetTargetToThreatServerRpc(NetworkObjectReference radMechNOR, Vector3 lastSeenPos);
+
+        bool IsTalking();
     }
 }

@@ -36,6 +36,8 @@ namespace LethalInternship.SharedAbstractions.Configs
         bool GrabShoppingCart { get; }
         bool GrabKiwiBabyItem { get; }
         bool GrabApparatus { get; }
+        bool GrabMines { get; }
+
         bool TeleportedInternDropItems { get; }
 
         // Voice

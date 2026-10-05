@@ -132,6 +132,15 @@ namespace LethalInternship.Core.Interns.AI
             });
         }
 
+        public bool IsTalking()
+        {
+            if (internIdentity == null
+                || internIdentity.Voice == null)
+            {
+                return false;
+            }
+            return internIdentity.Voice.IsTalking();
+        }
         #endregion
     }
 }

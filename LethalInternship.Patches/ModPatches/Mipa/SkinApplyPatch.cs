@@ -20,7 +20,7 @@ namespace LethalInternship.Patches.ModPatches.Mipa
                 return true;
             }
 
-            __instance.m_IsTalking = internAI.InternIdentity.Voice.IsTalking();
+            __instance.m_IsTalking = internAI.IsTalking();
             return false;
         }
     }
