@@ -49,14 +49,13 @@ namespace LethalInternship.Core.Interns.AI
         public bool IsEnemyDead => base.isEnemyDead;
         public new bool IsSpawned => base.IsSpawned;
         public bool AnimationCoroutineRagdollingRunning => animationCoroutineRagdollingRunning;
-        public List<IBodyReplacementBase> ListModelReplacement { get => listModelReplacement; set => listModelReplacement = value; }
+        public List<IBodyReplacementBase> ListModelReplacement { get; private set; } = new List<IBodyReplacementBase>();
 
         private INpcController npcController = null!;
         private IInternIdentity internIdentity = null!;
         private IRagdollInternBody ragdollInternBody = null!;
 
         public Collider InternBodyCollider = null!;
-        private List<IBodyReplacementBase> listModelReplacement = null!;
         private Dictionary<string, Component> dictComponentByCollider = null!;
         private EnumStateControllerMovement StateControllerMovement;
         private float updateDestinationIntervalInternAI;
@@ -128,7 +127,7 @@ namespace LethalInternship.Core.Interns.AI
             InitImportantColliders();
 
             // Model replacements
-            listModelReplacement = new List<IBodyReplacementBase>();
+            ListModelReplacement.Clear();
 
             // Grabbableobject
             InternManager.Instance.RegisterItems();
@@ -525,6 +524,13 @@ namespace LethalInternship.Core.Interns.AI
         public override void DoAIInterval()
         {
             SetAgent(enabled: true);
+
+            Debug.Log(
+    $"Agent: {this.Npc.playerUsername} | " +
+    $"enabled={agent.enabled} | " +
+    $"isOnNavMesh={agent.isOnNavMesh} | " +
+    $"position={agent.transform.position}"
+);
 
             BTController.TickTree(AIIntervalTime);
 

@@ -351,19 +351,17 @@ namespace LethalInternship.Core.Managers
             PlayerControllerBHook.OnDisable_ReversePatch?.Invoke(internController);
 
             // Destroy dead body of identity
-            if (spawnParamsNetworkSerializable.ShouldDestroyDeadBody)
+            if (PluginRuntimeProvider.Context.IsModModelReplacementAPILoaded
+                && internIdentity.BodyReplacementBase != null)
             {
-                if (PluginRuntimeProvider.Context.IsModModelReplacementAPILoaded
-                    && internIdentity.BodyReplacementBase != null)
-                {
-                    ModelReplacementAPIHook.RemovePlayerModelReplacement?.Invoke(internIdentity.BodyReplacementBase);
-                    internIdentity.BodyReplacementBase = null;
-                }
-                if (internIdentity.DeadBody != null)
-                {
-                    Object.Destroy(internIdentity.DeadBody.gameObject);
-                    internIdentity.DeadBody = null;
-                }
+                ModelReplacementAPIHook.RemovePlayerModelReplacement?.Invoke(internIdentity.BodyReplacementBase);
+                internIdentity.BodyReplacementBase = null;
+            }
+            // Remove deadbody on internIdentity
+            if (internIdentity.DeadBody != null)
+            {
+                Object.Destroy(internIdentity.DeadBody.gameObject);
+                internIdentity.DeadBody = null;
             }
             // Remove deadbody on controller
             if (internController.deadBody != null)

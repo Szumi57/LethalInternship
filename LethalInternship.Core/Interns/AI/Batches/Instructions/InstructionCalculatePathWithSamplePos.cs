@@ -7,6 +7,9 @@ namespace LethalInternship.Core.Interns.AI.Batches.Instructions
     {
         public override void Execute()
         {
+            if (onNeighborResult == null)
+                return;
+
             NavMeshHit hitEnd;
             if (NavMesh.SamplePosition(target, out hitEnd, samplePosDist, NavMesh.AllAreas))
             {

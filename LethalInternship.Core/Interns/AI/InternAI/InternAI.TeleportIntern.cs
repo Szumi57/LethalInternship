@@ -114,6 +114,7 @@ namespace LethalInternship.Core.Interns.AI
                 agent.enabled = false;
                 transform.position = navMeshPosition;
                 agent.enabled = true;
+                agent.Warp(navMeshPosition);
             }
 
             // For CullFactory mod

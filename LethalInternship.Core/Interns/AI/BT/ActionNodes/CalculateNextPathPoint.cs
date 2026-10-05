@@ -7,6 +7,7 @@ using LethalInternship.SharedAbstractions.Constants;
 using LethalInternship.SharedAbstractions.Hooks.PluginLoggerHooks;
 using LethalInternship.SharedAbstractions.Interns;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.AI;
 
 namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
@@ -86,7 +87,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
                 // Try to still calculate
                 if (!context.PathController.IsPathValid())
                 {
-                    //Debug.Log($"CalculatePath PathStatus == NavMeshPathStatus.PathPartial");
+                    Debug.Log($"CalculatePath PathStatus == NavMeshPathStatus.PathPartial");
                     CalculatePath(context);
                 }
 
@@ -156,7 +157,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             int idBatch = (int)ai.Npc.playerClientId;
             Dijkstra.Dijkstra.GenerateNeighborInstructions(pf, idBatch, startWriter, destinationWriter, instructionsToProcess);
             InternManager.Instance.RequestBatch(idBatch, instructionsToProcess, OnBatchCompleted);
-            PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CalculateNextPathPoint begin CalculatePathToDest {pf.Destination}");
+            //PluginLoggerHook.LogDebug?.Invoke($"-- {ai.Npc.playerUsername} CalculateNextPathPoint begin CalculatePathToDest {pf.Destination}");
         }
 
         private void OnBatchCompleted()
@@ -169,7 +170,7 @@ namespace LethalInternship.Core.Interns.AI.BT.ActionNodes
             currentContext.PathController.SetNewPath(pathIds);
 
             // log
-            //PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted >>> {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)} | Destination {currentContext.PathfindingContext.Destination}");
+            PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted >>> {currentContext.PathfindingContext.GetFullPathString(currentContext.PathController.PathIds)} | Destination {currentContext.PathfindingContext.Destination}");
             //PluginLoggerHook.LogDebug?.Invoke($"=> {currentContext.InternAI.Npc.playerUsername} CalculateNextPathPoint OnBatchCompleted {currentContext.PathfindingContext}");
         }
     }

@@ -86,12 +86,15 @@ namespace LethalInternship.Core.UI.CommandsControllers.GatheringPoint
         public void SetInteractable(bool interactable, string tooltipMessageNotInteractable = null!)
         {
             bool managingInterns = IdentitySelectionService.Instance.GetSelected()
-                                        .Any(x => IdentityManager.Instance.IsIdentityValidToCommand(x));
+                                        .Any(x => IdentityManager.Instance.IsIdentityValidToCommand(x)
+                                                  && IdentityManager.Instance.IsIdentityCloseEnoughToCommand(x));
+            bool settingUpPoint = CanSetUpGatheringPoint && !isGatheringPointSet;
+
             bool restrictedLocation = StartOfRound.Instance != null && (StartOfRound.Instance.inShipPhase
                                                                     || StartOfRound.Instance.shipIsLeaving
                                                                     || InternManager.Instance.IsCurrentMoonCompanyMoon());
 
-            interactable = managingInterns && !restrictedLocation;
+            interactable = (managingInterns || settingUpPoint) && !restrictedLocation;
             if (DebugConst.ALLOW_COMMANDS_ALWAYS)
                 interactable = true;
 

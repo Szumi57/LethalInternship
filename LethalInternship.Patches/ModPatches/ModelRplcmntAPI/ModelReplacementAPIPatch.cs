@@ -43,7 +43,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
             string suitNameToReplace = string.Empty;
             bool shouldAddNewBodyReplacement = true;
-            IBodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.ToArray();
+            IBodyReplacementBase[] bodiesReplacementBase = internAI.ListModelReplacement.ToArray(); // because we remove while looping
             //PluginLoggerHook.LogDebug?.Invoke($"{player.playerUsername} SetPlayerModelReplacement bodiesReplacementBase.Length {bodiesReplacementBase.Length}");
             foreach (IBodyReplacementBase bodyReplacementBase in bodiesReplacementBase)
             {
@@ -62,7 +62,7 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                 {
                     PluginLoggerHook.LogInfo?.Invoke($"Patch LethalInternship, intern {player.playerUsername}, Model Replacement change detected {bodyReplacementBase.GetType()} => {type}, changing model.");
                     suitNameToReplace = bodyReplacementBase.SuitName;
-                    internAI.ListModelReplacement.Remove(bodyReplacementBase);
+                    internAI.ListModelReplacement.Remove(bodyReplacementBase);// removing while looping
                     bodyReplacementBase.IsActive = false;
                     UnityEngine.Object.Destroy((Object)bodyReplacementBase.BodyReplacementBase);
                     shouldAddNewBodyReplacement = true;
@@ -71,6 +71,9 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
             //PluginLoggerHook.LogDebug?.Invoke($"{player.playerUsername} shouldAddNewBodyReplacement {shouldAddNewBodyReplacement}");
             if (shouldAddNewBodyReplacement
+                && internAI != null
+                && internAI.NpcController != null
+                && internAI.Npc != null
                 && !internAI.NpcController.Npc.isPlayerDead
                 && internAI.NpcController.Npc.isPlayerControlled)
             {
@@ -117,6 +120,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPrefix]
         static bool RemovePlayerModelReplacement_Prefix(PlayerControllerB player)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {
