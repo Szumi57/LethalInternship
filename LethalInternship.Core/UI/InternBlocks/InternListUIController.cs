@@ -51,12 +51,11 @@ namespace LethalInternship.Core.UI.InternBlocks
         {
             foreach (var (identity, block) in identityMap)
             {
-                if (interactable)
+                if (interactable
+                    && GetCategory(identity) != EnumCategoryTypeUI.InternClose)
                 {
-                    if (GetCategory(identity) != EnumCategoryTypeUI.InternClose)
-                    {
-                        interactable = false;
-                    }
+                    block.SetInteractable(interactable: false, tooltipMessageNotInteractable);
+                    continue;
                 }
                 block.SetInteractable(interactable, tooltipMessageNotInteractable);
             }

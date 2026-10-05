@@ -6,6 +6,11 @@ namespace LethalInternship.Patches.ModPatches.ButteryFixes
     {
         public static bool DeadBodyInfoPostStart_Prefix(DeadBodyInfo __0)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             if (__0.playerScript != null
                 && InternManagerProvider.Instance.IsPlayerIntern(__0.playerScript))
             {

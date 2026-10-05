@@ -61,7 +61,7 @@ namespace LethalInternship.Core.Interns
                     return "";
                 }
 
-                string suitName = SuitID.Value > StartOfRound.Instance.unlockablesList.unlockables.Count() ? "Not found" : StartOfRound.Instance.unlockablesList.unlockables[SuitID.Value].unlockableName;
+                string suitName = SuitID.Value >= StartOfRound.Instance.unlockablesList.unlockables.Count() ? "Not found" : StartOfRound.Instance.unlockablesList.unlockables[SuitID.Value].unlockableName;
                 return $"{SuitID.Value}: {suitName}";
             }
         }

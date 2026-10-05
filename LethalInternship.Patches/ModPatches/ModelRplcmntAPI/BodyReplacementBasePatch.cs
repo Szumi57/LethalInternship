@@ -15,6 +15,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPrefix]
         static bool LateUpdate_Prefix(BodyReplacementBase __instance, ref GameObject ___replacementDeadBody)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.controller.playerClientId);
             if (internAI == null)
             {

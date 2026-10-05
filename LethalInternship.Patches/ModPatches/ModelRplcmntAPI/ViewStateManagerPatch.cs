@@ -16,6 +16,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                                                   PlayerControllerB ___controller,
                                                   int ___CullingMaskThirdPerson)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)___controller.playerClientId);
             if (internAI == null)
             {
@@ -45,6 +50,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                                         PlayerControllerB ___controller,
                                         int ___CullingMaskFirstPerson)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)___controller.playerClientId);
             if (internAI == null)
             {

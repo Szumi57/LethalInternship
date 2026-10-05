@@ -26,6 +26,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
 
         public static void RemoveInternModelReplacement(PlayerControllerB player, bool forceRemove = false)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {

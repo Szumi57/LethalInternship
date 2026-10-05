@@ -12,6 +12,11 @@ namespace LethalInternship.Patches.ModPatches.HotdogScout
         [HarmonyPrefix]
         static bool Update_Prefix(JawMovement __instance)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)__instance.player.playerClientId);
             if (internAI == null)
             {

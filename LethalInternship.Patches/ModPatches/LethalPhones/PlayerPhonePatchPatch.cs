@@ -16,6 +16,9 @@ namespace LethalInternship.Patches.ModPatches.LethalPhones
         [HarmonyPrefix]
         static bool PlayerModelDisabled_Prefix(PlayerControllerB __0)
         {
+            if (!InternManagerProvider.IsReady)
+                return true;
+
             if (InternManagerProvider.Instance.IsPlayerIntern(__0))
             {
                 return false;
@@ -27,6 +30,9 @@ namespace LethalInternship.Patches.ModPatches.LethalPhones
         [HarmonyPrefix]
         static bool PlayerSpawnBody_Prefix(PlayerControllerB __0)
         {
+            if (!InternManagerProvider.IsReady)
+                return true;
+
             if (InternManagerProvider.Instance.IsPlayerIntern(__0))
             {
                 return false;

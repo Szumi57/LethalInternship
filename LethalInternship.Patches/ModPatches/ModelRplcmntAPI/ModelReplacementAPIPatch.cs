@@ -20,6 +20,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
         [HarmonyPrefix]
         static bool SetPlayerModelReplacement_Prefix(PlayerControllerB player, Type type)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)player.playerClientId);
             if (internAI == null)
             {

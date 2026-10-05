@@ -13,6 +13,9 @@ namespace LethalInternship.Patches.ModPatches.Peepers
         [HarmonyPostfix]
         public static void OnTriggerEnter_Postfix(PeeperAttachHitbox __instance, Collider other)
         {
+            if (!InternManagerProvider.IsReady)
+                return;
+
             if (other.CompareTag("Player"))
             {
                 PlayerControllerB playerControllerB = other.gameObject.GetComponent<PlayerControllerB>();

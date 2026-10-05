@@ -525,13 +525,6 @@ namespace LethalInternship.Core.Interns.AI
         {
             SetAgent(enabled: true);
 
-            Debug.Log(
-    $"Agent: {this.Npc.playerUsername} | " +
-    $"enabled={agent.enabled} | " +
-    $"isOnNavMesh={agent.isOnNavMesh} | " +
-    $"position={agent.transform.position}"
-);
-
             BTController.TickTree(AIIntervalTime);
 
             // Doors

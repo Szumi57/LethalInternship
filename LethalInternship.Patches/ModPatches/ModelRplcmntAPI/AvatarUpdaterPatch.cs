@@ -18,6 +18,11 @@ namespace LethalInternship.Patches.ModPatches.ModelRplcmntAPI
                                        SkinnedMeshRenderer ___playerModelRenderer,
                                        Vector3 ___rootPositionOffset)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             // Cull animations ?
             IInternCullingBodyInfo? internCullingBodyInfo = InternManagerProvider.Instance.GetInternCullingBodyInfo(___player.gameObject);
             if (internCullingBodyInfo == null)

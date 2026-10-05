@@ -14,6 +14,11 @@ namespace LethalInternship.Patches.ModPatches.LethalPhones
         [HarmonyPrefix]
         static bool UpdatePhoneSanity_PreFix(PlayerControllerB playerController)
         {
+            if (!InternManagerProvider.IsReady)
+            {
+                return true;
+            }
+
             IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)playerController.playerClientId);
             if (internAI != null)
             {
