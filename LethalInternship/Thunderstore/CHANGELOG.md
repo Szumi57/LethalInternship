@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.24.4 [Alpha] - 2026-11-
+### Added 
+- 
+### Fixed
+- 
+
 ## 0.24.3 [Alpha] - 2026-10-05
 ### Added 
 - Added a configuration option to prevent interns from looting landmines (with mods).
