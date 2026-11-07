@@ -98,32 +98,14 @@ namespace LethalInternship.Patches.GameEnginePatches
         /// Initialize arrays with for the right amount of entities (player + interns)
         /// </summary>
         /// <param name="__instance"></param>
-        //[HarmonyPatch("Start")]
-        //[HarmonyPostfix]
+        [HarmonyPatch("Start")]
+        [HarmonyPostfix]
         static void Start_PostFix(SoundManager __instance)
         {
-            //int playersAndInternsCount = StartOfRound.Instance.allPlayerObjects.Length;
+            if (!InternManagerProvider.IsReady)
+                return;
 
-            //Array.Resize<float>(ref __instance.playerVoicePitchLerpSpeed, playersAndInternsCount);
-            //Array.Resize<float>(ref __instance.playerVoicePitchTargets, playersAndInternsCount);
-            //Array.Resize<float>(ref __instance.playerVoicePitches, playersAndInternsCount);
-            //Array.Resize<float>(ref __instance.playerVoiceVolumes, playersAndInternsCount);
-
-            //// From moreCompany
-            //Array.Resize<AudioMixerGroup>(ref __instance.playerVoiceMixers, playersAndInternsCount);
-            //AudioMixerGroup audioMixerGroup = Resources.FindObjectsOfTypeAll<AudioMixerGroup>().FirstOrDefault((AudioMixerGroup x) => x.name.StartsWith("VoicePlayer"));
-            //for (int i = 0; i < playersAndInternsCount; i++)
-            //{
-            //    __instance.playerVoicePitchLerpSpeed[i] = 3f;
-            //    __instance.playerVoicePitchTargets[i] = 1f;
-            //    __instance.playerVoicePitches[i] = 1f;
-            //    __instance.playerVoiceVolumes[i] = 0.5f;
-            //    if (__instance.playerVoiceMixers[i] != null)
-            //    {
-            //        PluginLoggerHook.LogDebug?.Invoke($"playerVoiceMixers {i} {audioMixerGroup}");
-            //        __instance.playerVoiceMixers[i] = audioMixerGroup;
-            //    }
-            //}
+            InternManagerProvider.Instance.UpdateSoundManagerWithInterns(InternManagerProvider.Instance.AllEntitiesCount);
         }
     }
 }

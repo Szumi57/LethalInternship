@@ -31,6 +31,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         IInternAI? GetInternAIByInternId(int internId);
         void ManagePoolOfInterns();
         void SyncEndOfRoundInterns();
+        void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount);
 
         bool IsPlayerIntern(PlayerControllerB player);
         bool IsIdPlayerIntern(int id);
@@ -49,6 +50,7 @@ namespace LethalInternship.SharedAbstractions.Managers
         void GetAliveAndSpawnInternsAIOwnedByLocal(List<IInternAI> result);
         IInternAI? GetInternAiOwnerOfObject(GrabbableObject grabbableObject);
         IInternAI[] GetInternsAiHoldByPlayer(int idPlayerHolder);
+        IInternIdentity? GetIdentityAssociatedWithBody(PlayerControllerB body);
 
         void ExecuteOrder(Order order);
         int GetMaxDistanceCommand();
@@ -107,7 +109,5 @@ namespace LethalInternship.SharedAbstractions.Managers
         void GetListOfAvailableSuitIDs(List<int> indexesSpawnedSuits);
 
         bool IsCurrentMoonCompanyMoon();
-
-        IInternIdentity? GetIdentityAssociatedWithBody(PlayerControllerB body);
     }
 }

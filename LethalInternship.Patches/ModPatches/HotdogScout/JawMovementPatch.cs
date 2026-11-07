@@ -26,7 +26,9 @@ namespace LethalInternship.Patches.ModPatches.HotdogScout
             float num = 0f;
             if (internAI.IsTalking())
             {
-                num = __instance.player.isPlayerDead ? 0f : Mathf.Clamp(internAI.InternIdentity.Voice.GetAmplitude() * __instance.sensibility, 0f, __instance.maxJawOpening);
+                IInternIdentity? internIdentity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(internAI.Npc);
+                if (internIdentity != null)
+                    num = __instance.player.isPlayerDead ? 0f : Mathf.Clamp(internIdentity.Voice.GetAmplitude() * __instance.sensibility, 0f, __instance.maxJawOpening);
             }
             __instance.skinnedMeshRenderer.SetBlendShapeWeight(__instance.skinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(__instance.blendShapeName), num);
 

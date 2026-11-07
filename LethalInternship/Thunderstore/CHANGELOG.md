@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.4 [Alpha] - 2026-11-07
+### Fixed
+- Fix body not trackable for ship teleporter, thanks DravenXD (issue [#121](https://github.com/Szumi57/LethalInternship/issues/121))
+- Fix defibrillators from UsualScrap not being able to revive interns, thanks BrunoGoldbergFerro (issue [#123](https://github.com/Szumi57/LethalInternship/issues/123))
+
 ## 0.24.3 [Alpha] - 2026-10-05
 ### Added 
 - Added a configuration option to prevent interns from looting landmines (with mods).

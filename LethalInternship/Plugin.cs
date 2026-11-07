@@ -556,8 +556,8 @@ namespace LethalInternship
             }
             if (isModUsualScrapLoaded)
             {
-                _harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "RevivePlayer"),
-                               new HarmonyMethod(patchesAssembly.GetType("LethalInternship.Patches.ModPatches.UsualScrap.DefibrillatorScriptPatch"), "RevivePlayer_Prefix"));
+                //_harmony.Patch(AccessTools.Method(AccessTools.TypeByName("UsualScrap.Behaviors.DefibrillatorScript"), "FindBody"),
+                //               new HarmonyMethod(patchesAssembly.GetType("LethalInternship.Patches.ModPatches.UsualScrap.DefibrillatorScriptPatch"), "RevivePlayer_Prefix"));
             }
             if (IsModLethalMinLoaded)
             {

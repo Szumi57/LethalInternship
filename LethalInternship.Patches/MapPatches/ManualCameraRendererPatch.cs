@@ -37,9 +37,8 @@ namespace LethalInternship.Patches.MapPatches
                 return;
             }
 
-            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)controller.playerClientId);
-            if (internAI == null
-                || internAI.InternIdentity == null)
+            IInternIdentity? internIdentity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(controller);
+            if (internIdentity == null)
             {
                 if ((int)controller.playerClientId >= InternManagerProvider.Instance.IndexBeginOfInterns)
                 {
@@ -60,7 +59,7 @@ namespace LethalInternship.Patches.MapPatches
             }
 
             int[] idsIdentitiesSpawned = IdentityManagerProvider.Instance.GetIdentitiesIDsSpawned();
-            if (idsIdentitiesSpawned.Contains(internAI.InternIdentity.IdIdentity))
+            if (idsIdentitiesSpawned.Contains(internIdentity.IdIdentity))
             {
                 // valid intern
                 return;
@@ -89,8 +88,8 @@ namespace LethalInternship.Patches.MapPatches
                 return;
             }
 
-            IInternAI? internAI = InternManagerProvider.Instance.GetInternAI((int)controller.playerClientId);
-            if (internAI == null)
+            IInternIdentity? internIdentity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(controller);
+            if (internIdentity == null)
             {
                 if ((int)controller.playerClientId >= InternManagerProvider.Instance.IndexBeginOfInterns)
                 {
@@ -111,7 +110,7 @@ namespace LethalInternship.Patches.MapPatches
             }
 
             int[] idsIdentitiesSpawned = IdentityManagerProvider.Instance.GetIdentitiesIDsSpawned();
-            if (idsIdentitiesSpawned.Contains(internAI.InternIdentity.IdIdentity))
+            if (idsIdentitiesSpawned.Contains(internIdentity.IdIdentity))
             {
                 // valid intern
                 return;

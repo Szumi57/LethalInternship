@@ -57,18 +57,22 @@ namespace LethalInternship.Patches.MapHazardsPatches
                     __instance.PressMineServerRpc();
 
                     // Audio
-                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    IInternIdentity? internIdentity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(internAI.Npc);
+                    if (internIdentity != null)
                     {
-                        VoiceState = EnumVoicesState.SteppedOnTrap,
-                        CanTalkIfOtherInternTalk = true,
-                        WaitForCooldown = false,
-                        CutCurrentVoiceStateToTalk = true,
-                        CanRepeatVoiceState = false,
+                        internIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                        {
+                            VoiceState = EnumVoicesState.SteppedOnTrap,
+                            CanTalkIfOtherInternTalk = true,
+                            WaitForCooldown = false,
+                            CutCurrentVoiceStateToTalk = true,
+                            CanRepeatVoiceState = false,
 
-                        ShouldSync = false,
-                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
-                        AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
-                    });
+                            ShouldSync = false,
+                            IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                            AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+                        });
+                    }
                 }
             }
         }
@@ -109,18 +113,22 @@ namespace LethalInternship.Patches.MapHazardsPatches
                     ___localPlayerOnMine = false;
 
                     // Audio
-                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    IInternIdentity? internIdentity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(internAI.Npc);
+                    if (internIdentity != null)
                     {
-                        VoiceState = EnumVoicesState.SteppedOnTrap,
-                        CanTalkIfOtherInternTalk = true,
-                        WaitForCooldown = false,
-                        CutCurrentVoiceStateToTalk = true,
-                        CanRepeatVoiceState = true,
+                        internIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                        {
+                            VoiceState = EnumVoicesState.SteppedOnTrap,
+                            CanTalkIfOtherInternTalk = true,
+                            WaitForCooldown = false,
+                            CutCurrentVoiceStateToTalk = true,
+                            CanRepeatVoiceState = true,
 
-                        ShouldSync = false,
-                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
-                        AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
-                    });
+                            ShouldSync = false,
+                            IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                            AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+                        });
+                    }
 
                     // Boom
                     TriggerMineOnLocalClientByExiting_ReversePatch(__instance);
