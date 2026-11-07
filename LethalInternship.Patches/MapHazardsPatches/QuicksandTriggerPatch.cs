@@ -56,20 +56,24 @@ namespace LethalInternship.Patches.MapHazardsPatches
                 if (!__instance.isWater)
                 {
                     // Audio
-                    internAI.InternIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                    IInternIdentity? internIdentity = InternManagerProvider.Instance.GetIdentityAssociatedWithBody(internAI.Npc);
+                    if (internIdentity != null)
                     {
-                        VoiceState = EnumVoicesState.Sinking,
-                        CanTalkIfOtherInternTalk = true,
-                        WaitForCooldown = false,
-                        CutCurrentVoiceStateToTalk = true,
-                        CanRepeatVoiceState = true,
+                        internIdentity.Voice.TryPlayVoiceAudio(new PlayVoiceParameters()
+                        {
+                            VoiceState = EnumVoicesState.Sinking,
+                            CanTalkIfOtherInternTalk = true,
+                            WaitForCooldown = false,
+                            CutCurrentVoiceStateToTalk = true,
+                            CanRepeatVoiceState = true,
 
-                        ShouldSync = false,
-                        IsInternInside = internAI.NpcController.Npc.isInsideFactory,
-                        AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
-                    });
+                            ShouldSync = false,
+                            IsInternInside = internAI.NpcController.Npc.isInsideFactory,
+                            AllowSwearing = PluginRuntimeProvider.Context.Config.AllowSwearing
+                        });
+                    }
+                    return;
                 }
-                return;
             }
 
             if (internAI.NpcController.CheckConditionsForSinkingInQuicksandIntern())

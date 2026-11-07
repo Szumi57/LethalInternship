@@ -76,7 +76,8 @@ namespace LethalInternship.Core.Interns.AI
         [ClientRpc]
         private void PlayAudioClientRpc(string clipName, int enumTalkativeness)
         {
-            if (internIdentity.Voice == null)
+            if (internIdentity == null
+                || internIdentity.Voice == null)
                 return;
 
             if (enumTalkativeness != PluginRuntimeProvider.Context.Config.Talkativeness
@@ -94,7 +95,8 @@ namespace LethalInternship.Core.Interns.AI
 
         private void TryPlayCurrentOrderVoiceAudio(EnumVoicesState enumVoicesState)
         {
-            if (internIdentity.Voice == null)
+            if (internIdentity == null
+                || internIdentity.Voice == null)
                 return;
 
             // Default states, wait for cooldown and if no one is talking close
@@ -114,7 +116,8 @@ namespace LethalInternship.Core.Interns.AI
 
         public void TryPlayCantDoCommandVoiceAudio()
         {
-            if (internIdentity.Voice == null)
+            if (internIdentity == null
+                || internIdentity.Voice == null)
                 return;
 
             // Default states, wait for cooldown and if no one is talking close

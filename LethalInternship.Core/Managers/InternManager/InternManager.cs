@@ -197,7 +197,7 @@ namespace LethalInternship.Core.Managers
             UpdateAllInternsVoiceEffects();
         }
 
-        private void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
+        public void UpdateSoundManagerWithInterns(int irlPlayersAndInternsCount)
         {
             SoundManager instanceSM = SoundManager.Instance;
 

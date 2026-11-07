@@ -2,6 +2,7 @@
 using LethalInternship.Core.Interns.AI;
 using LethalInternship.SharedAbstractions.Enums;
 using LethalInternship.SharedAbstractions.Hooks.ModelReplacementAPIHooks;
+using LethalInternship.SharedAbstractions.Interns;
 using LethalInternship.SharedAbstractions.PluginRuntimeProvider;
 using Unity.Netcode;
 
@@ -73,7 +74,10 @@ namespace LethalInternship.Core.Managers
                             break;
                         }
                     }
-                    internAI.InternIdentity.UpdateItemsInInventory(new int[] { itemId });
+
+                    IInternIdentity? internIdentity = GetIdentityAssociatedWithBody(internAI.Npc);
+                    if (internIdentity != null)
+                        internIdentity.UpdateItemsInInventory(new int[] { itemId });
                 }
                 // Drop all items + weapon
                 internAI.DropAllItems(EnumOptionsGetItems.All, waitBetweenItems: false);
@@ -119,7 +123,9 @@ namespace LethalInternship.Core.Managers
                 internController.localVisor.position = internController.playersManager.notSpawnedPosition.position;
                 internController.transform.position = internController.playersManager.notSpawnedPosition.position;
 
-                internAI.InternIdentity.Status = EnumStatusIdentity.ToDrop;
+                IInternIdentity? internIdentity = GetIdentityAssociatedWithBody(internAI.Npc);
+                if (internIdentity != null) internIdentity.Status = EnumStatusIdentity.ToDrop;
+
                 instanceSOR.allPlayerObjects[internController.playerClientId].SetActive(false);
             }
 
